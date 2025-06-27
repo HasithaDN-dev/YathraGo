@@ -22,16 +22,16 @@ In the folders, you'll find options to get started
 
 
 ```bash
-// For backend
+# For backend
 cd backend
 
-// For mobile app of customer
+# For mobile app of customer
 cd mobile-customer
 
-// For mobile app of driver
+# For mobile app of driver
 cd mobile-driver
 
-// For web
+# For web
 cd web-dashboard
 ```
 
