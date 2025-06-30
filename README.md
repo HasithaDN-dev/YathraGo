@@ -18,7 +18,7 @@ See the `/backend`, `/mobile-customer`, `/mobile-driver`, and `/web-dashboard` f
 - **Backend:** NestJS + PostgreSQL
 
 ## ⚙️ Getting Started
-In the folders, you'll find options to get started
+In the folders, you'll find op
 
 
 ```bash
