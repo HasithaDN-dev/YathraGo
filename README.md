@@ -5,7 +5,7 @@ It connects passengers (parents/staff) with verified school and office transport
 
 ## 🚀 Features
 - Separate apps for drivers and passengers
-- Web dashboard for admin, managers, finance
+- Web dashboard for admin, managers, finance, vehicle owner
 - Real-time tracking, alerts, payment integration
 - Scalable modular monorepo structure
 
