@@ -17,5 +17,93 @@ datasource db {
 model Driver {
   id      Int    @id @default(autoincrement())
   name    String
-  contact String
+  contact String 
 }
+
+model Customer {
+  user_id           Int      @id @default(autoincrement())
+  name              String
+  email             String  
+  contact           String  
+  otp               String   
+  address           String
+  profileImageUrl   String
+  emergencyContact  String   
+  status            String
+  createdAt         DateTime 
+}
+
+model Complaints {
+  complaint_id Int    @id @default(autoincrement())
+  description  String
+  type         String
+  createdAt    DateTime @default(now())
+}
+
+model Inquires {
+  inquiry_id   Int    @id @default(autoincrement())
+  description  String
+  createdAt    DateTime @default(now())
+}
+
+model Absence {
+  absent_id    Int    @id @default(autoincrement())
+  reason       String
+  createdAt    DateTime @default(now())
+}
+
+model Ratings_and_Reviews {
+  review_id    Int    @id @default(autoincrement())
+  review       String
+  ratings      Int
+  createdAt    DateTime @default(now())
+}
+
+model Child {
+  child_id        Int    @id @default(autoincrement())
+  relationship    String
+  NearbyCity      String
+  schoolLocation  String
+  school          String
+  childName       String
+  childImageUrl   String
+  pickUpAddress   String
+}
+
+model Child_Trip {
+  childTrip_id    Int    @id @default(autoincrement())
+  date            DateTime @default(now())
+  pickUp          String
+  dropOff         String
+  startTime       DateTime
+  endTime         DateTime
+}
+
+model Staff_Passenger {
+  staff_id        Int    @id @default(autoincrement())
+  nearbyCity      String
+  workLocation    String
+  workAddress     String
+  pickUpLocation  String
+  pickupAddress   String
+}
+
+model Staff_Trip {
+  staffTrip_id    Int    @id @default(autoincrement())
+  pickUpLocation  String
+  dropOffLocation String
+  startTime       DateTime
+  endTime         DateTime
+  date            DateTime @default(now())
+}
+
+model Child_Assign_To {
+  assign_id       Int    @id @default(autoincrement())
+  createdAt       DateTime @default(now())
+}
+
+        
+ 
+
+
+ 
