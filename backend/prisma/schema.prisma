@@ -14,8 +14,124 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model Driver {
-  id      Int    @id @default(autoincrement())
-  name    String
-  contact String
+model Vehicle{
+  id Int @id @default(autoincrement())
+  type String 
+  brand String
+  model String
+  manufactureYear Int
+  registrationNumber String
+  color String
+  route String[]
+  no_of_seats Int
+  air_conditioned Boolean @default(false)
+  assistant Boolean @default(false)
+  rear_picture_url String
+  front_picture_url String
+  side_picture_url String
+  inside_picture_url String
+  revenue_license_url String
+  insurance_front_url String
+  insurance_back_url String
+  vehicle_reg_url String
+
+}
+
+model Chat{
+  id Int @id @default(autoincrement())
+  message String
+  timestamp DateTime @default(now())
+  seen Boolean @default(false)
+
+}
+
+model BackupDriver{
+  id Int @id @default(autoincrement())
+  name String
+  phone String
+  vehicle_Reg_No String
+  NIC String
+}
+
+model Absence{
+  id Int @id @default(autoincrement())
+  date DateTime
+  reason String
+  submittedAt DateTime @default(now())
+}
+
+model DriverNotification{
+  id Int @id @default(autoincrement())
+  title String
+  message String
+  date DateTime @default(now())
+
+  
+}
+
+model MonthlyPayment{
+  id Int @id @default(autoincrement())
+  amount Float
+  paid Boolean @default(false)
+  paymentDate DateTime @default(now())
+  month String
+  Status String @default("Pending") // Pending, Paid, Overdue
+ 
+}
+
+model PaymentBalance{
+  id Int @id @default(autoincrement())
+  month String
+  amountDue Float
+  balance    Float
+  date DateTime @default(now())
+  description String
+  type String // Income or Expense
+}
+
+model StaffEmergency{
+  id Int @id @default(autoincrement())
+  type String 
+  description String
+  OccurrenceDate DateTime
+
+}
+
+model ChildEmergency{
+  id Int @id @default(autoincrement())
+  type String 
+  description String
+  OccurrenceDate DateTime
+  
+}
+
+model Driver{
+  id Int @id @default(autoincrement())
+  first_name String
+  last_name String
+  phone String
+  second_phone String
+  gender String
+  vehicle_Reg_No String
+  NIC String
+  address String
+  profile_picture_url String
+  dirver_license_front_url String
+  driver_license_back_url String
+  nic_front_pic_url String
+  nice_back_pic_url String
+  date_of_birth DateTime
+  date_of_joining DateTime @default(now())
+}
+
+model FoundedBackupDrivers{
+  id Int @id @default(autoincrement())
+}
+
+model VehicleOwner{
+  id Int @id @default(autoincrement())
+  first_name String
+  last_name String
+  phone String
+  email String
 }
