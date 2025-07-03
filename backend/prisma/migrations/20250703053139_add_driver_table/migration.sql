@@ -5,4 +5,4 @@ CREATE TABLE "Driver" (
     "contact" TEXT NOT NULL,
 
     CONSTRAINT "Driver_pkey" PRIMARY KEY ("id")
-);
+)
