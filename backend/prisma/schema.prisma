@@ -15,7 +15,7 @@ datasource db {
 }
 
 
-model Vehicle{
+model Vehicle {
   id Int @id @default(autoincrement())
   type String 
   brand String
@@ -38,7 +38,7 @@ model Vehicle{
 
 }
 
-model Chat{
+model Chat {
   id Int @id @default(autoincrement())
   message String
   timestamp DateTime @default(now())
@@ -46,7 +46,7 @@ model Chat{
 
 }
 
-model BackupDriver{
+model BackupDriver {
   id Int @id @default(autoincrement())
   name String
   phone String
@@ -54,14 +54,14 @@ model BackupDriver{
   NIC String
 }
 
-model Absence{
+model Absence {
   id Int @id @default(autoincrement())
   date DateTime
   reason String
   submittedAt DateTime @default(now())
 }
 
-model DriverNotification{
+model DriverNotification {
   id Int @id @default(autoincrement())
   title String
   message String
@@ -70,7 +70,7 @@ model DriverNotification{
   
 }
 
-model MonthlyPayment{
+model MonthlyPayment {
   id Int @id @default(autoincrement())
   amount Float
   paid Boolean @default(false)
@@ -80,7 +80,7 @@ model MonthlyPayment{
  
 }
 
-model PaymentBalance{
+model PaymentBalance {
   id Int @id @default(autoincrement())
   month String
   amountDue Float
@@ -90,7 +90,7 @@ model PaymentBalance{
   type String // Income or Expense
 }
 
-model StaffEmergency{
+model StaffEmergency {
   id Int @id @default(autoincrement())
   type String 
   description String
@@ -98,7 +98,7 @@ model StaffEmergency{
 
 }
 
-model ChildEmergency{
+model ChildEmergency {
   id Int @id @default(autoincrement())
   type String 
   description String
@@ -106,7 +106,7 @@ model ChildEmergency{
   
 }
 
-model Driver{
+model Driver {
   id Int @id @default(autoincrement())
   first_name String
   last_name String
@@ -125,11 +125,11 @@ model Driver{
   date_of_joining DateTime @default(now())
 }
 
-model FoundedBackupDrivers{
+model FoundedBackupDrivers {
   id Int @id @default(autoincrement())
 }
 
-model VehicleOwner{
+model VehicleOwner {
   id Int @id @default(autoincrement())
   first_name String
   last_name String
@@ -218,4 +218,3 @@ model Child_Assign_To {
   assign_id       Int    @id @default(autoincrement())
   createdAt       DateTime @default(now())
 }
-
