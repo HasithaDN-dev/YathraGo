@@ -8,6 +8,12 @@ generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -19,14 +25,28 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+model Admin {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  permissions String[] // Array of permission strings
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
-model Driver {
-  id      Int    @id @default(autoincrement())
-  name    String
-  contact String
+model Manager {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  password   String
+  firstName  String
+  lastName   String
+  department String?  // Optional department field
+  level      String   @default("JUNIOR") // JUNIOR, SENIOR, EXECUTIVE
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
+
