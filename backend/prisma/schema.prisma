@@ -15,7 +15,7 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        Int @id @default(autoincrement())
   email     String   @unique
   password  String
   firstName String
@@ -26,7 +26,7 @@ model User {
 }
 
 model Admin {
-  id          String   @id @default(cuid())
+  id          Int @id @default(autoincrement())
   email       String   @unique
   password    String
   firstName   String
@@ -38,7 +38,7 @@ model Admin {
 }
 
 model Manager {
-  id         String   @id @default(cuid())
+  id         Int @id @default(autoincrement())
   email      String   @unique
   password   String
   firstName  String
@@ -50,7 +50,7 @@ model Manager {
   updatedAt  DateTime @updatedAt
  }
 
-model Vehicle{
+model Vehicle {
   id Int @id @default(autoincrement())
   type String 
   brand String
@@ -73,7 +73,7 @@ model Vehicle{
 
 }
 
-model Chat{
+model Chat {
   id Int @id @default(autoincrement())
   message String
   timestamp DateTime @default(now())
@@ -81,7 +81,7 @@ model Chat{
 
 }
 
-model BackupDriver{
+model BackupDriver {
   id Int @id @default(autoincrement())
   name String
   phone String
@@ -89,14 +89,13 @@ model BackupDriver{
   NIC String
 }
 
-model Absence{
-  id Int @id @default(autoincrement())
-  date DateTime
-  reason String
-  submittedAt DateTime @default(now())
+model Absence_Child {
+  absent_id    Int    @id @default(autoincrement())
+  reason       String
+  createdAt    DateTime @default(now())
 }
 
-model DriverNotification{
+model DriverNotification {
   id Int @id @default(autoincrement())
   title String
   message String
@@ -105,7 +104,7 @@ model DriverNotification{
   
 }
 
-model MonthlyPayment{
+model MonthlyPayment {
   id Int @id @default(autoincrement())
   amount Float
   paid Boolean @default(false)
@@ -115,7 +114,7 @@ model MonthlyPayment{
  
 }
 
-model PaymentBalance{
+model PaymentBalance {
   id Int @id @default(autoincrement())
   month String
   amountDue Float
@@ -125,7 +124,7 @@ model PaymentBalance{
   type String // Income or Expense
 }
 
-model StaffEmergency{
+model StaffEmergency {
   id Int @id @default(autoincrement())
   type String 
   description String
@@ -133,7 +132,7 @@ model StaffEmergency{
 
 }
 
-model ChildEmergency{
+model ChildEmergency {
   id Int @id @default(autoincrement())
   type String 
   description String
@@ -141,7 +140,7 @@ model ChildEmergency{
   
 }
 
-model Driver{
+model Driver {
   id Int @id @default(autoincrement())
   first_name String
   last_name String
@@ -152,7 +151,7 @@ model Driver{
   NIC String
   address String
   profile_picture_url String
-  dirver_license_front_url String
+  driver_license_front_url String
   driver_license_back_url String
   nic_front_pic_url String
   nice_back_pic_url String
@@ -160,11 +159,11 @@ model Driver{
   date_of_joining DateTime @default(now())
 }
 
-model FoundedBackupDrivers{
+model FoundedBackupDrivers {
   id Int @id @default(autoincrement())
 }
 
-model VehicleOwner{
+model VehicleOwner {
   id Int @id @default(autoincrement())
   first_name String
   last_name String
@@ -198,7 +197,7 @@ model Inquires {
   createdAt    DateTime @default(now())
 }
 
-model Absence {
+model Absence_Staff {
   absent_id    Int    @id @default(autoincrement())
   reason       String
   createdAt    DateTime @default(now())
@@ -253,4 +252,3 @@ model Child_Assign_To {
   assign_id       Int    @id @default(autoincrement())
   createdAt       DateTime @default(now())
 }
-
