@@ -156,6 +156,8 @@ model Driver {
   nic_front_pic_url String
   nice_back_pic_url String
   date_of_birth DateTime
+  otp          String?
+  otpExpiresAt DateTime?
   date_of_joining DateTime @default(now())
 }
 
