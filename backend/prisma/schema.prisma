@@ -212,6 +212,7 @@ model Ratings_and_Reviews {
 
 model Child {
   child_id        Int    @id @default(autoincrement())
+  staffPassengerId Int?    // Nullable FK to Staff_Passenger
   relationship    String
   NearbyCity      String
   schoolLocation  String
@@ -219,6 +220,7 @@ model Child {
   childName       String
   childImageUrl   String
   pickUpAddress   String
+  staffPassenger  Staff_Passenger? @relation(fields: [staffPassengerId], references: [staff_id])
 }
 
 model Child_Trip {
@@ -232,11 +234,15 @@ model Child_Trip {
 
 model Staff_Passenger {
   staff_id        Int    @id @default(autoincrement())
+  name            String
+  email           String  @unique
+  contact         String
   nearbyCity      String
   workLocation    String
   workAddress     String
   pickUpLocation  String
   pickupAddress   String
+  children        Child[]        // 1-to many: staff can have many children
 }
 
 model Staff_Trip {
