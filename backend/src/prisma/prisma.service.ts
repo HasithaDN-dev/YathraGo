@@ -15,4 +15,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       void app.close();
     });
   }
+
 }
+
