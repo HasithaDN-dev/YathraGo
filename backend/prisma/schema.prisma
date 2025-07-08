@@ -218,7 +218,7 @@ model Child {
   schoolLocation  String
   school          String
   childName       String
-  childImageUrl   String
+  childImageUrl   String?
   pickUpAddress   String
   staffPassenger  Staff_Passenger? @relation(fields: [staffPassengerId], references: [staff_id])
 }
