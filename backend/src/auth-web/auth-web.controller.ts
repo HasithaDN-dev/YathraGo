@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { AuthWebService } from './auth-web.service';
-import { AuthWebDto } from './dto';
+import { LoginDto, SignupDto } from './dto';
 
 @Controller('auth-web')
 export class AuthWebController {
@@ -8,13 +8,13 @@ export class AuthWebController {
 
     //signup route
     @Post('signup')
-    signup(@Body() credentialsDto:AuthWebDto){
-        return this.authService.singup(credentialsDto);
+    signup(@Body() credentialsDto:SignupDto){
+        return this.authService.signup(credentialsDto);
     }
 
     //login route
     @Post('login')
-    login(@Body() credentialsDto:AuthWebDto){
+    login(@Body() credentialsDto:LoginDto){
         return this.authService.login(credentialsDto);
     }
 }
