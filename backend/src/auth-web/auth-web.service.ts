@@ -20,7 +20,7 @@ export class AuthWebService {
 
         //create a user in the DB
         try {
-            const user = await this.prisma.user.create({
+            const user = await this.prisma.webuser.create({
             data:{
                 email:credentials.email,
                 password:hashPassword,
@@ -46,7 +46,7 @@ export class AuthWebService {
     async login(credentials:LoginDto){
 
         //find the user by email
-        const user =  await this.prisma.user.findUnique({
+        const user =  await this.prisma.webuser.findUnique({
             where:{
                 email:credentials.email
             },

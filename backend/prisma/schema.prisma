@@ -9,15 +9,28 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  username  String
-  role      String   @default("USER")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 Int                @id @default(autoincrement())
+  email              String?            @unique
+  firstName          String?
+  lastName           String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  accountType        AccountType?
+  phone              String             @unique
+  registrationStatus RegistrationStatus @default(OTP_PENDING)
+  Child              Child[]
+  Staff_Passenger    Staff_Passenger?
 }
 
+model Webuser{
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  username  String
+  role        String   @default("USER")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
 model Admin {
   id          Int      @id @default(autoincrement())
   email       String   @unique
@@ -197,16 +210,18 @@ model Ratings_and_Reviews {
 }
 
 model Child {
-  child_id         Int              @id @default(autoincrement())
   staffPassengerId Int?
   relationship     String
-  NearbyCity       String
   schoolLocation   String
   school           String
   childName        String
-  childImageUrl    String
+  childImageUrl    String?
   pickUpAddress    String
-  staffPassenger   Staff_Passenger? @relation(fields: [staffPassengerId], references: [staff_id])
+  id               Int              @id @default(autoincrement())
+  nearbyCity       String
+  userId           Int?
+  staffPassenger   Staff_Passenger? @relation(fields: [staffPassengerId], references: [id])
+  User             User?            @relation(fields: [userId], references: [id])
 }
 
 model Child_Trip {
@@ -219,16 +234,15 @@ model Child_Trip {
 }
 
 model Staff_Passenger {
-  staff_id       Int     @id @default(autoincrement())
-  name           String
-  email          String  @unique
-  contact        String
+  id             Int     @id @default(autoincrement())
+  userId         Int     @unique
   nearbyCity     String
   workLocation   String
   workAddress    String
   pickUpLocation String
   pickupAddress  String
   children       Child[]
+  User           User    @relation(fields: [userId], references: [id])
 }
 
 model Staff_Trip {
@@ -243,4 +257,17 @@ model Staff_Trip {
 model Child_Assign_To {
   assign_id Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
+}
+
+enum AccountType {
+  CHILD
+  STAFF
+}
+
+enum RegistrationStatus {
+  OTP_PENDING
+  OTP_VERIFIED
+  TYPE_SELECTED
+  CHILD_REGISTERED
+  STAFF_REGISTERED
 }
