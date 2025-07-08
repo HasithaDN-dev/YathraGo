@@ -4,9 +4,6 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
-generator client {
-  provider = "prisma-client-js"
-}
 
 datasource db {
   provider  = "postgresql"
@@ -14,15 +11,29 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// --------------------------------------------------
+// MODELS
+// --------------------------------------------------
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
 model User {
-  id        Int @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  firstName String
-  lastName  String
-  role      String   @default("USER") // USER, ADMIN, etc.
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  Int              @id @default(autoincrement())
+  phone               String           @unique
+  email               String?          @unique
+  firstName           String?
+  lastName            String?
+  accountType         AccountType?     // 'CHILD' or 'STAFF'
+  registrationStatus  RegistrationStatus @default(OTP_PENDING)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  // Relations
+  staff_Passenger      Staff_Passenger?
+  children            Child[]          @relation("UserChildren")
 }
 
 model Admin {
@@ -211,16 +222,21 @@ model Ratings_and_Reviews {
 }
 
 model Child {
-  child_id        Int    @id @default(autoincrement())
-  staffPassengerId Int?    // Nullable FK to Staff_Passenger
-  relationship    String
-  NearbyCity      String
-  schoolLocation  String
-  school          String
-  childName       String
-  childImageUrl   String?
-  pickUpAddress   String
-  staffPassenger  Staff_Passenger? @relation(fields: [staffPassengerId], references: [staff_id])
+  id                  Int     @id @default(autoincrement())
+  userId              Int?    // The user account that "owns" this child record
+  staffPassengerId    Int?    // The staff passenger profile of the parent
+
+  childName           String
+  relationship        String
+  nearbyCity          String
+  school              String
+  schoolLocation      String
+  pickUpAddress       String
+  childImageUrl       String?
+
+  // Relations
+  staff_Passenger      Staff_Passenger? @relation(fields: [staffPassengerId], references: [id])
+  user                User?           @relation("UserChildren", fields: [userId], references: [id])
 }
 
 model Child_Trip {
@@ -233,17 +249,19 @@ model Child_Trip {
 }
 
 model Staff_Passenger {
-  staff_id        Int    @id @default(autoincrement())
-  name            String
-  email           String  @unique
-  contact         String
-  nearbyCity      String
-  workLocation    String
-  workAddress     String
-  pickUpLocation  String
-  pickupAddress   String
-  children        Child[]        // 1-to many: staff can have many children
+  id               Int    @id @default(autoincrement())
+  userId           Int    @unique
+  nearbyCity       String
+  workLocation     String
+  workAddress      String
+  pickUpLocation   String
+  pickupAddress    String
+
+  // Relations
+  user             User   @relation(fields: [userId], references: [id])
+  children         Child[]
 }
+
 
 model Staff_Trip {
   staffTrip_id    Int    @id @default(autoincrement())
@@ -257,4 +275,21 @@ model Staff_Trip {
 model Child_Assign_To {
   assign_id       Int    @id @default(autoincrement())
   createdAt       DateTime @default(now())
+}
+
+// --------------------------------------------------
+// ENUMS
+// --------------------------------------------------
+
+enum AccountType {
+  CHILD
+  STAFF
+}
+
+enum RegistrationStatus {
+  OTP_PENDING
+  OTP_VERIFIED
+  TYPE_SELECTED
+  CHILD_REGISTERED
+  STAFF_REGISTERED
 }
