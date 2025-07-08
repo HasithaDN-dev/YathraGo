@@ -1,4 +1,10 @@
-import { IsString, IsEmail, MinLength, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  MinLength,
+  MaxLength,
+  Matches,
+} from 'class-validator';
 
 export class RegisterStaffDto {
   @IsString()
@@ -10,6 +16,11 @@ export class RegisterStaffDto {
   email: string;
 
   @IsString()
+  @MinLength(10, { message: 'Contact number must be exactly 10 digits.' })
+  @MaxLength(10, { message: 'Contact number must be exactly 10 digits.' })
+  @Matches(/^0\d{9}$/, {
+    message: 'Contact number must start with 0 and contain exactly 10 digits.',
+  })
   contact: string;
 
   @IsString()
