@@ -25,11 +25,51 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+
 ## Project setup
 
 ```bash
-$ npm install
+npm install
 ```
+
+## Generating Modules, Controllers, and Services
+
+NestJS provides CLI commands to quickly scaffold modules, controllers, and services. These commands automatically create the necessary folders and files in the correct structure.
+
+### 1. Generate a Module
+
+```bash
+npx nest g module <module-name>
+```
+**Example:**
+```bash
+npx nest g module passenger
+```
+This will create a new folder `src/passenger/` (if it doesn't exist) and a file `passenger.module.ts` inside it.
+
+### 2. Generate a Controller
+
+```bash
+npx nest g controller <module-name>
+```
+**Example:**
+```bash
+npx nest g controller passenger
+```
+This will create `src/passenger/passenger.controller.ts`.
+
+### 3. Generate a Service
+
+```bash
+npx nest g service <module-name>
+```
+**Example:**
+```bash
+npx nest g service passenger
+```
+This will create `src/passenger/passenger.service.ts`.
+
+You can repeat these commands for any feature/module you want to add. The CLI will generate the folder and files if they do not exist.
 
 ## Compile and run the project
 

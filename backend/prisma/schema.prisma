@@ -210,18 +210,18 @@ model Ratings_and_Reviews {
 }
 
 model Child {
-  staffPassengerId Int?
-  relationship     String
-  schoolLocation   String
-  school           String
-  childName        String
-  childImageUrl    String?
-  pickUpAddress    String
-  id               Int              @id @default(autoincrement())
-  nearbyCity       String
-  userId           Int?
-  staffPassenger   Staff_Passenger? @relation(fields: [staffPassengerId], references: [id])
-  User             User?            @relation(fields: [userId], references: [id])
+
+  child_id        Int    @id @default(autoincrement())
+  staffPassengerId Int?    // Nullable FK to Staff_Passenger
+  relationship    String
+  NearbyCity      String
+  schoolLocation  String
+  school          String
+  childName       String
+  childImageUrl   String?
+  pickUpAddress   String
+  staffPassenger  Staff_Passenger? @relation(fields: [staffPassengerId], references: [staff_id])
+
 }
 
 model Child_Trip {
