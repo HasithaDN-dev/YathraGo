@@ -1,4 +1,9 @@
-import { Injectable, Logger, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { OtpService } from '../common/services/otp.service';
@@ -33,7 +38,9 @@ export class AuthService {
     private otpService: OtpService,
   ) {}
 
-  async sendGetStartedOtp(sendOtpDto: SendOtpDto): Promise<{ message: string; isNewUser: boolean }> {
+  async sendGetStartedOtp(
+    sendOtpDto: SendOtpDto,
+  ): Promise<{ message: string; isNewUser: boolean }> {
     const { phone, userType } = sendOtpDto;
 
     // Check if user already exists
@@ -41,9 +48,9 @@ export class AuthService {
     const isNewUser = !existingUser;
 
     const result = await this.otpService.generateAndSendOtp(
-      phone, 
-      userType, 
-      isNewUser ? OtpPurpose.PHONE_VERIFICATION : OtpPurpose.LOGIN
+      phone,
+      userType,
+      isNewUser ? OtpPurpose.PHONE_VERIFICATION : OtpPurpose.LOGIN,
     );
 
     if (!result.success) {
@@ -64,8 +71,15 @@ export class AuthService {
     const isNewUser = !existingUser;
 
     // Verify OTP with appropriate purpose
-    const otpPurpose = isNewUser ? OtpPurpose.PHONE_VERIFICATION : OtpPurpose.LOGIN;
-    const otpResult = await this.otpService.verifyOtp(phone, otp, userType, otpPurpose);
+    const otpPurpose = isNewUser
+      ? OtpPurpose.PHONE_VERIFICATION
+      : OtpPurpose.LOGIN;
+    const otpResult = await this.otpService.verifyOtp(
+      phone,
+      otp,
+      userType,
+      otpPurpose,
+    );
 
     if (!otpResult.success) {
       throw new UnauthorizedException(otpResult.error);
@@ -107,7 +121,10 @@ export class AuthService {
     };
   }
 
-  private async findUserByPhone(phone: string, userType: UserType): Promise<any> {
+  private async findUserByPhone(
+    phone: string,
+    userType: UserType,
+  ): Promise<any> {
     if (userType === UserType.CUSTOMER) {
       return await this.prisma.customer.findFirst({
         where: { contact: phone },
@@ -157,7 +174,10 @@ export class AuthService {
     });
   }
 
-  private async markUserAsVerified(userId: number, userType: UserType): Promise<any> {
+  private async markUserAsVerified(
+    userId: number,
+    userType: UserType,
+  ): Promise<any> {
     if (userType === UserType.CUSTOMER) {
       return await this.prisma.customer.update({
         where: { user_id: userId },

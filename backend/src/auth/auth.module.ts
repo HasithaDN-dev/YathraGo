@@ -15,7 +15,10 @@ import { CommonModule } from '../common/common.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'your-default-secret-key'),
+        secret: configService.get<string>(
+          'JWT_SECRET',
+          'your-default-secret-key',
+        ),
         signOptions: {
           expiresIn: configService.get<string>('JWT_EXPIRES_IN', '7d'),
         },

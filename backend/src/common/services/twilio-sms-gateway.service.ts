@@ -11,12 +11,13 @@ export class TwilioSmsGateway implements SmsGateway {
 
   constructor(private configService: ConfigService) {
     const smsProvider = this.configService.get<string>('SMS_PROVIDER', 'dummy');
-    
+
     // Only initialize Twilio if it's the selected provider
     if (smsProvider.toLowerCase() === 'twilio') {
       const accountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID');
       const authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
-      this.fromNumber = this.configService.get<string>('TWILIO_FROM_NUMBER') || '';
+      this.fromNumber =
+        this.configService.get<string>('TWILIO_FROM_NUMBER') || '';
 
       if (!accountSid || !authToken || !this.fromNumber) {
         this.logger.warn('Twilio credentials not configured properly');
@@ -25,11 +26,16 @@ export class TwilioSmsGateway implements SmsGateway {
 
       this.twilioClient = new Twilio(accountSid, authToken);
     } else {
-      this.logger.log('Twilio SMS Gateway initialized but not active (using different provider)');
+      this.logger.log(
+        'Twilio SMS Gateway initialized but not active (using different provider)',
+      );
     }
   }
 
-  async sendSms(phone: string, message: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  async sendSms(
+    phone: string,
+    message: string,
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
       if (!this.twilioClient) {
         throw new Error('Twilio client not initialized - check credentials');
@@ -44,7 +50,9 @@ export class TwilioSmsGateway implements SmsGateway {
         to: formattedPhone,
       });
 
-      this.logger.log(`SMS sent successfully to ${phone}, Message SID: ${twilioMessage.sid}`);
+      this.logger.log(
+        `SMS sent successfully to ${phone}, Message SID: ${twilioMessage.sid}`,
+      );
 
       return {
         success: true,
@@ -52,15 +60,16 @@ export class TwilioSmsGateway implements SmsGateway {
       };
     } catch (error) {
       this.logger.error(`Failed to send SMS to ${phone}:`, error);
-      
+
       // Handle specific Twilio trial account errors
       if (error.code === 21608) {
         return {
           success: false,
-          error: 'Trial account limitation: Phone number must be verified in Twilio console. Please verify your number at https://console.twilio.com/us1/develop/phone-numbers/manage/verified or use the dummy SMS provider for testing.',
+          error:
+            'Trial account limitation: Phone number must be verified in Twilio console. Please verify your number at https://console.twilio.com/us1/develop/phone-numbers/manage/verified or use the dummy SMS provider for testing.',
         };
       }
-      
+
       return {
         success: false,
         error: error.message || 'Failed to send SMS',
