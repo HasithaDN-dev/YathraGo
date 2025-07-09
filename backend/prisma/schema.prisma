@@ -15,7 +15,6 @@ model User {
   lastName           String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  accountType        AccountType?
   phone              String             @unique
   registrationStatus RegistrationStatus @default(OTP_PENDING)
   Child              Child[]
@@ -258,11 +257,6 @@ model Staff_Trip {
 model Child_Assign_To {
   assign_id Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
-}
-
-enum AccountType {
-  CHILD
-  STAFF
 }
 
 enum RegistrationStatus {
