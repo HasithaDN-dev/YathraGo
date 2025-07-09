@@ -3,8 +3,8 @@ import { AuthService } from '../auth/auth.service';
 import { SendOtpDto, VerifyOtpDto } from '../common/dto/auth.dto';
 import { UserType } from '@prisma/client';
 
-@Controller('driver')
-export class DriverController {
+@Controller('customer')
+export class CustomerController {
   constructor(private authService: AuthService) {}
 
   @Post('auth/get-started/send-otp')
@@ -12,7 +12,7 @@ export class DriverController {
   async sendGetStartedOtp(@Body() body: { phone: string }) {
     const sendOtpDto: SendOtpDto = {
       ...body,
-      userType: UserType.DRIVER,
+      userType: UserType.CUSTOMER,
     };
     return this.authService.sendGetStartedOtp(sendOtpDto);
   }
@@ -22,7 +22,7 @@ export class DriverController {
   async verifyGetStartedOtp(@Body() body: { phone: string; otp: string }) {
     const verifyOtpDto: VerifyOtpDto = {
       ...body,
-      userType: UserType.DRIVER,
+      userType: UserType.CUSTOMER,
     };
     return this.authService.verifyGetStartedOtp(verifyOtpDto);
   }
