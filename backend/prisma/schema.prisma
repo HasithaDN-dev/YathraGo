@@ -18,8 +18,25 @@ model User {
   accountType        AccountType?
   phone              String             @unique
   registrationStatus RegistrationStatus @default(OTP_PENDING)
+  isVerified         Boolean            @default(false)
   Child              Child[]
   Staff_Passenger    Staff_Passenger?
+}
+
+model OtpCode {
+  id        Int      @id @default(autoincrement())
+  phone     String
+  code      String   // Stored as Argon2 hash for security
+  userType  UserType
+  purpose   OtpPurpose @default(PHONE_VERIFICATION)
+  expiresAt DateTime
+  isUsed    Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phone])
+  @@index([phone, userType, purpose])
 }
 
 model Webuser{
@@ -210,9 +227,9 @@ model Ratings_and_Reviews {
 }
 
 model Child {
-
   child_id        Int    @id @default(autoincrement())
-  staffPassengerId Int?    // Nullable FK to Staff_Passenger
+  userId          Int?   // FK to User
+  staffPassengerId Int?  // Nullable FK to Staff_Passenger
   relationship    String
   NearbyCity      String
   schoolLocation  String
@@ -220,8 +237,8 @@ model Child {
   childName       String
   childImageUrl   String?
   pickUpAddress   String
+  user            User? @relation(fields: [userId], references: [id])
   staffPassenger  Staff_Passenger? @relation(fields: [staffPassengerId], references: [staff_id])
-
 }
 
 model Child_Trip {
@@ -234,7 +251,7 @@ model Child_Trip {
 }
 
 model Staff_Passenger {
-  id             Int     @id @default(autoincrement())
+  staff_id       Int     @id @default(autoincrement())
   userId         Int     @unique
   nearbyCity     String
   workLocation   String
@@ -270,4 +287,15 @@ enum RegistrationStatus {
   TYPE_SELECTED
   CHILD_REGISTERED
   STAFF_REGISTERED
+}
+
+enum UserType {
+  CUSTOMER
+  DRIVER
+}
+
+enum OtpPurpose {
+  PHONE_VERIFICATION
+  LOGIN
+  PASSWORD_RESET
 }

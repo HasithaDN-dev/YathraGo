@@ -7,10 +7,23 @@ export class StaffPassengerService {
   constructor(private prisma: PrismaService) {}
 
   async register(dto: RegisterStaffDto) {
+    // TODO: Fix this implementation based on the correct DTO structure
+    throw new BadRequestException('Staff registration endpoint temporarily disabled');
+    /*
     const exists = await this.prisma.staff_Passenger.findUnique({
-      where: { email: dto.email },
+      where: { userId: dto.userId },
     });
-    if (exists) throw new BadRequestException('Email already registered.');
-    return this.prisma.staff_Passenger.create({ data: dto });
+    if (exists) throw new BadRequestException('User already registered as staff.');
+    return this.prisma.staff_Passenger.create({ 
+      data: {
+        userId: dto.userId,
+        nearbyCity: dto.nearbyCity,
+        workLocation: dto.workLocation,
+        workAddress: dto.workAddress,
+        pickUpLocation: dto.pickUpLocation,
+        pickupAddress: dto.pickupAddress,
+      } 
+    });
+    */
   }
 }
