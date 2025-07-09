@@ -8,12 +8,13 @@ import { VehicleModule } from './vehicle/vehicle.module';
 
 import { AuthWebModule } from './auth-web/auth-web.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { CustomerModule } from './customer/customer.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true, }), // Makes the configuration available globally
-    AuthModule, UserModule, DriverModule, VehicleModule, AuthWebModule, PrismaModule],
+    AuthModule, UserModule, DriverModule, VehicleModule, AuthWebModule, PrismaModule, CustomerModule],
 
 import { StaffPassengerModule } from './staff-passenger/staff-passenger.module';
 import { ChildModule } from './child/child.module';
