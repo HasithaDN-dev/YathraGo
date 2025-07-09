@@ -8,16 +8,15 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+
 model User {
-  id                 Int                @id @default(autoincrement())
-  email              String?            @unique
-  name               String?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  phone              String             @unique
-  registrationStatus RegistrationStatus @default(OTP_PENDING)
-  Child              Child[]
-  Staff_Passenger    Staff_Passenger?
+  id        Int       @id @default(autoincrement())
+  email     String?   @unique
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  phone     String    @unique
+  // Removed relation to Customer
 }
 
 model OtpCode {
@@ -184,16 +183,18 @@ model VehicleOwner {
 }
 
 model Customer {
-  user_id          Int      @id @default(autoincrement())
-  name             String
-  email            String
-  contact          String
-  otp              String
-  address          String
-  profileImageUrl  String
-  emergencyContact String
-  status           String
-  createdAt        DateTime
+  id                 Int                @id @default(autoincrement())
+  name               String
+  phone              String    @unique
+  email              String?
+  address            String?
+  profileImageUrl    String?
+  emergencyContact   String?
+  registrationStatus RegistrationStatus @default(OTP_PENDING)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  children           Child[]
+  staffPassenger     Staff_Passenger?
 }
 
 model Complaints {
@@ -223,19 +224,18 @@ model Ratings_and_Reviews {
 }
 
 model Child {
-
-  child_id        Int    @id @default(autoincrement())
-  staffPassengerId Int?    // Nullable FK to Staff_Passenger
-  relationship    String
-  NearbyCity      String
-  schoolLocation  String
-  school          String
-  childName       String
-  childImageUrl   String?
-  pickUpAddress   String
-  staffPassenger  Staff_Passenger? @relation(fields: [staffPassengerId], references: [id])
-  User            User?            @relation(fields: [userId], references: [id])
-  userId          Int?
+  child_id         Int      @id @default(autoincrement())
+  staffPassengerId Int? // Nullable FK to Staff_Passenger
+  relationship     String
+  NearbyCity       String
+  schoolLocation   String
+  school           String
+  childName        String
+  childImageUrl    String?
+  pickUpAddress    String
+  staffPassenger   Staff_Passenger? @relation(fields: [staffPassengerId], references: [id])
+  Customer         Customer?        @relation(fields: [customerId], references: [id])
+  customerId       Int?
 }
 
 model Child_Trip {
@@ -248,15 +248,15 @@ model Child_Trip {
 }
 
 model Staff_Passenger {
-  id             Int     @id @default(autoincrement())
-  userId         Int     @unique
+  id             Int      @id @default(autoincrement())
+  customerId     Int      @unique
   nearbyCity     String
   workLocation   String
   workAddress    String
   pickUpLocation String
   pickupAddress  String
   children       Child[]
-  User           User    @relation(fields: [userId], references: [id])
+  Customer       Customer @relation(fields: [customerId], references: [id])
 }
 
 model Staff_Trip {
