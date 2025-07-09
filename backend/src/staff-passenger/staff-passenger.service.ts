@@ -8,7 +8,9 @@ export class StaffPassengerService {
 
   async register(dto: RegisterStaffDto) {
     // TODO: Fix this implementation based on the correct DTO structure
-    throw new BadRequestException('Staff registration endpoint temporarily disabled');
+    throw new BadRequestException(
+      'Staff registration endpoint temporarily disabled',
+    );
     /*
     const exists = await this.prisma.staff_Passenger.findUnique({
       where: { userId: dto.userId },

@@ -157,7 +157,7 @@ model ChildEmergency {
 }
 
 model Driver {
-  id                       Int      @id @default(autoincrement())
+  driver_id                Int      @id @default(autoincrement())
   NIC                      String
   address                  String
   date_of_birth            DateTime
@@ -169,10 +169,14 @@ model Driver {
   last_name                String
   nic_front_pic_url        String
   nice_back_pic_url        String
-  phone                    String
+  phone                    String   // Standardized phone field name
   profile_picture_url      String
   second_phone             String
   vehicle_Reg_No           String
+  email                    String?  // Added email field for consistency
+  status                   String   @default("ACTIVE")
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 }
 
 model FoundedBackupDrivers {
@@ -188,16 +192,18 @@ model VehicleOwner {
 }
 
 model Customer {
-  user_id          Int      @id @default(autoincrement())
-  name             String
+  customer_id      Int      @id @default(autoincrement())
+  first_name       String
+  last_name        String
   email            String
-  contact          String
+  phone            String   // Standardized phone field name (was 'contact')
   otp              String
   address          String
   profileImageUrl  String
   emergencyContact String
-  status           String
-  createdAt        DateTime
+  status           String   @default("ACTIVE")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model Complaints {

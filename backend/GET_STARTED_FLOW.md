@@ -298,8 +298,6 @@ The unified system:
 🚫 **Attempt Protection**: Maximum 3 failed verification attempts  
 📊 **Security Monitoring**: Failed attempts are logged and tracked  
 
-For detailed security implementation, see: [`OTP_SECURITY.md`](./OTP_SECURITY.md)
-
 ## Error Handling
 
 ### Common Errors
