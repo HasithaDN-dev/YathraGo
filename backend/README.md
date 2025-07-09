@@ -25,6 +25,10 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## 📋 Documentation
+
+- **[Mobile Authentication Guide](./GET_STARTED_FLOW.md)** - Complete guide for implementing the unified "Get Started" authentication flow in mobile apps
+
 
 ## Project setup
 
