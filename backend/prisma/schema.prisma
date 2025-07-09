@@ -11,8 +11,7 @@ datasource db {
 model User {
   id                 Int                @id @default(autoincrement())
   email              String?            @unique
-  firstName          String?
-  lastName           String?
+  name               String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   phone              String             @unique
@@ -262,7 +261,7 @@ model Child_Assign_To {
 enum RegistrationStatus {
   OTP_PENDING
   OTP_VERIFIED
-  TYPE_SELECTED
   CHILD_REGISTERED
   STAFF_REGISTERED
+  FULLY_REGISTERED
 }
