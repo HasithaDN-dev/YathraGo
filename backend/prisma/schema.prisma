@@ -20,6 +20,21 @@ model User {
   Staff_Passenger    Staff_Passenger?
 }
 
+model OtpCode {
+  id        Int        @id @default(autoincrement())
+  phone     String
+  code      String
+  userType  UserType
+  purpose   OtpPurpose @default(PHONE_VERIFICATION)
+  expiresAt DateTime
+  isUsed    Boolean    @default(false)
+  attempts  Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([phone, userType, purpose])
+}
+
 model Webuser{
   id          Int      @id @default(autoincrement())
   email       String   @unique
@@ -264,6 +279,12 @@ enum RegistrationStatus {
   CHILD_REGISTERED
   STAFF_REGISTERED
   FULLY_REGISTERED
+}
+
+enum OtpPurpose {
+  PHONE_VERIFICATION
+  PASSWORD_RESET
+  LOGIN
 }
 
 enum UserType {

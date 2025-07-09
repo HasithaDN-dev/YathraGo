@@ -72,14 +72,17 @@ export class OtpService {
         Date.now() + this.OTP_EXPIRY_MINUTES * 60 * 1000,
       );
 
-      // Hash the OTP before storing (security improvement)
+      // --- Hashing OTP ---
+      // For production, the OTP is hashed before storing.
+      // For testing without a working SMS, you can comment out the hashing
+      // and store the plain 'code' in the database.
       const hashedCode = await argon2.hash(code);
 
       // Store hashed OTP in database
       await this.prisma.otpCode.create({
         data: {
           phone,
-          code: hashedCode, // Store hashed version
+          code: hashedCode, // For testing, change this value to 'code'
           userType,
           purpose,
           expiresAt,
@@ -117,6 +120,11 @@ export class OtpService {
     purpose: OtpPurpose = OtpPurpose.PHONE_VERIFICATION,
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      // --- Verifying Hashed OTP ---
+      // For production, we find all active OTPs and verify the hash.
+      // For testing, you can replace this block with a direct database lookup
+      // for the plain text 'code'.
+
       // Find all active OTPs for this phone/userType/purpose
       const otpRecords = await this.prisma.otpCode.findMany({
         where: {

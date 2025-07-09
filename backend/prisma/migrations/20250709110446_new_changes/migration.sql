@@ -1,57 +1,52 @@
-/*
-  Warnings:
+-- CreateEnum
+CREATE TYPE "RegistrationStatus" AS ENUM ('OTP_PENDING', 'OTP_VERIFIED', 'CHILD_REGISTERED', 'STAFF_REGISTERED', 'FULLY_REGISTERED');
 
-  - You are about to drop the column `contact` on the `Driver` table. All the data in the column will be lost.
-  - You are about to drop the column `email` on the `Driver` table. All the data in the column will be lost.
-  - You are about to drop the column `name` on the `Driver` table. All the data in the column will be lost.
-  - Added the required column `NIC` to the `Driver` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `address` to the `Driver` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `date_of_birth` to the `Driver` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `driver_license_back_url` to the `Driver` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `driver_license_front_url` to the `Driver` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `first_name` to the `Driver` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `gender` to the `Driver` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `last_name` to the `Driver` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `nic_front_pic_url` to the `Driver` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `nice_back_pic_url` to the `Driver` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `phone` to the `Driver` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `profile_picture_url` to the `Driver` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `second_phone` to the `Driver` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `vehicle_Reg_No` to the `Driver` table without a default value. This is not possible if the table is not empty.
+-- CreateEnum
+CREATE TYPE "OtpPurpose" AS ENUM ('PHONE_VERIFICATION', 'PASSWORD_RESET', 'LOGIN');
 
-*/
--- AlterTable
-ALTER TABLE "Driver" DROP COLUMN "contact",
-DROP COLUMN "email",
-DROP COLUMN "name",
-ADD COLUMN     "NIC" TEXT NOT NULL,
-ADD COLUMN     "address" TEXT NOT NULL,
-ADD COLUMN     "date_of_birth" TIMESTAMP(3) NOT NULL,
-ADD COLUMN     "date_of_joining" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN     "driver_license_back_url" TEXT NOT NULL,
-ADD COLUMN     "driver_license_front_url" TEXT NOT NULL,
-ADD COLUMN     "first_name" TEXT NOT NULL,
-ADD COLUMN     "gender" TEXT NOT NULL,
-ADD COLUMN     "last_name" TEXT NOT NULL,
-ADD COLUMN     "nic_front_pic_url" TEXT NOT NULL,
-ADD COLUMN     "nice_back_pic_url" TEXT NOT NULL,
-ADD COLUMN     "phone" TEXT NOT NULL,
-ADD COLUMN     "profile_picture_url" TEXT NOT NULL,
-ADD COLUMN     "second_phone" TEXT NOT NULL,
-ADD COLUMN     "vehicle_Reg_No" TEXT NOT NULL;
+-- CreateEnum
+CREATE TYPE "UserType" AS ENUM ('CUSTOMER', 'DRIVER');
 
 -- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
+    "email" TEXT,
+    "name" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "phone" TEXT NOT NULL,
+    "registrationStatus" "RegistrationStatus" NOT NULL DEFAULT 'OTP_PENDING',
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OtpCode" (
+    "id" SERIAL NOT NULL,
+    "phone" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "userType" "UserType" NOT NULL,
+    "purpose" "OtpPurpose" NOT NULL DEFAULT 'PHONE_VERIFICATION',
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "isUsed" BOOLEAN NOT NULL DEFAULT false,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "OtpCode_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Webuser" (
+    "id" SERIAL NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "firstName" TEXT NOT NULL,
-    "lastName" TEXT NOT NULL,
+    "username" TEXT NOT NULL,
     "role" TEXT NOT NULL DEFAULT 'USER',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Webuser_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -196,6 +191,28 @@ CREATE TABLE "ChildEmergency" (
 );
 
 -- CreateTable
+CREATE TABLE "Driver" (
+    "id" SERIAL NOT NULL,
+    "NIC" TEXT NOT NULL,
+    "address" TEXT NOT NULL,
+    "date_of_birth" TIMESTAMP(3) NOT NULL,
+    "date_of_joining" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "driver_license_back_url" TEXT NOT NULL,
+    "driver_license_front_url" TEXT NOT NULL,
+    "first_name" TEXT NOT NULL,
+    "gender" TEXT NOT NULL,
+    "last_name" TEXT NOT NULL,
+    "nic_front_pic_url" TEXT NOT NULL,
+    "nice_back_pic_url" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "profile_picture_url" TEXT NOT NULL,
+    "second_phone" TEXT NOT NULL,
+    "vehicle_Reg_No" TEXT NOT NULL,
+
+    CONSTRAINT "Driver_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "FoundedBackupDrivers" (
     "id" SERIAL NOT NULL,
 
@@ -276,8 +293,9 @@ CREATE TABLE "Child" (
     "schoolLocation" TEXT NOT NULL,
     "school" TEXT NOT NULL,
     "childName" TEXT NOT NULL,
-    "childImageUrl" TEXT NOT NULL,
+    "childImageUrl" TEXT,
     "pickUpAddress" TEXT NOT NULL,
+    "userId" INTEGER,
 
     CONSTRAINT "Child_pkey" PRIMARY KEY ("child_id")
 );
@@ -296,17 +314,15 @@ CREATE TABLE "Child_Trip" (
 
 -- CreateTable
 CREATE TABLE "Staff_Passenger" (
-    "staff_id" SERIAL NOT NULL,
-    "name" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "contact" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
     "nearbyCity" TEXT NOT NULL,
     "workLocation" TEXT NOT NULL,
     "workAddress" TEXT NOT NULL,
     "pickUpLocation" TEXT NOT NULL,
     "pickupAddress" TEXT NOT NULL,
 
-    CONSTRAINT "Staff_Passenger_pkey" PRIMARY KEY ("staff_id")
+    CONSTRAINT "Staff_Passenger_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -333,13 +349,28 @@ CREATE TABLE "Child_Assign_To" (
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "User_phone_key" ON "User"("phone");
+
+-- CreateIndex
+CREATE INDEX "OtpCode_phone_userType_purpose_idx" ON "OtpCode"("phone", "userType", "purpose");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Webuser_email_key" ON "Webuser"("email");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Admin_email_key" ON "Admin"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Manager_email_key" ON "Manager"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Staff_Passenger_email_key" ON "Staff_Passenger"("email");
+CREATE UNIQUE INDEX "Staff_Passenger_userId_key" ON "Staff_Passenger"("userId");
 
 -- AddForeignKey
-ALTER TABLE "Child" ADD CONSTRAINT "Child_staffPassengerId_fkey" FOREIGN KEY ("staffPassengerId") REFERENCES "Staff_Passenger"("staff_id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Child" ADD CONSTRAINT "Child_staffPassengerId_fkey" FOREIGN KEY ("staffPassengerId") REFERENCES "Staff_Passenger"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Child" ADD CONSTRAINT "Child_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Staff_Passenger" ADD CONSTRAINT "Staff_Passenger_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
