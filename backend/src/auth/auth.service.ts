@@ -25,6 +25,7 @@ export interface AuthResponse {
     userType: UserType;
     isVerified: boolean;
     isNewUser: boolean;
+    registrationStatus?: string;
   };
 }
 
@@ -94,12 +95,6 @@ export class AuthService {
       } else if (userType === UserType.DRIVER) {
         user = await this.createDriverUser(phone);
       }
-    } else {
-      // Update existing user as verified if needed
-      user = await this.markUserAsVerified(
-        user.customer_id || user.driver_id,
-        userType,
-      );
     }
 
     // Generate JWT token
@@ -143,15 +138,10 @@ export class AuthService {
   private async createCustomerUser(phone: string): Promise<any> {
     return await this.prisma.customer.create({
       data: {
-        first_name: '', // Will be updated later
-        last_name: '',
-        email: '',
+        name: '', // Will be updated later
         phone: phone,
-        otp: '',
-        address: '',
-        profileImageUrl: '',
-        emergencyContact: '',
         status: 'ACTIVE',
+        registrationStatus: 'OTP_VERIFIED',
       },
     });
   }
@@ -159,41 +149,25 @@ export class AuthService {
   private async createDriverUser(phone: string): Promise<any> {
     return await this.prisma.driver.create({
       data: {
+        name: '',
+        phone: phone,
+        status: 'ACTIVE',
+        registrationStatus: 'OTP_VERIFIED',
         NIC: '',
         address: '',
         date_of_birth: new Date(),
+        date_of_joining: new Date(),
         driver_license_back_url: '',
         driver_license_front_url: '',
-        first_name: '',
         gender: '',
-        last_name: '',
         nic_front_pic_url: '',
         nice_back_pic_url: '',
-        phone: phone,
         profile_picture_url: '',
         second_phone: '',
         vehicle_Reg_No: '',
-        email: '',
-        status: 'ACTIVE',
       },
     });
   }
 
-  private async markUserAsVerified(
-    userId: number,
-    userType: UserType,
-  ): Promise<any> {
-    if (userType === UserType.CUSTOMER) {
-      return await this.prisma.customer.update({
-        where: { customer_id: userId },
-        data: { status: 'VERIFIED' },
-      });
-    } else if (userType === UserType.DRIVER) {
-      return await this.prisma.driver.update({
-        where: { driver_id: userId },
-        data: { status: 'VERIFIED' },
-      });
-    }
-    return null;
-  }
+  // markUserAsVerified removed as requested
 }

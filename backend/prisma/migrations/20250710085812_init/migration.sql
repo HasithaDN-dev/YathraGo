@@ -1,27 +1,20 @@
 -- CreateEnum
-CREATE TYPE "AccountType" AS ENUM ('CHILD', 'STAFF');
+CREATE TYPE "RegistrationStatus" AS ENUM ('OTP_PENDING', 'OTP_VERIFIED', 'CHILD_REGISTERED', 'STAFF_REGISTERED', 'FULLY_REGISTERED');
 
 -- CreateEnum
-CREATE TYPE "RegistrationStatus" AS ENUM ('OTP_PENDING', 'OTP_VERIFIED', 'TYPE_SELECTED', 'CHILD_REGISTERED', 'STAFF_REGISTERED');
+CREATE TYPE "OtpPurpose" AS ENUM ('PHONE_VERIFICATION', 'PASSWORD_RESET', 'LOGIN');
 
 -- CreateEnum
 CREATE TYPE "UserType" AS ENUM ('CUSTOMER', 'DRIVER');
-
--- CreateEnum
-CREATE TYPE "OtpPurpose" AS ENUM ('PHONE_VERIFICATION', 'LOGIN', 'PASSWORD_RESET');
 
 -- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
     "email" TEXT,
-    "firstName" TEXT,
-    "lastName" TEXT,
+    "name" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "accountType" "AccountType",
     "phone" TEXT NOT NULL,
-    "registrationStatus" "RegistrationStatus" NOT NULL DEFAULT 'OTP_PENDING',
-    "isVerified" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -205,9 +198,8 @@ CREATE TABLE "Driver" (
     "date_of_joining" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "driver_license_back_url" TEXT NOT NULL,
     "driver_license_front_url" TEXT NOT NULL,
-    "first_name" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
     "gender" TEXT NOT NULL,
-    "last_name" TEXT NOT NULL,
     "nic_front_pic_url" TEXT NOT NULL,
     "nice_back_pic_url" TEXT NOT NULL,
     "phone" TEXT NOT NULL,
@@ -216,6 +208,7 @@ CREATE TABLE "Driver" (
     "vehicle_Reg_No" TEXT NOT NULL,
     "email" TEXT,
     "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+    "registrationStatus" "RegistrationStatus" NOT NULL DEFAULT 'OTP_PENDING',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -243,15 +236,14 @@ CREATE TABLE "VehicleOwner" (
 -- CreateTable
 CREATE TABLE "Customer" (
     "customer_id" SERIAL NOT NULL,
-    "first_name" TEXT NOT NULL,
-    "last_name" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
     "phone" TEXT NOT NULL,
-    "otp" TEXT NOT NULL,
-    "address" TEXT NOT NULL,
-    "profileImageUrl" TEXT NOT NULL,
-    "emergencyContact" TEXT NOT NULL,
+    "email" TEXT,
+    "address" TEXT,
+    "profileImageUrl" TEXT,
+    "emergencyContact" TEXT,
     "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+    "registrationStatus" "RegistrationStatus" NOT NULL DEFAULT 'OTP_PENDING',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -299,8 +291,6 @@ CREATE TABLE "Ratings_and_Reviews" (
 -- CreateTable
 CREATE TABLE "Child" (
     "child_id" SERIAL NOT NULL,
-    "userId" INTEGER,
-    "staffPassengerId" INTEGER,
     "relationship" TEXT NOT NULL,
     "NearbyCity" TEXT NOT NULL,
     "schoolLocation" TEXT NOT NULL,
@@ -308,6 +298,7 @@ CREATE TABLE "Child" (
     "childName" TEXT NOT NULL,
     "childImageUrl" TEXT,
     "pickUpAddress" TEXT NOT NULL,
+    "customerId" INTEGER,
 
     CONSTRAINT "Child_pkey" PRIMARY KEY ("child_id")
 );
@@ -326,15 +317,15 @@ CREATE TABLE "Child_Trip" (
 
 -- CreateTable
 CREATE TABLE "Staff_Passenger" (
-    "staff_id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "id" SERIAL NOT NULL,
+    "customerId" INTEGER NOT NULL,
     "nearbyCity" TEXT NOT NULL,
     "workLocation" TEXT NOT NULL,
     "workAddress" TEXT NOT NULL,
     "pickUpLocation" TEXT NOT NULL,
     "pickupAddress" TEXT NOT NULL,
 
-    CONSTRAINT "Staff_Passenger_pkey" PRIMARY KEY ("staff_id")
+    CONSTRAINT "Staff_Passenger_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -364,9 +355,6 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 CREATE UNIQUE INDEX "User_phone_key" ON "User"("phone");
 
 -- CreateIndex
-CREATE INDEX "OtpCode_phone_idx" ON "OtpCode"("phone");
-
--- CreateIndex
 CREATE INDEX "OtpCode_phone_userType_purpose_idx" ON "OtpCode"("phone", "userType", "purpose");
 
 -- CreateIndex
@@ -379,13 +367,13 @@ CREATE UNIQUE INDEX "Admin_email_key" ON "Admin"("email");
 CREATE UNIQUE INDEX "Manager_email_key" ON "Manager"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Staff_Passenger_userId_key" ON "Staff_Passenger"("userId");
+CREATE UNIQUE INDEX "Customer_phone_key" ON "Customer"("phone");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Staff_Passenger_customerId_key" ON "Staff_Passenger"("customerId");
 
 -- AddForeignKey
-ALTER TABLE "Child" ADD CONSTRAINT "Child_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Child" ADD CONSTRAINT "Child_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("customer_id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Child" ADD CONSTRAINT "Child_staffPassengerId_fkey" FOREIGN KEY ("staffPassengerId") REFERENCES "Staff_Passenger"("staff_id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Staff_Passenger" ADD CONSTRAINT "Staff_Passenger_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Staff_Passenger" ADD CONSTRAINT "Staff_Passenger_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("customer_id") ON DELETE RESTRICT ON UPDATE CASCADE;
