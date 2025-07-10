@@ -44,10 +44,11 @@ export class AuthService {
   ): Promise<{ message: string; isNewUser: boolean }> {
     const { phone, userType } = sendOtpDto;
 
-
     let existingEntity;
     if (userType === UserType.CUSTOMER) {
-      existingEntity = await this.prisma.customer.findUnique({ where: { phone } });
+      existingEntity = await this.prisma.customer.findUnique({
+        where: { phone },
+      });
     } else if (userType === UserType.DRIVER) {
       existingEntity = await this.prisma.driver.findFirst({ where: { phone } });
     }
@@ -73,9 +74,11 @@ export class AuthService {
   async verifyGetStartedOtp(verifyOtpDto: VerifyOtpDto): Promise<AuthResponse> {
     const { phone, otp, userType } = verifyOtpDto;
 
-
     // Always check for existing customer record
-    let customer: Customer | null = await this.findEntityByPhone(phone, userType);
+    let customer: Customer | null = await this.findEntityByPhone(
+      phone,
+      userType,
+    );
     const isNewUser: boolean = !customer;
 
     const otpPurpose = isNewUser
@@ -113,7 +116,9 @@ export class AuthService {
     }
 
     if (!entity) {
-      throw new UnauthorizedException('User not found or could not be created.');
+      throw new UnauthorizedException(
+        'User not found or could not be created.',
+      );
     }
 
     const payload: JwtPayload = {
@@ -137,7 +142,6 @@ export class AuthService {
       },
     };
   }
-
 
   private async findEntityByPhone(
     phone: string,
