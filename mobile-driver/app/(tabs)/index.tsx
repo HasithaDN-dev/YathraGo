@@ -1,3 +1,4 @@
+import { View, Text } from 'react-native';
 import { Image } from 'expo-image';
 import { Platform, StyleSheet } from 'react-native';
 
@@ -16,6 +17,31 @@ export default function HomeScreen() {
           style={styles.reactLogo}
         />
       }>
+      
+      {/* Official NativeWind Test Component */}
+      <View className="flex-1 items-center justify-center bg-white p-6 mb-4">
+        <Text className="text-xl font-bold text-green-600 mb-4">
+          Welcome to Nativewind Driver App!
+        </Text>
+        <View className="bg-gradient-to-r from-green-500 to-blue-500 p-4 rounded-lg shadow-lg">
+          <Text className="text-white text-center font-semibold">
+            🚗 Tailwind CSS is Working for Drivers!
+          </Text>
+        </View>
+        <Text className="text-gray-600 text-center mt-4 text-sm">
+          YathraGo Driver - Professional Ride Service
+        </Text>
+      </View>
+      
+      {/* Driver-specific Tailwind CSS Test */}
+      <View className="bg-green-600 p-4 mb-4 rounded-lg">
+        <Text className="text-white text-xl font-bold text-center">
+          🚗 Driver Dashboard Ready!
+        </Text>
+        <Text className="text-green-100 text-center mt-2">
+          YathraGo Driver - Start Your Journey
+        </Text>
+      </View>
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Welcome!</ThemedText>
         <HelloWave />
