@@ -56,7 +56,9 @@ export class SmsGateSmsGateway implements SmsGateway {
       const response = await fetch(url, options);
       if (!response.ok) {
         const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+        throw new Error(
+          `HTTP ${response.status}: ${text || response.statusText}`,
+        );
       }
       const text = await response.text();
       return text ? JSON.parse(text) : null;
@@ -96,7 +98,7 @@ export class SmsGateSmsGateway implements SmsGateway {
   private async testConnection(): Promise<void> {
     try {
       if (!this.smsGateClient) return;
-      
+
       const health = await this.smsGateClient.getHealth();
       if (!health?.status) return;
 
@@ -106,13 +108,16 @@ export class SmsGateSmsGateway implements SmsGateway {
         const checks = health.checks || {};
         const cellular = checks['connection:cellular']?.status === 'pass';
         const messages = checks['messages:failed']?.status === 'pass';
-        
+
         if (cellular && messages) {
           this.logger.log('SMS-Gate connected (cellular ready)');
         }
       }
     } catch (error: any) {
-      if (error?.message?.includes('HTTP 500') && error?.message?.includes('connection:status')) {
+      if (
+        error?.message?.includes('HTTP 500') &&
+        error?.message?.includes('connection:status')
+      ) {
         this.logger.log('SMS-Gate connected (cellular ready)');
       }
       // Silent fail for other errors
@@ -143,7 +148,9 @@ export class SmsGateSmsGateway implements SmsGateway {
       const response = await this.smsGateClient.send(messagePayload);
 
       if (response?.id) {
-        this.logger.log(`SMS sent successfully to ${phone}, Message ID: ${response.id}`);
+        this.logger.log(
+          `SMS sent successfully to ${phone}, Message ID: ${response.id}`,
+        );
         return { success: true, messageId: response.id };
       } else {
         this.logger.error(`SMS failed to send to ${phone}`);
@@ -157,7 +164,7 @@ export class SmsGateSmsGateway implements SmsGateway {
 
   private getErrorMessage(error: any): string {
     const msg = error.message || '';
-    
+
     if (msg.includes('fetch') || msg.includes('ECONNREFUSED')) {
       return 'Network error: Unable to connect to SMS-Gate server';
     }
@@ -173,7 +180,7 @@ export class SmsGateSmsGateway implements SmsGateway {
     if (msg.includes('HTTP 500')) {
       return 'SMS-Gate server error';
     }
-    
+
     return msg || 'Failed to send SMS via SMS-Gate';
   }
 }
