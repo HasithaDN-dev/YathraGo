@@ -23,7 +23,15 @@ export class DummySmsGateway implements SmsGateway {
   }
 
   private extractOtpFromMessage(message: string): string | null {
-    // Extract OTP code from message (assuming it's a 6-digit number)
+    // Extract OTP code from message (handles both formats: "123456" or "12 34 56")
+    // First try to match spaced format (e.g., "12 34 56")
+    const spacedOtpMatch = message.match(/\b(\d{2}\s\d{2}\s\d{2})\b/);
+    if (spacedOtpMatch) {
+      // Remove spaces to get the actual OTP
+      return spacedOtpMatch[1].replace(/\s/g, '');
+    }
+
+    // Fallback to original format (6 consecutive digits)
     const otpMatch = message.match(/\b\d{6}\b/);
     return otpMatch ? otpMatch[0] : null;
   }

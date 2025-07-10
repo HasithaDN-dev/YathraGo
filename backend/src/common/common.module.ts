@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SmsService } from './services/sms.service';
 import { TwilioSmsGateway } from './services/twilio-sms-gateway.service';
 import { DummySmsGateway } from './services/dummy-sms-gateway.service';
+import { SmsGateSmsGateway } from './services/smsgate-sms-gateway.service';
 import { OtpService } from './services/otp.service';
 
 @Global()
@@ -14,6 +15,7 @@ import { OtpService } from './services/otp.service';
     SmsService,
     TwilioSmsGateway,
     DummySmsGateway,
+    SmsGateSmsGateway,
     OtpService,
   ],
   exports: [PrismaService, SmsService, OtpService],
