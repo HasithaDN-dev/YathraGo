@@ -72,20 +72,14 @@ export class OtpService {
         Date.now() + this.OTP_EXPIRY_MINUTES * 60 * 1000,
       );
 
-      // --- Hashing OTP ---
-      // For production, the OTP is hashed before storing.
-      // For testing without a working SMS, you can comment out the hashing
-      // and store the plain 'code' in the database.
+      // Hash the OTP before storing (security improvement)
+      const hashedCode = await argon2.hash(code);
 
-      // --- TESTING MODE: Storing plain OTP ---
-      // const hashedCode = await argon2.hash(code); // Hashing is commented out for testing
-
-      // Store plain OTP in database for testing
+      // Store hashed OTP in database
       await this.prisma.otpCode.create({
         data: {
           phone,
-          // code: hashedCode, // Use hashed code in production
-          code: code, // Using plain code for testing
+          code: hashedCode, // Store hashed version
           userType,
           purpose,
           expiresAt,
@@ -123,12 +117,6 @@ export class OtpService {
     purpose: OtpPurpose = OtpPurpose.PHONE_VERIFICATION,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      // --- Verifying OTP ---
-      // The block for verifying hashed OTP is commented out for testing.
-      // We are now doing a direct database lookup for the plain text OTP.
-
-      /*
-      // --- PRODUCTION MODE: Verifying Hashed OTP ---
       // Find all active OTPs for this phone/userType/purpose
       const otpRecords = await this.prisma.otpCode.findMany({
         where: {
@@ -167,22 +155,6 @@ export class OtpService {
           continue;
         }
       }
-      */
-
-      // --- TESTING MODE: Verifying Plain OTP ---
-      const matchedOtpRecord = await this.prisma.otpCode.findFirst({
-        where: {
-          phone,
-          code,
-          userType,
-          purpose,
-          isUsed: false,
-          expiresAt: {
-            gt: new Date(),
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
 
       if (!matchedOtpRecord) {
         // Increment failed attempt count for security monitoring

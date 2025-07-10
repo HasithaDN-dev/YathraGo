@@ -25,14 +25,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload) {
     let user: any = null;
 
-    // Find user based on userType and the ID from the JWT payload (sub)
+    // Find user based on userType
     if (payload.userType === UserType.CUSTOMER) {
-      user = await this.prisma.user.findUnique({
-        where: { id: parseInt(payload.sub, 10) },
+      user = await this.prisma.customer.findFirst({
+        where: { phone: payload.phone },
       });
     } else if (payload.userType === UserType.DRIVER) {
-      user = await this.prisma.driver.findUnique({
-        where: { id: parseInt(payload.sub, 10) },
+      user = await this.prisma.driver.findFirst({
+        where: { phone: payload.phone },
       });
     }
 
@@ -40,10 +40,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found');
     }
 
-    // Return a consistent user object to be attached to the request
     return {
-      userId: user.id,
-      phone: user.phone,
+      userId: user.user_id || user.id,
+      phone: payload.phone,
       userType: payload.userType,
       isVerified: payload.isVerified,
     };

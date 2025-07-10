@@ -152,22 +152,26 @@ model ChildEmergency {
 }
 
 model Driver {
-  id                       Int      @id @default(autoincrement())
+  driver_id                Int      @id @default(autoincrement())
   NIC                      String
   address                  String
   date_of_birth            DateTime
   date_of_joining          DateTime @default(now())
   driver_license_back_url  String
   driver_license_front_url String
-  first_name               String
+  name                     String
   gender                   String
-  last_name                String
   nic_front_pic_url        String
   nice_back_pic_url        String
-  phone                    String
+  phone                    String   // Standardized phone field name
   profile_picture_url      String
   second_phone             String
   vehicle_Reg_No           String
+  email                    String?  // Added email field for consistency
+  status                   String   @default("ACTIVE")
+  registrationStatus       RegistrationStatus @default(OTP_PENDING)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 }
 
 model FoundedBackupDrivers {
@@ -183,13 +187,14 @@ model VehicleOwner {
 }
 
 model Customer {
-  id                 Int                @id @default(autoincrement())
+  customer_id      Int      @id @default(autoincrement())
   name               String
   phone              String    @unique
   email              String?
   address            String?
   profileImageUrl    String?
   emergencyContact   String?
+  status           String   @default("ACTIVE")
   registrationStatus RegistrationStatus @default(OTP_PENDING)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -225,7 +230,6 @@ model Ratings_and_Reviews {
 
 model Child {
   child_id         Int      @id @default(autoincrement())
-  staffPassengerId Int? // Nullable FK to Staff_Passenger
   relationship     String
   NearbyCity       String
   schoolLocation   String
@@ -233,8 +237,7 @@ model Child {
   childName        String
   childImageUrl    String?
   pickUpAddress    String
-  staffPassenger   Staff_Passenger? @relation(fields: [staffPassengerId], references: [id])
-  Customer         Customer?        @relation(fields: [customerId], references: [id])
+  Customer         Customer?        @relation(fields: [customerId], references: [customer_id])
   customerId       Int?
 }
 
@@ -255,8 +258,7 @@ model Staff_Passenger {
   workAddress    String
   pickUpLocation String
   pickupAddress  String
-  children       Child[]
-  Customer       Customer @relation(fields: [customerId], references: [id])
+  Customer       Customer @relation(fields: [customerId], references: [customer_id])
 }
 
 model Staff_Trip {

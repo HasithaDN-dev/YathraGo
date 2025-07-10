@@ -7,11 +7,11 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { OtpService } from '../common/services/otp.service';
-import { UserType, OtpPurpose, User, Customer } from '@prisma/client';
+import { UserType, OtpPurpose } from '@prisma/client';
 import { SendOtpDto, VerifyOtpDto } from '../common/dto/auth.dto';
 
 export interface JwtPayload {
-  sub: string; // user ID
+  sub: string; // user ID or phone number
   phone: string;
   userType: UserType;
   isVerified: boolean;
@@ -20,7 +20,7 @@ export interface JwtPayload {
 export interface AuthResponse {
   accessToken: string;
   user: {
-    id: number;
+    id?: number;
     phone: string;
     userType: UserType;
     isVerified: boolean;
@@ -44,16 +44,9 @@ export class AuthService {
   ): Promise<{ message: string; isNewUser: boolean }> {
     const { phone, userType } = sendOtpDto;
 
-    let existingEntity;
-    if (userType === UserType.CUSTOMER) {
-      existingEntity = await this.prisma.customer.findUnique({
-        where: { phone },
-      });
-    } else if (userType === UserType.DRIVER) {
-      existingEntity = await this.prisma.driver.findFirst({ where: { phone } });
-    }
-
-    const isNewUser = !existingEntity;
+    // Check if user already exists
+    const existingUser = await this.findUserByPhone(phone, userType);
+    const isNewUser = !existingUser;
 
     const result = await this.otpService.generateAndSendOtp(
       phone,
@@ -74,13 +67,11 @@ export class AuthService {
   async verifyGetStartedOtp(verifyOtpDto: VerifyOtpDto): Promise<AuthResponse> {
     const { phone, otp, userType } = verifyOtpDto;
 
-    // Always check for existing customer record
-    let customer: Customer | null = await this.findEntityByPhone(
-      phone,
-      userType,
-    );
-    const isNewUser: boolean = !customer;
+    // Check if user exists
+    const existingUser = await this.findUserByPhone(phone, userType);
+    const isNewUser = !existingUser;
 
+    // Verify OTP with appropriate purpose
     const otpPurpose = isNewUser
       ? OtpPurpose.PHONE_VERIFICATION
       : OtpPurpose.LOGIN;
@@ -95,35 +86,21 @@ export class AuthService {
       throw new UnauthorizedException(otpResult.error);
     }
 
-    let entity: Customer | null = null;
+    let user = existingUser;
 
-    if (userType === UserType.CUSTOMER) {
-      if (isNewUser) {
-        // Create the customer record after OTP is verified
-        customer = await this.createCustomer(phone);
-        entity = customer;
-      } else {
-        entity = customer;
-        if (customer && customer.registrationStatus === 'OTP_PENDING') {
-          customer = await this.markCustomerAsVerified(customer.id);
-          entity = customer;
-        }
+    if (isNewUser) {
+      // Create new user
+      if (userType === UserType.CUSTOMER) {
+        user = await this.createCustomerUser(phone);
+      } else if (userType === UserType.DRIVER) {
+        user = await this.createDriverUser(phone);
       }
-    } else if (userType === UserType.DRIVER) {
-      // For drivers, keep as any for now (or define a Driver type if you want)
-      entity = await this.findEntityByPhone(phone, userType);
-      // If you want to support driver creation, add logic here
     }
 
-    if (!entity) {
-      throw new UnauthorizedException(
-        'User not found or could not be created.',
-      );
-    }
-
+    // Generate JWT token
     const payload: JwtPayload = {
-      sub: entity.id.toString(),
-      phone: entity.phone,
+      sub: user.customer_id?.toString() || user.driver_id?.toString(),
+      phone: user.phone,
       userType,
       isVerified: true,
     };
@@ -133,71 +110,58 @@ export class AuthService {
     return {
       accessToken,
       user: {
-        id: entity.id,
-        phone: entity.phone,
+        id: user.customer_id || user.driver_id,
+        phone: user.phone,
         userType,
         isVerified: true,
         isNewUser,
-        ...(customer && { registrationStatus: customer.registrationStatus }),
       },
     };
   }
 
-  private async findEntityByPhone(
+  private async findUserByPhone(
     phone: string,
     userType: UserType,
-  ): Promise<any | null> {
+  ): Promise<any> {
     if (userType === UserType.CUSTOMER) {
-      return this.prisma.customer.findUnique({ where: { phone } });
+      return await this.prisma.customer.findFirst({
+        where: { phone: phone },
+      });
     } else if (userType === UserType.DRIVER) {
-      return this.prisma.driver.findFirst({ where: { phone } });
+      return await this.prisma.driver.findFirst({
+        where: { phone: phone },
+      });
     }
     return null;
   }
 
-  private async createCustomer(phone: string): Promise<Customer> {
-    return this.prisma.customer.create({
+  private async createCustomerUser(phone: string): Promise<any> {
+    return await this.prisma.customer.create({
       data: {
-        phone,
         name: '', // Will be updated later
+        phone: phone,
+        status: 'ACTIVE',
         registrationStatus: 'OTP_VERIFIED',
       },
     });
   }
 
-  // private async createCustomerWithUser(
-  //   phone: string,
-  // ): Promise<User & { customer: Customer | null }> {
-  //   return this.prisma.user.create({
-  //     data: {
-  //       phone,
-  //       customer: {
-  //         create: {
-  //           name: '', // Will be updated later
-  //           registrationStatus: 'OTP_VERIFIED',
-  //         },
-  //       },
-  //     },
-  //     include: {
-  //       customer: true,
-  //     },
-  //   });
-  // }
-
   private async createDriverUser(phone: string): Promise<any> {
-    return this.prisma.driver.create({
+    return await this.prisma.driver.create({
       data: {
+        name: '',
+        phone: phone,
+        status: 'ACTIVE',
+        registrationStatus: 'OTP_VERIFIED',
         NIC: '',
         address: '',
         date_of_birth: new Date(),
+        date_of_joining: new Date(),
         driver_license_back_url: '',
         driver_license_front_url: '',
-        first_name: '',
         gender: '',
-        last_name: '',
         nic_front_pic_url: '',
         nice_back_pic_url: '',
-        phone: phone,
         profile_picture_url: '',
         second_phone: '',
         vehicle_Reg_No: '',
@@ -205,10 +169,5 @@ export class AuthService {
     });
   }
 
-  private async markCustomerAsVerified(customerId: number): Promise<Customer> {
-    return this.prisma.customer.update({
-      where: { id: customerId },
-      data: { registrationStatus: 'OTP_VERIFIED' },
-    });
-  }
+  // markUserAsVerified removed as requested
 }

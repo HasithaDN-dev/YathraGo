@@ -9,5 +9,5 @@ export interface SmsConfig {
   accountSid?: string;
   authToken?: string;
   fromNumber?: string;
-  provider: 'twilio' | 'dummy';
+  provider: 'twilio' | 'dummy' | 'smsgate';
 }

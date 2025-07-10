@@ -9,7 +9,8 @@ export class CustomerService {
 
   async registerStaffPassenger(dto: RegisterStaffPassengerDto) {
     // Check if already staff
-    const exists = await this.prisma.staff_Passenger.findUnique({
+    // Check by customerId (not PK)
+    const exists = await this.prisma.staff_Passenger.findFirst({
       where: { customerId: dto.customerId },
     });
     if (exists)
@@ -29,7 +30,7 @@ export class CustomerService {
 
     // Update Customer profile
     await this.prisma.customer.update({
-      where: { id: dto.customerId },
+      where: { customer_id: dto.customerId },
       data: {
         name: dto.name,
         email: dto.email,
@@ -60,7 +61,7 @@ export class CustomerService {
 
     // Update Customer with parent info
     await this.prisma.customer.update({
-      where: { id: dto.customerId },
+      where: { customer_id: dto.customerId },
       data: {
         name: dto.parentName,
         email: dto.parentEmail,
