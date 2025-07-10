@@ -17,7 +17,11 @@ export class OtpService {
     private smsService: SmsService,
   ) {}
 
-  async generateAndSendOtp(phone: string, userType: UserType, purpose: OtpPurpose = OtpPurpose.PHONE_VERIFICATION): Promise<{ success: boolean; error?: string }> {
+  async generateAndSendOtp(
+    phone: string,
+    userType: UserType,
+    purpose: OtpPurpose = OtpPurpose.PHONE_VERIFICATION,
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       // Check if there's a recent OTP request (cooldown period)
       const recentOtp = await this.prisma.otpCode.findFirst({
@@ -26,14 +30,21 @@ export class OtpService {
           userType,
           purpose,
           createdAt: {
-            gte: new Date(Date.now() - this.RESEND_COOLDOWN_MINUTES * 60 * 1000),
+            gte: new Date(
+              Date.now() - this.RESEND_COOLDOWN_MINUTES * 60 * 1000,
+            ),
           },
         },
         orderBy: { createdAt: 'desc' },
       });
 
       if (recentOtp && !recentOtp.isUsed) {
-        const timeLeft = Math.ceil((recentOtp.createdAt.getTime() + this.RESEND_COOLDOWN_MINUTES * 60 * 1000 - Date.now()) / 1000);
+        const timeLeft = Math.ceil(
+          (recentOtp.createdAt.getTime() +
+            this.RESEND_COOLDOWN_MINUTES * 60 * 1000 -
+            Date.now()) /
+            1000,
+        );
         if (timeLeft > 0) {
           return {
             success: false,
@@ -57,16 +68,24 @@ export class OtpService {
 
       // Generate new 6-digit OTP
       const code = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = new Date(Date.now() + this.OTP_EXPIRY_MINUTES * 60 * 1000);
+      const expiresAt = new Date(
+        Date.now() + this.OTP_EXPIRY_MINUTES * 60 * 1000,
+      );
 
-      // Hash the OTP before storing (security improvement)
-      const hashedCode = await argon2.hash(code);
+      // --- Hashing OTP ---
+      // For production, the OTP is hashed before storing.
+      // For testing without a working SMS, you can comment out the hashing
+      // and store the plain 'code' in the database.
 
-      // Store hashed OTP in database
+      // --- TESTING MODE: Storing plain OTP ---
+      // const hashedCode = await argon2.hash(code); // Hashing is commented out for testing
+
+      // Store plain OTP in database for testing
       await this.prisma.otpCode.create({
         data: {
           phone,
-          code: hashedCode, // Store hashed version
+          // code: hashedCode, // Use hashed code in production
+          code: code, // Using plain code for testing
           userType,
           purpose,
           expiresAt,
@@ -84,7 +103,9 @@ export class OtpService {
         };
       }
 
-      this.logger.log(`OTP sent successfully to ${phone} for ${userType} ${purpose}`);
+      this.logger.log(
+        `OTP sent successfully to ${phone} for ${userType} ${purpose}`,
+      );
       return { success: true };
     } catch (error) {
       this.logger.error(`Error generating OTP for ${phone}:`, error);
@@ -95,8 +116,19 @@ export class OtpService {
     }
   }
 
-  async verifyOtp(phone: string, code: string, userType: UserType, purpose: OtpPurpose = OtpPurpose.PHONE_VERIFICATION): Promise<{ success: boolean; error?: string }> {
+  async verifyOtp(
+    phone: string,
+    code: string,
+    userType: UserType,
+    purpose: OtpPurpose = OtpPurpose.PHONE_VERIFICATION,
+  ): Promise<{ success: boolean; error?: string }> {
     try {
+      // --- Verifying OTP ---
+      // The block for verifying hashed OTP is commented out for testing.
+      // We are now doing a direct database lookup for the plain text OTP.
+
+      /*
+      // --- PRODUCTION MODE: Verifying Hashed OTP ---
       // Find all active OTPs for this phone/userType/purpose
       const otpRecords = await this.prisma.otpCode.findMany({
         where: {
@@ -119,7 +151,7 @@ export class OtpService {
       }
 
       // Try to verify the provided code against each stored hash
-      let matchedOtpRecord: typeof otpRecords[0] | null = null;
+      let matchedOtpRecord: (typeof otpRecords)[0] | null = null;
       for (const otpRecord of otpRecords) {
         try {
           const isValid = await argon2.verify(otpRecord.code, code);
@@ -129,10 +161,28 @@ export class OtpService {
           }
         } catch (verifyError) {
           // Continue to next record if hash verification fails
-          this.logger.warn(`Hash verification failed for OTP record ${otpRecord.id}`);
+          this.logger.warn(
+            `Hash verification failed for OTP record ${otpRecord.id}`,
+          );
           continue;
         }
       }
+      */
+
+      // --- TESTING MODE: Verifying Plain OTP ---
+      const matchedOtpRecord = await this.prisma.otpCode.findFirst({
+        where: {
+          phone,
+          code,
+          userType,
+          purpose,
+          isUsed: false,
+          expiresAt: {
+            gt: new Date(),
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
 
       if (!matchedOtpRecord) {
         // Increment failed attempt count for security monitoring
@@ -172,7 +222,11 @@ export class OtpService {
     }
   }
 
-  private async incrementFailedAttempts(phone: string, userType: UserType, purpose: OtpPurpose): Promise<void> {
+  private async incrementFailedAttempts(
+    phone: string,
+    userType: UserType,
+    purpose: OtpPurpose,
+  ): Promise<void> {
     try {
       // Find the most recent unused OTP for this phone/userType/purpose
       const recentOtp = await this.prisma.otpCode.findFirst({

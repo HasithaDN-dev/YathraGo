@@ -16,10 +16,6 @@ import { OtpService } from './services/otp.service';
     DummySmsGateway,
     OtpService,
   ],
-  exports: [
-    PrismaService,
-    SmsService,
-    OtpService,
-  ],
+  exports: [PrismaService, SmsService, OtpService],
 })
 export class CommonModule {}

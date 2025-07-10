@@ -15,7 +15,7 @@ export class SmsService {
   ) {
     // Determine which gateway to use based on configuration
     const provider = this.configService.get<string>('SMS_PROVIDER', 'dummy');
-    
+
     switch (provider.toLowerCase()) {
       case 'twilio':
         this.gateway = this.twilioGateway;
@@ -27,12 +27,18 @@ export class SmsService {
     }
   }
 
-  async sendOtp(phone: string, otp: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  async sendOtp(
+    phone: string,
+    otp: string,
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     const message = `Your YathraGo verification code is: ${otp}. This code will expire in 10 minutes. Do not share this code with anyone.`;
     return this.gateway.sendSms(phone, message);
   }
 
-  async sendSms(phone: string, message: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  async sendSms(
+    phone: string,
+    message: string,
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     return this.gateway.sendSms(phone, message);
   }
 }
