@@ -1,6 +1,4 @@
-import { View, Text } from 'react-native';
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -12,70 +10,71 @@ export default function HomeScreen() {
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
       headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
+        <View style={styles.headerImage}>
+          <Text className="text-2xl font-bold text-gray-800">🚗 YathraGo</Text>
+        </View>
       }>
       
-      {/* Official NativeWind Test Component */}
-      <View className="flex-1 items-center justify-center bg-white p-6 mb-4">
-        <Text className="text-xl font-bold text-blue-500 mb-4">
-          Welcome to Nativewind customer!
+      {/* Welcome Header */}
+      <View className="bg-white p-6 mb-4 rounded-lg shadow-sm">
+        <Text className="text-2xl font-bold text-gray-800 mb-2">
+          Welcome to YathraGo! 🚗
         </Text>
-        <View className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-lg shadow-lg">
-          <Text className="text-white text-center font-semibold">
-            🎉 Tailwind CSS is Working Perfectly!
+        <Text className="text-gray-600 text-base">
+          Your reliable ride-sharing companion
+        </Text>
+      </View>
+      
+      {/* Quick Action Cards */}
+      <View className="space-y-4 mb-6">
+        <View className="bg-blue-500 p-6 rounded-lg shadow-sm">
+          <Text className="text-white text-lg font-semibold mb-2">
+            � Book a Ride
+          </Text>
+          <Text className="text-blue-100 text-sm">
+            Quick and easy booking process
           </Text>
         </View>
-        <Text className="text-gray-600 text-center mt-4 text-sm">
-          YathraGo - Modern Ride Sharing Experience
-        </Text>
+        
+        <View className="bg-orange-500 p-6 rounded-lg shadow-sm">
+          <Text className="text-white text-lg font-semibold mb-2">
+            📍 Track Your Driver
+          </Text>
+          <Text className="text-orange-100 text-sm">
+            Real-time location tracking
+          </Text>
+        </View>
+        
+        <View className="bg-green-500 p-6 rounded-lg shadow-sm">
+          <Text className="text-white text-lg font-semibold mb-2">
+            💳 Secure Payments
+          </Text>
+          <Text className="text-green-100 text-sm">
+            Multiple payment options available
+          </Text>
+        </View>
       </View>
       
-      {/* Previous Tailwind CSS Test */}
-      <View className="bg-blue-500 p-4 mb-4 rounded-lg">
-        <Text className="text-white text-xl font-bold text-center">
-          🎉 Tailwind CSS is Working!
-        </Text>
-        <Text className="text-blue-100 text-center mt-2">
-          YathraGo - Ride Sharing App
-        </Text>
-      </View>
-      
-      <ThemedView style={styles.titleContainer}>
+      <ThemedView className="flex-row items-center gap-2">
         <ThemedText type="title">Welcome!</ThemedText>
         <HelloWave />
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
+      <ThemedView className="gap-2 mb-2">
+        <ThemedText type="subtitle">Step 1: Set Your Location</ThemedText>
         <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
+          Allow location access to find nearby drivers and get accurate pickup times.
         </ThemedText>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
+      <ThemedView className="gap-2 mb-2">
+        <ThemedText type="subtitle">Step 2: Choose Your Ride</ThemedText>
         <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
+          Select from various vehicle types based on your needs and budget.
         </ThemedText>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
+      <ThemedView className="gap-2 mb-2">
+        <ThemedText type="subtitle">Step 3: Enjoy Your Journey</ThemedText>
         <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
+          Track your ride in real-time and enjoy a safe, comfortable journey.
         </ThemedText>
       </ThemedView>
     </ParallaxScrollView>
@@ -83,20 +82,14 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
+  // Only keep complex positioning that Tailwind can't handle
+  headerImage: {
     height: 178,
     width: 290,
     bottom: 0,
     left: 0,
     position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { Platform, StyleSheet } from 'react-native';
 
 import { Collapsible } from '@/components/Collapsible';
@@ -20,7 +19,7 @@ export default function TabTwoScreen() {
           style={styles.headerImage}
         />
       }>
-      <ThemedView style={styles.titleContainer}>
+      <ThemedView className="flex-row gap-2">
         <ThemedText type="title">Explore</ThemedText>
       </ThemedView>
       <ThemedText>This app includes example code to help you get started.</ThemedText>
@@ -50,7 +49,9 @@ export default function TabTwoScreen() {
           <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
           different screen densities
         </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
+        <ThemedText className="text-center text-5xl my-5">
+          🚗
+        </ThemedText>
         <ExternalLink href="https://reactnative.dev/docs/images">
           <ThemedText type="link">Learn more</ThemedText>
         </ExternalLink>
@@ -97,14 +98,11 @@ export default function TabTwoScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Only keep complex positioning that Tailwind can't handle
   headerImage: {
     color: '#808080',
     bottom: -90,
     left: -35,
     position: 'absolute',
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
   },
 });
