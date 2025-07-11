@@ -1,3 +1,146 @@
+# Testing the Registration and Authentication Flow (Postman Guide)
+
+This section provides step-by-step instructions to test the OTP, staff passenger registration, and child registration flows using Postman.
+
+## 1. Send OTP
+
+**Endpoint:** `POST /customer/auth/get-started/send-otp`
+
+
+**Request Body:**
+```json
+{
+  "phone": "+94712345678",
+  "userType": "CUSTOMER"
+}
+```
+
+**Instructions:**
+1. Open Postman and create a new POST request to `http://localhost:3000/customer/auth/get-started/send-otp`.
+2. In the Body tab, select `raw` and `JSON`, then paste the above JSON.
+3. Click `Send`.
+4. You should receive a response like:
+   ```json
+   {
+     "message": "OTP sent successfully. Please check your phone.",
+     "isNewUser": true
+   }
+   ```
+
+## 2. Verify OTP
+
+**Endpoint:** `POST /customer/auth/get-started/verify-otp`
+
+
+**Request Body:**
+```json
+{
+  "phone": "+94712345678",
+  "otp": "123456",
+  "userType": "CUSTOMER"
+}
+```
+
+**Instructions:**
+1. Use the OTP you received (or check the database if in testing mode).
+2. Create a new POST request to `http://localhost:3000/customer/auth/get-started/verify-otp`.
+3. In the Body tab, select `raw` and `JSON`, then paste the above JSON.
+4. Click `Send`.
+5. You will receive a response like:
+   ```json
+   {
+     "accessToken": "<JWT_TOKEN>",
+     "user": {
+       "id": 1,
+       "phone": "+94712345678",
+       "userType": "CUSTOMER",
+       "isVerified": true,
+       "isNewUser": true,
+       "registrationStatus": "OTP_VERIFIED"
+     }
+   }
+   ```
+6. Copy the `accessToken` and `user.id` (this is your `customerId`).
+
+## 3. Register as Staff Passenger
+
+**Endpoint:** `POST /customer/register-staff-passenger`
+
+**Headers:**
+  - `Authorization: Bearer <accessToken>`
+  - `Content-Type: application/json`
+
+**Request Body Example:**
+```json
+{
+  "customerId": 1,
+  "nearbyCity": "Colombo",
+  "workLocation": "Company HQ",
+  "workAddress": "123 Main St",
+  "pickUpLocation": "Bus Stop",
+  "pickupAddress": "456 Side St",
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "address": "789 Home Ave",
+  "profileImageUrl": "https://example.com/profile.jpg",
+  "emergencyContact": "+94712345678"
+}
+```
+
+**Instructions:**
+1. Create a new POST request to `http://localhost:3000/customer/register-staff-passenger`.
+2. In the Headers tab, add your `Authorization` header with the value `Bearer <accessToken>`.
+3. In the Body tab, select `raw` and `JSON`, then paste the above JSON (replace `customerId` and other fields as needed).
+4. Click `Send`.
+5. You should receive a response like:
+   ```json
+   { "success": true, "message": "Staff passenger registered." }
+   ```
+
+## 4. Register a Child
+
+**Endpoint:** `POST /customer/register-child`
+
+**Headers:**
+  - `Authorization: Bearer <accessToken>`
+  - `Content-Type: application/json`
+
+**Request Body Example:**
+```json
+{
+  "customerId": 1,
+  "childName": "Jane Doe",
+  "relationship": "Daughter",
+  "NearbyCity": "Colombo",
+  "schoolLocation": "Colombo 7",
+  "school": "Royal College",
+  "pickUpAddress": "123 School Lane",
+  "childImageUrl": "https://example.com/child.jpg",
+  "parentImageUrl": "https://example.com/parent.jpg",
+  "parentName": "John Doe",
+  "parentEmail": "john.doe@example.com",
+  "parentAddress": "789 Home Ave",
+  "emergencyContact": "+94712345678"
+}
+```
+
+**Instructions:**
+1. Create a new POST request to `http://localhost:3000/customer/register-child`.
+2. In the Headers tab, add your `Authorization` header with the value `Bearer <accessToken>`.
+3. In the Body tab, select `raw` and `JSON`, then paste the above JSON (replace `customerId` and other fields as needed).
+4. Click `Send`.
+5. You should receive a response like:
+   ```json
+   { "success": true, "message": "Child registered." }
+   ```
+
+---
+
+**Notes:**
+- Always use the `accessToken` from OTP verification for all protected endpoints.
+- Use the `id` from the `user` object as `customerId` in registration requests.
+- If you get validation errors, check your request body matches the DTO fields and types.
+- If you get 401 errors, check your Authorization header and token.
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
@@ -25,10 +168,15 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## 📋 Documentation
+
+- **[Mobile Authentication Guide](./GET_STARTED_FLOW.md)** - Complete guide for implementing the unified "Get Started" authentication flow in mobile apps
+
+
 ## Project setup
 
 ```bash
-$ npm install
+npm install
 ```
 
 ## Compile and run the project
@@ -56,6 +204,45 @@ $ npm run test:e2e
 # test coverage
 $ npm run test:cov
 ```
+
+## Generating Modules, Controllers, and Services
+
+NestJS provides CLI commands to quickly scaffold modules, controllers, and services. These commands automatically create the necessary folders and files in the correct structure.
+
+#### 1. Generate a Module
+
+```bash
+npx nest g module <module-name>
+```
+**Example:**
+```bash
+npx nest g module passenger
+```
+This will create a new folder `src/passenger/` (if it doesn't exist) and a file `passenger.module.ts` inside it.
+
+#### 2. Generate a Controller
+
+```bash
+npx nest g controller <module-name>
+```
+**Example:**
+```bash
+npx nest g controller passenger
+```
+This will create `src/passenger/passenger.controller.ts`.
+
+#### 3. Generate a Service
+
+```bash
+npx nest g service <module-name>
+```
+**Example:**
+```bash
+npx nest g service passenger
+```
+This will create `src/passenger/passenger.service.ts`.
+
+You can repeat these commands for any feature/module you want to add. The CLI will generate the folder and files if they do not exist.
 
 ## Deployment
 

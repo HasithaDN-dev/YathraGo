@@ -35,6 +35,9 @@ cd mobile-driver
 cd web-dashboard
 ```
 
+# For he CRLF LF problem run
+npx run format
+
 ## 📄 License
 This project is licensed under the MIT License.
 

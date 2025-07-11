@@ -1,4 +1,29 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { AuthService } from '../auth/auth.service';
+import { SendOtpDto, VerifyOtpDto } from '../common/dto/auth.dto';
+import { UserType } from '@prisma/client';
 
 @Controller('driver')
-export class DriverController {}
+export class DriverController {
+  constructor(private authService: AuthService) {}
+
+  @Post('auth/get-started/send-otp')
+  @HttpCode(HttpStatus.OK)
+  async sendGetStartedOtp(@Body() body: { phone: string }) {
+    const sendOtpDto: SendOtpDto = {
+      ...body,
+      userType: UserType.DRIVER,
+    };
+    return this.authService.sendGetStartedOtp(sendOtpDto);
+  }
+
+  @Post('auth/get-started/verify-otp')
+  @HttpCode(HttpStatus.OK)
+  async verifyGetStartedOtp(@Body() body: { phone: string; otp: string }) {
+    const verifyOtpDto: VerifyOtpDto = {
+      ...body,
+      userType: UserType.DRIVER,
+    };
+    return this.authService.verifyGetStartedOtp(verifyOtpDto);
+  }
+}
