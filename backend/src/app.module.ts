@@ -10,6 +10,7 @@ import { VehicleModule } from './vehicle/vehicle.module';
 import { AuthWebModule } from './auth-web/auth-web.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CustomerModule } from './customer/customer.module';
+import { OwnerModule } from './owner/owner.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { CustomerModule } from './customer/customer.module';
     VehicleModule,
     AuthWebModule,
     CustomerModule,
+    OwnerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
