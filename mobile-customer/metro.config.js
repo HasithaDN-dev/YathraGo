@@ -3,4 +3,23 @@ const { withNativeWind } = require('nativewind/metro');
 
 const config = getDefaultConfig(__dirname);
 
+// Enable better hot reload and fast refresh
+config.server = {
+  ...config.server,
+  enhanceMiddleware: (middleware) => {
+    return (req, res, next) => {
+      // Enable better caching for faster reloads
+      if (req.url.endsWith('.bundle')) {
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+      return middleware(req, res, next);
+    };
+  },
+};
+
+// Enable faster rebuilds
+config.watchFolders = [
+  ...config.watchFolders || [],
+];
+
 module.exports = withNativeWind(config, { input: './global.css' });

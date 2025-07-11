@@ -1,8 +1,6 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -20,91 +18,77 @@ export default function TabTwoScreen() {
           style={styles.headerImage}
         />
       }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
+      <ThemedView className="flex-row gap-2">
+        <ThemedText type="title">Driver Resources</ThemedText>
       </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
+      <ThemedText>Explore tools and features designed specifically for YathraGo drivers.</ThemedText>
+      
+      <Collapsible title="Driver Dashboard">
         <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
+          Your main hub includes:{' '}
+          <ThemedText type="defaultSemiBold">earnings tracking</ThemedText>,{' '}
+          <ThemedText type="defaultSemiBold">ride history</ThemedText>, and{' '}
+          <ThemedText type="defaultSemiBold">performance metrics</ThemedText>
         </ThemedText>
         <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
+          Monitor your daily and weekly performance to maximize your earnings.
         </ThemedText>
       </Collapsible>
-      <Collapsible title="Images">
+      
+      <Collapsible title="Navigation & GPS">
         <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
+          Integrated GPS navigation helps you reach passengers quickly and efficiently.
+          Features include real-time traffic updates and optimal route suggestions.
         </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
       </Collapsible>
-      <Collapsible title="Custom fonts">
+      
+      <Collapsible title="Earnings & Payments">
         <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
+          Track your earnings in real-time. View detailed breakdowns including:{' '}
+          <ThemedText type="defaultSemiBold">base fare</ThemedText>,{' '}
+          <ThemedText type="defaultSemiBold">distance</ThemedText>, and{' '}
+          <ThemedText type="defaultSemiBold">time bonuses</ThemedText>
         </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
+        <ThemedText className="text-center text-5xl my-5">
+          💰
+        </ThemedText>
       </Collapsible>
-      <Collapsible title="Light and dark mode components">
+      
+      <Collapsible title="Driver Support">
         <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
+          24/7 support available for drivers. Get help with:{' '}
+          <ThemedText type="defaultSemiBold">technical issues</ThemedText>,{' '}
+          <ThemedText type="defaultSemiBold">payment questions</ThemedText>, and{' '}
+          <ThemedText type="defaultSemiBold">ride disputes</ThemedText>
         </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
       </Collapsible>
-      <Collapsible title="Animations">
+      
+      <Collapsible title="Safety Features">
         <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          library to create a waving hand animation.
+          Your safety is our priority. Features include emergency assistance,
+          real-time location sharing, and driver identity verification.
         </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
+        <ThemedText className="text-center text-5xl my-5">
+          🛡️
+        </ThemedText>
+      </Collapsible>
+      
+      <Collapsible title="Driver Training">
+        <ThemedText>
+          Access training materials and best practices for professional driving.
+          Learn about customer service, route optimization, and safety protocols.
+        </ThemedText>
       </Collapsible>
     </ParallaxScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  // Only keep complex positioning that Tailwind can't handle
   headerImage: {
     color: '#808080',
     bottom: -90,
     left: -35,
     position: 'absolute',
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
   },
 });
