@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity } from 'react-native';
-import { Image } from 'expo-image';
+import { View, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Typography } from '@/components/Typography';
@@ -92,18 +91,18 @@ export default function OnboardingScreen() {
           <View className="mb-6">
             <Image
               source={require('../assets/images/logo.png')}
-              className="w-42 h-42"
-              contentFit="contain"
+              className="w-40 h-40"
+              resizeMode="contain"
             />
           </View>
         )}
 
         {/* Image */}
-        <View className="w-80 h-80 mb-8">
+        <View className="mb-8">
           <Image
             source={currentItem.image}
-            className="w-full h-full rounded-2xl"
-            contentFit="contain"
+            className="w-72 h-72 rounded-2xl"
+            resizeMode="contain"
           />
         </View>
 
