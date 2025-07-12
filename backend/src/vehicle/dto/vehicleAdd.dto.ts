@@ -1,61 +1,44 @@
-import { IsString, IsInt, IsBoolean, IsArray, IsUrl } from 'class-validator';
+import { IsString, IsInt, IsBoolean, IsArray, IsNotEmpty } from 'class-validator';
 
 export class CreateVehicleDto {
   @IsString()
+  @IsNotEmpty()
   type: string;
 
   @IsString()
+  @IsNotEmpty()
   brand: string;
 
   @IsString()
+  @IsNotEmpty()
   model: string;
 
   @IsInt()
+  @IsNotEmpty()
   manufactureYear: number;
 
   @IsString()
+  @IsNotEmpty()
   registrationNumber: string;
 
   @IsString()
+  @IsNotEmpty()
   color: string;
 
   @IsArray()
   @IsString({ each: true })
+  @IsNotEmpty()
   route: string[];
 
   @IsInt()
+  @IsNotEmpty()
   no_of_seats: number;
 
   @IsBoolean()
+  @IsNotEmpty()
   air_conditioned: boolean;
 
   @IsBoolean()
+  @IsNotEmpty()
   assistant: boolean;
-
-  @IsUrl()
-  rear_picture_url: string;
-
-  @IsUrl()
-  front_picture_url: string;
-
-  @IsUrl()
-  side_picture_url: string;
-
-  @IsUrl()
-  inside_picture_url: string;
-
-  @IsUrl()
-  revenue_license_url: string;
-
-  @IsUrl()
-  insurance_front_url: string;
-
-  @IsUrl()
-  insurance_back_url: string;
-
-  @IsUrl()
-  vehicle_reg_url: string;
-
-  @IsInt()
-  ownerId: number;
 }

@@ -84,13 +84,15 @@ model Vehicle {
   front_picture_url   String
   side_picture_url    String
   inside_picture_url  String
-  revenue_license_url String
-  insurance_front_url String
-  insurance_back_url  String
-  vehicle_reg_url     String
+  revenue_license_url String?
+  insurance_front_url String?
+  insurance_back_url  String?
+  vehicle_reg_url     String?
   owner   VehicleOwner? @relation(fields: [ownerId], references: [id])
   ownerId Int?
- 
+
+  driver   Driver? @relation(fields: [driverId], references: [driver_id])
+  driverId Int?
 }
 
 model Chat {
@@ -175,6 +177,7 @@ model Driver {
   registrationStatus       RegistrationStatus @default(OTP_PENDING)
   createdAt                DateTime           @default(now())
   updatedAt                DateTime           @updatedAt
+  vehicles Vehicle[] 
 }
 
 model FoundedBackupDrivers {
@@ -189,7 +192,7 @@ model VehicleOwner {
   email      String
   company    String?
   Address    String
-  Vehicle    Vehicle[]
+  vehicles    Vehicle[]
 }
 
 model Customer {
