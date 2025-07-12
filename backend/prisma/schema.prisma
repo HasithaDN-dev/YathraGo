@@ -8,14 +8,13 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String?   @unique
+  id        Int      @id @default(autoincrement())
+  email     String?  @unique
   name      String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  phone     String    @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  phone     String   @unique
   // Removed relation to Customer
 }
 
@@ -34,15 +33,16 @@ model OtpCode {
   @@index([phone, userType, purpose])
 }
 
-model Webuser{
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  password    String
+model Webuser {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
   username  String
-  role        String   @default("USER")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  role      String   @default("USER")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
+
 model Admin {
   id          Int      @id @default(autoincrement())
   email       String   @unique
@@ -69,7 +69,7 @@ model Manager {
 }
 
 model Vehicle {
-  id                  Int      @id @default(autoincrement())
+  id                  Int       @id @default(autoincrement())
   type                String
   brand               String
   model               String
@@ -78,16 +78,21 @@ model Vehicle {
   color               String
   route               String[]
   no_of_seats         Int
-  air_conditioned     Boolean  @default(false)
-  assistant           Boolean  @default(false)
+  air_conditioned     Boolean   @default(false)
+  assistant           Boolean   @default(false)
   rear_picture_url    String
   front_picture_url   String
   side_picture_url    String
   inside_picture_url  String
-  revenue_license_url String
-  insurance_front_url String
-  insurance_back_url  String
-  vehicle_reg_url     String
+  revenue_license_url String?
+  insurance_front_url String?
+  insurance_back_url  String?
+  vehicle_reg_url     String?
+  owner   VehicleOwner? @relation(fields: [ownerId], references: [id])
+  ownerId Int?
+
+  driver   Driver? @relation(fields: [driverId], references: [driver_id])
+  driverId Int?
 }
 
 model Chat {
@@ -152,26 +157,27 @@ model ChildEmergency {
 }
 
 model Driver {
-  driver_id                Int      @id @default(autoincrement())
+  driver_id                Int                @id @default(autoincrement())
   NIC                      String
   address                  String
   date_of_birth            DateTime
-  date_of_joining          DateTime @default(now())
+  date_of_joining          DateTime           @default(now())
   driver_license_back_url  String
   driver_license_front_url String
   name                     String
   gender                   String
   nic_front_pic_url        String
   nice_back_pic_url        String
-  phone                    String   // Standardized phone field name
+  phone                    String // Standardized phone field name
   profile_picture_url      String
   second_phone             String
   vehicle_Reg_No           String
-  email                    String?  // Added email field for consistency
-  status                   String   @default("ACTIVE")
+  email                    String? // Added email field for consistency
+  status                   String             @default("ACTIVE")
   registrationStatus       RegistrationStatus @default(OTP_PENDING)
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  vehicles Vehicle[] 
 }
 
 model FoundedBackupDrivers {
@@ -179,22 +185,25 @@ model FoundedBackupDrivers {
 }
 
 model VehicleOwner {
-  id         Int    @id @default(autoincrement())
+  id         Int     @id @default(autoincrement())
   first_name String
   last_name  String
   phone      String
   email      String
+  company    String?
+  Address    String
+  vehicles    Vehicle[]
 }
 
 model Customer {
-  customer_id      Int      @id @default(autoincrement())
+  customer_id        Int                @id @default(autoincrement())
   name               String
-  phone              String    @unique
+  phone              String             @unique
   email              String?
   address            String?
   profileImageUrl    String?
   emergencyContact   String?
-  status           String   @default("ACTIVE")
+  status             String             @default("ACTIVE")
   registrationStatus RegistrationStatus @default(OTP_PENDING)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -229,16 +238,16 @@ model Ratings_and_Reviews {
 }
 
 model Child {
-  child_id         Int      @id @default(autoincrement())
-  relationship     String
-  NearbyCity       String
-  schoolLocation   String
-  school           String
-  childName        String
-  childImageUrl    String?
-  pickUpAddress    String
-  Customer         Customer?        @relation(fields: [customerId], references: [customer_id])
-  customerId       Int?
+  child_id       Int       @id @default(autoincrement())
+  relationship   String
+  NearbyCity     String
+  schoolLocation String
+  school         String
+  childName      String
+  childImageUrl  String?
+  pickUpAddress  String
+  Customer       Customer? @relation(fields: [customerId], references: [customer_id])
+  customerId     Int?
 }
 
 model Child_Trip {

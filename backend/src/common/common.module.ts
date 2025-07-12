@@ -6,6 +6,7 @@ import { TwilioSmsGateway } from './services/twilio-sms-gateway.service';
 import { DummySmsGateway } from './services/dummy-sms-gateway.service';
 import { SmsGateSmsGateway } from './services/smsgate-sms-gateway.service';
 import { OtpService } from './services/otp.service';
+import { multerConfigVehicle } from './services/multer.config';
 
 @Global()
 @Module({
@@ -17,6 +18,7 @@ import { OtpService } from './services/otp.service';
     DummySmsGateway,
     SmsGateSmsGateway,
     OtpService,
+    
   ],
   exports: [PrismaService, SmsService, OtpService],
 })
