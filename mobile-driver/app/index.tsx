@@ -1,58 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SplashScreen from 'expo-splash-screen';
-
-// Prevent splash screen from auto-hiding
-SplashScreen.preventAutoHideAsync();
+import React from 'react';
+import { Redirect } from 'expo-router';
+import { useAuthState } from '@/hooks/useAuthState';
 
 export default function IndexScreen() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // Check if user has seen onboarding
-        const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
-        
-        // Check if user is authenticated
-        const authToken = await AsyncStorage.getItem('authToken');
-        const isAuthenticated = !!authToken;
-
-        // Hide splash screen
-        await SplashScreen.hideAsync();
-
-        if (!hasSeenOnboarding) {
-          // First time user - show welcome then onboarding
-          router.replace('/welcome');
-        } else if (!isAuthenticated) {
-          // User has seen onboarding but not authenticated
-          router.replace('/onboarding'); // Will navigate to auth after onboarding
-        } else {
-          // User is authenticated - go to main app
-          router.replace('/(tabs)');
-        }
-      } catch (error) {
-        console.error('Error checking auth state:', error);
-        await SplashScreen.hideAsync();
-        router.replace('/welcome');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeApp();
-  }, [router]);
+  const { isLoading } = useAuthState();
 
   if (isLoading) {
-    return (
-      <View className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
+    return null; // Loading handled by root layout
   }
 
-  return null;
+  // All users see splash screen first for consistent brand experience
+  return <Redirect href="/splash" />;
 }

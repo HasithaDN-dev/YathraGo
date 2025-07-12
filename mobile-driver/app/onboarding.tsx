@@ -3,7 +3,6 @@ import { View, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Typography } from '@/components/Typography';
 
 const onboardingData = [
@@ -44,13 +43,12 @@ export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentItem = onboardingData[currentIndex];
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (currentIndex < onboardingData.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      // Mark onboarding as seen and navigate to phone auth
-      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-      router.replace('/(tabs)'); // Will be redirected to auth in index.tsx
+      // Navigate to phone auth after completing onboarding
+      router.replace('/(auth)/phone-auth');
     }
   };
 
@@ -60,14 +58,12 @@ export default function OnboardingScreen() {
     }
   };
 
-  const handleSkip = async () => {
-    await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-    router.replace('/(tabs)'); // Will be redirected to auth in index.tsx
+  const handleSkip = () => {
+    router.replace('/(auth)/phone-auth');
   };
 
-  const handleGetStarted = async () => {
-    await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-    router.replace('/(tabs)'); // Will be redirected to auth in index.tsx
+  const handleGetStarted = () => {
+    router.replace('/(auth)/phone-auth');
   };
 
   const isLastScreen = currentIndex === onboardingData.length - 1;
