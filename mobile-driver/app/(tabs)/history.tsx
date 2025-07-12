@@ -54,7 +54,7 @@ export default function HistoryScreen() {
             {item.date} • {item.time}
           </Text>
         </View>
-        <View className="bg-green-100 px-3 py-1 rounded-full">
+        <View className="bg-brand-successBg px-3 py-1 rounded-full">
           <Text className="text-green-700 text-xs font-medium capitalize">
             {item.status}
           </Text>
@@ -63,7 +63,7 @@ export default function HistoryScreen() {
 
       <View className="space-y-2">
         <View className="flex-row">
-          <View className="w-3 h-3 bg-blue-500 rounded-full mt-1 mr-3" />
+          <View className="w-3 h-3 bg-brand-deepNavy rounded-full mt-1 mr-3" />
           <View className="flex-1">
             <Text className="text-sm text-gray-600">Pickup</Text>
             <Text className="text-base text-gray-800">{item.pickup}</Text>

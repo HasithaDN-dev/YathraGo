@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -10,7 +10,7 @@ export default function HomeScreen() {
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
       headerImage={
-        <View style={styles.headerImage}>
+        <View className="h-44 w-72 bottom-0 left-0 absolute justify-center items-center">
           <Text className="text-2xl font-bold text-gray-800">🚗 YathraGo</Text>
         </View>
       }>
@@ -27,16 +27,16 @@ export default function HomeScreen() {
       
       {/* Quick Action Cards */}
       <View className="space-y-4 mb-6">
-        <View className="bg-blue-500 p-6 rounded-lg shadow-sm">
+        <View className="bg-brand-deepNavy p-6 rounded-lg shadow-sm">
           <Text className="text-white text-lg font-semibold mb-2">
             � Book a Ride
           </Text>
-          <Text className="text-blue-100 text-sm">
+          <Text className="text-brand-lightNavy text-sm">
             Quick and easy booking process
           </Text>
         </View>
         
-        <View className="bg-orange-500 p-6 rounded-lg shadow-sm">
+        <View className="bg-brand-brightOrange p-6 rounded-lg shadow-sm">
           <Text className="text-white text-lg font-semibold mb-2">
             📍 Track Your Driver
           </Text>
@@ -45,7 +45,7 @@ export default function HomeScreen() {
           </Text>
         </View>
         
-        <View className="bg-green-500 p-6 rounded-lg shadow-sm">
+        <View className="bg-brand-successGreen p-6 rounded-lg shadow-sm">
           <Text className="text-white text-lg font-semibold mb-2">
             💳 Secure Payments
           </Text>
@@ -80,16 +80,3 @@ export default function HomeScreen() {
     </ParallaxScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  // Only keep complex positioning that Tailwind can't handle
-  headerImage: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

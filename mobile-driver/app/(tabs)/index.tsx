@@ -20,7 +20,7 @@ export default function HomeScreen() {
         <Text className="text-3xl font-bold text-green-600 mb-4">
           🚗 YathraGo Driver
         </Text>
-        <View className="bg-green-500 p-6 rounded-lg shadow-lg w-full">
+        <View className="bg-brand-successGreen p-6 rounded-lg shadow-lg w-full">
           <Text className="text-white text-center text-lg font-semibold">
             Professional Ride Service Platform
           </Text>
@@ -32,7 +32,7 @@ export default function HomeScreen() {
       
       {/* Driver Action Cards */}
       <View className="space-y-4 mb-6">
-        <View className="bg-green-600 p-6 rounded-lg shadow-sm">
+        <View className="bg-brand-successGreen p-6 rounded-lg shadow-sm">
           <Text className="text-white text-xl font-bold mb-2">
             � Go Online
           </Text>
@@ -41,16 +41,16 @@ export default function HomeScreen() {
           </Text>
         </View>
         
-        <View className="bg-blue-500 p-6 rounded-lg shadow-sm">
+        <View className="bg-brand-deepNavy p-6 rounded-lg shadow-sm">
           <Text className="text-white text-xl font-bold mb-2">
             📊 View Earnings
           </Text>
-          <Text className="text-blue-100 text-sm">
+          <Text className="text-brand-lightNavy text-sm">
             Track your daily and weekly income
           </Text>
         </View>
         
-        <View className="bg-orange-500 p-6 rounded-lg shadow-sm">
+        <View className="bg-brand-brightOrange p-6 rounded-lg shadow-sm">
           <Text className="text-white text-xl font-bold mb-2">
             🗺️ Navigation
           </Text>

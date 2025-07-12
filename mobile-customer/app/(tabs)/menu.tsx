@@ -169,14 +169,14 @@ export default function MenuScreen() {
         {/* Profile Card */}
         <View className="bg-white mx-4 mt-4 p-4 rounded-lg border border-gray-200">
           <View className="flex-row items-center">
-            <View className="w-16 h-16 bg-blue-100 rounded-full items-center justify-center mr-4">
+            <View className="w-16 h-16 bg-brand-backgroundLight rounded-full items-center justify-center mr-4">
               <Text className="text-2xl">👨‍💼</Text>
             </View>
             <View className="flex-1">
               <Text className="text-lg font-bold text-gray-800">John Doe</Text>
               <Text className="text-sm text-gray-600">+94 77 123 4567</Text>
               <View className="flex-row items-center mt-1">
-                <View className="w-2 h-2 bg-green-500 rounded-full mr-2" />
+                <View className="w-2 h-2 bg-brand-successGreen rounded-full mr-2" />
                 <Text className="text-sm text-green-600">Active Member</Text>
               </View>
             </View>
@@ -188,13 +188,13 @@ export default function MenuScreen() {
           <Text className="text-lg font-semibold text-gray-800 mb-3">Quick Actions</Text>
           <View className="flex-row justify-between">
             <TouchableOpacity className="items-center flex-1">
-              <View className="w-12 h-12 bg-blue-100 rounded-full items-center justify-center mb-2">
+              <View className="w-12 h-12 bg-brand-backgroundLight rounded-full items-center justify-center mb-2">
                 <Text className="text-xl">🚗</Text>
               </View>
               <Text className="text-xs text-gray-600 text-center">Book Ride</Text>
             </TouchableOpacity>
             <TouchableOpacity className="items-center flex-1">
-              <View className="w-12 h-12 bg-green-100 rounded-full items-center justify-center mb-2">
+              <View className="w-12 h-12 bg-brand-successBg rounded-full items-center justify-center mb-2">
                 <Text className="text-xl">💰</Text>
               </View>
               <Text className="text-xs text-gray-600 text-center">Payments</Text>
@@ -216,7 +216,7 @@ export default function MenuScreen() {
         {/* Logout Button */}
         <View className="p-4">
           <TouchableOpacity
-            className="bg-red-600 py-4 rounded-lg"
+            className="bg-brand-errorRed py-4 rounded-lg"
             onPress={handleLogout}
           >
             <Text className="text-white text-center font-semibold text-lg">

@@ -61,11 +61,11 @@ export default function RidesScreen() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-brand-successBg text-brand-successGreen';
       case 'completed':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-brand-backgroundLight text-brand-deepNavy';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'bg-brand-errorBg text-brand-errorRed';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -94,7 +94,7 @@ export default function RidesScreen() {
 
       <View className="space-y-2 mb-3">
         <View className="flex-row">
-          <View className="w-3 h-3 bg-green-500 rounded-full mt-1 mr-3" />
+          <View className="w-3 h-3 bg-brand-successGreen rounded-full mt-1 mr-3" />
           <View className="flex-1">
             <Text className="text-sm text-gray-600">Pickup</Text>
             <Text className="text-base text-gray-800">{item.pickup}</Text>

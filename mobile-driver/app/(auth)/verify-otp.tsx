@@ -172,7 +172,7 @@ export default function VerifyOTPScreen() {
         </View>
 
         <TouchableOpacity
-          className={`w-full py-4 rounded-lg ${isLoading ? 'bg-gray-400' : 'bg-blue-600'}`}
+          className={`w-full py-4 rounded-lg ${isLoading ? 'bg-gray-400' : 'bg-brand-deepNavy'}`}
           onPress={handleVerifyOTP}
           disabled={isLoading}
         >
@@ -185,7 +185,7 @@ export default function VerifyOTPScreen() {
         <View className="items-center">
           {canResend ? (
             <TouchableOpacity onPress={handleResendOTP}>
-              <Text className="text-blue-600 font-semibold">
+              <Text className="text-brand-deepNavy font-semibold">
                 Resend OTP
               </Text>
             </TouchableOpacity>

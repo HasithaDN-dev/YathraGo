@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Typography } from '@/components/Typography';
 
 const onboardingData = [
   {
@@ -78,7 +79,7 @@ export default function OnboardingScreen() {
       {/* Skip Button */}
       <View className="absolute top-20 right-6 z-10">
         <TouchableOpacity onPress={handleSkip}>
-          <Text className="text-blue-600 text-base font-semibold">Skip</Text>
+          <Typography variant="label-large" className="text-brand-deepNavy">Skip</Typography>
         </TouchableOpacity>
       </View>
 
@@ -89,7 +90,7 @@ export default function OnboardingScreen() {
           <View className="mb-6">
             <Image
               source={require('../assets/images/logo.png')}
-              style={styles.logoImage}
+              className="w-42 h-42"
               contentFit="contain"
             />
           </View>
@@ -99,20 +100,20 @@ export default function OnboardingScreen() {
         <View className="w-80 h-80 mb-8">
           <Image
             source={currentItem.image}
-            style={styles.onboardingImage}
+            className="w-full h-full rounded-2xl"
             contentFit="contain"
           />
         </View>
 
         {/* Title */}
-        <Text className="text-2xl font-bold text-gray-800 text-center mb-4">
+        <Typography variant="headline-large" className="text-center mb-4">
           {currentItem.title}
-        </Text>
+        </Typography>
 
         {/* Description */}
-        <Text className="text-base text-gray-600 text-center leading-6 mb-8 px-4">
+        <Typography variant="body-medium" className="text-center mb-8 px-4 text-brand-neutralGray">
           {currentItem.description}
-        </Text>
+        </Typography>
 
         {/* Progress Dots */}
         <View className="flex-row justify-center mb-4">
@@ -120,7 +121,7 @@ export default function OnboardingScreen() {
             <View
               key={index}
               className={`w-2 h-2 rounded-full mx-1 ${
-                index === currentIndex ? 'bg-blue-600' : 'bg-gray-300'
+                index === currentIndex ? 'bg-brand-deepNavy' : 'bg-brand-lightGray'
               }`}
             />
           ))}
@@ -135,33 +136,19 @@ export default function OnboardingScreen() {
           className={`py-3 px-6 ${currentIndex === 0 ? 'opacity-0' : 'opacity-100'}`}
           disabled={currentIndex === 0}
         >
-          <Text className="text-blue-600 text-base font-semibold">Back</Text>
+          <Typography variant="label-large" className="text-brand-deepNavy">Back</Typography>
         </TouchableOpacity>
 
         {/* Next/Get Started Button */}
         <TouchableOpacity
           onPress={isLastScreen ? handleGetStarted : handleNext}
-          className="bg-blue-600 py-3 px-8 rounded-lg"
+          className="bg-brand-deepNavy py-3 px-8 rounded-lg"
         >
-          <Text className="text-white text-base font-semibold">
+          <Typography variant="label-large" className="text-white">
             {currentIndex === 0 ? 'Continue' : isLastScreen ? 'Get Started' : 'Next'}
-          </Text>
+          </Typography>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  // Complex image sizing that needs precise control
-  onboardingImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 15,
-  },
-  // Logo styling for the final screen
-  logoImage: {
-    width: 170,
-    height: 170,
-  },
-});

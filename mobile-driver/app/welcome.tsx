@@ -62,10 +62,7 @@ export default function WelcomeScreen() {
       >
         <Image
           source={require('../assets/images/logo.png')}
-          style={{
-            width: 300,
-            height: 300,
-          }}
+          className="w-80 h-80"
           contentFit="contain"
         />
       </Animated.View>

@@ -77,17 +77,17 @@ export default function PhoneAuthScreen() {
       <StatusBar style="dark" />
       
       <View className="mb-8">
-        <Text className="text-3xl font-bold text-center text-gray-800 mb-2">
+        <Text className="text-3xl font-bold text-center text-black mb-2">
           Welcome to YathraGo
         </Text>
-        <Text className="text-base text-center text-gray-600">
+        <Text className="text-base text-center text-brand-neutralGray">
           Enter your phone number to book your ride
         </Text>
       </View>
 
       <View className="space-y-4">
         <View>
-          <Text className="text-sm font-medium text-gray-700 mb-2">Phone Number</Text>
+          <Text className="text-sm font-medium text-black mb-2">Phone Number</Text>
           <TextInput
             className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg"
             placeholder="+94 77 123 4567"
@@ -96,13 +96,13 @@ export default function PhoneAuthScreen() {
             keyboardType="phone-pad"
             maxLength={13}
           />
-          <Text className="text-xs text-gray-500 mt-1">
+          <Text className="text-xs text-brand-neutralGray mt-1">
             We&apos;ll send you a verification code
           </Text>
         </View>
 
         <TouchableOpacity
-          className={`w-full py-4 rounded-lg mt-6 ${isLoading ? 'bg-gray-400' : 'bg-blue-600'}`}
+          className={`w-full py-4 rounded-lg mt-6 ${isLoading ? 'bg-brand-lightGray' : 'bg-brand-deepNavy'}`}
           onPress={handleSendOTP}
           disabled={isLoading}
         >
@@ -112,7 +112,7 @@ export default function PhoneAuthScreen() {
         </TouchableOpacity>
 
         <View className="mt-6">
-          <Text className="text-xs text-center text-gray-500">
+          <Text className="text-xs text-center text-brand-neutralGray">
             By continuing, you agree to our Terms of Service and Privacy Policy
           </Text>
         </View>

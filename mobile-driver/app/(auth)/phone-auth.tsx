@@ -77,17 +77,17 @@ export default function PhoneAuthScreen() {
       <StatusBar style="dark" />
       
       <View className="mb-8">
-        <Text className="text-3xl font-bold text-center text-gray-800 mb-2">
+        <Text className="text-3xl font-bold text-center text-black mb-2">
           Welcome to YathraGo
         </Text>
-        <Text className="text-base text-center text-gray-600">
+        <Text className="text-base text-center text-brand-neutralGray">
           Enter your phone number to get started
         </Text>
       </View>
 
       <View className="space-y-4">
         <View>
-          <Text className="text-sm font-medium text-gray-700 mb-2">Phone Number</Text>
+          <Text className="text-sm font-medium text-black mb-2">Phone Number</Text>
           <TextInput
             className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg"
             placeholder="+94 77 123 4567"
@@ -102,7 +102,7 @@ export default function PhoneAuthScreen() {
         </View>
 
         <TouchableOpacity
-          className={`w-full py-4 rounded-lg mt-6 ${isLoading ? 'bg-gray-400' : 'bg-blue-600'}`}
+          className={`w-full py-4 rounded-lg mt-6 ${isLoading ? 'bg-gray-400' : 'bg-brand-deepNavy'}`}
           onPress={handleSendOTP}
           disabled={isLoading}
         >

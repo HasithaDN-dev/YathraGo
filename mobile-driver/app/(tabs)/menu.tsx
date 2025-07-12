@@ -151,14 +151,14 @@ export default function MenuScreen() {
         {/* Profile Card */}
         <View className="bg-white mx-4 mt-4 p-4 rounded-lg border border-gray-200">
           <View className="flex-row items-center">
-            <View className="w-16 h-16 bg-blue-100 rounded-full items-center justify-center mr-4">
+            <View className="w-16 h-16 bg-brand-backgroundLight rounded-full items-center justify-center mr-4">
               <Text className="text-2xl">👨‍💼</Text>
             </View>
             <View className="flex-1">
               <Text className="text-lg font-bold text-gray-800">Driver Name</Text>
               <Text className="text-sm text-gray-600">+94 77 123 4567</Text>
               <View className="flex-row items-center mt-1">
-                <View className="w-2 h-2 bg-green-500 rounded-full mr-2" />
+                <View className="w-2 h-2 bg-brand-successGreen rounded-full mr-2" />
                 <Text className="text-sm text-green-600">Online</Text>
               </View>
             </View>
@@ -173,7 +173,7 @@ export default function MenuScreen() {
         {/* Logout Button */}
         <View className="p-4">
           <TouchableOpacity
-            className="bg-red-600 py-4 rounded-lg"
+            className="bg-brand-errorRed py-4 rounded-lg"
             onPress={handleLogout}
           >
             <Text className="text-white text-center font-semibold text-lg">

@@ -85,15 +85,15 @@ export default function NotificationsScreen() {
   const getNotificationColor = (type: string) => {
     switch (type) {
       case 'ride_confirmation':
-        return 'bg-green-100 text-green-800';
+        return 'bg-brand-successBg text-brand-successGreen';
       case 'driver_arrival':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-brand-backgroundLight text-brand-deepNavy';
       case 'ride_completed':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-brand-successBg text-brand-successGreen';
       case 'payment':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-brand-warningAmber';
       case 'reminder':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-orange-100 text-brand-brightOrange';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -104,7 +104,7 @@ export default function NotificationsScreen() {
   const renderNotificationItem = (item: typeof notificationsData[0]) => (
     <TouchableOpacity
       key={item.id}
-      className={`p-4 border-b border-gray-100 ${!item.isRead ? 'bg-blue-50' : 'bg-white'}`}
+      className={`p-4 border-b border-gray-100 ${!item.isRead ? 'bg-brand-backgroundLight' : 'bg-white'}`}
       onPress={() => markAsRead(item.id)}
     >
       <View className="flex-row">
@@ -118,7 +118,7 @@ export default function NotificationsScreen() {
               {item.title}
             </Text>
             {!item.isRead && (
-              <View className="w-2 h-2 bg-blue-500 rounded-full ml-2 mt-2" />
+              <View className="w-2 h-2 bg-brand-deepNavy rounded-full ml-2 mt-2" />
             )}
           </View>
           
@@ -158,7 +158,7 @@ export default function NotificationsScreen() {
           {unreadCount > 0 && (
             <TouchableOpacity 
               onPress={markAllAsRead}
-              className="bg-blue-600 px-4 py-2 rounded-lg"
+              className="bg-brand-deepNavy px-4 py-2 rounded-lg"
             >
               <Text className="text-white text-sm font-medium">Mark All Read</Text>
             </TouchableOpacity>
