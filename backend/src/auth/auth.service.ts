@@ -29,6 +29,12 @@ export interface AuthResponse {
   };
 }
 
+interface UserEntity {
+  customer_id?: number;
+  driver_id?: number;
+  phone: string;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -97,9 +103,13 @@ export class AuthService {
       }
     }
 
+    if (!user) {
+      throw new UnauthorizedException('User creation failed');
+    }
+
     // Generate JWT token
     const payload: JwtPayload = {
-      sub: user.customer_id?.toString() || user.driver_id?.toString(),
+      sub: (user.customer_id || user.driver_id)?.toString() || '',
       phone: user.phone,
       userType,
       isVerified: true,
@@ -122,32 +132,32 @@ export class AuthService {
   private async findUserByPhone(
     phone: string,
     userType: UserType,
-  ): Promise<any> {
+  ): Promise<UserEntity | null> {
     if (userType === UserType.CUSTOMER) {
-      return await this.prisma.customer.findFirst({
+      return (await this.prisma.customer.findFirst({
         where: { phone: phone },
-      });
+      })) as UserEntity | null;
     } else if (userType === UserType.DRIVER) {
-      return await this.prisma.driver.findFirst({
+      return (await this.prisma.driver.findFirst({
         where: { phone: phone },
-      });
+      })) as UserEntity | null;
     }
     return null;
   }
 
-  private async createCustomerUser(phone: string): Promise<any> {
-    return await this.prisma.customer.create({
+  private async createCustomerUser(phone: string): Promise<UserEntity> {
+    return (await this.prisma.customer.create({
       data: {
         name: '', // Will be updated later
         phone: phone,
         status: 'ACTIVE',
         registrationStatus: 'OTP_VERIFIED',
       },
-    });
+    })) as UserEntity;
   }
 
-  private async createDriverUser(phone: string): Promise<any> {
-    return await this.prisma.driver.create({
+  private async createDriverUser(phone: string): Promise<UserEntity> {
+    return (await this.prisma.driver.create({
       data: {
         name: '',
         phone: phone,
@@ -166,8 +176,30 @@ export class AuthService {
         second_phone: '',
         vehicle_Reg_No: '',
       },
-    });
+    })) as UserEntity;
   }
 
-  // markUserAsVerified removed as requested
+  // Simple JWT utility methods (NestJS best practice)
+  refreshToken(user: JwtPayload): { accessToken: string } {
+    const payload: JwtPayload = {
+      sub: user.sub,
+      phone: user.phone,
+      userType: user.userType,
+      isVerified: user.isVerified,
+    };
+
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: '7d', // Extended expiry for refresh
+    });
+
+    return { accessToken };
+  }
+
+  logout(user: JwtPayload): { message: string } {
+    // Here you could implement token blacklisting if needed
+    // For now, just return success since JWT tokens are stateless
+    this.logger.log(`User ${user.phone} logged out`);
+
+    return { message: 'Logged out successfully' };
+  }
 }

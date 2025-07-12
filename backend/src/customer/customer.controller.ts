@@ -1,46 +1,56 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { AuthService } from '../auth/auth.service';
-import { SendOtpDto, VerifyOtpDto } from '../common/dto/auth.dto';
-import { UserType } from '@prisma/client';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Get,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { RegisterStaffPassengerDto } from './dto/register_staff_passenger.dto';
 import { RegisterChildDto } from './dto/register-child.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CustomerService } from './customer.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 
 @Controller('customer')
 export class CustomerController {
-  constructor(
-    private authService: AuthService,
-    private readonly customerService: CustomerService,
-  ) {}
+  constructor(private readonly customerService: CustomerService) {}
 
-  @Post('auth/get-started/send-otp')
-  @HttpCode(HttpStatus.OK)
-  async sendGetStartedOtp(@Body() body: { phone: string }) {
-    const sendOtpDto: SendOtpDto = {
-      ...body,
-      userType: UserType.CUSTOMER,
-    };
-    return this.authService.sendGetStartedOtp(sendOtpDto);
-  }
-
-  @Post('auth/get-started/verify-otp')
-  @HttpCode(HttpStatus.OK)
-  async verifyGetStartedOtp(@Body() body: { phone: string; otp: string }) {
-    const verifyOtpDto: VerifyOtpDto = {
-      ...body,
-      userType: UserType.CUSTOMER,
-    };
-    return this.authService.verifyGetStartedOtp(verifyOtpDto);
-  }
-
+  // Customer business logic endpoints (registration flows)
   @Post('register-staff-passenger')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   async registerStaffPassenger(@Body() dto: RegisterStaffPassengerDto) {
     return this.customerService.registerStaffPassenger(dto);
   }
+
   @Post('register-child')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   async registerChild(@Body() dto: RegisterChildDto) {
     return this.customerService.registerChild(dto);
+  }
+
+  // Customer profile management
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  async getProfile(@Request() req: AuthenticatedRequest) {
+    return this.customerService.getCustomerProfile(req.user.sub);
+  }
+
+  @Post('update-profile')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async updateProfile(
+    @Body() profileData: UpdateProfileDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.customerService.updateCustomerProfile(
+      req.user.sub,
+      profileData,
+    );
   }
 }

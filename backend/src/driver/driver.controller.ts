@@ -1,29 +1,50 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { AuthService } from '../auth/auth.service';
-import { SendOtpDto, VerifyOtpDto } from '../common/dto/auth.dto';
-import { UserType } from '@prisma/client';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Get,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
+import { DriverService } from './driver.service';
+import { UpdateDriverProfileDto } from './dto/update-driver-profile.dto';
+import { UploadDocumentsDto } from './dto/upload-documents.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
 
 @Controller('driver')
 export class DriverController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly driverService: DriverService) {}
 
-  @Post('auth/get-started/send-otp')
-  @HttpCode(HttpStatus.OK)
-  async sendGetStartedOtp(@Body() body: { phone: string }) {
-    const sendOtpDto: SendOtpDto = {
-      ...body,
-      userType: UserType.DRIVER,
-    };
-    return this.authService.sendGetStartedOtp(sendOtpDto);
+  // Driver business logic endpoints (registration flows)
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  async getProfile(@Request() req: AuthenticatedRequest) {
+    return this.driverService.getDriverProfile(req.user.sub);
   }
 
-  @Post('auth/get-started/verify-otp')
+  @Post('update-profile')
   @HttpCode(HttpStatus.OK)
-  async verifyGetStartedOtp(@Body() body: { phone: string; otp: string }) {
-    const verifyOtpDto: VerifyOtpDto = {
-      ...body,
-      userType: UserType.DRIVER,
-    };
-    return this.authService.verifyGetStartedOtp(verifyOtpDto);
+  @UseGuards(JwtAuthGuard)
+  async updateProfile(
+    @Body() profileData: UpdateDriverProfileDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.driverService.updateDriverProfile(req.user.sub, profileData);
+  }
+
+  @Post('upload-documents')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async uploadDocuments(
+    @Body() documentsData: UploadDocumentsDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.driverService.uploadDriverDocuments(
+      req.user.sub,
+      documentsData,
+    );
   }
 }

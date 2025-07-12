@@ -3,10 +3,14 @@ import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ApiService } from '../../services/api';
 
 export default function VerifyOTPScreen() {
   const router = useRouter();
-  const { phoneNumber } = useLocalSearchParams();
+  const { phoneNumber, isNewUser } = useLocalSearchParams<{
+    phoneNumber: string;
+    isNewUser: string;
+  }>();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
@@ -58,36 +62,26 @@ export default function VerifyOTPScreen() {
 
     setIsLoading(true);
     try {
-      // TODO: Replace with your actual API call
-      const response = await fetch('YOUR_API_ENDPOINT/auth/verify-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          phoneNumber: phoneNumber,
-          otp: otpCode,
-        }),
-      });
+      const result = await ApiService.verifyDriverOtp(phoneNumber!, otpCode);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Store auth token and user data
-        await AsyncStorage.setItem('authToken', data.token);
-        await AsyncStorage.setItem('userProfile', JSON.stringify(data.user));
-        
-        // Navigate to main app
-        router.replace('/(tabs)');
+      // Store auth token and user data
+      await AsyncStorage.setItem('authToken', result.accessToken);
+      await AsyncStorage.setItem('userProfile', JSON.stringify(result.user));
+      
+      // Navigate based on user status
+      if (result.user.isNewUser) {
+        // New user - go to driver profile setup
+        router.replace('/(tabs)'); // You can create a driver-setup screen later
       } else {
-        Alert.alert('Verification Failed', data.message || 'Invalid OTP');
-        // Clear OTP inputs
-        setOtp(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
+        // Existing user - go to main app
+        router.replace('/(tabs)');
       }
     } catch (error) {
       console.error('OTP verification error:', error);
-      Alert.alert('Error', 'Network error. Please try again.');
+      Alert.alert('Verification Failed', error instanceof Error ? error.message : 'Invalid OTP');
+      // Clear OTP inputs
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
     } finally {
       setIsLoading(false);
     }
@@ -98,39 +92,26 @@ export default function VerifyOTPScreen() {
 
     setIsLoading(true);
     try {
-      // TODO: Replace with your actual API call
-      const response = await fetch('YOUR_API_ENDPOINT/auth/send-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          phoneNumber: phoneNumber,
-        }),
-      });
-
-      if (response.ok) {
-        Alert.alert('Success', 'OTP sent successfully');
-        setCanResend(false);
-        setResendTimer(60);
-        
-        // Restart timer
-        const timer = setInterval(() => {
-          setResendTimer((prev) => {
-            if (prev <= 1) {
-              setCanResend(true);
-              clearInterval(timer);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      } else {
-        Alert.alert('Error', 'Failed to resend OTP');
-      }
+      await ApiService.sendDriverOtp(phoneNumber!);
+      
+      Alert.alert('Success', 'OTP sent successfully');
+      setCanResend(false);
+      setResendTimer(60);
+      
+      // Restart timer
+      const timer = setInterval(() => {
+        setResendTimer((prev) => {
+          if (prev <= 1) {
+            setCanResend(true);
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch (error) {
       console.error('Resend OTP error:', error);
-      Alert.alert('Error', 'Network error. Please try again.');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to resend OTP');
     } finally {
       setIsLoading(false);
     }
