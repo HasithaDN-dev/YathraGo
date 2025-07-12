@@ -7,16 +7,24 @@ import {
   PaperPlaneRight,
   Code,
   CaretRight,
+  Clock,
+  Bell,
+  List,
+  Car,
   IconProps,
 } from 'phosphor-react-native';
 
-type IconSymbolName = 'house.fill' | 'paperplane.fill' | 'chevron.left.forwardslash.chevron.right' | 'chevron.right';
+type IconSymbolName = 'house.fill' | 'paperplane.fill' | 'chevron.left.forwardslash.chevron.right' | 'chevron.right' | 'clock' | 'bell' | 'menu' | 'car';
 
 const ICON_MAP: Record<IconSymbolName, React.ComponentType<IconProps>> = {
   'house.fill': House,
   'paperplane.fill': PaperPlaneRight,
   'chevron.left.forwardslash.chevron.right': Code,
   'chevron.right': CaretRight,
+  'clock': Clock,
+  'bell': Bell,
+  'menu': List,
+  'car': Car,
 };
 
 export function IconSymbol({
