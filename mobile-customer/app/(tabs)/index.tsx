@@ -1,19 +1,16 @@
-import { View, Text } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <View className="h-44 w-72 bottom-0 left-0 absolute justify-center items-center">
-          <Text className="text-2xl font-bold text-gray-800">🚗 YathraGo</Text>
-        </View>
-      }>
+    <ScrollView className="flex-1 bg-white">
+      {/* Header */}
+      <View className="bg-brand-deepNavy p-6 pt-12">
+        <Text className="text-white text-3xl font-bold text-center">🚗 YathraGo</Text>
+        <Text className="text-brand-lightNavy text-center mt-2">Your reliable ride-sharing companion</Text>
+      </View>
       
       {/* Welcome Header */}
       <View className="bg-white p-6 mb-4 rounded-lg shadow-sm">
@@ -57,7 +54,6 @@ export default function HomeScreen() {
       
       <ThemedView className="flex-row items-center gap-2">
         <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
       </ThemedView>
       <ThemedView className="gap-2 mb-2">
         <ThemedText type="subtitle">Step 1: Set Your Location</ThemedText>
@@ -77,6 +73,6 @@ export default function HomeScreen() {
           Track your ride in real-time and enjoy a safe, comfortable journey.
         </ThemedText>
       </ThemedView>
-    </ParallaxScrollView>
+    </ScrollView>
   );
 }

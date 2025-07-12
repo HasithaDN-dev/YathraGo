@@ -1,19 +1,16 @@
-import { View, Text } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-4xl">🚗</Text>
-        </View>
-      }>
+    <ScrollView className="flex-1 bg-white">
+      {/* Header */}
+      <View className="bg-success p-6 pt-12">
+        <Text className="text-white text-3xl font-bold text-center">🚗 YathraGo Driver</Text>
+        <Text className="text-green-100 text-center mt-2">Professional Ride Service Platform</Text>
+      </View>
       
       {/* YathraGo Driver Welcome Section */}
       <View className="flex-1 items-center justify-center bg-white p-6 mb-4 rounded-lg shadow-sm">
@@ -62,7 +59,6 @@ export default function HomeScreen() {
 
       <ThemedView className="flex-row items-center gap-2">
         <ThemedText type="title">Driver Hub</ThemedText>
-        <HelloWave />
       </ThemedView>
       
       <ThemedView className="gap-2 mb-2">
@@ -85,6 +81,6 @@ export default function HomeScreen() {
           Use built-in navigation to reach passengers and complete rides safely and efficiently.
         </ThemedText>
       </ThemedView>
-    </ParallaxScrollView>
+    </ScrollView>
   );
 }
