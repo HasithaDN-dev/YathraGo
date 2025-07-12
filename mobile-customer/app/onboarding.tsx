@@ -68,7 +68,7 @@ export default function OnboardingScreen() {
   };
 
   const handleGetStarted = () => {
-    router.replace('/(tabs)');
+    router.replace('./auth/phone-input');
   };
 
   const isLastScreen = currentIndex === onboardingData.length - 1;

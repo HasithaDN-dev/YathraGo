@@ -23,6 +23,8 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="welcome" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/phone-input" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/otp-verification" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>

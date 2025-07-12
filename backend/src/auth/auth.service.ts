@@ -7,8 +7,12 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { OtpService } from '../common/services/otp.service';
-import { UserType, OtpPurpose } from '@prisma/client';
-import { SendOtpDto, VerifyOtpDto } from '../common/dto/auth.dto';
+import { UserType, OtpPurpose, Customer, Driver } from '@prisma/client';
+import {
+  SendOtpDto,
+  VerifyOtpDto,
+  SendOtpResponse,
+} from '../common/dto/auth.dto';
 
 export interface JwtPayload {
   sub: string; // user ID or phone number
@@ -39,9 +43,7 @@ export class AuthService {
     private otpService: OtpService,
   ) {}
 
-  async sendGetStartedOtp(
-    sendOtpDto: SendOtpDto,
-  ): Promise<{ message: string; isNewUser: boolean }> {
+  async sendGetStartedOtp(sendOtpDto: SendOtpDto): Promise<SendOtpResponse> {
     const { phone, userType } = sendOtpDto;
 
     // Check if user already exists
@@ -59,6 +61,7 @@ export class AuthService {
     }
 
     return {
+      success: true,
       message: 'OTP sent successfully. Please check your phone.',
       isNewUser,
     };
@@ -86,7 +89,7 @@ export class AuthService {
       throw new UnauthorizedException(otpResult.error);
     }
 
-    let user = existingUser;
+    let user: Customer | Driver | null = existingUser;
 
     if (isNewUser) {
       // Create new user
@@ -97,9 +100,14 @@ export class AuthService {
       }
     }
 
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
     // Generate JWT token
+    const userId = 'customer_id' in user ? user.customer_id : user.driver_id;
     const payload: JwtPayload = {
-      sub: user.customer_id?.toString() || user.driver_id?.toString(),
+      sub: userId.toString(),
       phone: user.phone,
       userType,
       isVerified: true,
@@ -110,7 +118,7 @@ export class AuthService {
     return {
       accessToken,
       user: {
-        id: user.customer_id || user.driver_id,
+        id: userId,
         phone: user.phone,
         userType,
         isVerified: true,
@@ -122,7 +130,7 @@ export class AuthService {
   private async findUserByPhone(
     phone: string,
     userType: UserType,
-  ): Promise<any> {
+  ): Promise<Customer | Driver | null> {
     if (userType === UserType.CUSTOMER) {
       return await this.prisma.customer.findFirst({
         where: { phone: phone },
@@ -135,7 +143,7 @@ export class AuthService {
     return null;
   }
 
-  private async createCustomerUser(phone: string): Promise<any> {
+  private async createCustomerUser(phone: string): Promise<Customer> {
     return await this.prisma.customer.create({
       data: {
         name: '', // Will be updated later
@@ -146,7 +154,7 @@ export class AuthService {
     });
   }
 
-  private async createDriverUser(phone: string): Promise<any> {
+  private async createDriverUser(phone: string): Promise<Driver> {
     return await this.prisma.driver.create({
       data: {
         name: '',

@@ -30,7 +30,6 @@ export class AuthWebService {
       });
 
       return this.signToken(user.id, user.email, user.role);
-
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
@@ -68,7 +67,7 @@ export class AuthWebService {
   async signToken(
     userId: number,
     email: string,
-    role: string
+    role: string,
   ): Promise<{ access_token: string }> {
     const payload = {
       sub: userId,
@@ -77,8 +76,6 @@ export class AuthWebService {
     };
 
     const jwtSecret = this.config.get('WEB_JWT_SECRET');
-
-
 
     const token = await this.jwt.signAsync(payload, {
       expiresIn: '1h',

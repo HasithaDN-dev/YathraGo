@@ -46,8 +46,8 @@ export default function OnboardingScreen() {
     if (currentIndex < onboardingData.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      // Navigate to main app after last screen
-      router.replace('/(tabs)');
+      // Navigate to phone input for authentication
+      router.replace('./auth/phone-input');
     }
   };
 
@@ -58,11 +58,11 @@ export default function OnboardingScreen() {
   };
 
   const handleSkip = () => {
-    router.replace('/(tabs)');
+    router.replace('./auth/phone-input');
   };
 
   const handleGetStarted = () => {
-    router.replace('/(tabs)');
+    router.replace('./auth/phone-input');
   };
 
   const isLastScreen = currentIndex === onboardingData.length - 1;
