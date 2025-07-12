@@ -14,8 +14,8 @@ export default function IndexScreen() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Clear any demo data - comment this out after first run
-        // await AsyncStorage.clear(); // Disabled for testing proper navigation flow
+        // Clear any demo data - uncomment this line to reset app state for testing
+        await AsyncStorage.clear(); // Reset for testing - comment out after first successful flow
         
         // Check if user has seen onboarding
         const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
@@ -59,3 +59,4 @@ export default function IndexScreen() {
 
   return null;
 }
+/* $env:BROWSER="chrome"; npm run web */
