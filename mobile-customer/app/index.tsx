@@ -21,6 +21,12 @@ export default function IndexScreen() {
         const authToken = await AsyncStorage.getItem('authToken');
         const isAuthenticated = !!authToken;
 
+        // For testing the profile system, let's set temporary auth
+        if (!authToken) {
+          await AsyncStorage.setItem('authToken', 'demo_token');
+          await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+        }
+
         // Hide splash screen
         await SplashScreen.hideAsync();
 

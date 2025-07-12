@@ -1,82 +1,59 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-
-// Sample notification data - replace with actual data from your API
-const notificationsData = [
-  {
-    id: 1,
-    type: 'ride_confirmation',
-    title: 'Ride Confirmed',
-    message: 'Your ride for tomorrow at 8:00 AM has been confirmed with driver Sunil Fernando',
-    time: '10 minutes ago',
-    isRead: false,
-  },
-  {
-    id: 2,
-    type: 'driver_arrival',
-    title: 'Driver Arriving Soon',
-    message: 'Your driver is 5 minutes away from pickup location',
-    time: '2 hours ago',
-    isRead: false,
-  },
-  {
-    id: 3,
-    type: 'ride_completed',
-    title: 'Ride Completed',
-    message: 'Your child has safely reached International School Colombo',
-    time: '1 day ago',
-    isRead: true,
-  },
-  {
-    id: 4,
-    type: 'payment',
-    title: 'Payment Successful',
-    message: 'Payment of Rs. 1,200 has been processed successfully',
-    time: '1 day ago',
-    isRead: true,
-  },
-  {
-    id: 5,
-    type: 'reminder',
-    title: 'Upcoming Ride Reminder',
-    message: 'Don&apos;t forget! You have a ride scheduled for tomorrow at 8:00 AM',
-    time: '2 days ago',
-    isRead: true,
-  },
-];
+import React from 'react';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Typography } from '@/components/Typography';
+import { ProfileSwitcher } from '@/components/ProfileSwitcher';
+import { useProfile } from '@/contexts/ProfileContext';
 
 export default function NotificationsScreen() {
-  const [notifications, setNotifications] = useState(notificationsData);
+  const { activeProfile } = useProfile();
 
-  const markAsRead = (id: number) => {
-    setNotifications(prev =>
-      prev.map(notification =>
-        notification.id === id 
-          ? { ...notification, isRead: true }
-          : notification
-      )
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, isRead: true }))
-    );
-  };
+  // Mock notifications data
+  const mockNotifications = [
+    {
+      id: '1',
+      title: 'Trip Reminder',
+      message: 'Your ride to school is scheduled in 30 minutes',
+      time: '2 hours ago',
+      type: 'reminder',
+      read: false
+    },
+    {
+      id: '2',
+      title: 'Driver Assigned',
+      message: 'John has been assigned as your driver for today&apos;s trip',
+      time: '1 day ago',
+      type: 'info',
+      read: true
+    },
+    {
+      id: '3',
+      title: 'Payment Successful',
+      message: 'Payment of $12.50 for your last trip has been processed',
+      time: '2 days ago',
+      type: 'success',
+      read: true
+    },
+    {
+      id: '4',
+      title: 'Trip Cancelled',
+      message: 'Your scheduled trip to the library has been cancelled',
+      time: '3 days ago',
+      type: 'warning',
+      read: true
+    }
+  ];
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'ride_confirmation':
-        return '✅';
-      case 'driver_arrival':
-        return '🚗';
-      case 'ride_completed':
-        return '🏁';
-      case 'payment':
-        return '💳';
       case 'reminder':
         return '⏰';
+      case 'info':
+        return 'ℹ️';
+      case 'success':
+        return '✅';
+      case 'warning':
+        return '⚠️';
       default:
         return '📱';
     }
@@ -84,104 +61,148 @@ export default function NotificationsScreen() {
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'ride_confirmation':
-        return 'bg-brand-successBg text-brand-successGreen';
-      case 'driver_arrival':
-        return 'bg-brand-backgroundLight text-brand-deepNavy';
-      case 'ride_completed':
-        return 'bg-brand-successBg text-brand-successGreen';
-      case 'payment':
-        return 'bg-yellow-100 text-brand-warningAmber';
       case 'reminder':
-        return 'bg-orange-100 text-brand-brightOrange';
+        return 'bg-brand-brightOrange';
+      case 'info':
+        return 'bg-brand-deepNavy';
+      case 'success':
+        return 'bg-success';
+      case 'warning':
+        return 'bg-warning';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-brand-neutralGray';
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
-
-  const renderNotificationItem = (item: typeof notificationsData[0]) => (
-    <TouchableOpacity
-      key={item.id}
-      className={`p-4 border-b border-gray-100 ${!item.isRead ? 'bg-brand-backgroundLight' : 'bg-white'}`}
-      onPress={() => markAsRead(item.id)}
-    >
-      <View className="flex-row">
-        <View className="mr-3 mt-1">
-          <Text className="text-xl">{getNotificationIcon(item.type)}</Text>
-        </View>
-        
-        <View className="flex-1">
-          <View className="flex-row justify-between items-start mb-1">
-            <Text className={`text-base font-semibold ${!item.isRead ? 'text-gray-900' : 'text-gray-700'}`}>
-              {item.title}
-            </Text>
-            {!item.isRead && (
-              <View className="w-2 h-2 bg-brand-deepNavy rounded-full ml-2 mt-2" />
-            )}
-          </View>
-          
-          <Text className={`text-sm mb-2 ${!item.isRead ? 'text-gray-800' : 'text-gray-600'}`}>
-            {item.message}
-          </Text>
-          
-          <View className="flex-row justify-between items-center">
-            <Text className="text-xs text-gray-500">{item.time}</Text>
-            <View className={`px-2 py-1 rounded-full ${getNotificationColor(item.type)}`}>
-              <Text className="text-xs font-medium capitalize">
-                {item.type.replace('_', ' ')}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
   return (
-    <View className="flex-1 bg-white">
-      <StatusBar style="dark" />
+    <SafeAreaView className="flex-1 bg-white">
+      <ProfileSwitcher />
       
-      {/* Header */}
-      <View className="bg-white px-6 pt-12 pb-4 border-b border-gray-200">
-        <View className="flex-row justify-between items-center">
-          <View>
-            <Text className="text-2xl font-bold text-gray-800">Notifications</Text>
-            {unreadCount > 0 && (
-              <Text className="text-sm text-gray-600 mt-1">
-                {unreadCount} unread notification{unreadCount > 1 ? 's' : ''}
-              </Text>
-            )}
+      <ScrollView className="flex-1 px-4 py-6">
+        <View className="space-y-6">
+          {/* Header */}
+          <View className="space-y-2">
+            <Typography variant="headline-large" className="text-black">
+              Notifications
+            </Typography>
+            <Typography variant="body-medium" className="text-brand-neutralGray">
+              {activeProfile?.type === 'child' 
+                ? `Stay updated on your trips, ${activeProfile.name}`
+                : `Updates for ${activeProfile?.name}&apos;s activities`
+              }
+            </Typography>
           </View>
-          
-          {unreadCount > 0 && (
-            <TouchableOpacity 
-              onPress={markAllAsRead}
-              className="bg-brand-deepNavy px-4 py-2 rounded-lg"
-            >
-              <Text className="text-white text-sm font-medium">Mark All Read</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
 
-      {/* Notifications List */}
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {notifications.map((item) => renderNotificationItem(item))}
-        
-        {/* Empty state - uncomment if no notifications */}
-        {/* 
-        {notifications.length === 0 && (
-          <View className="flex-1 items-center justify-center py-20">
-            <Text className="text-gray-500 text-lg mb-2">No notifications</Text>
-            <Text className="text-gray-400 text-center">
-              You are all caught up!
-            </Text>
+          {/* Filter Options */}
+          <View className="flex-row justify-between items-center">
+            <View className="flex-row">
+              <TouchableOpacity className="bg-brand-deepNavy px-4 py-2 rounded-full">
+                <Typography variant="label-medium" className="text-white">
+                  All
+                </Typography>
+              </TouchableOpacity>
+              <TouchableOpacity className="ml-3 bg-brand-lightGray px-4 py-2 rounded-full">
+                <Typography variant="label-medium" className="text-brand-neutralGray">
+                  Unread
+                </Typography>
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity>
+              <Typography variant="label-medium" className="text-brand-brightOrange">
+                Mark all read
+              </Typography>
+            </TouchableOpacity>
           </View>
-        )}
-        */}
+
+          {/* Notifications List */}
+          <View className="space-y-3">
+            {mockNotifications.map((notification) => (
+              <TouchableOpacity 
+                key={notification.id}
+                className={`rounded-2xl p-4 border ${
+                  notification.read 
+                    ? 'bg-white border-brand-lightGray' 
+                    : 'bg-brand-lightestBlue border-brand-deepNavy'
+                }`}
+              >
+                <View className="flex-row">
+                  {/* Notification Icon */}
+                  <View className={`w-10 h-10 rounded-full ${getNotificationColor(notification.type)} items-center justify-center`}>
+                    <Typography variant="label-medium" className="text-white">
+                      {getNotificationIcon(notification.type)}
+                    </Typography>
+                  </View>
+
+                  {/* Notification Content */}
+                  <View className="ml-4 flex-1 space-y-1">
+                    <View className="flex-row justify-between items-start">
+                      <Typography 
+                        variant="label-large" 
+                        className={notification.read ? "text-black" : "text-brand-deepNavy"}
+                      >
+                        {notification.title}
+                      </Typography>
+                      <Typography variant="body-small" className="text-brand-neutralGray">
+                        {notification.time}
+                      </Typography>
+                    </View>
+                    
+                    <Typography 
+                      variant="body-medium" 
+                      className={notification.read ? "text-brand-neutralGray" : "text-black"}
+                    >
+                      {notification.message}
+                    </Typography>
+
+                    {/* Unread Indicator */}
+                    {!notification.read && (
+                      <View className="flex-row items-center pt-2">
+                        <View className="w-2 h-2 bg-brand-brightOrange rounded-full" />
+                        <View className="ml-2">
+                          <Typography variant="body-small" className="text-brand-brightOrange">
+                            New
+                          </Typography>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Empty State */}
+          {mockNotifications.length === 0 && (
+            <View className="bg-brand-lightGray rounded-2xl p-8 items-center space-y-3">
+              <Typography variant="headline-medium" className="text-brand-neutralGray">
+                No notifications
+              </Typography>
+              <Typography variant="body-medium" className="text-brand-neutralGray text-center">
+                {activeProfile?.type === 'child' 
+                  ? "You&apos;ll receive updates about your trips here"
+                  : "Notifications about family trips will appear here"
+                }
+              </Typography>
+            </View>
+          )}
+
+          {/* Notification Settings */}
+          <View className="bg-brand-lightestBlue rounded-2xl p-4 space-y-3">
+            <Typography variant="headline-medium" className="text-black">
+              Notification Settings
+            </Typography>
+            <Typography variant="body-medium" className="text-brand-neutralGray">
+              Customize when and how you receive notifications for trips and updates.
+            </Typography>
+            <TouchableOpacity className="bg-brand-deepNavy rounded-xl p-3 items-center">
+              <Typography variant="label-medium" className="text-white">
+                Manage Settings
+              </Typography>
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }

@@ -1,78 +1,101 @@
-import { View, Text, ScrollView } from 'react-native';
-
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import React from 'react';
+import { View, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Typography } from '@/components/Typography';
+import { ProfileSwitcher } from '@/components/ProfileSwitcher';
+import { useProfile } from '@/contexts/ProfileContext';
 
 export default function HomeScreen() {
+  const { activeProfile } = useProfile();
+
   return (
-    <ScrollView className="flex-1 bg-white">
-      {/* Header */}
-      <View className="bg-brand-deepNavy p-6 pt-12">
-        <Text className="text-white text-3xl font-bold text-center">🚗 YathraGo</Text>
-        <Text className="text-brand-lightNavy text-center mt-2">Your reliable ride-sharing companion</Text>
-      </View>
+    <SafeAreaView className="flex-1 bg-white">
+      <ProfileSwitcher />
       
-      {/* Welcome Header */}
-      <View className="bg-white p-6 mb-4 rounded-lg shadow-sm">
-        <Text className="text-2xl font-bold text-gray-800 mb-2">
-          Welcome to YathraGo! 🚗
-        </Text>
-        <Text className="text-gray-600 text-base">
-          Your reliable ride-sharing companion
-        </Text>
-      </View>
-      
-      {/* Quick Action Cards */}
-      <View className="space-y-4 mb-6">
-        <View className="bg-brand-deepNavy p-6 rounded-lg shadow-sm">
-          <Text className="text-white text-lg font-semibold mb-2">
-            � Book a Ride
-          </Text>
-          <Text className="text-brand-lightNavy text-sm">
-            Quick and easy booking process
-          </Text>
+      <ScrollView className="flex-1 px-4 py-6">
+        <View className="space-y-6">
+          {/* Welcome Section */}
+          <View className="space-y-2">
+            <Typography variant="headline-large" className="text-black">
+              Welcome back{activeProfile ? `, ${activeProfile.name}` : ''}!
+            </Typography>
+            <Typography variant="body-medium" className="text-brand-neutralGray">
+              {activeProfile?.type === 'child' 
+                ? "Let&apos;s plan your next trip safely"
+                : "Manage your family&apos;s travel needs"
+              }
+            </Typography>
+          </View>
+
+          {/* Quick Actions */}
+          <View className="bg-brand-lightestBlue rounded-2xl p-6 space-y-4">
+            <Typography variant="headline-medium" className="text-black">
+              Quick Actions
+            </Typography>
+            
+            <View className="space-y-3">
+              <View className="bg-white rounded-xl p-4 flex-row items-center justify-between">
+                <View>
+                  <Typography variant="label-large" className="text-black">
+                    Book a Ride
+                  </Typography>
+                  <Typography variant="body-small" className="text-brand-neutralGray">
+                    {activeProfile?.type === 'child' 
+                      ? "Request a safe trip"
+                      : "Book for yourself or your child"
+                    }
+                  </Typography>
+                </View>
+                <View className="w-8 h-8 bg-brand-brightOrange rounded-full items-center justify-center">
+                  <Typography variant="label-medium" className="text-white">
+                    🚗
+                  </Typography>
+                </View>
+              </View>
+
+              <View className="bg-white rounded-xl p-4 flex-row items-center justify-between">
+                <View>
+                  <Typography variant="label-large" className="text-black">
+                    Track Ride
+                  </Typography>
+                  <Typography variant="body-small" className="text-brand-neutralGray">
+                    {activeProfile?.type === 'child' 
+                      ? "See your current trip"
+                      : "Monitor family trips"
+                    }
+                  </Typography>
+                </View>
+                <View className="w-8 h-8 bg-brand-deepNavy rounded-full items-center justify-center">
+                  <Typography variant="label-medium" className="text-white">
+                    📍
+                  </Typography>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Profile-specific Content */}
+          {activeProfile?.type === 'child' ? (
+            <View className="bg-brand-softOrange rounded-2xl p-6 space-y-3">
+              <Typography variant="headline-medium" className="text-black">
+                Your School Routes
+              </Typography>
+              <Typography variant="body-medium" className="text-brand-neutralGray">
+                Quick access to your regular school routes and pickup locations.
+              </Typography>
+            </View>
+          ) : (
+            <View className="bg-brand-lightestBlue rounded-2xl p-6 space-y-3">
+              <Typography variant="headline-medium" className="text-black">
+                Family Overview
+              </Typography>
+              <Typography variant="body-medium" className="text-brand-neutralGray">
+                Monitor all family members&apos; trips and manage their travel preferences.
+              </Typography>
+            </View>
+          )}
         </View>
-        
-        <View className="bg-brand-brightOrange p-6 rounded-lg shadow-sm">
-          <Text className="text-white text-lg font-semibold mb-2">
-            📍 Track Your Driver
-          </Text>
-          <Text className="text-orange-100 text-sm">
-            Real-time location tracking
-          </Text>
-        </View>
-        
-        <View className="bg-brand-successGreen p-6 rounded-lg shadow-sm">
-          <Text className="text-white text-lg font-semibold mb-2">
-            💳 Secure Payments
-          </Text>
-          <Text className="text-green-100 text-sm">
-            Multiple payment options available
-          </Text>
-        </View>
-      </View>
-      
-      <ThemedView className="flex-row items-center gap-2">
-        <ThemedText type="title">Welcome!</ThemedText>
-      </ThemedView>
-      <ThemedView className="gap-2 mb-2">
-        <ThemedText type="subtitle">Step 1: Set Your Location</ThemedText>
-        <ThemedText>
-          Allow location access to find nearby drivers and get accurate pickup times.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView className="gap-2 mb-2">
-        <ThemedText type="subtitle">Step 2: Choose Your Ride</ThemedText>
-        <ThemedText>
-          Select from various vehicle types based on your needs and budget.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView className="gap-2 mb-2">
-        <ThemedText type="subtitle">Step 3: Enjoy Your Journey</ThemedText>
-        <ThemedText>
-          Track your ride in real-time and enjoy a safe, comfortable journey.
-        </ThemedText>
-      </ThemedView>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

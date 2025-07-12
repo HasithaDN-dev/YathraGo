@@ -1,235 +1,164 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Typography } from '@/components/Typography';
+import { ProfileSwitcher } from '@/components/ProfileSwitcher';
+import { useProfile } from '@/contexts/ProfileContext';
 
 export default function MenuScreen() {
-  const router = useRouter();
-
-  const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // Clear all stored data
-              await AsyncStorage.multiRemove(['authToken', 'userProfile']);
-              // Navigate back to welcome screen
-              router.replace('/welcome');
-            } catch (error) {
-              console.error('Error during logout:', error);
-              Alert.alert('Error', 'Failed to logout. Please try again.');
-            }
-          },
-        },
-      ]
-    );
-  };
+  const { activeProfile } = useProfile();
 
   const menuItems = [
     {
-      title: 'Profile',
-      subtitle: 'View and edit your profile',
+      id: '1',
+      title: 'Profile Settings',
+      description: 'Edit personal information and preferences',
       icon: '👤',
-      onPress: () => {
-        // TODO: Navigate to profile screen
-        Alert.alert('Coming Soon', 'Profile screen will be available soon');
-      },
+      action: () => console.log('Profile Settings')
     },
     {
+      id: '2',
       title: 'Payment Methods',
-      subtitle: 'Manage your payment cards and methods',
+      description: 'Manage cards and payment options',
       icon: '💳',
-      onPress: () => {
-        // TODO: Navigate to payment methods screen
-        Alert.alert('Coming Soon', 'Payment methods screen will be available soon');
-      },
+      action: () => console.log('Payment Methods')
     },
     {
-      title: 'Family Members',
-      subtitle: 'Add and manage family members',
-      icon: '👨‍👩‍👧‍👦',
-      onPress: () => {
-        // TODO: Navigate to family members screen
-        Alert.alert('Coming Soon', 'Family members screen will be available soon');
-      },
-    },
-    {
-      title: 'Saved Locations',
-      subtitle: 'Manage your home, work and other locations',
+      id: '3',
+      title: 'Saved Places',
+      description: 'Home, school, and favorite locations',
       icon: '📍',
-      onPress: () => {
-        // TODO: Navigate to saved locations screen
-        Alert.alert('Coming Soon', 'Saved locations screen will be available soon');
-      },
+      action: () => console.log('Saved Places')
     },
     {
-      title: 'Emergency Contacts',
-      subtitle: 'Add emergency contacts for safety',
-      icon: '🚨',
-      onPress: () => {
-        // TODO: Navigate to emergency contacts screen
-        Alert.alert('Coming Soon', 'Emergency contacts screen will be available soon');
-      },
-    },
-    {
-      title: 'Settings',
-      subtitle: 'App preferences and notifications',
+      id: '4',
+      title: 'Trip Preferences',
+      description: 'Set default options for rides',
       icon: '⚙️',
-      onPress: () => {
-        // TODO: Navigate to settings screen
-        Alert.alert('Coming Soon', 'Settings screen will be available soon');
-      },
+      action: () => console.log('Trip Preferences')
     },
     {
+      id: '5',
+      title: 'Safety Settings',
+      description: 'Emergency contacts and safety features',
+      icon: '🛡️',
+      action: () => console.log('Safety Settings'),
+      highlight: activeProfile?.type === 'child'
+    },
+    {
+      id: '6',
       title: 'Help & Support',
-      subtitle: 'Get help and contact support',
+      description: 'Get help and contact support',
       icon: '❓',
-      onPress: () => {
-        // TODO: Navigate to help screen
-        Alert.alert('Coming Soon', 'Help & Support screen will be available soon');
-      },
+      action: () => console.log('Help & Support')
     },
     {
-      title: 'Rate Our Service',
-      subtitle: 'Share your feedback with us',
-      icon: '⭐',
-      onPress: () => {
-        // TODO: Navigate to rating screen
-        Alert.alert('Coming Soon', 'Rating screen will be available soon');
-      },
-    },
-    {
-      title: 'Privacy Policy',
-      subtitle: 'Read our privacy policy',
-      icon: '🔒',
-      onPress: () => {
-        // TODO: Navigate to privacy policy screen
-        Alert.alert('Coming Soon', 'Privacy Policy screen will be available soon');
-      },
-    },
-    {
-      title: 'Terms of Service',
-      subtitle: 'Read our terms of service',
-      icon: '📋',
-      onPress: () => {
-        // TODO: Navigate to terms screen
-        Alert.alert('Coming Soon', 'Terms of Service screen will be available soon');
-      },
-    },
+      id: '7',
+      title: 'About YathraGo',
+      description: 'App version and information',
+      icon: 'ℹ️',
+      action: () => console.log('About YathraGo')
+    }
   ];
 
-  const renderMenuItem = (item: typeof menuItems[0], index: number) => (
-    <TouchableOpacity
-      key={index}
-      className="bg-white p-4 border-b border-gray-100 flex-row items-center"
-      onPress={item.onPress}
-    >
-      <View className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-4">
-        <Text className="text-lg">{item.icon}</Text>
-      </View>
-      
-      <View className="flex-1">
-        <Text className="text-base font-semibold text-gray-800 mb-1">
-          {item.title}
-        </Text>
-        <Text className="text-sm text-gray-600">
-          {item.subtitle}
-        </Text>
-      </View>
-      
-      <View className="ml-2">
-        <Text className="text-gray-400 text-lg">›</Text>
-      </View>
-    </TouchableOpacity>
-  );
-
   return (
-    <View className="flex-1 bg-gray-50">
-      <StatusBar style="dark" />
+    <SafeAreaView className="flex-1 bg-white">
+      <ProfileSwitcher />
       
-      {/* Header */}
-      <View className="bg-white px-6 pt-12 pb-4 border-b border-gray-200">
-        <Text className="text-2xl font-bold text-gray-800">Menu</Text>
-        <Text className="text-sm text-gray-600 mt-1">
-          Manage your account and preferences
-        </Text>
-      </View>
+      <ScrollView className="flex-1 px-4 py-6">
+        <View className="space-y-6">
+          {/* Header */}
+          <View className="space-y-2">
+            <Typography variant="headline-large" className="text-black">
+              Menu
+            </Typography>
+            <Typography variant="body-medium" className="text-brand-neutralGray">
+              {activeProfile?.type === 'child' 
+                ? `Manage your settings, ${activeProfile.name}`
+                : `Settings and preferences for ${activeProfile?.name}`
+              }
+            </Typography>
+          </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Profile Card */}
-        <View className="bg-white mx-4 mt-4 p-4 rounded-lg border border-gray-200">
-          <View className="flex-row items-center">
-            <View className="w-16 h-16 bg-brand-backgroundLight rounded-full items-center justify-center mr-4">
-              <Text className="text-2xl">👨‍💼</Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-lg font-bold text-gray-800">John Doe</Text>
-              <Text className="text-sm text-gray-600">+94 77 123 4567</Text>
-              <View className="flex-row items-center mt-1">
-                <View className="w-2 h-2 bg-brand-successGreen rounded-full mr-2" />
-                <Text className="text-sm text-green-600">Active Member</Text>
+          {/* Profile Summary */}
+          <View className="bg-brand-lightestBlue rounded-2xl p-6 space-y-4">
+            <View className="flex-row items-center">
+              <View className={`w-16 h-16 rounded-full items-center justify-center ${
+                activeProfile?.type === 'parent' ? 'bg-brand-brightOrange' : 'bg-brand-softOrange'
+              }`}>
+                <Typography variant="headline-medium" className="text-white">
+                  {activeProfile?.name.charAt(0).toUpperCase()}
+                </Typography>
+              </View>
+              <View className="ml-4 flex-1">
+                <Typography variant="headline-medium" className="text-black">
+                  {activeProfile?.name}
+                </Typography>
+                <Typography variant="body-medium" className="text-brand-neutralGray">
+                  {activeProfile?.type === 'parent' ? 'Parent Account' : 'Child Account'}
+                </Typography>
+                {activeProfile?.type === 'child' && activeProfile?.school && (
+                  <Typography variant="body-small" className="text-brand-neutralGray">
+                    {activeProfile.school}
+                  </Typography>
+                )}
               </View>
             </View>
           </View>
-        </View>
 
-        {/* Quick Actions */}
-        <View className="bg-white mx-4 mt-4 p-4 rounded-lg border border-gray-200">
-          <Text className="text-lg font-semibold text-gray-800 mb-3">Quick Actions</Text>
-          <View className="flex-row justify-between">
-            <TouchableOpacity className="items-center flex-1">
-              <View className="w-12 h-12 bg-brand-backgroundLight rounded-full items-center justify-center mb-2">
-                <Text className="text-xl">🚗</Text>
-              </View>
-              <Text className="text-xs text-gray-600 text-center">Book Ride</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className="items-center flex-1">
-              <View className="w-12 h-12 bg-brand-successBg rounded-full items-center justify-center mb-2">
-                <Text className="text-xl">💰</Text>
-              </View>
-              <Text className="text-xs text-gray-600 text-center">Payments</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className="items-center flex-1">
-              <View className="w-12 h-12 bg-purple-100 rounded-full items-center justify-center mb-2">
-                <Text className="text-xl">📞</Text>
-              </View>
-              <Text className="text-xs text-gray-600 text-center">Support</Text>
-            </TouchableOpacity>
+          {/* Menu Items */}
+          <View className="space-y-2">
+            {menuItems.map((item) => (
+              <TouchableOpacity 
+                key={item.id}
+                onPress={item.action}
+                className={`rounded-2xl p-4 border ${
+                  item.highlight 
+                    ? 'bg-brand-lightestBlue border-brand-deepNavy' 
+                    : 'bg-white border-brand-lightGray'                  }`}
+                >
+                  <View className="flex-row items-center">
+                    <View className={`w-12 h-12 rounded-full items-center justify-center ${
+                      item.highlight ? 'bg-brand-brightOrange' : 'bg-brand-lightGray'
+                    }`}>
+                      <Typography variant="label-large" className="text-white">
+                        {item.icon}
+                      </Typography>
+                    </View>
+                    
+                    <View className="ml-4 flex-1">
+                    <Typography 
+                      variant="label-large" 
+                      className={item.highlight ? "text-brand-deepNavy" : "text-black"}
+                    >
+                      {item.title}
+                    </Typography>
+                    <Typography 
+                      variant="body-medium" 
+                      className={item.highlight ? "text-black" : "text-brand-neutralGray"}
+                    >
+                      {item.description}
+                    </Typography>
+                  </View>
+                  
+                  <View className="w-6 h-6 items-center justify-center">
+                    <Typography variant="label-medium" className="text-brand-neutralGray">
+                      →
+                    </Typography>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
-        </View>
 
-        {/* Menu Items */}
-        <View className="mt-4">
-          {menuItems.map((item, index) => renderMenuItem(item, index))}
-        </View>
-
-        {/* Logout Button */}
-        <View className="p-4">
-          <TouchableOpacity
-            className="bg-brand-errorRed py-4 rounded-lg"
-            onPress={handleLogout}
-          >
-            <Text className="text-white text-center font-semibold text-lg">
-              Logout
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* App Version */}
-        <View className="items-center pb-8 pt-4">
-          <Text className="text-xs text-gray-500">YathraGo Customer v1.0.0</Text>
+          {/* App Version */}
+          <View className="items-center pt-4">
+            <Typography variant="body-small" className="text-brand-neutralGray">
+              YathraGo v1.0.0
+            </Typography>
+          </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
