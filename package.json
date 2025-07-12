@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "cloudinary": "^2.7.0",
-    "streamifier": "^0.1.1"
-  }
-}
