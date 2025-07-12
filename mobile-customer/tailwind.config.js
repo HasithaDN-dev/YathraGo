@@ -10,7 +10,12 @@ module.exports = {
   ],
   presets: [require("nativewind/preset")],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        'figtree': ['Figtree'],
+        'figtree-italic': ['Figtree-Italic'],
+      },
+    },
   },
   plugins: [],
 };
