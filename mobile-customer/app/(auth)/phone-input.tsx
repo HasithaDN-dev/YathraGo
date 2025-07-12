@@ -126,7 +126,7 @@ export default function PhoneInputScreen() {
       if (response.ok && data.success) {
         // Navigate to OTP verification screen
         router.push({
-          pathname: '/auth/otp-verification',
+          pathname: './otp-verification',
           params: {
             phone: formattedPhone,
             isNewUser: data.isNewUser?.toString() || 'false',

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, Styl
 import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApiUrl, API_CONFIG } from '../../config/api';
 
 export default function OtpVerificationScreen() {
@@ -92,8 +93,8 @@ export default function OtpVerificationScreen() {
 
       // Check if verification was successful
       if (response.ok && data.accessToken) {
-        // Store auth token (you can use AsyncStorage if needed)
-        // await AsyncStorage.setItem('authToken', data.accessToken);
+        // Store auth token to mark user as authenticated
+        await AsyncStorage.setItem('authToken', data.accessToken);
         
         console.log('OTP verification successful, navigating to main app');
         // Navigate to main app

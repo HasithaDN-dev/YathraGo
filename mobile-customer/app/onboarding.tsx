@@ -54,9 +54,9 @@ export default function OnboardingScreen() {
     if (currentIndex < onboardingData.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      // Mark onboarding as seen and navigate to phone auth
+      // Mark onboarding as seen and navigate to auth
       await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-      router.replace('/(tabs)'); // Will be redirected to auth in index.tsx
+      router.replace('/(auth)/phone-input');
     }
   };
 
@@ -68,12 +68,12 @@ export default function OnboardingScreen() {
 
   const handleSkip = async () => {
     await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-    router.replace('/(tabs)'); // Will be redirected to auth in index.tsx
+    router.replace('/(auth)/phone-input');
   };
 
   const handleGetStarted = async () => {
     await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-    router.replace('/(tabs)'); // Will be redirected to auth in index.tsx
+    router.replace('/(auth)/phone-input');
   };
 
   const isLastScreen = currentIndex === onboardingData.length - 1;

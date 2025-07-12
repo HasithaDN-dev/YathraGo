@@ -31,7 +31,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async sendGetStartedOtp(@Body() sendOtpDto: SendOtpDto) {
     this.logger.log(`OTP send request received for phone: ${sendOtpDto.phone}`);
-    
+
     // Additional phone number validation
     if (!sendOtpDto.phone.match(/^\+94[0-9]{9}$/)) {
       this.logger.warn(`Invalid phone number format: ${sendOtpDto.phone}`);
@@ -51,7 +51,7 @@ export class AuthController {
         error instanceof Error ? error.message : 'Unknown error';
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(`OTP send error: ${errorMessage}`, errorStack);
-      
+
       // Return user-friendly error messages
       if (errorMessage.includes('Phone number must be')) {
         return {
@@ -59,7 +59,7 @@ export class AuthController {
           error: errorMessage,
         };
       }
-      
+
       return {
         success: false,
         error: 'Unable to send OTP. Please try again later.',
@@ -102,7 +102,7 @@ export class AuthController {
         error instanceof Error ? error.message : 'Unknown error';
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(`OTP verify error: ${errorMessage}`, errorStack);
-      
+
       // Return user-friendly error messages
       if (errorMessage.includes('Invalid OTP code')) {
         return {
@@ -110,21 +110,21 @@ export class AuthController {
           error: 'Wrong OTP. Enter the correct OTP',
         };
       }
-      
+
       if (errorMessage.includes('expired')) {
         return {
           success: false,
           error: 'OTP has expired. Please request a new one',
         };
       }
-      
+
       if (errorMessage.includes('Too many failed attempts')) {
         return {
           success: false,
           error: 'Too many failed attempts. Please request a new OTP',
         };
       }
-      
+
       return {
         success: false,
         error: 'Unable to verify OTP. Please try again.',

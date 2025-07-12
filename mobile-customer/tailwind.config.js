@@ -22,6 +22,7 @@ module.exports = {
           'softOrange': '#fde63a',   // Soft accent
           'neutralGray': '#6b7280',  // Secondary text
           'lightGray': '#f3f4f6',    // Light backgrounds
+          'lightestBlue': '#e3f2fd', // Light blue background
         },
         
         // Basic colors

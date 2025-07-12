@@ -14,18 +14,15 @@ export default function IndexScreen() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        // Clear any demo data - comment this out after first run
+        // await AsyncStorage.clear(); // Disabled for testing proper navigation flow
+        
         // Check if user has seen onboarding
         const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
         
         // Check if user is authenticated
         const authToken = await AsyncStorage.getItem('authToken');
         const isAuthenticated = !!authToken;
-
-        // For testing the profile system, let's set temporary auth
-        if (!authToken) {
-          await AsyncStorage.setItem('authToken', 'demo_token');
-          await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-        }
 
         // Hide splash screen
         await SplashScreen.hideAsync();
@@ -35,7 +32,7 @@ export default function IndexScreen() {
           router.replace('/welcome');
         } else if (!isAuthenticated) {
           // User has seen onboarding but not authenticated
-          router.replace('/onboarding'); // Will navigate to auth after onboarding
+          router.replace('/(auth)/phone-input');
         } else {
           // User is authenticated - go to main app
           router.replace('/(tabs)');
