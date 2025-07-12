@@ -3,14 +3,14 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "expo start",
-    "start:clear": "expo start --clear",
-    "dev": "expo start --clear",
-    "android": "expo start --android --clear",
-    "android:dev": "expo start --android --clear",
-    "ios": "expo start --ios --clear",
-    "ios:dev": "expo start --ios --clear",
-    "web": "expo start --web",
+    "start": "expo start --port 8082",
+    "start:clear": "expo start --clear --port 8082",
+    "dev": "expo start --clear --port 8082",
+    "android": "expo start --android --clear --port 8082",
+    "android:dev": "expo start --android --clear --port 8082",
+    "ios": "expo start --ios --clear --port 8082",
+    "ios:dev": "expo start --ios --clear --port 8082",
+    "web": "expo start --web --port 8082",
     "lint": "expo lint"
   },
   "dependencies": {
