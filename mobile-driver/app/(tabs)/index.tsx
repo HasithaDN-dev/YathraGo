@@ -1,26 +1,23 @@
-import { View, Text } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-4xl">🚗</Text>
-        </View>
-      }>
+    <ScrollView className="flex-1 bg-white">
+      {/* Header */}
+      <View className="bg-success p-6 pt-12">
+        <Text className="text-white text-3xl font-bold text-center">🚗 YathraGo Driver</Text>
+        <Text className="text-green-100 text-center mt-2">Professional Ride Service Platform</Text>
+      </View>
       
       {/* YathraGo Driver Welcome Section */}
       <View className="flex-1 items-center justify-center bg-white p-6 mb-4 rounded-lg shadow-sm">
         <Text className="text-3xl font-bold text-green-600 mb-4">
           🚗 YathraGo Driver
         </Text>
-        <View className="bg-green-500 p-6 rounded-lg shadow-lg w-full">
+        <View className="bg-brand-successGreen p-6 rounded-lg shadow-lg w-full">
           <Text className="text-white text-center text-lg font-semibold">
             Professional Ride Service Platform
           </Text>
@@ -32,7 +29,7 @@ export default function HomeScreen() {
       
       {/* Driver Action Cards */}
       <View className="space-y-4 mb-6">
-        <View className="bg-green-600 p-6 rounded-lg shadow-sm">
+        <View className="bg-brand-successGreen p-6 rounded-lg shadow-sm">
           <Text className="text-white text-xl font-bold mb-2">
             � Go Online
           </Text>
@@ -41,16 +38,16 @@ export default function HomeScreen() {
           </Text>
         </View>
         
-        <View className="bg-blue-500 p-6 rounded-lg shadow-sm">
+        <View className="bg-brand-deepNavy p-6 rounded-lg shadow-sm">
           <Text className="text-white text-xl font-bold mb-2">
             📊 View Earnings
           </Text>
-          <Text className="text-blue-100 text-sm">
+          <Text className="text-brand-lightNavy text-sm">
             Track your daily and weekly income
           </Text>
         </View>
         
-        <View className="bg-orange-500 p-6 rounded-lg shadow-sm">
+        <View className="bg-brand-brightOrange p-6 rounded-lg shadow-sm">
           <Text className="text-white text-xl font-bold mb-2">
             🗺️ Navigation
           </Text>
@@ -62,7 +59,6 @@ export default function HomeScreen() {
 
       <ThemedView className="flex-row items-center gap-2">
         <ThemedText type="title">Driver Hub</ThemedText>
-        <HelloWave />
       </ThemedView>
       
       <ThemedView className="gap-2 mb-2">
@@ -85,6 +81,6 @@ export default function HomeScreen() {
           Use built-in navigation to reach passengers and complete rides safely and efficiently.
         </ThemedText>
       </ThemedView>
-    </ParallaxScrollView>
+    </ScrollView>
   );
 }

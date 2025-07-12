@@ -1,26 +1,33 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * YathraGo App Colors - Simplified for Tab Navigation & Components
+ * Main brand colors are handled by Tailwind CSS configuration
  */
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+// YathraGo Brand Colors (for JavaScript/React Navigation usage)
+const deepNavyBlue = '#143373';      // Primary brand color
+const neutralGray = '#6b7280';       // Secondary text/icons
+const white = '#ffffff';             // Background
+const black = '#000000';             // Primary text
 
 export const Colors = {
+  // For tab navigation (React Navigation requirement)
+  tabIconDefault: neutralGray,
+  tabIconSelected: deepNavyBlue,
+  
+  // For ThemedText/ThemedView components (simplified - no light/dark modes)
+  text: black,
+  background: white,
+  icon: neutralGray,
+  
+  // Simplified structure (removes theme complexity since you don't use light/dark mode)
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    text: black,
+    background: white,
+    icon: neutralGray,
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: black,  // Same as light since no dark mode
+    background: white,
+    icon: neutralGray,
   },
 };
