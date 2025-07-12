@@ -24,8 +24,8 @@ export class VehicleService {
   }
 
   //adding vehices of a paticular owner
-  async addVehicle(userID: number,data: any): Promise<CreateVehicleDto> {
-    const result = this.prisma.vehicle.create({
+  async addVehicle(userID: number,data: any): Promise<any> {
+    const result = await this.prisma.vehicle.create({
       data:{
         ...data,
         ownerId: userID,
@@ -40,6 +40,55 @@ export class VehicleService {
       }
     });
 
-    return result;
+       return {
+        success: true,
+        message: 'Vehicle added successfully',
+        data: result,
+      };
+  }
+
+  //update vehcile details
+  async updateVehicle(id: number, vehicleDto: any): Promise<any> {
+    const vehicle = await this.prisma.vehicle.findUnique({
+      where: { id }
+    });
+
+    if (!vehicle) {
+      throw new NotFoundException('Vehicle not found');
+    }
+
+    //console.log(vehicleDto);
+
+    const updatedVehicle = await this.prisma.vehicle.update({
+      where: { 
+        id:id },
+      data: { ...vehicleDto }
+    });
+
+    return {
+      success: true,
+      message: 'Vehicle updated successfully',
+      data: updatedVehicle,
+    };
+  }
+
+  //deleting a vehicle
+  async deleteVehicle(id:number):Promise<any> {
+    
+    const vehicle = await this.prisma.vehicle.findUnique({
+      where: { id }
+    });
+
+    if (!vehicle) {
+      throw new NotFoundException('Vehicle not found');
+    }
+
+    await this.prisma.vehicle.delete({
+      where: { id }
+    });
+
+    return {
+      message: 'Vehicle deleted successfully',
+    }
   }
 }

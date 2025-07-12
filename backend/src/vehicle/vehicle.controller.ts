@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, ParseIntPipe, Post, Req, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Req, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { VehicleService } from './vehicle.service';
 import { User } from 'src/auth-web/decorators';
@@ -40,7 +40,6 @@ export class VehicleController {
             {name:'vehicle_reg',maxCount:1}
 
         ], multerConfigVehicle))
-
 
         async addVehicle(
             @UploadedFiles() files: {
@@ -104,7 +103,26 @@ export class VehicleController {
 
            //console.log(vehicleData,user.id);
             return this.vehicleService.addVehicle(user.id, vehicleData);
-}
+        }
+
+        //update vehicle details of the owner
+        @UseGuards(JwtGuard,RolesGuard)
+        @Patch('owner/update-vehicle/:id')
+        @Roles('owner')
+        async updateVehicle(@Param('id',ParseIntPipe) id:number,@Body() vehicleDto: any): Promise<any> {
+
+            //console.log(vehicleDto,id);
+            return this.vehicleService.updateVehicle(id,vehicleDto);
+        }
+
+
+        //delete vehicle of the owner
+        @UseGuards(JwtGuard,RolesGuard)
+        @Delete('owner/delete-vehicle/:id')
+        @Roles('owner')
+        async deleteVehicle(@Param('id',ParseIntPipe) id:number):Promise<any> {
+            return this.vehicleService.deleteVehicle(id);
+        }
 
     
 
