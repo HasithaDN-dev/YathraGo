@@ -76,7 +76,6 @@ export default function VerifyOTPScreen() {
         // Store auth token and user data
         await AsyncStorage.setItem('authToken', data.token);
         await AsyncStorage.setItem('userProfile', JSON.stringify(data.user));
-        await AsyncStorage.setItem('hasSeenOnboarding', 'true');
         
         // Navigate to main app
         router.replace('/(tabs)');

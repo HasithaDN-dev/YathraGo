@@ -28,19 +28,18 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        {/* Initial screens - accessible to all users */}
-        <Stack.Screen name="index" options={{ headerShown: false }} />
+        {/* Entry point - splash screen accessible to all users */}
         <Stack.Screen name="splash" options={{ headerShown: false }} />
 
         {/* Protected routes - only accessible when authenticated */}
-        <Stack.Protected guard={isAuthenticated}>
+        <Stack.Protected guard={isAuthenticated === true}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         </Stack.Protected>
 
         {/* Unauthenticated user routes */}
-        <Stack.Protected guard={!isAuthenticated}>
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Protected guard={isAuthenticated === false}>
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         </Stack.Protected>
 
         <Stack.Screen name="+not-found" />

@@ -8,6 +8,9 @@
     "scheme": "mobilecustomer",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
       "supportsTablet": true
     },

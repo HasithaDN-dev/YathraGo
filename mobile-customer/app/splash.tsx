@@ -3,25 +3,30 @@ import { View, Animated } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import * as SplashScreen from 'expo-splash-screen';
+import * as ExpSplashScreen from 'expo-splash-screen';
+import { useAuthState } from '@/hooks/useAuthState';
 
-// Prevent splash screen from showing immediately
-SplashScreen.preventAutoHideAsync().then(() => {
-  SplashScreen.hideAsync();
-});
+// Prevent splash screen from auto-hiding
+ExpSplashScreen.preventAutoHideAsync();
 
-export default function WelcomeScreen() {
+export default function SplashScreen() {
   const router = useRouter();
+  const { isAuthenticated } = useAuthState();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.1)).current;
 
   const handleNavigation = useCallback(() => {
-    router.replace('./onboarding');
-  }, [router]);
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    } else {
+      // All unauthenticated users go through onboarding for consistent experience
+      router.replace('./onboarding');
+    }
+  }, [router, isAuthenticated]);
 
   useEffect(() => {
-    // Immediately hide the default splash screen to prevent it from showing
-    SplashScreen.hideAsync();
+    // Hide the default Expo splash screen
+    ExpSplashScreen.hideAsync();
 
     // Start animations immediately
     Animated.parallel([
@@ -38,7 +43,7 @@ export default function WelcomeScreen() {
       })
     ]).start();
 
-    // Auto navigate to main app after 3 seconds
+    // Auto navigate after 3 seconds
     const navTimer = setTimeout(() => {
       handleNavigation();
     }, 3000);
