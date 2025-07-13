@@ -8,6 +8,7 @@ import '../global.css';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useAuthState } from '@/hooks/useAuthState';
+import { ProfileProvider } from '@/contexts/ProfileContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -26,25 +27,27 @@ export default function RootLayout() {
   }
 
   return (
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          {/* Entry point - splash screen accessible to all users */}
-          <Stack.Screen name="splash" options={{ headerShown: false }} />
+      <ProfileProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack>
+            {/* Entry point - splash screen accessible to all users */}
+            <Stack.Screen name="splash" options={{ headerShown: false }} />
 
-          {/* Protected routes - only accessible when authenticated */}
-          <Stack.Protected guard={isAuthenticated === true}>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          </Stack.Protected>
+            {/* Protected routes - only accessible when authenticated */}
+            <Stack.Protected guard={isAuthenticated === true}>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            </Stack.Protected>
 
-          {/* Unauthenticated user routes */}
-          <Stack.Protected guard={isAuthenticated === false}>
-            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          </Stack.Protected>
+            {/* Unauthenticated user routes */}
+            <Stack.Protected guard={isAuthenticated === false}>
+              <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            </Stack.Protected>
 
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </ProfileProvider>
   );
 }
