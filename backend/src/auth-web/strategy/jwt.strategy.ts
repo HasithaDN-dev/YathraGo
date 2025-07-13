@@ -6,8 +6,10 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'web-jwt') {
-  constructor(config: ConfigService, private prisma:PrismaService) {
-    
+  constructor(
+    config: ConfigService,
+    private prisma: PrismaService,
+  ) {
     const secret = config.get<string>('WEB_JWT_SECRET');
     if (!secret) {
       throw new Error('WEB_JWT_SECRET is not defined in .env');
@@ -19,15 +21,14 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'web-jwt') {
     });
   }
 
-  async validate(payload: {sub:number,email:string,role:string}) {
-
+  async validate(payload: { sub: number; email: string; role: string }) {
     const user = await this.prisma.webuser.findUnique({
-      where: { id: payload.sub }
+      where: { id: payload.sub },
     });
     if (!user) {
       throw new UnauthorizedException('User not found'); // or throw new UnauthorizedException();
     }
     const { password, ...userWithoutPassword } = user;
     return userWithoutPassword;
-}
+  }
 }

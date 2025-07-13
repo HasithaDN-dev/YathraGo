@@ -17,16 +17,16 @@ export class VehicleService {
       },
     });
 
-   if (vehicleList.length === 0) {
-    throw new NotFoundException('No vehicle found');
+    if (vehicleList.length === 0) {
+      throw new NotFoundException('No vehicle found');
     }
     return vehicleList;
   }
 
   //adding vehices of a paticular owner
-  async addVehicle(userID: number,data: any): Promise<any> {
+  async addVehicle(userID: number, data: any): Promise<any> {
     const result = await this.prisma.vehicle.create({
-      data:{
+      data: {
         ...data,
         ownerId: userID,
         rear_picture_url: data.rear_picture_url,
@@ -37,20 +37,20 @@ export class VehicleService {
         insurance_front_url: data.insurance_front_url,
         insurance_back_url: data.insurance_back_url,
         vehicle_reg_url: data.vehicle_reg_url,
-      }
+      },
     });
 
-       return {
-        success: true,
-        message: 'Vehicle added successfully',
-        data: result,
-      };
+    return {
+      success: true,
+      message: 'Vehicle added successfully',
+      data: result,
+    };
   }
 
   //update vehcile details
   async updateVehicle(id: number, vehicleDto: any): Promise<any> {
     const vehicle = await this.prisma.vehicle.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!vehicle) {
@@ -60,9 +60,10 @@ export class VehicleService {
     //console.log(vehicleDto);
 
     const updatedVehicle = await this.prisma.vehicle.update({
-      where: { 
-        id:id },
-      data: { ...vehicleDto }
+      where: {
+        id: id,
+      },
+      data: { ...vehicleDto },
     });
 
     return {
@@ -73,10 +74,9 @@ export class VehicleService {
   }
 
   //deleting a vehicle
-  async deleteVehicle(id:number):Promise<any> {
-    
+  async deleteVehicle(id: number): Promise<any> {
     const vehicle = await this.prisma.vehicle.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!vehicle) {
@@ -84,11 +84,11 @@ export class VehicleService {
     }
 
     await this.prisma.vehicle.delete({
-      where: { id }
+      where: { id },
     });
 
     return {
       message: 'Vehicle deleted successfully',
-    }
+    };
   }
 }

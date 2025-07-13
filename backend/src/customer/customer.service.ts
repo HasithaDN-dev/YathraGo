@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterStaffPassengerDto } from './dto/register_staff_passenger.dto';
 import { RegisterChildDto } from './dto/register-child.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { BadRequestException } from '@nestjs/common/exceptions/bad-request.exception';
 @Injectable()
 export class CustomerService {
@@ -73,5 +74,46 @@ export class CustomerService {
     });
 
     return { success: true, message: 'Child registered.' };
+  }
+
+  async getCustomerProfile(customerId: string) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { customer_id: parseInt(customerId) },
+      include: {
+        children: true,
+        staffPassenger: true,
+      },
+    });
+
+    if (!customer) {
+      throw new BadRequestException('Customer not found');
+    }
+
+    return {
+      success: true,
+      profile: customer,
+    };
+  }
+
+  async updateCustomerProfile(
+    customerId: string,
+    profileData: UpdateProfileDto,
+  ) {
+    const updatedCustomer = await this.prisma.customer.update({
+      where: { customer_id: parseInt(customerId) },
+      data: {
+        name: profileData?.name || '',
+        email: profileData?.email || '',
+        address: profileData?.address || '',
+        profileImageUrl: profileData?.profileImageUrl || '',
+        emergencyContact: profileData?.emergencyContact || '',
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Profile updated successfully',
+      profile: updatedCustomer,
+    };
   }
 }

@@ -18,7 +18,6 @@ import { multerConfigVehicle } from './services/multer.config';
     DummySmsGateway,
     SmsGateSmsGateway,
     OtpService,
-    
   ],
   exports: [PrismaService, SmsService, OtpService],
 })

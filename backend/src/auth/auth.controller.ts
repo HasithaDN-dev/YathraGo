@@ -1,20 +1,132 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SendOtpDto, VerifyOtpDto } from '../common/dto/auth.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { UserType } from '@prisma/client';
+
+interface AuthenticatedRequest {
+  user: {
+    sub: string;
+    phone: string;
+    userType: UserType;
+    isVerified: boolean;
+  };
+}
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @Post('get-started/send-otp')
+  // Customer authentication endpoints
+  @Post('customer/send-otp')
   @HttpCode(HttpStatus.OK)
-  async sendGetStartedOtp(@Body() sendOtpDto: SendOtpDto) {
+  async sendCustomerOtp(@Body() body: { phone: string }) {
+    const sendOtpDto = {
+      phone: body.phone,
+      userType: 'CUSTOMER' as const,
+    };
     return this.authService.sendGetStartedOtp(sendOtpDto);
   }
 
-  @Post('get-started/verify-otp')
+  @Post('customer/verify-otp')
   @HttpCode(HttpStatus.OK)
-  async verifyGetStartedOtp(@Body() verifyOtpDto: VerifyOtpDto) {
+  async verifyCustomerOtp(@Body() body: { phone: string; otp: string }) {
+    const verifyOtpDto = {
+      phone: body.phone,
+      otp: body.otp,
+      userType: 'CUSTOMER' as const,
+    };
     return this.authService.verifyGetStartedOtp(verifyOtpDto);
+  }
+
+  @Post('customer/refresh-token')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  refreshCustomerToken(@Request() req: AuthenticatedRequest) {
+    return this.authService.refreshToken(req.user);
+  }
+
+  @Post('customer/validate-token')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  validateCustomerToken(@Request() req: AuthenticatedRequest) {
+    return {
+      valid: true,
+      user: req.user,
+      message: 'Token is valid',
+    };
+  }
+
+  @Post('customer/logout')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  logoutCustomer(@Request() req: AuthenticatedRequest) {
+    return this.authService.logout(req.user);
+  }
+
+  // Driver authentication endpoints
+  @Post('driver/send-otp')
+  @HttpCode(HttpStatus.OK)
+  async sendDriverOtp(@Body() body: { phone: string }) {
+    const sendOtpDto = {
+      phone: body.phone,
+      userType: 'DRIVER' as const,
+    };
+    return this.authService.sendGetStartedOtp(sendOtpDto);
+  }
+
+  @Post('driver/verify-otp')
+  @HttpCode(HttpStatus.OK)
+  async verifyDriverOtp(@Body() body: { phone: string; otp: string }) {
+    const verifyOtpDto = {
+      phone: body.phone,
+      otp: body.otp,
+      userType: 'DRIVER' as const,
+    };
+    return this.authService.verifyGetStartedOtp(verifyOtpDto);
+  }
+
+  @Post('driver/refresh-token')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  refreshDriverToken(@Request() req: AuthenticatedRequest) {
+    return this.authService.refreshToken(req.user);
+  }
+
+  @Post('driver/validate-token')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  validateDriverToken(@Request() req: AuthenticatedRequest) {
+    return {
+      valid: true,
+      user: req.user,
+      message: 'Token is valid',
+    };
+  }
+
+  @Post('driver/logout')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  logoutDriver(@Request() req: AuthenticatedRequest) {
+    return this.authService.logout(req.user);
+  }
+
+  // Utility endpoints for mobile apps
+  @Post('validate-token')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  validateToken(@Request() req: AuthenticatedRequest) {
+    return {
+      valid: true,
+      user: req.user,
+      message: 'Token is valid',
+    };
   }
 }

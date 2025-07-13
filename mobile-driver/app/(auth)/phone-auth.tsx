@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function PhoneAuthScreen() {
   const router = useRouter();
+  const { sendOtp } = useAuth();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -45,28 +47,19 @@ export default function PhoneAuthScreen() {
 
     setIsLoading(true);
     try {
-      // TODO: Replace with your actual API call
-      const response = await fetch('YOUR_API_ENDPOINT/auth/send-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          phoneNumber: phoneNumber,
-        }),
+      const result = await sendOtp(phoneNumber);
+      
+      // Navigate to OTP verification screen  
+      router.push({
+        pathname: '/(auth)/verify-otp',
+        params: { 
+          phoneNumber, 
+          isNewUser: result.isNewUser || false
+        }
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Navigate to OTP verification screen  
-        router.push('/onboarding'); // Temporary navigation - will be updated when routes are properly configured
-      } else {
-        Alert.alert('Error', data.message || 'Failed to send OTP');
-      }
     } catch (error) {
       console.error('Send OTP error:', error);
-      Alert.alert('Error', 'Network error. Please try again.');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Network error. Please try again.');
     } finally {
       setIsLoading(false);
     }
