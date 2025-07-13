@@ -27,3 +27,29 @@ export interface ButtonProps {
   className?: string;
   onPress?: () => void;
 }
+
+// Input field types
+export type InputVariant = 'default' | 'outline' | 'ghost' | 'error' | 'success';
+
+// Input field component props
+export interface InputProps {
+  label?: string;
+  placeholder?: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  variant?: InputVariant;
+  textSize?: YathraGoTextSize;
+  IconLeft?: React.ComponentType<any>;
+  IconRight?: React.ComponentType<any>;
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad' | 'url';
+  secureTextEntry?: boolean;
+  maxLength?: number;
+  editable?: boolean;
+  multiline?: boolean;
+  numberOfLines?: number;
+  error?: string;
+  helperText?: string;
+  className?: string;
+  onFocus?: () => void;
+  onBlur?: () => void;
+}

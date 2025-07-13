@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Alert } from 'react-native';
+import { View, Text, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Phone } from 'phosphor-react-native';
 import { useAuth } from '../../hooks/useAuth';
 import CustomButton from '../../components/ui/CustomButton';
+import InputField from '../../components/ui/InputField';
 
 export default function PhoneAuthScreen() {
   const router = useRouter();
@@ -80,20 +82,18 @@ export default function PhoneAuthScreen() {
       </View>
 
       <View className="space-y-4">
-        <View>
-          <Text className="text-sm font-medium text-black mb-2">Phone Number</Text>
-          <TextInput
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg"
-            placeholder="+94 77 123 4567"
-            value={phoneNumber}
-            onChangeText={handlePhoneChange}
-            keyboardType="phone-pad"
-            maxLength={13}
-          />
-          <Text className="text-xs text-gray-500 mt-1">
-            We&apos;ll send you a verification code
-          </Text>
-        </View>
+        <InputField
+          label="Phone Number"
+          placeholder="+94 77 123 4567"
+          value={phoneNumber}
+          onChangeText={handlePhoneChange}
+          keyboardType="phone-pad"
+          maxLength={13}
+          IconLeft={Phone}
+          helperText="We'll send you a verification code"
+          variant="outline"
+          textSize="body-medium"
+        />
 
         <CustomButton
           title={isLoading ? 'Sending OTP...' : 'Send OTP'}
