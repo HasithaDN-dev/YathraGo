@@ -75,7 +75,7 @@ export default function PhoneAuthScreen() {
           Welcome to YathraGo
         </Text>
         <Text className="text-base text-center text-brand-neutralGray">
-          Enter your phone number to book your ride
+          Enter your phone number to continue
         </Text>
       </View>
 
