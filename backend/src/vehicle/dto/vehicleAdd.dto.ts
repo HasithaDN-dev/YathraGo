@@ -1,4 +1,10 @@
-import { IsString, IsInt, IsBoolean, IsArray, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsBoolean,
+  IsArray,
+  IsNotEmpty,
+} from 'class-validator';
 
 export class CreateVehicleDto {
   @IsString()

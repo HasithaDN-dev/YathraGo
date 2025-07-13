@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity } from 'react-native';
-import { Image } from 'expo-image';
+import { View, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Typography } from '@/components/Typography';
 
 const onboardingData = [
@@ -44,13 +42,12 @@ export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentItem = onboardingData[currentIndex];
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (currentIndex < onboardingData.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      // Mark onboarding as seen and navigate to phone auth
-      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-      router.replace('/(tabs)'); // Will be redirected to auth in index.tsx
+      // Navigate to phone auth after completing onboarding
+      router.replace('/(auth)/phone-auth');
     }
   };
 
@@ -60,14 +57,12 @@ export default function OnboardingScreen() {
     }
   };
 
-  const handleSkip = async () => {
-    await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-    router.replace('/(tabs)'); // Will be redirected to auth in index.tsx
+  const handleSkip = () => {
+    router.replace('/(auth)/phone-auth');
   };
 
-  const handleGetStarted = async () => {
-    await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-    router.replace('/(tabs)'); // Will be redirected to auth in index.tsx
+  const handleGetStarted = () => {
+    router.replace('/(auth)/phone-auth');
   };
 
   const isLastScreen = currentIndex === onboardingData.length - 1;
@@ -90,18 +85,18 @@ export default function OnboardingScreen() {
           <View className="mb-6">
             <Image
               source={require('../assets/images/logo.png')}
-              className="w-42 h-42"
-              contentFit="contain"
+              className="w-40 h-40"
+              resizeMode="contain"
             />
           </View>
         )}
 
         {/* Image */}
-        <View className="w-80 h-80 mb-8">
+        <View className="mb-8">
           <Image
             source={currentItem.image}
-            className="w-full h-full rounded-2xl"
-            contentFit="contain"
+            className="w-72 h-72 rounded-2xl"
+            resizeMode="contain"
           />
         </View>
 

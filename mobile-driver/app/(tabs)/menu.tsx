@@ -23,8 +23,8 @@ export default function MenuScreen() {
             try {
               // Clear all stored data
               await AsyncStorage.multiRemove(['authToken', 'userProfile']);
-              // Navigate back to welcome screen
-              router.replace('/welcome');
+              // Navigate back to splash screen
+              router.replace('/splash');
             } catch (error) {
               console.error('Error during logout:', error);
               Alert.alert('Error', 'Failed to logout. Please try again.');

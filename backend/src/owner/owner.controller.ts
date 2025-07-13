@@ -1,7 +1,4 @@
 import { Controller } from '@nestjs/common';
 
 @Controller('owner')
-export class OwnerController {
-
-   
-}
+export class OwnerController {}
