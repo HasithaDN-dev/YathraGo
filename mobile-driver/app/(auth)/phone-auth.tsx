@@ -17,13 +17,12 @@ export default function PhoneAuthScreen() {
     // Remove all non-digits
     const cleaned = text.replace(/\D/g, '');
     
-    // Add country code if not present
-    if (cleaned.length > 0 && !cleaned.startsWith('94')) {
-      return '+94' + cleaned;
-    } else if (cleaned.length > 0) {
-      return '+' + cleaned;
+    // Limit to 10 digits max for display
+    if (cleaned.length > 10) {
+      return cleaned.substring(0, 10);
     }
-    return text;
+    
+    return cleaned;
   };
 
   const handlePhoneChange = (text: string) => {
@@ -33,8 +32,28 @@ export default function PhoneAuthScreen() {
 
   const validatePhoneNumber = (phone: string) => {
     // Sri Lankan phone number validation
-    const phoneRegex = /^\+94[0-9]{9}$/;
-    return phoneRegex.test(phone);
+    // Accept 9 digits (without leading 0) or 10 digits (with leading 0)
+    const phone9Digits = /^[1-9][0-9]{8}$/; // 9 digits without leading 0
+    const phone10Digits = /^0[1-9][0-9]{8}$/; // 10 digits with leading 0
+    
+    return phone9Digits.test(phone) || phone10Digits.test(phone);
+  };
+
+  const convertToApiFormat = (phone: string) => {
+    // Remove any non-digits
+    const cleaned = phone.replace(/\D/g, '');
+    
+    // If 10 digits with leading 0, remove the leading 0
+    if (cleaned.length === 10 && cleaned.startsWith('0')) {
+      return '+94' + cleaned.substring(1);
+    }
+    
+    // If 9 digits, add +94 prefix
+    if (cleaned.length === 9) {
+      return '+94' + cleaned;
+    }
+    
+    return '+94' + cleaned;
   };
 
   const handleSendOTP = async () => {
@@ -44,19 +63,22 @@ export default function PhoneAuthScreen() {
     }
 
     if (!validatePhoneNumber(phoneNumber)) {
-      Alert.alert('Error', 'Please enter a valid Sri Lankan phone number');
+      Alert.alert('Error', 'Please enter a valid Sri Lankan phone number (9 or 10 digits)');
       return;
     }
 
+    // Convert to API format (+94XXXXXXXXX)
+    const apiPhoneNumber = convertToApiFormat(phoneNumber);
+
     setIsLoading(true);
     try {
-      const result = await sendOtp(phoneNumber);
+      const result = await sendOtp(apiPhoneNumber);
       
-      // Navigate to OTP verification screen  
+      // Navigate to OTP verification screen with the API format phone number
       router.push({
         pathname: '/(auth)/verify-otp',
         params: { 
-          phoneNumber, 
+          phoneNumber: apiPhoneNumber, 
           isNewUser: result.isNewUser || false
         }
       });
@@ -84,11 +106,11 @@ export default function PhoneAuthScreen() {
       <View className="space-y-4">
         <InputField
           label="Phone Number"
-          placeholder="+94 77 123 4567"
+          placeholder="07XXXXXXXX"
           value={phoneNumber}
           onChangeText={handlePhoneChange}
           keyboardType="phone-pad"
-          maxLength={13}
+          maxLength={10}
           IconLeft={Phone}
           helperText="We'll send you a verification code"
           variant="outline"
