@@ -17,7 +17,7 @@ module.exports = {
           'deepNavy': '#143373',     // Primary brand color
           'brightOrange': '#fdc334', // Secondary brand color
           'warmYellow': '#faaa21',   // Accent color
-          'goldenYellow': '#ffb425', // Accent color
+          'navyBlue': '#1F4EAD',     // Accent color
           'lightNavy': '#2d4a8a',    // Light brand color
           'softOrange': '#fde63a',   // Soft accent
           'neutralGray': '#6b7280',  // Secondary text

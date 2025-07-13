@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../hooks/useAuth';
+import CustomButton from '../../components/ui/CustomButton';
 
 export default function PhoneAuthScreen() {
   const router = useRouter();
@@ -94,15 +95,16 @@ export default function PhoneAuthScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity
-          className={`w-full py-4 rounded-lg mt-6 ${isLoading ? 'bg-gray-400' : 'bg-brand-deepNavy'}`}
+        <CustomButton
+          title={isLoading ? 'Sending OTP...' : 'Send OTP'}
+          bgVariant="primary"
+          textVariant="white"
+          textSize="body-large"
+          loading={isLoading}
           onPress={handleSendOTP}
-          disabled={isLoading}
-        >
-          <Text className="text-white text-center font-semibold text-lg">
-            {isLoading ? 'Sending OTP...' : 'Send OTP'}
-          </Text>
-        </TouchableOpacity>
+          fullWidth={true}
+          className="mt-6"
+        />
 
         <View className="mt-6">
           <Text className="text-xs text-center text-gray-500">

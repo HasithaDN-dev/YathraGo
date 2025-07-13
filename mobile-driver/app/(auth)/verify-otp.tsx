@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, Alert, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ApiService } from '../../services/api';
+import CustomButton from '../../components/ui/CustomButton';
 
 export default function VerifyOTPScreen() {
   const router = useRouter();
-  const { phoneNumber, isNewUser } = useLocalSearchParams<{
+  const { phoneNumber } = useLocalSearchParams<{
     phoneNumber: string;
     isNewUser: string;
   }>();
@@ -151,40 +152,41 @@ export default function VerifyOTPScreen() {
           ))}
         </View>
 
-        <TouchableOpacity
-          className={`w-full py-4 rounded-lg ${isLoading ? 'bg-gray-400' : 'bg-brand-deepNavy'}`}
+        <CustomButton
+          title={isLoading ? 'Verifying...' : 'Verify OTP'}
+          bgVariant="primary"
+          textVariant="white"
+          textSize="body-large"
+          loading={isLoading}
           onPress={handleVerifyOTP}
-          disabled={isLoading}
-        >
-          <Text className="text-white text-center font-semibold text-lg">
-            {isLoading ? 'Verifying...' : 'Verify OTP'}
-          </Text>
-        </TouchableOpacity>
+          fullWidth={true}
+        />
 
-        {/* Resend OTP */}
-        <View className="items-center">
-          {canResend ? (
+        {/* Resend OTP - text button */}
+        {canResend ? (
+          <View className="items-center mt-4">
             <TouchableOpacity onPress={handleResendOTP}>
-              <Text className="text-brand-deepNavy font-semibold">
+              <Text className="text-brand-warmYellow font-semibold text-body-medium">
                 Resend OTP
               </Text>
             </TouchableOpacity>
-          ) : (
+          </View>
+        ) : (
+          <View className="items-center mt-4">
             <Text className="text-gray-500">
               Resend OTP in {resendTimer}s
             </Text>
-          )}
-        </View>
+          </View>
+        )}
 
-        {/* Change number */}
-        <TouchableOpacity
-          className="w-full py-3"
-          onPress={() => router.back()}
-        >
-          <Text className="text-gray-600 text-center font-semibold">
-            Change Phone Number
-          </Text>
-        </TouchableOpacity>
+        {/* Change number - text button */}
+        <View className="items-center mt-4">
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text className="text-gray-600 font-semibold text-body-medium">
+              Change Phone Number
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
