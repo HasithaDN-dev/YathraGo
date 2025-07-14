@@ -41,7 +41,7 @@ export default function StaffStep1Screen() {
 
     try {
       await AsyncStorage.setItem('staffRegistrationStep1', JSON.stringify(formData));
-      router.push('./staff-step2');
+      router.push('/(registration)/staff-step2');
     } catch {
       Alert.alert('Error', 'Failed to save data. Please try again.');
     }
