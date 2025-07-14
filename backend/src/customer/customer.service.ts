@@ -71,7 +71,10 @@ export class CustomerService {
   }
 
   async registerChild(dto: RegisterChildDto) {
-    console.log('[BACKEND] [SERVICE] registerChild - Input:', JSON.stringify(dto, null, 2));
+    console.log(
+      '[BACKEND] [SERVICE] registerChild - Input:',
+      JSON.stringify(dto, null, 2),
+    );
 
     try {
       // Use transaction to ensure data consistency and proper connection management

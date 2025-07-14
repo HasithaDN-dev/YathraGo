@@ -40,8 +40,15 @@ export class CustomerController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   async registerChild(@Body() dto: RegisterChildDto) {
-    console.log('[BACKEND] [CONTROLLER] Child Registration - DTO received:', JSON.stringify(dto, null, 2));
-    console.log('[BACKEND] [CONTROLLER] Type of customerId:', typeof dto.customerId, dto.customerId);
+    console.log(
+      '[BACKEND] [CONTROLLER] Child Registration - DTO received:',
+      JSON.stringify(dto, null, 2),
+    );
+    console.log(
+      '[BACKEND] [CONTROLLER] Type of customerId:',
+      typeof dto.customerId,
+      dto.customerId,
+    );
     console.log(
       '[BACKEND] [CONTROLLER] DTO prototype:',
       Object.getPrototypeOf(dto),

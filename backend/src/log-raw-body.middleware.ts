@@ -5,23 +5,9 @@ import { Request, Response, NextFunction } from 'express';
 export class LogRawBodyMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     if (req.originalUrl.includes('/customer/register-child')) {
-      let rawBody = '';
-      req.on('data', (chunk) => {
-        rawBody += chunk;
-      });
-      req.on('end', () => {
-        try {
-          console.log('[RAW BODY] /customer/register-child:', rawBody);
-        } catch (e) {
-          console.log(
-            '[RAW BODY] /customer/register-child: [unparsable]',
-            rawBody,
-          );
-        }
-        next();
-      });
-    } else {
-      next();
+      // Log the parsed body, not the raw stream
+      console.log('[BODY] /customer/register-child:', req.body);
     }
+    next();
   }
 }
