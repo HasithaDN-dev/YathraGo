@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
 import { ProfileSwitcher } from '@/components/ProfileSwitcher';
 import { useProfile } from '@/contexts/ProfileContext';
+import { resetAppState, getAppState } from '../../utils/resetAppState';
 
 export default function MenuScreen() {
   const { activeProfile } = useProfile();
@@ -61,6 +62,26 @@ export default function MenuScreen() {
     }
   ];
 
+  // Development menu items (only show in development)
+  const devMenuItems = __DEV__ ? [
+    {
+      id: 'dev1',
+      title: 'Reset App State',
+      description: 'Clear all data and restart as new user',
+      icon: '🔄',
+      action: resetAppState,
+      highlight: true
+    },
+    {
+      id: 'dev2',
+      title: 'Debug App State',
+      description: 'Log current app state to console',
+      icon: '🐛',
+      action: getAppState,
+      highlight: false
+    }
+  ] : [];
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ProfileSwitcher />
@@ -108,7 +129,7 @@ export default function MenuScreen() {
 
           {/* Menu Items */}
           <View className="space-y-2">
-            {menuItems.map((item) => (
+            {[...menuItems, ...devMenuItems].map((item) => (
               <TouchableOpacity 
                 key={item.id}
                 onPress={item.action}
@@ -150,6 +171,61 @@ export default function MenuScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* Development Tools (Only in dev mode) */}
+          {__DEV__ && (
+            <View className="mt-6">
+              <Typography variant="title-large" className="text-black mb-4">
+                Developer Tools
+              </Typography>
+              
+              <View className="space-y-2">
+                <TouchableOpacity
+                  className="bg-brand-lightGray p-4 rounded-xl"
+                  onPress={() => resetAppState()}
+                >
+                  <View className="flex-row items-center">
+                    <View className="w-12 h-12 rounded-full items-center justify-center bg-red-500">
+                      <Typography variant="label-large" className="text-white">
+                        🔄
+                      </Typography>
+                    </View>
+                    
+                    <View className="ml-4 flex-1">
+                      <Typography variant="label-large" className="text-black">
+                        Reset App State
+                      </Typography>
+                      <Typography variant="body-medium" className="text-brand-neutralGray">
+                        Clear all data and restart as new user
+                      </Typography>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  className="bg-brand-lightGray p-4 rounded-xl"
+                  onPress={() => getAppState()}
+                >
+                  <View className="flex-row items-center">
+                    <View className="w-12 h-12 rounded-full items-center justify-center bg-blue-500">
+                      <Typography variant="label-large" className="text-white">
+                        🔍
+                      </Typography>
+                    </View>
+                    
+                    <View className="ml-4 flex-1">
+                      <Typography variant="label-large" className="text-black">
+                        Debug App State
+                      </Typography>
+                      <Typography variant="body-medium" className="text-brand-neutralGray">
+                        View current app data
+                      </Typography>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
           {/* App Version */}
           <View className="items-center pt-4">

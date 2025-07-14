@@ -70,8 +70,8 @@ export default function VerifyOTPScreen() {
       
       // Navigate based on user status
       if (result.user.isNewUser) {
-        // New user - go to customer profile setup
-        router.replace('/(tabs)'); // You can create a customer-setup screen later
+        // New user - go to registration
+        router.replace('/registration-type' as any);
       } else {
         // Existing user - go to main app
         router.replace('/(tabs)');

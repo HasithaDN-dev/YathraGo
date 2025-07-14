@@ -96,10 +96,12 @@ CREATE TABLE "Vehicle" (
     "front_picture_url" TEXT NOT NULL,
     "side_picture_url" TEXT NOT NULL,
     "inside_picture_url" TEXT NOT NULL,
-    "revenue_license_url" TEXT NOT NULL,
-    "insurance_front_url" TEXT NOT NULL,
-    "insurance_back_url" TEXT NOT NULL,
-    "vehicle_reg_url" TEXT NOT NULL,
+    "revenue_license_url" TEXT,
+    "insurance_front_url" TEXT,
+    "insurance_back_url" TEXT,
+    "vehicle_reg_url" TEXT,
+    "ownerId" INTEGER,
+    "driverId" INTEGER,
 
     CONSTRAINT "Vehicle_pkey" PRIMARY KEY ("id")
 );
@@ -229,6 +231,8 @@ CREATE TABLE "VehicleOwner" (
     "last_name" TEXT NOT NULL,
     "phone" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "company" TEXT,
+    "Address" TEXT NOT NULL,
 
     CONSTRAINT "VehicleOwner_pkey" PRIMARY KEY ("id")
 );
@@ -292,7 +296,7 @@ CREATE TABLE "Ratings_and_Reviews" (
 CREATE TABLE "Child" (
     "child_id" SERIAL NOT NULL,
     "relationship" TEXT NOT NULL,
-    "NearbyCity" TEXT NOT NULL,
+    "nearbyCity" TEXT NOT NULL,
     "schoolLocation" TEXT NOT NULL,
     "school" TEXT NOT NULL,
     "childName" TEXT NOT NULL,
@@ -371,6 +375,12 @@ CREATE UNIQUE INDEX "Customer_phone_key" ON "Customer"("phone");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Staff_Passenger_customerId_key" ON "Staff_Passenger"("customerId");
+
+-- AddForeignKey
+ALTER TABLE "Vehicle" ADD CONSTRAINT "Vehicle_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "VehicleOwner"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Vehicle" ADD CONSTRAINT "Vehicle_driverId_fkey" FOREIGN KEY ("driverId") REFERENCES "Driver"("driver_id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Child" ADD CONSTRAINT "Child_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("customer_id") ON DELETE SET NULL ON UPDATE CASCADE;

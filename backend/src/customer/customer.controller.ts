@@ -24,21 +24,55 @@ export class CustomerController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   async registerStaffPassenger(@Body() dto: RegisterStaffPassengerDto) {
-    return this.customerService.registerStaffPassenger(dto);
+    console.log(
+      '[DEBUG] Staff Passenger Registration - Request received:',
+      JSON.stringify(dto, null, 2),
+    );
+    const result = await this.customerService.registerStaffPassenger(dto);
+    console.log(
+      '[DEBUG] Staff Passenger Registration - Response:',
+      JSON.stringify(result, null, 2),
+    );
+    return result;
   }
 
   @Post('register-child')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   async registerChild(@Body() dto: RegisterChildDto) {
-    return this.customerService.registerChild(dto);
+    console.log('[BACKEND] [CONTROLLER] Child Registration - DTO received:', JSON.stringify(dto, null, 2));
+    console.log('[BACKEND] [CONTROLLER] Type of customerId:', typeof dto.customerId, dto.customerId);
+    console.log(
+      '[BACKEND] [CONTROLLER] DTO prototype:',
+      Object.getPrototypeOf(dto),
+    );
+    for (const key of Object.keys(dto)) {
+      console.log(
+        `[BACKEND] [CONTROLLER] Property: ${key}, Type:`,
+        typeof dto[key],
+        ', Value:',
+        dto[key],
+      );
+    }
+    const result = await this.customerService.registerChild(dto);
+    console.log(
+      '[DEBUG] Child Registration - Response:',
+      JSON.stringify(result, null, 2),
+    );
+    return result;
   }
 
   // Customer profile management
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   async getProfile(@Request() req: AuthenticatedRequest) {
-    return this.customerService.getCustomerProfile(req.user.sub);
+    console.log('[DEBUG] Get Profile - User ID:', req.user.sub);
+    const result = await this.customerService.getCustomerProfile(req.user.sub);
+    console.log(
+      '[DEBUG] Get Profile - Response:',
+      JSON.stringify(result, null, 2),
+    );
+    return result;
   }
 
   @Post('update-profile')
@@ -48,9 +82,19 @@ export class CustomerController {
     @Body() profileData: UpdateProfileDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.customerService.updateCustomerProfile(
+    console.log(
+      '[DEBUG] Update Profile - Request data:',
+      JSON.stringify(profileData, null, 2),
+    );
+    console.log('[DEBUG] Update Profile - User ID:', req.user.sub);
+    const result = await this.customerService.updateCustomerProfile(
       req.user.sub,
       profileData,
     );
+    console.log(
+      '[DEBUG] Update Profile - Response:',
+      JSON.stringify(result, null, 2),
+    );
+    return result;
   }
 }

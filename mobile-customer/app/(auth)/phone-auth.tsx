@@ -6,7 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 export default function PhoneAuthScreen() {
   const router = useRouter();
-  const { sendOtp, checkRegistrationStatus } = useAuth();
+  const { sendOtp } = useAuth();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -14,11 +14,15 @@ export default function PhoneAuthScreen() {
     // Remove all non-digits
     const cleaned = text.replace(/\D/g, '');
     
-    // Add country code if not present
+    // Add country code if not present and limit to 9 digits after +94
     if (cleaned.length > 0 && !cleaned.startsWith('94')) {
-      return '+94' + cleaned;
+      // Limit to 9 digits for local number
+      const localNumber = cleaned.slice(0, 9);
+      return '+94' + localNumber;
     } else if (cleaned.length > 0) {
-      return '+' + cleaned;
+      // Already has country code, limit total to 11 digits (94 + 9 digits)
+      const limitedNumber = cleaned.slice(0, 11);
+      return '+' + limitedNumber;
     }
     return text;
   };
@@ -88,7 +92,7 @@ export default function PhoneAuthScreen() {
             value={phoneNumber}
             onChangeText={handlePhoneChange}
             keyboardType="phone-pad"
-            maxLength={13}
+            maxLength={12}
           />
           <Text className="text-xs text-brand-neutralGray mt-1">
             We&apos;ll send you a verification code

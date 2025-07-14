@@ -1,6 +1,8 @@
 import { IsNumber, IsString, IsOptional, IsEmail } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class RegisterChildDto {
+  @Type(() => Number)
   @IsNumber()
   customerId: number;
 
@@ -11,7 +13,7 @@ export class RegisterChildDto {
   relationship: string;
 
   @IsString()
-  NearbyCity: string;
+  nearbyCity: string;
 
   @IsString()
   schoolLocation: string;

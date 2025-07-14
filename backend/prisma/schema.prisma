@@ -240,7 +240,7 @@ model Ratings_and_Reviews {
 model Child {
   child_id       Int       @id @default(autoincrement())
   relationship   String
-  NearbyCity     String
+  nearbyCity     String
   schoolLocation String
   school         String
   childName      String

@@ -9,111 +9,187 @@ export class CustomerService {
   constructor(private prisma: PrismaService) {}
 
   async registerStaffPassenger(dto: RegisterStaffPassengerDto) {
-    // Check if already staff
-    // Check by customerId (not PK)
-    const exists = await this.prisma.staff_Passenger.findFirst({
-      where: { customerId: dto.customerId },
-    });
-    if (exists)
-      throw new BadRequestException('Already registered as staff passenger.');
+    console.log(
+      '[SERVICE] registerStaffPassenger - Input:',
+      JSON.stringify(dto, null, 2),
+    );
 
-    // Create Staff_Passenger
-    await this.prisma.staff_Passenger.create({
-      data: {
-        customerId: dto.customerId,
-        nearbyCity: dto.nearbyCity,
-        workLocation: dto.workLocation,
-        workAddress: dto.workAddress,
-        pickUpLocation: dto.pickUpLocation,
-        pickupAddress: dto.pickupAddress,
-      },
-    });
+    try {
+      // Check if already staff
+      // Check by customerId (not PK)
+      const exists = await this.prisma.staff_Passenger.findFirst({
+        where: { customerId: dto.customerId },
+      });
 
-    // Update Customer profile
-    await this.prisma.customer.update({
-      where: { customer_id: dto.customerId },
-      data: {
-        name: dto.name,
-        email: dto.email,
-        address: dto.address,
-        profileImageUrl: dto.profileImageUrl,
-        emergencyContact: dto.emergencyContact,
-        registrationStatus: 'STAFF_REGISTERED',
-      },
-    });
+      if (exists) {
+        throw new BadRequestException('Already registered as staff passenger.');
+      }
 
-    return { success: true, message: 'Staff passenger registered.' };
+      // Use transaction to ensure data consistency and proper connection management
+      const result = await this.prisma.$transaction(async (tx) => {
+        // Create Staff_Passenger
+        const staffPassenger = await tx.staff_Passenger.create({
+          data: {
+            customerId: dto.customerId,
+            nearbyCity: dto.nearbyCity,
+            workLocation: dto.workLocation,
+            workAddress: dto.workAddress,
+            pickUpLocation: dto.pickUpLocation,
+            pickupAddress: dto.pickupAddress,
+          },
+        });
+
+        // Update Customer profile
+        const updatedCustomer = await tx.customer.update({
+          where: { customer_id: dto.customerId },
+          data: {
+            name: dto.name,
+            email: dto.email,
+            address: dto.address,
+            profileImageUrl: dto.profileImageUrl,
+            emergencyContact: dto.emergencyContact,
+            registrationStatus: 'STAFF_REGISTERED',
+          },
+        });
+
+        return { staffPassenger, updatedCustomer };
+      });
+
+      const response = {
+        success: true,
+        message: 'Staff passenger registered.',
+      };
+      console.log(
+        '[SERVICE] registerStaffPassenger - Output:',
+        JSON.stringify(response, null, 2),
+      );
+      return response;
+    } catch (error) {
+      console.error('[SERVICE] registerStaffPassenger - Error:', error);
+      throw error;
+    }
   }
 
   async registerChild(dto: RegisterChildDto) {
-    // Create Child
-    await this.prisma.child.create({
-      data: {
-        customerId: dto.customerId,
-        childName: dto.childName,
-        relationship: dto.relationship,
-        NearbyCity: dto.NearbyCity,
-        schoolLocation: dto.schoolLocation,
-        school: dto.school,
-        pickUpAddress: dto.pickUpAddress,
-        childImageUrl: dto.childImageUrl,
-      },
-    });
+    console.log('[BACKEND] [SERVICE] registerChild - Input:', JSON.stringify(dto, null, 2));
 
-    // Update Customer with parent info
-    await this.prisma.customer.update({
-      where: { customer_id: dto.customerId },
-      data: {
-        name: dto.parentName,
-        email: dto.parentEmail,
-        address: dto.parentAddress,
-        profileImageUrl: dto.parentImageUrl,
-        emergencyContact: dto.emergencyContact,
-        registrationStatus: 'CHILD_REGISTERED',
-      },
-    });
+    try {
+      // Use transaction to ensure data consistency and proper connection management
+      await this.prisma.$transaction(async (tx) => {
+        // Create Child
+        await tx.child.create({
+          data: {
+            customerId: dto.customerId,
+            childName: dto.childName,
+            relationship: dto.relationship,
+            nearbyCity: dto.nearbyCity,
+            schoolLocation: dto.schoolLocation,
+            school: dto.school,
+            pickUpAddress: dto.pickUpAddress,
+            childImageUrl: dto.childImageUrl ?? null,
+          },
+        });
 
-    return { success: true, message: 'Child registered.' };
+        // Update Customer with parent info
+        await tx.customer.update({
+          where: { customer_id: dto.customerId },
+          data: {
+            name: dto.parentName,
+            email: dto.parentEmail,
+            address: dto.parentAddress,
+            profileImageUrl: dto.parentImageUrl,
+            emergencyContact: dto.emergencyContact,
+            registrationStatus: 'CHILD_REGISTERED',
+          },
+        });
+      });
+
+      const result = { success: true, message: 'Child registered.' };
+      console.log(
+        '[SERVICE] registerChild - Output:',
+        JSON.stringify(result, null, 2),
+      );
+      return result;
+    } catch (error) {
+      console.error('[SERVICE] registerChild - Error:', error);
+      throw error;
+    }
   }
 
   async getCustomerProfile(customerId: string) {
-    const customer = await this.prisma.customer.findUnique({
-      where: { customer_id: parseInt(customerId) },
-      include: {
-        children: true,
-        staffPassenger: true,
-      },
-    });
+    console.log('[SERVICE] getCustomerProfile - Input customerId:', customerId);
 
-    if (!customer) {
-      throw new BadRequestException('Customer not found');
+    try {
+      const customer = await this.prisma.customer.findUnique({
+        where: { customer_id: parseInt(customerId) },
+        include: {
+          children: true,
+          staffPassenger: true,
+        },
+      });
+
+      if (!customer) {
+        throw new BadRequestException('Customer not found');
+      }
+
+      const result = {
+        success: true,
+        profile: customer,
+      };
+
+      console.log(
+        '[SERVICE] getCustomerProfile - Output: Found customer with',
+        customer.children?.length || 0,
+        'children and',
+        customer.staffPassenger
+          ? 'staff registration'
+          : 'no staff registration',
+      );
+      return result;
+    } catch (error) {
+      console.error('[SERVICE] getCustomerProfile - Error:', error);
+      throw error;
     }
-
-    return {
-      success: true,
-      profile: customer,
-    };
   }
 
   async updateCustomerProfile(
     customerId: string,
     profileData: UpdateProfileDto,
   ) {
-    const updatedCustomer = await this.prisma.customer.update({
-      where: { customer_id: parseInt(customerId) },
-      data: {
-        name: profileData?.name || '',
-        email: profileData?.email || '',
-        address: profileData?.address || '',
-        profileImageUrl: profileData?.profileImageUrl || '',
-        emergencyContact: profileData?.emergencyContact || '',
-      },
-    });
+    console.log(
+      '[SERVICE] updateCustomerProfile - Input customerId:',
+      customerId,
+    );
+    console.log(
+      '[SERVICE] updateCustomerProfile - Input data:',
+      JSON.stringify(profileData, null, 2),
+    );
 
-    return {
-      success: true,
-      message: 'Profile updated successfully',
-      profile: updatedCustomer,
-    };
+    try {
+      const updatedCustomer = await this.prisma.customer.update({
+        where: { customer_id: parseInt(customerId) },
+        data: {
+          name: profileData?.name || '',
+          email: profileData?.email || '',
+          address: profileData?.address || '',
+          profileImageUrl: profileData?.profileImageUrl || '',
+          emergencyContact: profileData?.emergencyContact || '',
+        },
+      });
+
+      const result = {
+        success: true,
+        message: 'Profile updated successfully',
+        profile: updatedCustomer,
+      };
+      console.log(
+        '[SERVICE] updateCustomerProfile - Output:',
+        JSON.stringify(result, null, 2),
+      );
+      return result;
+    } catch (error) {
+      console.error('[SERVICE] updateCustomerProfile - Error:', error);
+      throw error;
+    }
   }
 }
