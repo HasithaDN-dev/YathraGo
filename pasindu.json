@@ -1,0 +1,14 @@
+{
+    "name": "Pasindu",
+    "version": "1.0.0",
+    "description": "A simple JSON file for Pasindu",
+    "author": "Pasindu",
+    "license": "MIT",
+    "dependencies": {
+        "express": "^4.17.1",
+        "mongoose": "^5.10.9"
+    },
+    "scripts": {
+        "start": "node index.js"
+    }
+}
