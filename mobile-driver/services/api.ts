@@ -55,6 +55,23 @@ export class ApiService {
     });
   }
 
+  static async registerDriver(token: string, formData: FormData) {
+    const response = await fetch(`${API_BASE_URL}/driver/register`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // 'Content-Type' is automatically set to 'multipart/form-data' by the browser
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Request failed');
+    }
+
+    return response.json();
+  }
   // Driver Profile & Registration
   static async getProfile(token: string) {
     return this.request('/driver/profile', {
