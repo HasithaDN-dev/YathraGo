@@ -84,17 +84,17 @@ export class ApiService {
     });
   }
 
-  static async verifyCustomerOtp(phone: string, otp: string, otpId: string) {
+  static async verifyCustomerOtp(phone: string, otp: string) {
     const response = await this.request('/auth/customer/verify-otp', {
       method: 'POST',
-      body: JSON.stringify({ phone, otp, otpId })
+      body: JSON.stringify({ phone, otp })
     });
 
     // Store token and customer data if successful
-    if (response.token) {
-      await AsyncStorage.setItem(TOKEN_KEY, response.token);
-      if (response.customer) {
-        await AsyncStorage.setItem(CUSTOMER_KEY, JSON.stringify(response.customer));
+    if (response.accessToken) {
+      await AsyncStorage.setItem(TOKEN_KEY, response.accessToken);
+      if (response.user) {
+        await AsyncStorage.setItem(CUSTOMER_KEY, JSON.stringify(response.user));
       }
     }
 

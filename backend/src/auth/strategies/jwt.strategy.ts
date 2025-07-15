@@ -41,7 +41,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     return {
-      userId: user.user_id || user.id,
+      sub: payload.sub, // Use the original sub from JWT payload
       phone: payload.phone,
       userType: payload.userType,
       isVerified: payload.isVerified,

@@ -33,7 +33,10 @@ export class CustomerServiceExtension {
       return {
         customerId: dto.customerId,
         success: false,
-        message: typeof error?.message === 'string' ? error.message : 'Failed to complete registration',
+        message:
+          typeof error?.message === 'string'
+            ? error.message
+            : 'Failed to complete registration',
       };
     }
   }
