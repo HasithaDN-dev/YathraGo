@@ -24,28 +24,11 @@ export class CustomerController {
   @Post('customer-register')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  async customerRegister(
-    @Body() dto: CustomerRegisterDto,
-  ) {
-    // Now expects customerId in the DTO
-    console.log('[DEBUG] Customer Register - customerId:', dto.customerId);
-    console.log('[DEBUG] Customer Register - DTO:', JSON.stringify(dto, null, 2));
-    try {
-      const customerId = Number(dto.customerId);
-      const result = await this.customerService.completeCustomerRegistration(
-        customerId,
-        dto,
-      );
-      return result;
-    } catch (error: any) {
-      console.error('[ERROR] Customer Register:', error);
-      return {
-        customerId: dto.customerId,
-        success: false,
-        message: error?.message || 'Registration failed',
-      };
-    }
+  async customerRegister(@Body() dto: CustomerRegisterDto) {
+    const result = await this.customerService.completeCustomerRegistration(dto);
+    return result;
   }
+
   // Customer business logic endpoints (registration flows)
   @Post('register-staff-passenger')
   @HttpCode(HttpStatus.OK)

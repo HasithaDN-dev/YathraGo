@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsOptional, IsEmail } from 'class-validator';
+import { IsNumber, IsString, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class RegisterChildDto {
@@ -27,20 +27,4 @@ export class RegisterChildDto {
   @IsOptional()
   @IsString()
   childImageUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  parentImageUrl?: string;
-
-  @IsString()
-  emergencyContact: string;
-
-  @IsString()
-  parentName: string;
-
-  @IsEmail()
-  parentEmail: string;
-
-  @IsString()
-  parentAddress: string;
 }

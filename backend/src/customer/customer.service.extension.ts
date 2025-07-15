@@ -8,17 +8,13 @@ export class CustomerServiceExtension {
 
   /**
    * Complete customer registration after OTP verification.
-   * @param customerId number (from JWT sub)
    * @param dto CustomerRegisterDto
-   * @returns { customerId, success, message }
+   * @returns An object containing customerId, success, and message.
    */
-  async completeCustomerRegistration(
-    customerId: number,
-    dto: CustomerRegisterDto,
-  ) {
+  async completeCustomerRegistration(dto: CustomerRegisterDto) {
     try {
       const updatedCustomer = await this.prisma.customer.update({
-        where: { customer_id: customerId },
+        where: { customer_id: dto.customerId },
         data: {
           name: dto.name,
           email: dto.email,
@@ -35,7 +31,7 @@ export class CustomerServiceExtension {
       };
     } catch (error) {
       return {
-        customerId,
+        customerId: dto.customerId,
         success: false,
         message: error?.message || 'Failed to complete registration',
       };

@@ -44,11 +44,6 @@ export class CustomerService {
         const updatedCustomer = await tx.customer.update({
           where: { customer_id: dto.customerId },
           data: {
-            name: dto.name,
-            email: dto.email,
-            address: dto.address,
-            profileImageUrl: dto.profileImageUrl,
-            emergencyContact: dto.emergencyContact,
             registrationStatus: 'STAFF_REGISTERED',
           },
         });
@@ -98,11 +93,6 @@ export class CustomerService {
         await tx.customer.update({
           where: { customer_id: dto.customerId },
           data: {
-            name: dto.parentName,
-            email: dto.parentEmail,
-            address: dto.parentAddress,
-            profileImageUrl: dto.parentImageUrl,
-            emergencyContact: dto.emergencyContact,
             registrationStatus: 'CHILD_REGISTERED',
           },
         });
@@ -202,13 +192,10 @@ export class CustomerService {
    * @param dto CustomerRegisterDto
    * @returns { customerId, success, message }
    */
-  async completeCustomerRegistration(
-    customerId: number,
-    dto: CustomerRegisterDto,
-  ) {
+  async completeCustomerRegistration(dto: CustomerRegisterDto) {
     try {
       const updatedCustomer = await this.prisma.customer.update({
-        where: { customer_id: customerId },
+        where: { customer_id: dto.customerId },
         data: {
           name: dto.name,
           email: dto.email,
@@ -225,7 +212,7 @@ export class CustomerService {
       };
     } catch (error) {
       return {
-        customerId,
+        customerId: dto.customerId,
         success: false,
         message: error?.message || 'Failed to complete registration',
       };
