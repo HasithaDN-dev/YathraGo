@@ -90,7 +90,12 @@ export default function StaffPassengerScreen() {
           [
             {
               text: 'Go to Dashboard',
-              onPress: () => router.replace('/(tabs)')
+              onPress: () => {
+                // Small delay to ensure alert closes properly
+                setTimeout(() => {
+                  router.replace('/(tabs)' as any);
+                }, 100);
+              }
             }
           ]
         );

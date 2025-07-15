@@ -20,6 +20,30 @@ export default function CustomerRegisterScreen() {
     emergencyContact: '',
   });
 
+  // Format phone number function
+  const formatPhoneNumber = (text: string) => {
+    // Remove all non-digit characters
+    const cleaned = text.replace(/\D/g, '');
+
+    // If starts with '0', replace with '94'
+    if (cleaned.startsWith('0')) {
+      const mobileNumber = cleaned.slice(1); // Remove leading '0'
+      return '+94' + mobileNumber;
+    }
+
+    // If starts with '94', assume it's already in international format
+    if (cleaned.startsWith('94')) {
+      return '+' + cleaned.slice(0, 11); // Keep only first 11 digits
+    }
+
+    // Fallback: If digits are present but no prefix, assume it's local
+    if (cleaned.length === 9) {
+      return '+94' + cleaned;
+    }
+
+    return text; // Return original if unprocessable
+  };
+
   // Load customer ID from stored user data on component mount
   React.useEffect(() => {
     const loadCustomerId = async () => {
@@ -39,10 +63,19 @@ export default function CustomerRegisterScreen() {
   }, []);
 
   const handleInputChange = (field: keyof CustomerRegistration, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    if (field === 'emergencyContact') {
+      // Format phone number for emergency contact
+      const formattedValue = formatPhoneNumber(value);
+      setFormData(prev => ({
+        ...prev,
+        [field]: formattedValue
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
   };
 
   const validateForm = (): boolean => {
@@ -64,6 +97,13 @@ export default function CustomerRegisterScreen() {
     }
     if (!formData.emergencyContact?.trim()) {
       Alert.alert('Error', 'Emergency contact is required');
+      return false;
+    }
+
+    // Validate emergency contact phone number format
+    const phoneRegex = /^\+94[0-9]{9}$/;
+    if (!phoneRegex.test(formData.emergencyContact)) {
+      Alert.alert('Error', 'Please enter a valid Sri Lankan phone number (e.g., +94712345678)');
       return false;
     }
 
