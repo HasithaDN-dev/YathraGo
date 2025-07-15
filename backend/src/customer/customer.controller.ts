@@ -11,6 +11,7 @@ import {
 import { RegisterStaffPassengerDto } from './dto/register_staff_passenger.dto';
 import { RegisterChildDto } from './dto/register-child.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { CustomerRegisterDto } from './dto/customer-register.dto';
 import { CustomerService } from './customer.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
@@ -19,6 +20,32 @@ import { AuthenticatedRequest } from '../common/interfaces/authenticated-request
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
+  // Complete customer registration after OTP verification
+  @Post('customer-register')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async customerRegister(
+    @Body() dto: CustomerRegisterDto,
+  ) {
+    // Now expects customerId in the DTO
+    console.log('[DEBUG] Customer Register - customerId:', dto.customerId);
+    console.log('[DEBUG] Customer Register - DTO:', JSON.stringify(dto, null, 2));
+    try {
+      const customerId = Number(dto.customerId);
+      const result = await this.customerService.completeCustomerRegistration(
+        customerId,
+        dto,
+      );
+      return result;
+    } catch (error: any) {
+      console.error('[ERROR] Customer Register:', error);
+      return {
+        customerId: dto.customerId,
+        success: false,
+        message: error?.message || 'Registration failed',
+      };
+    }
+  }
   // Customer business logic endpoints (registration flows)
   @Post('register-staff-passenger')
   @HttpCode(HttpStatus.OK)
