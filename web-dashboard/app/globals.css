@@ -37,6 +37,26 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+    /* YathraGo Brand Colors */
+  --color-deep-navy: #143373;
+  --bright-orange: #fdc334;
+  --warm-yellow: #faaa21;
+  --golden-yellow: #ffb425;
+  --light-navy: #2d4a8a;
+  --soft-orange: #fde63a;
+  --neutral-gray: #6b7280;
+  --color-neutral-gray: #6b7280;
+  --light-gray: #f3f4f6;
+  --color-light-gray: #f3f4f6;
+  --white: #ffffff;
+  --success-green: #10b981;
+  --warning-amber: #f59e0b;
+  --error-red: #ef4444;
+  --black: #000000;
+  --bg-light-blue: #c0def5;
+  --transparent-bg-light-navy: #c0def54d;
+  --success-bg: #e3f9f2;
+  --error-bg: #ffe8e8;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -57,8 +77,8 @@
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --accent: oklch(0.3398 0.1166 262.52);
+  --accent-foreground: oklch(0.97 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
@@ -76,6 +96,25 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* YathraGo Brand Colors */
+  --color-deep-navy: #143373;
+  --bright-orange: #fdc334;
+  --warm-yellow: #faaa21;
+  --golden-yellow: #ffb425;
+  --light-navy: #2d4a8a;
+  --soft-orange: #fde63a;
+  --neutral-gray: #6b7280;
+  --light-gray: #f3f4f6;
+  --white: #ffffff;
+  --success-green: #10b981;
+  --warning-amber: #f59e0b;
+  --error-red: #ef4444;
+  --black: #000000;
+  --bg-light-blue: #c0def5;
+  --transparent-bg-light-navy: #c0def54d;
+  --success-bg: #e3f9f2;
+  --error-bg: #ffe8e8;
 }
 
 .dark {
