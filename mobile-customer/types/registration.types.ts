@@ -17,7 +17,6 @@ export interface StaffPassengerRegistration {
   workAddress: string;
   pickUpLocation: string;
   pickupAddress: string;
-  profileImageUrl?: string;
 }
 
 // Customer Registration interface

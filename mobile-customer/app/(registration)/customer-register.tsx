@@ -2,26 +2,41 @@ import React, { useState } from 'react';
 import { View, Alert, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedView } from '../../components/ThemedView';
 import { ThemedText } from '../../components/ThemedText';
 import { CustomButton } from '../../components/ui/CustomButton';
 import { CustomInput } from '../../components/ui/CustomInput';
-import { useAuth } from '../../hooks/useAuth';
 import { ApiService } from '../../services/api';
 import { CustomerRegistration } from '../../types/registration.types';
 
 export default function CustomerRegisterScreen() {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<CustomerRegistration>>({
-    customerId: user?.id || 0,
+    customerId: 0,
     name: '',
     email: '',
     address: '',
     profileImageUrl: '',
     emergencyContact: '',
   });
+
+  // Load customer ID from stored user data on component mount
+  React.useEffect(() => {
+    const loadCustomerId = async () => {
+      try {
+        const storedUser = await ApiService.getStoredCustomer();
+        if (storedUser?.id) {
+          setFormData(prev => ({
+            ...prev,
+            customerId: storedUser.id
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading customer ID:', error);
+      }
+    };
+    loadCustomerId();
+  }, []);
 
   const handleInputChange = (field: keyof CustomerRegistration, value: string) => {
     setFormData(prev => ({
@@ -31,6 +46,10 @@ export default function CustomerRegisterScreen() {
   };
 
   const validateForm = (): boolean => {
+    if (!formData.customerId || formData.customerId === 0) {
+      Alert.alert('Error', 'Customer ID not found. Please log in again.');
+      return false;
+    }
     if (!formData.name?.trim()) {
       Alert.alert('Error', 'Name is required');
       return false;
@@ -61,7 +80,7 @@ export default function CustomerRegisterScreen() {
   const handleRegisterAndContinue = async () => {
     if (!validateForm()) return;
     
-    const token = await AsyncStorage.getItem('authToken');
+    const token = await ApiService.getStoredToken();
     if (!token) {
       Alert.alert('Error', 'Authentication token not found');
       return;

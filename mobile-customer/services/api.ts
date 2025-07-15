@@ -223,11 +223,6 @@ export class ApiService {
       pickUpLocation: String(data.pickUpLocation || '').trim(),
       pickupAddress: String(data.pickupAddress || '').trim(),
     };
-
-    // Only add optional fields if they have meaningful values
-    if (data.profileImageUrl && String(data.profileImageUrl).trim()) {
-      payload.profileImageUrl = String(data.profileImageUrl).trim();
-    }
       
     // Validate required fields are not empty
     const requiredFields = ['nearbyCity', 'workLocation', 'workAddress', 'pickUpLocation', 'pickupAddress'];

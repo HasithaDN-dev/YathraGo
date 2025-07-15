@@ -2,20 +2,17 @@ import React, { useState } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedView } from '../../components/ThemedView';
 import { ThemedText } from '../../components/ThemedText';
 import { CustomInput } from '../../components/ui/CustomInput';
 import { CustomButton } from '../../components/ui/CustomButton';
-import { useAuth } from '../../hooks/useAuth';
 import { ApiService } from '../../services/api';
 import { ChildRegistration } from '../../types/registration.types';
 
 export default function ChildRegistrationScreen() {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<ChildRegistration>>({
-    customerId: user?.id || 0,
+    customerId: 0,
     childName: '',
     relationship: '',
     nearbyCity: '',
@@ -25,6 +22,24 @@ export default function ChildRegistrationScreen() {
     childImageUrl: '',
   });
 
+  // Load customer ID from stored user data on component mount
+  React.useEffect(() => {
+    const loadCustomerId = async () => {
+      try {
+        const storedUser = await ApiService.getStoredCustomer();
+        if (storedUser?.id) {
+          setFormData(prev => ({
+            ...prev,
+            customerId: storedUser.id
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading customer ID:', error);
+      }
+    };
+    loadCustomerId();
+  }, []);
+
   const handleInputChange = (field: keyof ChildRegistration, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -33,6 +48,11 @@ export default function ChildRegistrationScreen() {
   };
 
   const validateForm = (): boolean => {
+    if (!formData.customerId || formData.customerId === 0) {
+      Alert.alert('Error', 'Customer ID not found. Please log in again.');
+      return false;
+    }
+    
     const requiredFields: (keyof ChildRegistration)[] = [
       'childName', 
       'relationship', 
@@ -56,7 +76,7 @@ export default function ChildRegistrationScreen() {
   const handleRegister = async () => {
     if (!validateForm()) return;
     
-    const token = await AsyncStorage.getItem('authToken');
+    const token = await ApiService.getStoredToken();
     if (!token) {
       Alert.alert('Error', 'Authentication token not found');
       return;

@@ -34,7 +34,7 @@ export const useAuth = () => {
 
   const checkAuthState = async () => {
     try {
-      const token = await AsyncStorage.getItem('authToken');
+      const token = await ApiService.getStoredToken();
       if (token) {
         const response = await ApiService.validateToken(token);
         setIsAuthenticated(true);
@@ -46,7 +46,7 @@ export const useAuth = () => {
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      await AsyncStorage.multiRemove(['authToken', 'userProfile']);
+      await AsyncStorage.multiRemove(['customer_auth_token', 'customer_data']);
     } finally {
       setLoading(false);
     }
@@ -73,9 +73,8 @@ export const useAuth = () => {
     try {
       const response = await ApiService.verifyCustomerOtp(phone, otp);
       
-      // Store token and user data
-      await AsyncStorage.setItem('authToken', response.accessToken);
-      await AsyncStorage.setItem('userProfile', JSON.stringify(response.user));
+      // The ApiService already stores the token and user data correctly
+      // No need to store it again here with different keys
       
       setIsAuthenticated(true);
       setUser(response.user);
@@ -94,14 +93,14 @@ export const useAuth = () => {
   const logout = async () => {
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('authToken');
+      const token = await ApiService.getStoredToken();
       if (token) {
         await ApiService.logout(token);
       }
     } catch (error) {
       console.error('Logout API call failed:', error);
     } finally {
-      await AsyncStorage.multiRemove(['authToken', 'userProfile']);
+      await AsyncStorage.multiRemove(['customer_auth_token', 'customer_data']);
       setIsAuthenticated(false);
       setUser(null);
       setProfile(null);
@@ -117,7 +116,7 @@ export const useAuth = () => {
 
   const refreshProfile = async () => {
     try {
-      const token = await AsyncStorage.getItem('authToken');
+      const token = await ApiService.getStoredToken();
       if (token) {
         const profileResponse = await ApiService.getProfile(token);
         setProfile(profileResponse.profile);
