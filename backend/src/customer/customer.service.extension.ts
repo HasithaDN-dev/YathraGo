@@ -21,7 +21,7 @@ export class CustomerServiceExtension {
           address: dto.address,
           profileImageUrl: dto.profileImageUrl,
           emergencyContact: dto.emergencyContact,
-          registrationStatus: 'CUSTOMER_REGISTERED',
+          registrationStatus: 'CUSTOMER_REGISTERED' as any,
         },
       });
       return {
@@ -29,11 +29,11 @@ export class CustomerServiceExtension {
         success: true,
         message: 'Customer registration completed',
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         customerId: dto.customerId,
         success: false,
-        message: error?.message || 'Failed to complete registration',
+        message: typeof error?.message === 'string' ? error.message : 'Failed to complete registration',
       };
     }
   }

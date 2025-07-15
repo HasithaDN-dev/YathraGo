@@ -7,12 +7,8 @@ export interface ChildRegistration {
   school: string;
   pickUpAddress: string;
   childImageUrl?: string;
-  parentImageUrl?: string;
-  emergencyContact: string;
-  parentName: string;
-  parentEmail: string;
-  parentAddress: string;
 }
+
 // Registration types based on the DTOs
 export interface StaffPassengerRegistration {
   customerId: number;
@@ -21,12 +17,18 @@ export interface StaffPassengerRegistration {
   workAddress: string;
   pickUpLocation: string;
   pickupAddress: string;
+}
+
+// Customer Registration interface
+export interface CustomerRegistration {
+  customerId: number;
   name: string;
-  email: string;
-  address: string;
+  email?: string;
+  address?: string;
   profileImageUrl?: string;
   emergencyContact?: string;
 }
+
 
 export type RegistrationType = 'staff';
 

@@ -5,7 +5,7 @@
 
 import { API_BASE_URL } from '../config/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ChildRegistration, StaffPassengerRegistration } from '../types/registration.types';
+import { ChildRegistration, StaffPassengerRegistration,CustomerRegistration } from '../types/registration.types';
 import { Profile } from '../types/profile.types';
 
 // Constants
@@ -149,6 +149,40 @@ export class ApiService {
   /**
    * Registration Methods
    */
+  static async registerCustomer(token: string, data: CustomerRegistration) {
+    // Normalize, trim, and map all fields to match backend DTO
+    const payload: any = {
+      customerId: Number(data.customerId),
+      name: String(data.name || '').trim(),
+      emergencyContact: String(data.emergencyContact || '').trim(),
+      email: String(data.email || '').trim().toLowerCase(),
+      address: String(data.address || '').trim(),
+    };
+    if (data.profileImageUrl && String(data.profileImageUrl).trim()) {
+      payload.profileImageUrl = String(data.profileImageUrl).trim();
+    }
+
+        // Validate email format
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(payload.email)) {
+      throw new Error('Invalid email format');
+    }
+
+          // Validate required fields are not empty
+    const requiredFields = ['emergencyContact', 'email', 'address'];
+    for (const field of requiredFields) {
+      if (!payload[field] || payload[field] === '') {
+        throw new Error(`${field} is required and cannot be empty`);
+      }
+    }
+    
+    return this.request('/customer/customer-register', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  }
+
   static async registerChild(token: string, data: ChildRegistration) {
     // Normalize, trim, and map all fields to match backend DTO
     const payload: any = {
@@ -159,17 +193,19 @@ export class ApiService {
       schoolLocation: String(data.schoolLocation || '').trim(),
       school: String(data.school || '').trim(),
       pickUpAddress: String(data.pickUpAddress || '').trim(),
-      emergencyContact: String(data.emergencyContact || '').trim(),
-      parentName: String(data.parentName || '').trim(),
-      parentEmail: String(data.parentEmail || '').trim().toLowerCase(),
-      parentAddress: String(data.parentAddress || '').trim(),
     };
     if (data.childImageUrl && String(data.childImageUrl).trim()) {
       payload.childImageUrl = String(data.childImageUrl).trim();
     }
-    if (data.parentImageUrl && String(data.parentImageUrl).trim()) {
-      payload.parentImageUrl = String(data.parentImageUrl).trim();
+
+    // Validate required fields are not empty
+    const requiredFields = ['childName', 'relationship', 'nearbyCity', 'schoolLocation', 'school', 'pickUpAddress'];
+    for (const field of requiredFields) {
+      if (!payload[field] || payload[field] === '') {
+        throw new Error(`${field} is required and cannot be empty`);
+      }
     }
+
     return this.request('/customer/register-child', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -186,43 +222,20 @@ export class ApiService {
       workAddress: String(data.workAddress || '').trim(),
       pickUpLocation: String(data.pickUpLocation || '').trim(),
       pickupAddress: String(data.pickupAddress || '').trim(),
-      name: String(data.name || '').trim(),
-      email: String(data.email || '').trim().toLowerCase(),
-      address: String(data.address || '').trim(),
     };
 
     // Only add optional fields if they have meaningful values
     if (data.profileImageUrl && String(data.profileImageUrl).trim()) {
       payload.profileImageUrl = String(data.profileImageUrl).trim();
     }
-    
-    if (data.emergencyContact && String(data.emergencyContact).trim()) {
-      payload.emergencyContact = String(data.emergencyContact).trim();
-    }
-    
+      
     // Validate required fields are not empty
-    const requiredFields = ['nearbyCity', 'workLocation', 'workAddress', 'pickUpLocation', 'pickupAddress', 'name', 'email', 'address'];
+    const requiredFields = ['nearbyCity', 'workLocation', 'workAddress', 'pickUpLocation', 'pickupAddress'];
     for (const field of requiredFields) {
       if (!payload[field] || payload[field] === '') {
         throw new Error(`${field} is required and cannot be empty`);
       }
     }
-    
-    // Validate email format
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(payload.email)) {
-      throw new Error('Invalid email format');
-    }
-    
-    console.log('Final payload for staff registration:', JSON.stringify(payload, null, 2));
-    console.log('Payload validation check:', {
-      customerId: typeof payload.customerId,
-      nearbyCity: typeof payload.nearbyCity,
-      email: typeof payload.email,
-      emailValid: emailRegex.test(payload.email),
-      hasProfileImageUrl: 'profileImageUrl' in payload,
-      hasEmergencyContact: 'emergencyContact' in payload,
-    });
     
     return this.request('/customer/register-staff-passenger', {
       method: 'POST',
