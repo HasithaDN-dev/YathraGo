@@ -8,130 +8,111 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChildRegistration, StaffPassengerRegistration } from '../types/registration.types';
 import { Profile } from '../types/profile.types';
 
-// Generic API response type
-type ApiResponse<T = any> = {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-};
-
 // Constants
 const TOKEN_KEY = 'customer_auth_token';
 const CUSTOMER_KEY = 'customer_data';
 
-/**
- * Generic API request handler
- */
-async function apiRequest<T>(
-  endpoint: string, 
-  options: RequestInit = {}
-): Promise<ApiResponse<T>> {
-  try {
-    const url = `${API_BASE_URL}${endpoint}`;
-    
-    // Get auth token if available
-    const token = await AsyncStorage.getItem(TOKEN_KEY);
-    
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-        ...options.headers,
-      },
-      ...options,
-    };
-
-    console.log(`API Request: ${options.method || 'GET'} ${url}`);
-    if (config.body) {
-      console.log('Request Body:', config.body);
+export class ApiService {
+  private static async request(endpoint: string, options: RequestInit = {}) {
+    try {
+      console.log(`Making API request to: ${API_BASE_URL}${endpoint}`);
+      if (options.body) {
+        console.log('Request payload:', options.body);
+      }
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+        ...options,
+      });
+      const responseText = await response.text();
+      console.log(`API Response Status: ${response.status}`);
+      console.log(`API Response Body: ${responseText}`);
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = JSON.parse(responseText);
+          if (errorData.message && Array.isArray(errorData.message)) {
+            errorMessage = errorData.message.map((err: any) => {
+              if (err.field && err.errors) {
+                return `${err.field}: ${err.errors.join(', ')}`;
+              }
+              return JSON.stringify(err);
+            }).join('\n');
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (errorData.errors && Array.isArray(errorData.errors)) {
+            errorMessage = errorData.errors.map((err: any) => {
+              if (typeof err === 'string') return err;
+              if (err.message) return err.message;
+              if (err.msg) return err.msg;
+              return JSON.stringify(err);
+            }).join(', ');
+          } else {
+            errorMessage = responseText;
+          }
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          errorMessage = responseText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+      try {
+        return JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse success response:', parseError);
+        return { success: true, data: responseText };
+      }
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        throw new Error('Network error: Cannot connect to server. Make sure the backend is running on http://192.168.1.127:3000');
+      }
+      throw error;
     }
-
-    const response = await fetch(url, config);
-    const data = await response.json();
-
-    console.log(`API Response [${response.status}]:`, data);
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: data.message || data.error || `HTTP ${response.status}`,
-        data: data
-      };
-    }
-
-    return {
-      success: true,
-      data: data,
-      message: data.message
-    };
-  } catch (error) {
-    console.error('API Request Error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Network error occurred'
-    };
   }
-}
 
-/**
- * Authentication Services
- */
-export const authService = {
   /**
-   * Send OTP to customer phone number
+   * Authentication Methods
    */
-  async sendCustomerOtp(phone: string): Promise<ApiResponse<{ message: string; otpId: string }>> {
-    return apiRequest<{ message: string; otpId: string }>('/auth/customer/send-otp', {
+  static async sendCustomerOtp(phone: string) {
+    return this.request('/auth/customer/send-otp', {
       method: 'POST',
       body: JSON.stringify({ phone })
     });
-  },
+  }
 
-  /**
-   * Verify OTP and get authentication token
-   */
-  async verifyCustomerOtp(phone: string, otp: string, otpId: string): Promise<ApiResponse<{ token: string; customer: any }>> {
-    const response = await apiRequest<{ token: string; customer: any }>('/auth/customer/verify-otp', {
+  static async verifyCustomerOtp(phone: string, otp: string, otpId: string) {
+    const response = await this.request('/auth/customer/verify-otp', {
       method: 'POST',
       body: JSON.stringify({ phone, otp, otpId })
     });
 
     // Store token and customer data if successful
-    if (response.success && response.data) {
-      await AsyncStorage.setItem(TOKEN_KEY, response.data.token);
-      await AsyncStorage.setItem(CUSTOMER_KEY, JSON.stringify(response.data.customer));
+    if (response.token) {
+      await AsyncStorage.setItem(TOKEN_KEY, response.token);
+      if (response.customer) {
+        await AsyncStorage.setItem(CUSTOMER_KEY, JSON.stringify(response.customer));
+      }
     }
 
     return response;
-  },
+  }
 
-  /**
-   * Validate current authentication token
-   */
-  async validateToken(): Promise<ApiResponse<{ valid: boolean; customer?: any }>> {
-    const token = await AsyncStorage.getItem(TOKEN_KEY);
-    
-    if (!token) {
-      return {
-        success: false,
-        error: 'No authentication token found'
-      };
-    }
-
-    return apiRequest<{ valid: boolean; customer?: any }>('/auth/customer/validate-token', {
-      method: 'POST'
+  static async validateToken(token: string) {
+    return this.request('/auth/customer/validate-token', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
     });
-  },
+  }
 
-  /**
-   * Logout customer and clear stored data
-   */
-  async logout(): Promise<void> {
+  static async logout(token: string) {
     try {
-      // Call logout endpoint to invalidate token on server
-      await apiRequest('/auth/customer/logout', {
-        method: 'POST'
+      await this.request('/auth/customer/logout', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
       });
     } catch {
       console.log('Logout API call failed, proceeding with local cleanup');
@@ -139,12 +120,9 @@ export const authService = {
       // Always clear local storage
       await AsyncStorage.multiRemove([TOKEN_KEY, CUSTOMER_KEY]);
     }
-  },
+  }
 
-  /**
-   * Get stored customer data
-   */
-  async getStoredCustomer(): Promise<any | null> {
+  static async getStoredCustomer(): Promise<any | null> {
     try {
       const customerData = await AsyncStorage.getItem(CUSTOMER_KEY);
       return customerData ? JSON.parse(customerData) : null;
@@ -152,82 +130,26 @@ export const authService = {
       console.error('Error getting stored customer:', error);
       return null;
     }
-  },
+  }
 
-  /**
-   * Check if customer is authenticated
-   */
-  async isAuthenticated(): Promise<boolean> {
+  static async getStoredToken(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem(TOKEN_KEY);
+    } catch (error) {
+      console.error('Error getting stored token:', error);
+      return null;
+    }
+  }
+
+  static async isAuthenticated(): Promise<boolean> {
     const token = await AsyncStorage.getItem(TOKEN_KEY);
     return !!token;
   }
-};
-
-/**
- * Registration Services
- */
-export const registrationService = {
-  /**
-   * Register a staff passenger with detailed validation
-   */
-  async registerStaffPassenger(data: StaffPassengerRegistration): Promise<ApiResponse<{ id: string; message: string; registrationNumber?: string }>> {
-    // Ensure all fields match the DTO exactly
-    const payload: any = {
-      customerId: Number(data.customerId), // Must be number for DTO validation
-      nearbyCity: String(data.nearbyCity || '').trim(),
-      workLocation: String(data.workLocation || '').trim(),
-      workAddress: String(data.workAddress || '').trim(),
-      pickUpLocation: String(data.pickUpLocation || '').trim(),
-      pickupAddress: String(data.pickupAddress || '').trim(),
-      name: String(data.name || '').trim(),
-      email: String(data.email || '').trim().toLowerCase(),
-      address: String(data.address || '').trim(),
-    };
-    
-    if (data.emergencyContact && String(data.emergencyContact).trim()) {
-      payload.emergencyContact = String(data.emergencyContact).trim();
-    }
-    
-    // Validate required fields are not empty
-    const requiredFields = ['nearbyCity', 'workLocation', 'workAddress', 'pickUpLocation', 'pickupAddress', 'name', 'email', 'address'];
-    for (const field of requiredFields) {
-      if (!payload[field] || payload[field] === '') {
-        return {
-          success: false,
-          error: `${field} is required and cannot be empty`
-        };
-      }
-    }
-    
-    // Validate email format
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(payload.email)) {
-      return {
-        success: false,
-        error: 'Invalid email format'
-      };
-    }
-    
-    console.log('Final payload for staff registration:', JSON.stringify(payload, null, 2));
-    console.log('Payload validation check:', {
-      customerId: typeof payload.customerId,
-      nearbyCity: typeof payload.nearbyCity,
-      email: typeof payload.email,
-      emailValid: emailRegex.test(payload.email),
-      hasProfileImageUrl: 'profileImageUrl' in payload,
-      hasEmergencyContact: 'emergencyContact' in payload,
-    });
-    
-    return apiRequest<{ id: string; message: string; registrationNumber?: string }>('/customer/register-staff-passenger', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-  },
 
   /**
-   * Register a child with detailed validation
+   * Registration Methods
    */
-  async registerChild(data: ChildRegistration): Promise<ApiResponse<{ id: string; message: string; registrationNumber?: string }>> {
+  static async registerChild(token: string, data: ChildRegistration) {
     // Normalize, trim, and map all fields to match backend DTO
     const payload: any = {
       customerId: Number(data.customerId),
@@ -242,63 +164,100 @@ export const registrationService = {
       parentEmail: String(data.parentEmail || '').trim().toLowerCase(),
       parentAddress: String(data.parentAddress || '').trim(),
     };
-    
     if (data.childImageUrl && String(data.childImageUrl).trim()) {
       payload.childImageUrl = String(data.childImageUrl).trim();
     }
     if (data.parentImageUrl && String(data.parentImageUrl).trim()) {
       payload.parentImageUrl = String(data.parentImageUrl).trim();
     }
-    
-    return apiRequest<{ id: string; message: string; registrationNumber?: string }>('/customer/register-child', {
+    return this.request('/customer/register-child', {
       method: 'POST',
-      body: JSON.stringify(payload)
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
   }
-};
 
-/**
- * Profile Services
- */
-export const profileService = {
-  /**
-   * Get customer profile
-   */
-  async getProfile(): Promise<ApiResponse<Profile>> {
-    return apiRequest<Profile>('/customer/profile', {
-      method: 'GET'
+  static async registerStaffPassenger(token: string, data: StaffPassengerRegistration) {
+    // Ensure all fields match the DTO exactly
+    const payload: any = {
+      customerId: Number(data.customerId), // Must be number for DTO validation
+      nearbyCity: String(data.nearbyCity || '').trim(),
+      workLocation: String(data.workLocation || '').trim(),
+      workAddress: String(data.workAddress || '').trim(),
+      pickUpLocation: String(data.pickUpLocation || '').trim(),
+      pickupAddress: String(data.pickupAddress || '').trim(),
+      name: String(data.name || '').trim(),
+      email: String(data.email || '').trim().toLowerCase(),
+      address: String(data.address || '').trim(),
+    };
+
+    // Only add optional fields if they have meaningful values
+    if (data.profileImageUrl && String(data.profileImageUrl).trim()) {
+      payload.profileImageUrl = String(data.profileImageUrl).trim();
+    }
+    
+    if (data.emergencyContact && String(data.emergencyContact).trim()) {
+      payload.emergencyContact = String(data.emergencyContact).trim();
+    }
+    
+    // Validate required fields are not empty
+    const requiredFields = ['nearbyCity', 'workLocation', 'workAddress', 'pickUpLocation', 'pickupAddress', 'name', 'email', 'address'];
+    for (const field of requiredFields) {
+      if (!payload[field] || payload[field] === '') {
+        throw new Error(`${field} is required and cannot be empty`);
+      }
+    }
+    
+    // Validate email format
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(payload.email)) {
+      throw new Error('Invalid email format');
+    }
+    
+    console.log('Final payload for staff registration:', JSON.stringify(payload, null, 2));
+    console.log('Payload validation check:', {
+      customerId: typeof payload.customerId,
+      nearbyCity: typeof payload.nearbyCity,
+      email: typeof payload.email,
+      emailValid: emailRegex.test(payload.email),
+      hasProfileImageUrl: 'profileImageUrl' in payload,
+      hasEmergencyContact: 'emergencyContact' in payload,
     });
-  },
+    
+    return this.request('/customer/register-staff-passenger', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  }
 
   /**
-   * Update customer profile
+   * Profile Methods
    */
-  async updateProfile(data: Partial<Profile>): Promise<ApiResponse<Profile>> {
-    return apiRequest<Profile>('/customer/profile', {
+  static async getProfile(token: string) {
+    return this.request('/customer/profile', {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  }
+
+  static async updateProfile(token: string, data: Partial<Profile>) {
+    return this.request('/customer/profile', {
       method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(data)
     });
   }
-};
 
-/**
- * Utility Services
- */
-export const utilityService = {
   /**
-   * Check API health
+   * Utility Methods
    */
-  async healthCheck(): Promise<ApiResponse<{ status: string; timestamp: string }>> {
-    return apiRequest<{ status: string; timestamp: string }>('/health', {
+  static async healthCheck() {
+    return this.request('/health', {
       method: 'GET'
     });
   }
-};
+}
 
 // Default export for backward compatibility
-export default {
-  auth: authService,
-  registration: registrationService,
-  profile: profileService,
-  utility: utilityService
-};
+export default ApiService;
