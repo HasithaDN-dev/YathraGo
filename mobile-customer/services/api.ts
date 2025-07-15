@@ -5,7 +5,7 @@
 
 import { API_BASE_URL } from '../config/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ChildRegistration, StaffPassengerRegistration,CustomerRegistration } from '../types/registration.types';
+import { ChildRegistration, StaffPassengerRegistration, CustomerRegistration } from '../types/registration.types';
 import { Profile } from '../types/profile.types';
 
 // Constants

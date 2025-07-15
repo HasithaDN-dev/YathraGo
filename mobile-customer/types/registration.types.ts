@@ -17,6 +17,7 @@ export interface StaffPassengerRegistration {
   workAddress: string;
   pickUpLocation: string;
   pickupAddress: string;
+  profileImageUrl?: string;
 }
 
 // Customer Registration interface
@@ -29,8 +30,7 @@ export interface CustomerRegistration {
   emergencyContact?: string;
 }
 
-
-export type RegistrationType = 'staff';
+export type RegistrationType = 'staff' | 'child';
 
 export interface RegistrationResponse {
   success: boolean;

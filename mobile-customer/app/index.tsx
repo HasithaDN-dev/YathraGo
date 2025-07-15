@@ -38,8 +38,8 @@ export default function IndexScreen() {
           // User has seen onboarding but not authenticated
           router.replace('/(auth)/phone-auth');
         } else if (!isRegistered) {
-          // User is authenticated but not registered - show registration
-          router.replace('/(registration)/registration-type');
+          // User is authenticated but not registered - show customer registration first  
+          router.replace('/(registration)/customer-register' as any);
         } else {
           // User is authenticated and registered - go to main app
           router.replace('/(tabs)');
