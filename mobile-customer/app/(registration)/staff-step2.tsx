@@ -6,8 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StaffPassengerRegistration } from '../../types/registration.types';
 import { FormHeader } from '../../components/ui/FormHeader';
 import { CustomInput } from '../../components/ui/CustomInput';
-import { ButtonComponent } from '../../components/ui/ButtonComponent';
-import { PhoneComponent, validateSriLankanPhone } from '../../components/ui/PhoneComponent';
+import { CustomButton } from '../../components/ui/CustomButton';
 import { ProgressIndicator } from '../../components/ui/ProgressIndicator';
 import { ImagePickerField } from '../../components/ui/ImagePickerField';
 import { ApiService } from '../../services/api';
@@ -22,7 +21,6 @@ export default function StaffStep2Screen() {
     emergencyContact: '',
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [phoneError, setPhoneError] = useState('');
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -47,14 +45,6 @@ export default function StaffStep2Screen() {
       return false;
     }
 
-    // Emergency contact phone validation (if provided)
-    if (formData.emergencyContact.trim()) {
-      if (!validateSriLankanPhone(formData.emergencyContact.trim())) {
-        setPhoneError('Enter a valid Sri Lankan mobile number (e.g., +94 712 345 678)');
-        return false;
-      }
-    }
-    setPhoneError('');
     return true;
   };
 
@@ -214,13 +204,12 @@ export default function StaffStep2Screen() {
               required
             />
 
-            <PhoneComponent
+            <CustomInput
               label="Emergency Contact (optional)"
               value={formData.emergencyContact}
-              onChangeText={(value: string) => handleInputChange('emergencyContact', value)}
-              required={false}
-              error={phoneError}
-              example="e.g., +94 712 345 678"
+              onChangeText={(value) => handleInputChange('emergencyContact', value)}
+              placeholder="e.g., +94712345678"
+              keyboardType="phone-pad"
             />
 
             <CustomInput
@@ -236,7 +225,7 @@ export default function StaffStep2Screen() {
 
       {/* Submit Button */}
       <View className="px-6 pb-6" style={{ backgroundColor: '#F9FAFB' }}>
-        <ButtonComponent
+        <CustomButton
           title="Continue"
           onPress={handleSubmit}
           loading={isLoading}

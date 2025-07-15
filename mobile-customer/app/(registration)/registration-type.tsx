@@ -17,9 +17,9 @@ export default function RegistrationTypeScreen() {
     }
 
     if (selectedType === 'staff') {
-      router.push('/(registration)/staff-step1');
+      router.push('./staff-step1');
     } else {
-      router.push('/(registration)/child-step1');
+      router.push('./child-step1');
     }
   };
 

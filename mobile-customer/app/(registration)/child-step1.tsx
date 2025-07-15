@@ -45,7 +45,7 @@ export default function ChildStep1Screen() {
       console.log('[FRONTEND] Step 1 formData:', formData);
       await AsyncStorage.setItem('childRegistrationStep1', JSON.stringify(formData));
       console.log('[FRONTEND] Step 1 data saved to AsyncStorage.');
-      router.push('/(registration)/child-step2');
+      router.push('./child-step2');
     } catch (e) {
       console.log('[FRONTEND] Error saving step 1 data:', e);
       Alert.alert('Error', 'Failed to save data. Please try again.');
