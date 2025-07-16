@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, TextInput, TouchableOpacity, Alert, Button, Pressable } from 'react-native';
+import { Link, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -68,11 +68,12 @@ export default function PhoneAuthScreen() {
   return (
     <View className="flex-1 bg-white px-6 justify-center">
       <StatusBar style="dark" />
-      
+     
       <View className="mb-8">
         <Text className="text-3xl font-bold text-center text-black mb-2">
           Welcome to YathraGo
         </Text>
+      
         <Text className="text-base text-center text-brand-neutralGray">
           Enter your phone number to get started
         </Text>
@@ -108,8 +109,13 @@ export default function PhoneAuthScreen() {
           <Text className="text-xs text-center text-gray-500">
             By continuing, you agree to our Terms of Service and Privacy Policy
           </Text>
+           <Link href={'/(auth)/reg-personal'}>
+            <Text > Register</Text>
+          </Link>
         </View>
+        
       </View>
+      
     </View>
   );
 }
