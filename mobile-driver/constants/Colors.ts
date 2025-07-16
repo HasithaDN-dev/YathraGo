@@ -9,7 +9,8 @@ const neutralGray = '#6b7280';       // Secondary text/icons
 const white = '#ffffff';             // Background
 const black = '#000000';     
 const goldenYellow = '#FFB425'; 
-const birghtOrange = '#FDC334';      // Primary text
+const birghtOrange = '#FDC334';  
+const lightNavy  = '#2D4A8A'   // Primary text
 
 export const Colors = {
   // For tab navigation (React Navigation requirement)

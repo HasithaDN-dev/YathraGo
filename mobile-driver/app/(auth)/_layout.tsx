@@ -48,6 +48,34 @@ export default function AuthLayout() {
             title:'Upload ID'
           }}
         />
+        <Stack.Screen
+          name='ownership'
+          options={{
+            headerShown:false,
+            title:'Vehicle Ownership'
+          }}
+        />
+        <Stack.Screen
+          name='vehicle-reg'
+          options={{
+            headerShown:false,
+            title:'Vehicle Registration'
+          }}
+        />
+        <Stack.Screen
+          name='vehicle-doc'
+          options={{
+            headerShown:false,
+            title:'Vehicle Documents'
+          }}
+        />
+        <Stack.Screen
+          name='success'
+          options={{
+            headerShown:false,
+            title:'Success'
+          }}
+        />
       </Stack>
     </IdVerificationProvider>
   );

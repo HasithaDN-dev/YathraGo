@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { StatusBar } from 'expo-status-bar';
 import { useIdVerification } from '@/contexts/IdVerificationContext';
+import { ApiService } from '@/services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const IdCardPlaceholder = ({ onPress, imageUri }: { onPress: () => void; imageUri?: string | null }) => (
   <View className="w-full h-48 bg-brand-lightGray rounded-lg border-2 border-dashed border-gray-300 overflow-hidden">
@@ -27,9 +29,23 @@ export default function RegIdScreen() {
   const router = useRouter();
   const { frontImage, backImage } = useIdVerification();
 
-  const handleVerify = () => {
-    // Logic to submit images for verification would go here
-    console.log("Verifying ID...");
+  const handleVerify = async () => {
+    if (frontImage && backImage) {
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        if (token) {
+          // We are calling the API but not handling the response since the backend is not implemented
+          ApiService.uploadIdDocuments(token, frontImage, backImage);
+          router.push('/(auth)/ownership');
+        } else {
+          Alert.alert('Authentication Error', 'You are not logged in.');
+        }
+      } catch (error) {
+        console.error(error);
+        // Even if the API call fails, navigate to the next screen as per the instructions
+        router.back();
+      }
+    }
   };
 
   return (
