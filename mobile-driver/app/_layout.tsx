@@ -13,7 +13,7 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const { isAuthenticated, isLoading } = useAuthState();
   const [loaded] = useFonts({
-    Figtree: require('../assets/fonts/Figtree-VariableFont_wght.ttf'),
+    'Figtree': require('../assets/fonts/Figtree-VariableFont_wght.ttf'),
     'Figtree-Italic': require('../assets/fonts/Figtree-Italic-VariableFont_wght.ttf'),
   });
 

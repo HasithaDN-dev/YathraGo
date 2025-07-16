@@ -80,7 +80,7 @@ export default function OnboardingScreen() {
       {/* Skip Button */}
       <View className="absolute top-20 right-6 z-10">
         <TouchableOpacity onPress={handleSkip}>
-          <Typography level="callout" className="text-brand-deepNavy">Skip</Typography>
+          <Typography variant="callout" className="text-brand-deepNavy">Skip</Typography>
         </TouchableOpacity>
       </View>
 
@@ -107,12 +107,12 @@ export default function OnboardingScreen() {
         </View>
 
         {/* Title */}
-        <Typography level="title-1" className="text-center mb-4">
+        <Typography variant="title-1" className="text-center mb-4">
           {currentItem.title}
         </Typography>
 
         {/* Description */}
-        <Typography level="body" className="text-center mb-8 px-4 text-brand-neutralGray">
+        <Typography variant="body" className="text-center mb-8 px-4 text-brand-neutralGray">
           {currentItem.description}
         </Typography>
 
@@ -136,7 +136,7 @@ export default function OnboardingScreen() {
             className={`py-3 px-6 ${currentIndex === 0 ? 'opacity-0' : 'opacity-100'}`}
             disabled={currentIndex === 0}
           >
-            <Typography level="callout" className="text-brand-deepNavy">Back</Typography>
+            <Typography variant="callout" className="text-brand-deepNavy">Back</Typography>
           </TouchableOpacity>
 
           {/* Next/Get Started Button */}
@@ -144,7 +144,7 @@ export default function OnboardingScreen() {
             onPress={isLastScreen ? handleGetStarted : handleNext}
             className="bg-brand-deepNavy py-3 px-8 rounded-lg"
           >
-            <Typography level="callout" className="text-white">
+            <Typography variant="callout" className="text-white">
               {isLastScreen ? 'Get Started' : 'Next'}
             </Typography>
           </TouchableOpacity>

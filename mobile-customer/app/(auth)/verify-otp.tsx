@@ -124,13 +124,13 @@ export default function VerifyOTPScreen() {
       <StatusBar style="dark" />
       
       <View className="mb-8">
-        <Typography level="large-title" weight="bold" className="text-center text-gray-800 mb-2">
+        <Typography variant="large-title" weight="bold" className="text-center text-brand-deepNavy mb-2">
           Verify Phone Number
         </Typography>
-        <Typography level="body" className="text-center text-gray-600 mb-2">
+        <Typography variant="body" className="text-center text-brand-neutralGray mb-2">
           Enter the 6-digit code sent to
         </Typography>
-        <Typography level="body" weight="semibold" className="text-center text-gray-800">
+        <Typography variant="body" weight="semibold" className="text-center text-brand-deepNavy">
           {phoneNumber}
         </Typography>
       </View>
@@ -157,25 +157,24 @@ export default function VerifyOTPScreen() {
           title={isLoading ? 'Verifying...' : 'Verify OTP'}
           bgVariant="primary"
           textVariant="white"
-          level="body"
-          weight="bold"
           loading={isLoading}
           onPress={handleVerifyOTP}
           fullWidth={true}
+          size="large"
         />
 
         {/* Resend OTP - text button */}
         {canResend ? (
           <View className="items-center mt-4">
             <TouchableOpacity onPress={handleResendOTP}>
-              <Typography level="body" weight="medium" className="text-brand-warmYellow">
+              <Typography variant="body" weight="medium" className="text-brand-warmYellow">
                 Resend OTP
               </Typography>
             </TouchableOpacity>
           </View>
         ) : (
           <View className="items-center mt-4">
-            <Typography level="body" className="text-gray-500">
+            <Typography variant="body" className="text-brand-neutralGray">
               Resend OTP in {resendTimer}s
             </Typography>
           </View>
@@ -184,7 +183,7 @@ export default function VerifyOTPScreen() {
         {/* Change number - text button */}
         <View className="items-center mt-4">
           <TouchableOpacity onPress={() => router.back()}>
-            <Typography level="body" weight="medium" className="text-gray-600">
+            <Typography variant="body" weight="medium" className="text-brand-neutralGray">
               Change Phone Number
             </Typography>
           </TouchableOpacity>

@@ -1,59 +1,69 @@
 import React from 'react';
 import { Text, type TextProps } from 'react-native';
+import { FontWeight, TypographyVariant } from '@/types/common.types';
 
-export type TypographyLevel = 'large-title' | 'title-1' | 'title-2' | 'title-3' | 'headline' | 'body' | 'callout' | 'subhead' | 'footnote' | 'caption-1' | 'caption-2' | 'tappable';
-
-export type TypographyWeight = 'regular' | 'medium' | 'semibold' | 'bold';
-
-export type TypographyProps = TextProps & {
-  level?: TypographyLevel;
-  weight?: TypographyWeight;
-  color?: string;
-  className?: string;
+interface TypographyProps extends TextProps {
+  variant: TypographyVariant;
+  weight?: FontWeight;
   children: React.ReactNode;
+}
+
+const variantSizes: Record<TypographyVariant, string> = {
+  'large-title': 'text-large-title',
+  'title-1': 'text-title-1',
+  'title-2': 'text-title-2',
+  'title-3': 'text-title-3',
+  'headline': 'text-headline',
+  'body': 'text-body',
+  'callout': 'text-callout',
+  'subhead': 'text-subhead',
+  'footnote': 'text-footnote',
+  'caption-1': 'text-caption-1',
+  'caption-2': 'text-caption-2',
+  'tappable': 'text-tappable',
 };
 
-export function Typography({
-  level = 'body',
+const defaultWeights: Record<TypographyVariant, FontWeight> = {
+  'large-title': 'regular',
+  'title-1': 'regular',
+  'title-2': 'regular',
+  'title-3': 'regular',
+  'headline': 'semibold',
+  'body': 'regular',
+  'callout': 'regular',
+  'subhead': 'regular',
+  'footnote': 'regular',
+  'caption-1': 'regular',
+  'caption-2': 'regular',
+  'tappable': 'medium',
+};
+
+const weightStyles: Record<FontWeight, string> = {
+  'light': 'font-figtree-light',
+  'regular': 'font-figtree-regular',
+  'medium': 'font-figtree-medium',
+  'semibold': 'font-figtree-semibold',
+  'bold': 'font-figtree-bold',
+  'extrabold': 'font-figtree-extrabold',
+};
+
+export const Typography: React.FC<TypographyProps> = ({ 
+  variant = 'body', 
   weight,
-  color,
-  className,
-  children,
-  style,
-  ...props
-}: TypographyProps) {
+  children, 
+  className, 
+  ...props 
+}) => {
+  const finalWeight = weight || defaultWeights[variant];
+  const sizeClass = variantSizes[variant];
+  const weightClass = weightStyles[finalWeight];
   
-  // Get font weight based on variant and weight prop
-  const getFontWeight = () => {
-    if (weight) {
-      if (weight === 'regular') return 'font-normal';
-      return `font-${weight}`;
-    }
-    // Default weights based on YathraGo design system
-    switch (level) {
-      case 'large-title':
-      case 'title-1':
-        return 'font-bold';
-      case 'headline':
-        return 'font-semibold';
-      case 'tappable':
-        return 'font-medium';
-      default:
-        return 'font-normal';
-    }
-  };
-
-  const levelStyles = `text-${level} ${getFontWeight()}`;
-
   return (
-    <Text
-      style={style}
-      className={`${levelStyles} ${className}`}
+    <Text 
+      className={`${weightClass} ${sizeClass} ${className}`}
       {...props}
     >
       {children}
     </Text>
   );
-}
-
-// Convenience components for common typography patterns
+};

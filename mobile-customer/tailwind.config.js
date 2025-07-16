@@ -37,7 +37,7 @@ module.exports = {
           DEFAULT: '#f59e0b',
           bg: '#fef3c7',
         },
-        'error': {
+        'danger': {
           DEFAULT: '#ef4444',
           bg: '#ffe8e8',
         },
@@ -45,6 +45,13 @@ module.exports = {
         // Background colors
         'bg-light-blue': '#c0def5',
         'bg-transparent-navy': '#c0def54d',
+      },
+
+      fontFamily: {
+        'figtree-regular': ['Figtree-Regular'],
+        'figtree-medium': ['Figtree-Medium'],
+        'figtree-semibold': ['Figtree-SemiBold'],
+        'figtree-bold': ['Figtree-Bold'],
       },
 
         fontSize: {

@@ -97,21 +97,21 @@ export default function PhoneAuthScreen() {
       <StatusBar style="dark" />
       
       <View className="mb-8">
-        <Text style={{ fontFamily: 'Figtree', fontWeight: '700', fontSize: 20 }}>Inter Bold</Text>
-        <Text style={{ fontFamily: 'Figtree-Regular', fontWeight: '700' }}>Inter Bold</Text>
-        <Text style={{ fontFamily: 'Figtree-Bold', fontWeight: '700' }}>Inter Bold</Text>
-        <Text style={{ fontFamily: 'figtree-italic', fontWeight: '700', fontStyle: 'italic' }}>Inter Bold Italic</Text>
-        <Text style={{ fontFamily: 'Figtree' }}>Fira Sans Medium Italic</Text>
-        <Text className="text-large-1">Test Title</Text>
+        <Text style={{ fontFamily: 'Figtree', fontSize: 20 }}>Whereas recognition of the inherent dignity</Text>
+        <Text style={{ fontFamily: 'Figtree-Regular', fontWeight: '700' }}>Whereas recognition of the inherent dignity</Text>
+        <Text style={{ fontFamily: 'Figtree-Bold', fontWeight: '700' }}>Whereas recognition of the inherent dignity</Text>
+        <Text style={{ fontFamily: 'figtree-italic', fontWeight: '700', fontStyle: 'italic' }}>Whereas recognition of the inherent dignity</Text>
+        <Text style={{ fontFamily: 'Figtree' }}>Whereas recognition of the inherent dignity</Text>
+        <Text className="text-large-1">Whereas recognition of the inherent dignitye</Text>
 
         <Text className="text-blue-500 text-headline font-bold">
-          Test Title
+          Whereas recognition of the inherent dignity
         </Text>
-        <Typography level="large-title" className="text-center font-normal text-black mb-2">
-          Welcome to YathraGo
+        <Typography variant="large-title" weight="semibold"className="text-center text-brand-deepNavy mb-2">
+          Welcome to YathraGo life
         </Typography>
-        <Typography level="body" className="text-center font-bold text-brand-neutralGray">
-          Enter your phone number to continue
+        <Typography variant="body" weight="bold" className="text-center text-brand-neutralGray">
+          Whereas recognition of the inherent dignity
         </Typography>
       </View>
 
@@ -121,28 +121,27 @@ export default function PhoneAuthScreen() {
           placeholder="07XXXXXXXX"
           value={phoneNumber}
           onChangeText={handlePhoneChange}
-          keyboardType="phone-pad"
-          maxLength={10}
           IconLeft={PhoneIcon}
           helperText="We'll send you a verification code"
-          variant="outline"
           size="medium"
+          keyboardType="phone-pad"
+          maxLength={10}
+          className=""
         />
 
         <CustomButton
           title={isLoading ? 'Sending Verification Code...' : 'Send Verification Code'}
+          onPress={handleSendOTP}
+          loading={isLoading}
+          fullWidth={true}
           bgVariant="primary"
           textVariant="white"
-          level="body"
-          weight="bold"
-          loading={isLoading}
-          onPress={handleSendOTP}
-          fullWidth={true}
+          size="large"
           className="mt-6"
         />
 
         <View className="mt-6">
-          <Typography level="caption-1" className="text-center text-brand-neutralGray">
+          <Typography variant="caption-1" className="text-center text-brand-neutralGray">
             By continuing, you agree to our Terms of Service and Privacy Policy
           </Typography>
         </View>
