@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { View, TextInput, TouchableOpacity } from 'react-native';
+import { Typography } from '@/components/Typography';
 import { InputProps, InputVariant } from '@/types/common.types';
 
 // Input variant styles
@@ -124,9 +125,9 @@ const InputField: React.FC<InputProps> = ({
     <View className="w-full">
       {/* Label */}
       {label && (
-        <Text className="text-label-medium font-medium text-black mb-2">
+        <Typography variant="label-medium" weight="semibold" className="text-black mb-2">
           {label}
-        </Text>
+        </Typography>
       )}
 
       {/* Input Container */}
@@ -167,16 +168,16 @@ const InputField: React.FC<InputProps> = ({
 
       {/* Error Message */}
       {error && (
-        <Text className="text-label-small text-red-500 mt-1">
+        <Typography variant="label-small" className="text-red-500 mt-1">
           {error}
-        </Text>
+        </Typography>
       )}
 
       {/* Helper Text */}
       {helperText && !error && (
-        <Text className="text-label-small text-brand-neutralGray mt-1">
+        <Typography variant="label-small" className="text-brand-neutralGray mt-1">
           {helperText}
-        </Text>
+        </Typography>
       )}
     </View>
   );

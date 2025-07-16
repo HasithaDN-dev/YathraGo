@@ -49,6 +49,7 @@ module.exports = {
 
         fontSize: {
         // Your Custom Typography Scale
+        'large-1': '28px',
         'large-title': ['34px', { lineHeight: '41px' }],
         'title-1': ['28px', { lineHeight: '34px' }],
         'title-2': ['22px', { lineHeight: '28px' }],

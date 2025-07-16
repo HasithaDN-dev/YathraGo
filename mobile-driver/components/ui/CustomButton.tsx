@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, View, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Typography } from '@/components/Typography';
 import { ButtonProps, ButtonBgVariant, ButtonTextVariant } from '@/types/common.types';
 
 // Background variant styles
@@ -144,7 +145,7 @@ const CustomButton: React.FC<ButtonProps> = ({
       return (
         <View className="flex-row items-center justify-center gap-2">
           <ActivityIndicator size="small" color={iconColor} />
-          <Text className={textClasses}>Loading...</Text>
+          <Typography className={textClasses}>Loading...</Typography>
         </View>
       );
     }
@@ -152,9 +153,9 @@ const CustomButton: React.FC<ButtonProps> = ({
     return (
       <View className="flex-row items-center justify-center gap-2">
         {IconLeft && <IconLeft size={iconSize} color={iconColor} weight="regular" />}
-        <Text className={textClasses}>
+        <Typography className={textClasses}>
           {title}
-        </Text>
+        </Typography>
         {IconRight && <IconRight size={iconSize} color={iconColor} weight="regular" />}
       </View>
     );

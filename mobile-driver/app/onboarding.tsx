@@ -74,7 +74,7 @@ export default function OnboardingScreen() {
       {/* Skip Button */}
       <View className="absolute top-20 right-6 z-10">
         <TouchableOpacity onPress={handleSkip}>
-          <Typography variant="label-large" className="text-brand-deepNavy">Skip</Typography>
+          <Typography level="label" weight="medium" className="text-brand-deepNavy">Skip</Typography>
         </TouchableOpacity>
       </View>
 
@@ -101,12 +101,12 @@ export default function OnboardingScreen() {
         </View>
 
         {/* Title */}
-        <Typography variant="headline-large" className="text-center mb-4">
+        <Typography level="headline" weight="bold" className="text-center mb-4">
           {currentItem.title}
         </Typography>
 
         {/* Description */}
-        <Typography variant="body-medium" className="text-center mb-8 px-4 text-brand-neutralGray">
+        <Typography level="body" weight="regular" className="text-center mb-8 px-4 text-brand-neutralGray">
           {currentItem.description}
         </Typography>
 
@@ -131,7 +131,7 @@ export default function OnboardingScreen() {
           className={`py-3 px-6 ${currentIndex === 0 ? 'opacity-0' : 'opacity-100'}`}
           disabled={currentIndex === 0}
         >
-          <Typography variant="label-large" className="text-brand-deepNavy">Back</Typography>
+          <Typography level="label" weight="medium" className="text-brand-deepNavy">Back</Typography>
         </TouchableOpacity>
 
         {/* Next/Get Started Button */}
@@ -139,7 +139,7 @@ export default function OnboardingScreen() {
           onPress={isLastScreen ? handleGetStarted : handleNext}
           className="bg-brand-deepNavy py-3 px-8 rounded-lg"
         >
-          <Typography variant="label-large" className="text-white">
+          <Typography level="label" weight="medium" className="text-white">
             {currentIndex === 0 ? 'Continue' : isLastScreen ? 'Get Started' : 'Next'}
           </Typography>
         </TouchableOpacity>

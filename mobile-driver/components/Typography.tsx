@@ -9,7 +9,7 @@ export type TypographyVariant =
   | 'body-large' | 'body-medium' | 'body-small' | 'body-extra-small'
   | 'label-large' | 'label-medium' | 'label-small';
 
-export type TypographyWeight = 'regular' | 'semibold' | 'bold';
+export type TypographyWeight = 'regular' | 'semibold' | 'bold' | 'medium';
 
 export type TypographyProps = TextProps & {
   variant?: TypographyVariant;

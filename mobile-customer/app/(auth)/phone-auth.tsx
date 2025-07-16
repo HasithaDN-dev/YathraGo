@@ -102,13 +102,15 @@ export default function PhoneAuthScreen() {
         <Text style={{ fontFamily: 'Figtree-Bold', fontWeight: '700' }}>Inter Bold</Text>
         <Text style={{ fontFamily: 'figtree-italic', fontWeight: '700', fontStyle: 'italic' }}>Inter Bold Italic</Text>
         <Text style={{ fontFamily: 'Figtree' }}>Fira Sans Medium Italic</Text>
+        <Text className="text-large-1">Test Title</Text>
+
         <Text className="text-blue-500 text-headline font-bold">
-          Hello, Tailwind in Expo!
+          Test Title
         </Text>
-        <Typography level="large-title" className="text-center text-black mb-2">
+        <Typography level="large-title" className="text-center font-normal text-black mb-2">
           Welcome to YathraGo
         </Typography>
-        <Typography level="body" className="text-center text-brand-neutralGray">
+        <Typography level="body" className="text-center font-bold text-brand-neutralGray">
           Enter your phone number to continue
         </Typography>
       </View>
