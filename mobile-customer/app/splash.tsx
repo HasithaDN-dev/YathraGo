@@ -132,10 +132,10 @@ export default function SplashScreen() {
           }}
           className="items-center mb-4"
         >
-          <Typography variant="display-large" className="text-brand-deepNavy font-bold text-center">
+          <Typography level="large-title" weight="bold" className="text-brand-deepNavy text-center">
             YathraGo
           </Typography>
-          <Typography variant="headline-medium" className="text-brand-brightOrange font-medium">
+          <Typography level="headline" weight="medium" className="text-brand-brightOrange">
             Customer
           </Typography>
         </Animated.View>
@@ -145,10 +145,10 @@ export default function SplashScreen() {
           style={{ opacity: taglineOpacity }}
           className="items-center mb-12"
         >
-          <Typography variant="body-large" className="text-brand-neutralGray text-center leading-6">
+          <Typography level="body" className="text-brand-neutralGray text-center leading-6">
             Your Reliable Ride Partner
           </Typography>
-          <Typography variant="body-medium" className="text-brand-warmYellow text-center mt-2 font-medium">
+          <Typography level="body" weight="medium" className="text-brand-warmYellow text-center mt-2">
             Book. Ride. Arrive.
           </Typography>
         </Animated.View>
@@ -172,7 +172,7 @@ export default function SplashScreen() {
               }}
             />
           </View>
-          <Typography variant="label-small" className="text-brand-neutralGray mt-3">
+          <Typography level="caption-1" className="text-brand-neutralGray mt-3">
             Loading...
           </Typography>
         </Animated.View>

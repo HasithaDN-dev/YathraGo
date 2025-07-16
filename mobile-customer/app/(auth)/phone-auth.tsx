@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, Alert } from 'react-native';
+import { Typography } from '@/components/Typography';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Phone } from 'phosphor-react-native';
+import { PhoneIcon } from 'phosphor-react-native';
 import { useAuth } from '../../hooks/useAuth';
 import CustomButton from '../../components/ui/CustomButton';
 import InputField from '../../components/ui/InputField';
@@ -96,12 +97,20 @@ export default function PhoneAuthScreen() {
       <StatusBar style="dark" />
       
       <View className="mb-8">
-        <Text className="text-3xl font-bold text-center text-black mb-2">
+        <Text style={{ fontFamily: 'Figtree', fontWeight: '700', fontSize: 20 }}>Inter Bold</Text>
+        <Text style={{ fontFamily: 'Figtree-Regular', fontWeight: '700' }}>Inter Bold</Text>
+        <Text style={{ fontFamily: 'Figtree-Bold', fontWeight: '700' }}>Inter Bold</Text>
+        <Text style={{ fontFamily: 'figtree-italic', fontWeight: '700', fontStyle: 'italic' }}>Inter Bold Italic</Text>
+        <Text style={{ fontFamily: 'Figtree' }}>Fira Sans Medium Italic</Text>
+        <Text className="text-blue-500 text-headline font-bold">
+          Hello, Tailwind in Expo!
+        </Text>
+        <Typography level="large-title" className="text-center text-black mb-2">
           Welcome to YathraGo
-        </Text>
-        <Text className="text-base text-center text-brand-neutralGray">
+        </Typography>
+        <Typography level="body" className="text-center text-brand-neutralGray">
           Enter your phone number to continue
-        </Text>
+        </Typography>
       </View>
 
       <View className="space-y-4">
@@ -112,17 +121,18 @@ export default function PhoneAuthScreen() {
           onChangeText={handlePhoneChange}
           keyboardType="phone-pad"
           maxLength={10}
-          IconLeft={Phone}
+          IconLeft={PhoneIcon}
           helperText="We'll send you a verification code"
           variant="outline"
-          textSize="body-medium"
+          size="medium"
         />
 
         <CustomButton
-          title={isLoading ? 'Sending OTP...' : 'Send OTP'}
+          title={isLoading ? 'Sending Verification Code...' : 'Send Verification Code'}
           bgVariant="primary"
           textVariant="white"
-          textSize="body-large"
+          level="body"
+          weight="bold"
           loading={isLoading}
           onPress={handleSendOTP}
           fullWidth={true}
@@ -130,9 +140,9 @@ export default function PhoneAuthScreen() {
         />
 
         <View className="mt-6">
-          <Text className="text-xs text-center text-brand-neutralGray">
+          <Typography level="caption-1" className="text-center text-brand-neutralGray">
             By continuing, you agree to our Terms of Service and Privacy Policy
-          </Text>
+          </Typography>
         </View>
       </View>
     </View>

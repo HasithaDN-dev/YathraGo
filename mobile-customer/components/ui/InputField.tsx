@@ -1,55 +1,97 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
-import { InputProps, InputVariant } from '@/types/common.types';
+import { WarningCircleIcon } from 'phosphor-react-native';
+import { View, TextInput, TouchableOpacity } from 'react-native';
+import { Typography } from '@/components/Typography';
+import { InputVariant, InputFieldProps } from '@/types/common.types';
 
-// Input variant styles
-const getInputVariantStyle = (variant: InputVariant, isFocused: boolean, hasError: boolean) => {
+// Focus color map for border and icon
+const focusColorMap = {
+  deepNavy: {
+    border: 'border-brand-deepNavy',
+    border2: 'border-2 border-brand-deepNavy',
+    borderB: 'border-b-2 border-brand-deepNavy',
+    hex: '#143373',
+  },
+  navyBlue: {
+    border: 'border-brand-navyBlue',
+    border2: 'border-2 border-brand-navyBlue',
+    borderB: 'border-b-2 border-brand-navyBlue',
+    hex: '#1e40af',
+  },
+  warmYellow: {
+    border: 'border-brand-warmYellow',
+    border2: 'border-2 border-brand-warmYellow',
+    borderB: 'border-b-2 border-brand-warmYellow',
+    hex: '#fbbf24',
+  },
+};
+
+// Input variant styles with focusColor
+const getInputVariantStyle = (
+  variant: InputVariant,
+  isFocused: boolean,
+  hasError: boolean,
+  focusColor: 'deepNavy' | 'navyBlue' | 'warmYellow'
+) => {
   if (hasError) {
-    return 'border-2 border-red-500 bg-white';
+    return 'border-2 border-error bg-white';
   }
-  
+  const color = focusColorMap[focusColor] || focusColorMap.navyBlue;
   switch (variant) {
     case 'outline':
-      return isFocused 
-        ? 'border-2 border-brand-deepNavy bg-white' 
+      return isFocused
+        ? `${color.border2} bg-white`
         : 'border-2 border-gray-300 bg-white';
     case 'ghost':
-      return isFocused 
-        ? 'border-b-2 border-brand-deepNavy bg-transparent' 
+      return isFocused
+        ? `${color.borderB} bg-transparent`
         : 'border-b border-gray-300 bg-transparent';
     case 'error':
-      return 'border-2 border-red-500 bg-red-50';
+      return 'border-2 border-error bg-error-bg';
     case 'success':
-      return 'border-2 border-green-500 bg-green-50';
-    default: // default
-      return isFocused 
-        ? 'border border-brand-deepNavy bg-white' 
+      return 'border-2 border-success bg-success-bg';
+    default:
+      return isFocused
+        ? `border ${color.border} bg-white`
         : 'border border-gray-300 bg-white';
   }
 };
 
-// Get icon color based on variant and state
-const getIconColor = (variant: InputVariant, isFocused: boolean, hasError: boolean) => {
-  if (hasError) return '#ef4444'; // red-500
-  if (isFocused) return '#143373'; // brand-deepNavy
-  
+// Map theme color names to hex codes for icon coloring
+const themeHexMap = {
+  error: '#ef4444', // Tailwind error
+  success: '#10b981', // Tailwind success
+  neutralGray: '#6b7280', // Tailwind gray-500
+};
+
+// Get icon color based on variant, state, and focusColor (always returns hex for Phosphor icons)
+const getIconColor = (
+  variant: InputVariant,
+  isFocused: boolean,
+  hasError: boolean,
+  focusColor: 'deepNavy' | 'navyBlue' | 'warmYellow'
+) => {
+  if (hasError) return themeHexMap.error;
+  if (isFocused) return focusColorMap[focusColor]?.hex || focusColorMap.navyBlue.hex;
   switch (variant) {
     case 'success':
-      return '#10b981'; // green-500
+      return themeHexMap.success;
     case 'error':
-      return '#ef4444'; // red-500
+      return themeHexMap.error;
     default:
-      return '#6b7280'; // gray-500
+      return themeHexMap.neutralGray;
   }
 };
 
-const InputField: React.FC<InputProps> = ({
+
+
+const InputField: React.FC<InputFieldProps> = ({
   label,
   placeholder,
   value,
   onChangeText,
   variant = 'default',
-  textSize = 'body-medium',
+  size = 'medium',
   IconLeft,
   IconRight,
   keyboardType = 'default',
@@ -63,6 +105,7 @@ const InputField: React.FC<InputProps> = ({
   className = '',
   onFocus,
   onBlur,
+  focusColor = 'navyBlue',
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -78,55 +121,64 @@ const InputField: React.FC<InputProps> = ({
     onBlur?.();
   };
 
-  // Dynamic sizing based on textSize
-  const getTextSizeStyle = () => {
-    if (textSize.startsWith('display-') || textSize.startsWith('headline-')) {
-      return `text-${textSize}`;
-    } else if (textSize.startsWith('title-')) {
-      return `text-${textSize}`;
-    } else {
-      return `text-${textSize}`;
-    }
-  };
 
-  const getIconSize = () => {
-    if (textSize.startsWith('display-')) return 28;
-    if (textSize.startsWith('headline-')) return 24;
-    if (textSize.startsWith('title-large')) return 22;
-    if (textSize.startsWith('title-')) return 20;
-    if (textSize.startsWith('body-large')) return 20;
-    if (textSize.startsWith('body-')) return 18;
-    if (textSize.startsWith('label-')) return 16;
-    return 18; // Default
+  // Map size to font size and icon size
+  const sizeMap = {
+    small: {
+      label: { level: 'caption-1', className: 'mb-1' },
+      input: { font: 'caption-1', height: 'h-10', py: 'py-2', px: 'px-3' },
+      error: { level: 'caption-1', className: 'mt-1' },
+      helper: { level: 'caption-1', className: 'mt-1' },
+      icon: 16,
+    },
+    medium: {
+      label: { level: 'subhead', className: 'mb-2' },
+      input: { font: 'body', height: 'h-12', py: 'py-3', px: 'px-4' },
+      error: { level: 'caption-1', className: 'mt-1' },
+      helper: { level: 'caption-1', className: 'mt-1' },
+      icon: 18,
+    },
+    large: {
+      label: { level: 'title-3', className: 'mb-3' },
+      input: { font: 'title-2', height: 'h-14', py: 'py-4', px: 'px-5' },
+      error: { level: 'body', className: 'mt-2' },
+      helper: { level: 'body', className: 'mt-2' },
+      icon: 22,
+    },
   };
+  const iconSize = sizeMap[size].icon;
+  const heightClass = multiline ? sizeMap[size].input.py : sizeMap[size].input.height;
+  const pxClass = sizeMap[size].input.px;
+  const fontSizeClass = `text-${sizeMap[size].input.font}`;
+
 
   const inputContainerClasses = [
     'rounded-xl flex flex-row items-center',
-    getInputVariantStyle(variant, isFocused, hasError),
-    multiline ? 'py-3' : 'h-12',
-    'px-4',
+    getInputVariantStyle(variant, isFocused, hasError, focusColor),
+    heightClass,
+    pxClass,
     !editable ? 'opacity-60' : '',
     className
   ].filter(Boolean).join(' ');
 
   const textInputClasses = [
     'flex-1',
-    getTextSizeStyle(),
+    fontSizeClass,
     'text-black',
     IconLeft ? 'ml-2' : '',
     IconRight ? 'mr-2' : '',
   ].filter(Boolean).join(' ');
 
-  const iconColor = getIconColor(variant, isFocused, hasError);
-  const iconSize = getIconSize();
+  const iconColor = getIconColor(variant, isFocused, hasError, focusColor);
+  // Removed duplicate iconSize declaration
 
   return (
     <View className="w-full">
       {/* Label */}
       {label && (
-        <Text className="text-label-medium font-medium text-black mb-2">
+        <Typography level={sizeMap[size].label.level as any} weight="semibold" className={`text-black ${sizeMap[size].label.className}`.trim()}>
           {label}
-        </Text>
+        </Typography>
       )}
 
       {/* Input Container */}
@@ -158,25 +210,31 @@ const InputField: React.FC<InputProps> = ({
         />
 
         {/* Right Icon */}
-        {IconRight && (
-          <TouchableOpacity>
-            <IconRight size={iconSize} color={iconColor} weight="regular" />
+        {error ? (
+          <TouchableOpacity disabled>
+            <WarningCircleIcon size={iconSize} color={themeHexMap.error} weight="bold" />
           </TouchableOpacity>
+        ) : (
+          IconRight && (
+            <TouchableOpacity>
+              <IconRight size={iconSize} color={iconColor} weight="regular" />
+            </TouchableOpacity>
+          )
         )}
       </View>
 
       {/* Error Message */}
       {error && (
-        <Text className="text-label-small text-red-500 mt-1">
+        <Typography level={sizeMap[size].error.level as any} className={`text-error ${sizeMap[size].error.className}`.trim()}>
           {error}
-        </Text>
+        </Typography>
       )}
 
       {/* Helper Text */}
       {helperText && !error && (
-        <Text className="text-label-small text-brand-neutralGray mt-1">
+        <Typography level={sizeMap[size].helper.level as any} className={`text-brand-neutralGray ${sizeMap[size].helper.className}`.trim()}>
           {helperText}
-        </Text>
+        </Typography>
       )}
     </View>
   );

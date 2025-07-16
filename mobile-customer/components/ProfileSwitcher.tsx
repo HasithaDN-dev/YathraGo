@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
-import { useProfile } from '@/contexts/ProfileContext';
+import { View, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { Typography } from '@/components/Typography';
+import { useProfile } from '@/contexts/ProfileContext';
 
 export function ProfileSwitcher() {
   const { activeProfile, profiles, switchProfile, addChildProfile } = useProfile();
@@ -61,15 +61,15 @@ export function ProfileSwitcher() {
                   <View className={`w-6 h-6 rounded-full items-center justify-center ${
                     profile.type === 'parent' ? 'bg-brand-brightOrange' : 'bg-brand-softOrange'
                   }`}>
-                    <Text className="text-xs text-white font-bold">
+                    <Typography level="caption-1" weight="bold" className="text-white">
                       {profile.name.charAt(0).toUpperCase()}
-                    </Text>
+                    </Typography>
                   </View>
                   
                   {/* Profile Name */}
                   <View className="ml-2">
                     <Typography 
-                      variant="label-medium" 
+                      level="subhead" 
                       className={
                         activeProfile.id === profile.id
                           ? 'text-white'
@@ -97,9 +97,9 @@ export function ProfileSwitcher() {
                 className="px-4 py-2 rounded-full border-2 border-dashed border-brand-neutralGray"
               >
                 <View className="flex-row items-center">
-                  <Text className="text-brand-neutralGray text-lg">+</Text>
+                  <Typography level="callout" className="text-brand-neutralGray">+</Typography>
                   <View className="ml-2">
-                    <Typography variant="label-medium" className="text-brand-neutralGray">
+                    <Typography level="subhead" className="text-brand-neutralGray">
                       Add Child
                     </Typography>
                   </View>
@@ -117,12 +117,12 @@ export function ProfileSwitcher() {
                 />
                 <View className="ml-2">
                   <TouchableOpacity onPress={handleAddChild} className="bg-brand-deepNavy rounded-full w-6 h-6 items-center justify-center">
-                    <Text className="text-white text-xs">✓</Text>
+                    <Typography level="caption-1" className="text-white">✓</Typography>
                   </TouchableOpacity>
                 </View>
                 <View className="ml-1">
                   <TouchableOpacity onPress={cancelAddChild} className="bg-brand-neutralGray rounded-full w-6 h-6 items-center justify-center">
-                    <Text className="text-white text-xs">✕</Text>
+                    <Typography level="caption-1" className="text-white">✕</Typography>
                   </TouchableOpacity>
                 </View>
               </View>

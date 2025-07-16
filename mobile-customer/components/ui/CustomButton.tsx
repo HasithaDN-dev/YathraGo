@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, View, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Typography } from '@/components/Typography';
 import { ButtonProps, ButtonBgVariant, ButtonTextVariant } from '@/types/common.types';
 
 // Background variant styles
@@ -66,7 +67,8 @@ const CustomButton: React.FC<ButtonProps> = ({
   title,
   bgVariant = 'primary',
   textVariant = 'white',
-  textSize = 'body-large', // Default to body-large
+  level = 'body', // Default to body
+  weight,
   IconLeft,
   IconRight,
   loading = false,
@@ -78,48 +80,55 @@ const CustomButton: React.FC<ButtonProps> = ({
 }) => {
   const isDisabled = disabled || loading;
 
-  // Dynamic padding based on text content and textSize
+  // Dynamic padding based on text content and level
   const getDynamicPadding = () => {
     const textLength = title.length;
     const hasIcons = IconLeft || IconRight;
-    
-    // Base padding varies by text size category
-    if (textSize.startsWith('display-') || textSize.startsWith('headline-')) {
-      return hasIcons ? 'px-5 py-4' : 'px-6 py-4'; // Large text
-    } else if (textSize.startsWith('title-')) {
-      return hasIcons ? 'px-4 py-3' : 'px-5 py-3'; // Title text
-    } else if (textSize.startsWith('label-')) {
-      return hasIcons ? 'px-2 py-2' : 'px-3 py-2'; // Small text
-    } else {
-      // Body text - adjust for length
-      if (textLength <= 8) {
-        return hasIcons ? 'px-4 py-3' : 'px-5 py-3'; // Short text
-      } else {
-        return hasIcons ? 'px-3 py-3' : 'px-4 py-3'; // Long text
-      }
+    switch (level) {
+      case 'large-title':
+        return hasIcons ? 'px-5 py-4' : 'px-6 py-4';
+      case 'title-1':
+      case 'title-2':
+      case 'title-3':
+        return hasIcons ? 'px-4 py-3' : 'px-5 py-3';
+      case 'caption-1':
+      case 'caption-2':
+        return hasIcons ? 'px-2 py-2' : 'px-3 py-2';
+      default:
+        if (textLength <= 8) {
+          return hasIcons ? 'px-4 py-3' : 'px-5 py-3';
+        } else {
+          return hasIcons ? 'px-3 py-3' : 'px-4 py-3';
+        }
     }
   };
 
-  const getTextSizeStyle = () => {
-    // Determine appropriate font weight based on text size category
-    if (textSize.startsWith('display-') || textSize.startsWith('headline-')) {
-      return `text-${textSize} font-bold`;
-    } else if (textSize.startsWith('title-')) {
-      return `text-${textSize} font-semibold`;
-    } else {
-      return `text-${textSize} font-regular`;
-    }
-  };
-
+  // Icon size based on level
   const getIconSize = () => {
-    if (textSize.startsWith('display-')) return 32;      // Large icons for display text
-    if (textSize.startsWith('headline-')) return 28;     // Medium-large icons
-    if (textSize.startsWith('title-large')) return 24;   // Large title icons
-    if (textSize.startsWith('title-')) return 20;        // Standard title icons
-    if (textSize.startsWith('body-large')) return 20;    // Body large icons
-    if (textSize.startsWith('body-')) return 18;         // Standard body icons
-    if (textSize.startsWith('label-')) return 16;        // Small label icons
-    return 20; // Default
+    switch (level) {
+      case 'large-title':
+        return 32;
+      case 'title-1':
+        return 24;
+      case 'title-2':
+        return 22;
+      case 'title-3':
+        return 20;
+      case 'headline':
+      case 'callout':
+      case 'tappable':
+        return 18;
+      case 'subhead':
+        return 16;
+      case 'footnote':
+        return 14;
+      case 'caption-1':
+      case 'caption-2':
+        return 12;
+      case 'body':
+      default:
+        return 18;
+    }
   };
 
   const buttonClasses = [
@@ -131,11 +140,7 @@ const CustomButton: React.FC<ButtonProps> = ({
     className
   ].filter(Boolean).join(' ');
 
-  const textClasses = [
-    getTextSizeStyle(),
-    getTextVariantStyle(textVariant)
-  ].filter(Boolean).join(' ');
-
+  const textClasses = [getTextVariantStyle(textVariant)].filter(Boolean).join(' ');
   const iconColor = getIconColor(textVariant, bgVariant);
   const iconSize = getIconSize();
 
@@ -144,7 +149,7 @@ const CustomButton: React.FC<ButtonProps> = ({
       return (
         <View className="flex-row items-center justify-center gap-2">
           <ActivityIndicator size="small" color={iconColor} />
-          <Text className={textClasses}>Loading...</Text>
+          <Typography level={level} weight={weight} className={textClasses}>Loading...</Typography>
         </View>
       );
     }
@@ -152,9 +157,9 @@ const CustomButton: React.FC<ButtonProps> = ({
     return (
       <View className="flex-row items-center justify-center gap-2">
         {IconLeft && <IconLeft size={iconSize} color={iconColor} weight="regular" />}
-        <Text className={textClasses}>
+        <Typography level={level} weight={weight} className={textClasses}>
           {title}
-        </Text>
+        </Typography>
         {IconRight && <IconRight size={iconSize} color={iconColor} weight="regular" />}
       </View>
     );

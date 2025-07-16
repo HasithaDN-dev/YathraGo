@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, Alert, TouchableOpacity } from 'react-native';
+import { View, TextInput, Alert, TouchableOpacity } from 'react-native';
+import { Typography } from '@/components/Typography';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -123,15 +124,15 @@ export default function VerifyOTPScreen() {
       <StatusBar style="dark" />
       
       <View className="mb-8">
-        <Text className="text-3xl font-bold text-center text-gray-800 mb-2">
+        <Typography level="large-title" weight="bold" className="text-center text-gray-800 mb-2">
           Verify Phone Number
-        </Text>
-        <Text className="text-base text-center text-gray-600 mb-2">
+        </Typography>
+        <Typography level="body" className="text-center text-gray-600 mb-2">
           Enter the 6-digit code sent to
-        </Text>
-        <Text className="text-base text-center text-gray-800 font-semibold">
+        </Typography>
+        <Typography level="body" weight="semibold" className="text-center text-gray-800">
           {phoneNumber}
-        </Text>
+        </Typography>
       </View>
 
       <View className="space-y-6">
@@ -156,7 +157,8 @@ export default function VerifyOTPScreen() {
           title={isLoading ? 'Verifying...' : 'Verify OTP'}
           bgVariant="primary"
           textVariant="white"
-          textSize="body-large"
+          level="body"
+          weight="bold"
           loading={isLoading}
           onPress={handleVerifyOTP}
           fullWidth={true}
@@ -166,25 +168,25 @@ export default function VerifyOTPScreen() {
         {canResend ? (
           <View className="items-center mt-4">
             <TouchableOpacity onPress={handleResendOTP}>
-              <Text className="text-brand-warmYellow font-semibold text-body-medium">
+              <Typography level="body" weight="medium" className="text-brand-warmYellow">
                 Resend OTP
-              </Text>
+              </Typography>
             </TouchableOpacity>
           </View>
         ) : (
           <View className="items-center mt-4">
-            <Text className="text-gray-500">
+            <Typography level="body" className="text-gray-500">
               Resend OTP in {resendTimer}s
-            </Text>
+            </Typography>
           </View>
         )}
 
         {/* Change number - text button */}
         <View className="items-center mt-4">
           <TouchableOpacity onPress={() => router.back()}>
-            <Text className="text-gray-600 font-semibold text-body-medium">
+            <Typography level="body" weight="medium" className="text-gray-600">
               Change Phone Number
-            </Text>
+            </Typography>
           </TouchableOpacity>
         </View>
       </View>

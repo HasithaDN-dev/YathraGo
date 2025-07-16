@@ -46,40 +46,21 @@ module.exports = {
         'bg-light-blue': '#c0def5',
         'bg-transparent-navy': '#c0def54d',
       },
-      fontFamily: {
-        'figtree': ['Figtree', 'sans-serif'],
-      },
-      fontSize: {
-        // YathraGo Display Styles
-        'display-large': ['57px', { lineHeight: '64px', letterSpacing: '-0.25px' }],
-        'display-medium': ['45px', { lineHeight: '52px', letterSpacing: '0px' }],
-        'display-small': ['36px', { lineHeight: '44px', letterSpacing: '0px' }],
-        
-        // YathraGo Headline Styles
-        'headline-large': ['32px', { lineHeight: '40px', letterSpacing: '0px' }],
-        'headline-medium': ['28px', { lineHeight: '36px', letterSpacing: '0px' }],
-        'headline-small': ['24px', { lineHeight: '32px', letterSpacing: '0px' }],
-        
-        // YathraGo Title Styles
-        'title-large': ['22px', { lineHeight: '28px', letterSpacing: '0px' }],
-        'title-medium': ['18px', { lineHeight: '22px', letterSpacing: '0.15px' }],
-        'title-small': ['14px', { lineHeight: '20px', letterSpacing: '0.1px' }],
-        
-        // YathraGo Body Styles
-        'body-large': ['18px', { lineHeight: '22px', letterSpacing: '0.5px' }],
-        'body-medium': ['16px', { lineHeight: '20px', letterSpacing: '0.25px' }],
-        'body-small': ['14px', { lineHeight: '17px', letterSpacing: '0.4px' }],
-        'body-extra-small': ['12px', { letterSpacing: '0px' }],
-        
-        // YathraGo Label Styles  
-        'label-large': ['16px', { lineHeight: '20px', letterSpacing: '0.1px' }],
-        'label-medium': ['14px', { lineHeight: '17px', letterSpacing: '0.5px' }],
-        'label-small': ['12px', { lineHeight: '14.5px', letterSpacing: '0.5px' }],
-      },
-      fontWeight: {
-        'regular': '400',
-        'semibold': '600', 
-        'bold': '700',
+
+        fontSize: {
+        // Your Custom Typography Scale
+        'large-title': ['34px', { lineHeight: '41px' }],
+        'title-1': ['28px', { lineHeight: '34px' }],
+        'title-2': ['22px', { lineHeight: '28px' }],
+        'title-3': ['20px', { lineHeight: '25px' }],
+        'headline': ['17px', { lineHeight: '22px' }],
+        'body': ['17px', { lineHeight: '22px' }],
+        'callout': ['16px', { lineHeight: '21px' }],
+        'subhead': ['15px', { lineHeight: '20px' }],
+        'footnote': ['13px', { lineHeight: '18px' }],
+        'caption-1': ['12px', { lineHeight: '16px' }],
+        'caption-2': ['11px', { lineHeight: '13px' }],
+        'tappable': ['17px', { lineHeight: '22px' }],
       },
     },
   },

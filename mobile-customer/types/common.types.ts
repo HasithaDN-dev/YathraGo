@@ -6,19 +6,27 @@ export type ButtonBgVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'd
 export type ButtonTextVariant = 'primary' | 'secondary' | 'white' | 'black' | 'navyBlue';
 
 // YathraGo Typography sizes from tailwind.config.js
-export type YathraGoTextSize = 
-  | 'display-large' | 'display-medium' | 'display-small'
-  | 'headline-large' | 'headline-medium' | 'headline-small'
-  | 'title-large' | 'title-medium' | 'title-small'
-  | 'body-large' | 'body-medium' | 'body-small' | 'body-extra-small'
-  | 'label-large' | 'label-medium' | 'label-small';
+export type YathraGoTextSize =
+  | 'large-title'
+  | 'title-1'
+  | 'title-2'
+  | 'title-3'
+  | 'headline'
+  | 'body'
+  | 'callout'
+  | 'subhead'
+  | 'footnote'
+  | 'caption-1'
+  | 'caption-2'
+  | 'tappable';
 
 // Button component props
 export interface ButtonProps {
   title: string;
   bgVariant?: ButtonBgVariant;
   textVariant?: ButtonTextVariant;
-  textSize?: YathraGoTextSize;  // Direct typography control
+  level?: YathraGoTextSize; // Direct typography control (now matches TypographyLevel)
+  weight?: 'regular' | 'medium' | 'semibold' | 'bold';
   IconLeft?: React.ComponentType<any>;
   IconRight?: React.ComponentType<any>;
   loading?: boolean;
@@ -31,14 +39,14 @@ export interface ButtonProps {
 // Input field types
 export type InputVariant = 'default' | 'outline' | 'ghost' | 'error' | 'success';
 
-// Input field component props
-export interface InputProps {
+// Input field component props (for InputField component)
+export interface InputFieldProps {
   label?: string;
   placeholder?: string;
   value: string;
   onChangeText: (text: string) => void;
   variant?: InputVariant;
-  textSize?: YathraGoTextSize;
+  size?: 'small' | 'medium' | 'large';
   IconLeft?: React.ComponentType<any>;
   IconRight?: React.ComponentType<any>;
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad' | 'url';
@@ -52,4 +60,8 @@ export interface InputProps {
   className?: string;
   onFocus?: () => void;
   onBlur?: () => void;
+  /**
+   * Focus color for border and icon when focused. One of: 'deepNavy', 'navyBlue', 'warmYellow'. Defaults to 'navyBlue'.
+   */
+  focusColor?: 'deepNavy' | 'navyBlue' | 'warmYellow';
 }
