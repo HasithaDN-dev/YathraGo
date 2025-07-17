@@ -46,7 +46,7 @@ export const useAuth = () => {
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      await AsyncStorage.multiRemove(['customer_auth_token', 'customer_data']);
+      await AsyncStorage.multiRemove(['authToken', 'customer_data']);
     } finally {
       setLoading(false);
     }
@@ -100,7 +100,7 @@ export const useAuth = () => {
     } catch (error) {
       console.error('Logout API call failed:', error);
     } finally {
-      await AsyncStorage.multiRemove(['customer_auth_token', 'customer_data']);
+      await AsyncStorage.multiRemove(['authToken', 'customer_data']);
       setIsAuthenticated(false);
       setUser(null);
       setProfile(null);
@@ -121,9 +121,17 @@ export const useAuth = () => {
         const profileResponse = await ApiService.getProfile(token);
         setProfile(profileResponse.profile);
         setUser(profileResponse.user);
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+        setProfile(null);
       }
     } catch (error) {
       console.error('Profile refresh failed:', error);
+      setIsAuthenticated(false);
+      setUser(null);
+      setProfile(null);
     }
   };
 

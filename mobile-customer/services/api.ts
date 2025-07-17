@@ -9,7 +9,7 @@ import { ChildRegistration, StaffPassengerRegistration, CustomerRegistration } f
 import { Profile } from '../types/profile.types';
 
 // Constants
-const TOKEN_KEY = 'customer_auth_token';
+const TOKEN_KEY = 'authToken';
 const CUSTOMER_KEY = 'customer_data';
 
 export class ApiService {
@@ -118,7 +118,7 @@ export class ApiService {
       console.log('Logout API call failed, proceeding with local cleanup');
     } finally {
       // Always clear local storage
-      await AsyncStorage.multiRemove([TOKEN_KEY, CUSTOMER_KEY]);
+      await AsyncStorage.multiRemove(['authToken', CUSTOMER_KEY]);
     }
   }
 
