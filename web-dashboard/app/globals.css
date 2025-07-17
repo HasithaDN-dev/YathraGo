@@ -159,3 +159,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom styles for no hover effect on logo */
+.no-hover a:hover {
+  background-color: transparent !important;
+  color: inherit !important;
+  opacity: 1 !important;
+}
