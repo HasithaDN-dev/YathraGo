@@ -73,8 +73,9 @@ export default function VerifyOTPScreen() {
       
       // Navigate based on user status
       if (result.user.isNewUser) {
-        // New user - go to Driver profile setup
-        router.replace('/(tabs)');
+        // New user - go to driver profile setup
+       // console.log("reached");
+        router.replace('/(auth)/reg-personal');
       } else {
         // Existing user - go to main app
         router.replace('/(tabs)');

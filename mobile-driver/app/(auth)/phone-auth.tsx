@@ -108,6 +108,7 @@ export default function PhoneAuthScreen() {
         <Typography variant="body" className="text-center text-brand-neutralGray">
           Enter your phone number to continue
         </Typography>
+
       </View>
 
       <View className="space-y-4">
@@ -138,7 +139,9 @@ export default function PhoneAuthScreen() {
             By continuing, you agree to our Terms of Service and Privacy Policy
           </Typography>
         </View>
+        
       </View>
+      
     </View>
   );
 }

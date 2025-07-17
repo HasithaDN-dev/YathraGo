@@ -55,6 +55,23 @@ export class ApiService {
     });
   }
 
+  static async registerDriver(token: string, formData: FormData) {
+    const response = await fetch(`${API_BASE_URL}/driver/register`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // 'Content-Type' is automatically set to 'multipart/form-data' by the browser
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Request failed');
+    }
+
+    return response.json();
+  }
   // Driver Profile & Registration
   static async getProfile(token: string) {
     return this.request('/driver/profile', {
@@ -77,5 +94,69 @@ export class ApiService {
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(documentsData),
     });
+  }
+
+  static async uploadIdDocuments(token: string, frontImage: any, backImage: any) {
+    const formData = new FormData();
+    formData.append('frontImage', {
+      uri: frontImage.uri,
+      name: 'front.jpg',
+      type: 'image/jpeg',
+    } as any);
+    formData.append('backImage', {
+      uri: backImage.uri,
+      name: 'back.jpg',
+      type: 'image/jpeg',
+    } as any);
+
+    const response = await fetch(`${API_BASE_URL}/driver/upload-id-documents`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // 'Content-Type' is set to 'multipart/form-data' by FormData
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Request failed');
+    }
+
+    return response.json();
+  }
+
+  static async registerVehicle(token: string, vehicleData: FormData) {
+    const response = await fetch(`${API_BASE_URL}/vehicle/register`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: vehicleData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Request failed');
+    }
+
+    return response.json();
+  }
+
+  static async uploadVehicleDocuments(token: string, documents: FormData) {
+    const response = await fetch(`${API_BASE_URL}/vehicle/upload-documents`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: documents,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Request failed');
+    }
+
+    return response.json();
   }
 }
