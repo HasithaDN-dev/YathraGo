@@ -6,6 +6,7 @@ import { NavigationMenu,
   NavigationMenuItem,
   NavigationMenuLink
 } from "@/components/ui/navigation-menu";
+import Image from "next/image";
 
 export default function ConditionalNavigation() {
   const pathname = usePathname();
@@ -19,8 +20,10 @@ export default function ConditionalNavigation() {
     <NavigationMenu className="bg-light-gray text-deep-navy w-full p-4">
       <div className="flex justify-between items-center w-full">
         <NavigationMenuList>
-          <NavigationMenuItem>
-            <NavigationMenuLink href="/">Icon</NavigationMenuLink>
+          <NavigationMenuItem className="no-hover">
+            <NavigationMenuLink href="/">
+              <Image src="/logo.svg" alt="Yathra-Go" width={100} height={40} />
+            </NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
             <NavigationMenuLink href="/student">Student</NavigationMenuLink>
