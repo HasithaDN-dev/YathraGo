@@ -60,7 +60,8 @@ export interface InputFieldProps {
   size?: 'small' | 'medium' | 'large';
   IconLeft?: React.ComponentType<IconProps>
   IconRight?: React.ComponentType<IconProps>;
-  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad' | 'url';
+  inputMode?: 'text' | 'numeric' | 'decimal' | 'email' | 'tel' | 'search' | 'url' | 'none';
+  enterKeyHint?: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send';
   secureTextEntry?: boolean;
   maxLength?: number;
   editable?: boolean;

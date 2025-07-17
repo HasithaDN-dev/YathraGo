@@ -120,7 +120,8 @@ const InputField: React.FC<InputFieldProps> = ({
   size = 'medium',
   IconLeft,
   IconRight,
-  keyboardType = 'default',
+  inputMode,
+  enterKeyHint,
   secureTextEntry = false,
   maxLength,
   editable = true,
@@ -227,7 +228,8 @@ const InputField: React.FC<InputFieldProps> = ({
           onChangeText={onChangeText}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          keyboardType={keyboardType}
+          inputMode={inputMode}
+          enterKeyHint={enterKeyHint}
           secureTextEntry={secureTextEntry}
           maxLength={maxLength}
           editable={editable}

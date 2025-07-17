@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Alert } from 'react-native';
+import { View, Alert } from 'react-native';
+import YathraGoLogo from '../../assets/images/YathroGo-logo.svg';
 import { Typography } from '@/components/Typography';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -93,25 +94,19 @@ export default function PhoneAuthScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 justify-center">
+    <View className="flex-1 px-6 py-20 justify-start  bg-white">
       <StatusBar style="dark" />
+
+      <View className="items-center my-8">
+        <YathraGoLogo width={150} height={150}/>
+      </View>
       
       <View className="mb-8">
-        <Text style={{ fontFamily: 'Figtree', fontSize: 20 }}>Whereas recognition of the inherent dignity</Text>
-        <Text style={{ fontFamily: 'Figtree-Regular', fontWeight: '700' }}>Whereas recognition of the inherent dignity</Text>
-        <Text style={{ fontFamily: 'Figtree-Bold', fontWeight: '700' }}>Whereas recognition of the inherent dignity</Text>
-        <Text style={{ fontFamily: 'figtree-italic', fontWeight: '700', fontStyle: 'italic' }}>Whereas recognition of the inherent dignity</Text>
-        <Text style={{ fontFamily: 'Figtree' }}>Whereas recognition of the inherent dignity</Text>
-        <Text className="text-large-1">Whereas recognition of the inherent dignitye</Text>
-
-        <Text className="text-blue-500 text-headline font-bold">
-          Whereas recognition of the inherent dignity
-        </Text>
-        <Typography variant="large-title" weight="semibold"className="text-center text-brand-deepNavy mb-2">
-          Welcome to YathraGo life
+        <Typography variant="large-title" className="text-center mb-2">
+          Here We Go!
         </Typography>
-        <Typography variant="body" weight="bold" className="text-center text-brand-neutralGray">
-          Whereas recognition of the inherent dignity
+        <Typography variant="body" className="text-center text-brand-neutralGray">
+          Enter your phone number to continue
         </Typography>
       </View>
 
@@ -122,10 +117,9 @@ export default function PhoneAuthScreen() {
           value={phoneNumber}
           onChangeText={handlePhoneChange}
           IconLeft={PhoneIcon}
-          IconRight={PhoneIcon}
           helperText="We'll send you a verification code"
           size="large"
-          keyboardType="phone-pad"
+          inputMode="tel"
           maxLength={10}
           className=""
         />
@@ -135,8 +129,6 @@ export default function PhoneAuthScreen() {
           onPress={handleSendOTP}
           loading={isLoading}
           fullWidth={true}
-          bgVariant="primary"
-          textVariant="white"
           size="large"
           className="mt-6"
         />

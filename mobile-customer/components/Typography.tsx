@@ -24,7 +24,7 @@ const variantSizes: Record<TypographyVariant, string> = {
 };
 
 const defaultWeights: Record<TypographyVariant, FontWeight> = {
-  'large-title': 'regular',
+  'large-title': 'bold',
   'title-1': 'regular',
   'title-2': 'regular',
   'title-3': 'regular',
