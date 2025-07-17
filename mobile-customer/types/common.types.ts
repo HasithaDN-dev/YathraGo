@@ -58,8 +58,8 @@ export interface InputFieldProps {
   onChangeText: (text: string) => void;
   variant?: InputVariant;
   size?: 'small' | 'medium' | 'large';
-  IconLeft?: React.ComponentType<any>;
-  IconRight?: React.ComponentType<any>;
+  IconLeft?: React.ComponentType<IconProps>
+  IconRight?: React.ComponentType<IconProps>;
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad' | 'url';
   secureTextEntry?: boolean;
   maxLength?: number;

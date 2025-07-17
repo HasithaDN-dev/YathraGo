@@ -7,19 +7,19 @@ import { InputVariant, InputFieldProps, TypographyVariant } from '@/types/common
 // Focus color map for border and icon
 const focusColorMap = {
   deepNavy: {
-    border: 'border-brand-deepNavy',
+    border: 'border-[1.5px] border-brand-deepNavy',
     border2: 'border-2 border-brand-deepNavy',
     borderB: 'border-b-2 border-brand-deepNavy',
     hex: '#143373',
   },
   navyBlue: {
-    border: 'border-brand-navyBlue',
+    border: 'border-[1.5px] border-brand-navyBlue',
     border2: 'border-2 border-brand-navyBlue',
     borderB: 'border-b-2 border-brand-navyBlue',
     hex: '#1e40af',
   },
   warmYellow: {
-    border: 'border-brand-warmYellow',
+    border: 'border-[1.5px] border-brand-warmYellow',
     border2: 'border-2 border-brand-warmYellow',
     borderB: 'border-b-2 border-brand-warmYellow',
     hex: '#fbbf24',
@@ -54,8 +54,8 @@ const getInputVariantStyle = (
       return 'border-2 border-success bg-success-bg';
     default:
       return isFocused
-        ? `border ${color.border} bg-white`
-        : 'border border-gray-300 bg-white';
+        ? `${color.border} bg-white`
+        : 'border-[1.5px] border-gray-300 bg-white';
   }
 };
 
@@ -89,8 +89,8 @@ const getIconColor = (
 // Size configuration with proper typing
 const sizeMap = {
   small: {
-    label: { variant: 'caption-1' as TypographyVariant, className: 'mb-1' },
-    input: { font: 'caption-1', height: 'h-10', py: 'py-2', px: 'px-3' },
+    label: { variant: 'footnote' as TypographyVariant, className: 'mb-1' },
+    input: { font: 'subhead', height: 'h-10', py: 'py-2', px: 'px-3' },
     error: { variant: 'caption-1' as TypographyVariant, className: 'mt-1' },
     helper: { variant: 'caption-1' as TypographyVariant, className: 'mt-1' },
     icon: 16,
@@ -98,16 +98,16 @@ const sizeMap = {
   medium: {
     label: { variant: 'subhead' as TypographyVariant, className: 'mb-2' },
     input: { font: 'body', height: 'h-12', py: 'py-3', px: 'px-4' },
-    error: { variant: 'caption-1' as TypographyVariant, className: 'mt-1' },
-    helper: { variant: 'caption-1' as TypographyVariant, className: 'mt-1' },
-    icon: 18,
+    error: { variant: 'footnote' as TypographyVariant, className: 'mt-1' },
+    helper: { variant: 'footnote' as TypographyVariant, className: 'mt-1' },
+    icon: 20,
   },
   large: {
-    label: { variant: 'title-3' as TypographyVariant, className: 'mb-3' },
-    input: { font: 'title-2', height: 'h-14', py: 'py-4', px: 'px-5' },
-    error: { variant: 'body' as TypographyVariant, className: 'mt-2' },
-    helper: { variant: 'body' as TypographyVariant, className: 'mt-2' },
-    icon: 22,
+    label: { variant: 'body' as TypographyVariant, className: 'mb-3' },
+    input: { font: 'title-3', height: 'h-14', py: 'py-4', px: 'px-5' },
+    error: { variant: 'subhead' as TypographyVariant, className: 'mt-2' },
+    helper: { variant: 'subhead' as TypographyVariant, className: 'mt-2' },
+    icon: 24,
   },
 } as const;
 
@@ -164,8 +164,11 @@ const InputField: React.FC<InputFieldProps> = ({
 
   const textInputClasses = [
     'flex-1',
+    'font-figtree-regular',
     fontSizeClass,
     'text-black',
+    'h-full',         // Make input fill container height
+    'py-0',           // Remove extra vertical padding
     IconLeft ? 'ml-2' : '',
     IconRight ? 'mr-2' : '',
   ].filter(Boolean).join(' ');

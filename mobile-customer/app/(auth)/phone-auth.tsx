@@ -122,8 +122,9 @@ export default function PhoneAuthScreen() {
           value={phoneNumber}
           onChangeText={handlePhoneChange}
           IconLeft={PhoneIcon}
+          IconRight={PhoneIcon}
           helperText="We'll send you a verification code"
-          size="medium"
+          size="large"
           keyboardType="phone-pad"
           maxLength={10}
           className=""
