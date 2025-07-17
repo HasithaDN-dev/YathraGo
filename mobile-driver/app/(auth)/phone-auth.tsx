@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Alert } from 'react-native';
-import YathraGoLogo from '../../assets/images/YathroGo-logo.svg';
+import YathraGoLinearLogo from '../../assets/images/YathraGo-linear-logo.svg';
 import { Typography } from '@/components/Typography';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -18,12 +18,12 @@ export default function PhoneAuthScreen() {
   const formatPhoneNumber = (text: string) => {
     // Remove all non-digits
     const cleaned = text.replace(/\D/g, '');
-    
+
     // Limit to 10 digits max for display
     if (cleaned.length > 10) {
       return cleaned.substring(0, 10);
     }
-    
+
     return cleaned;
   };
 
@@ -37,24 +37,24 @@ export default function PhoneAuthScreen() {
     // Accept 9 digits (without leading 0) or 10 digits (with leading 0)
     const phone9Digits = /^[1-9][0-9]{8}$/; // 9 digits without leading 0
     const phone10Digits = /^0[1-9][0-9]{8}$/; // 10 digits with leading 0
-    
+
     return phone9Digits.test(phone) || phone10Digits.test(phone);
   };
 
   const convertToApiFormat = (phone: string) => {
     // Remove any non-digits
     const cleaned = phone.replace(/\D/g, '');
-    
+
     // If 10 digits with leading 0, remove the leading 0
     if (cleaned.length === 10 && cleaned.startsWith('0')) {
       return '+94' + cleaned.substring(1);
     }
-    
+
     // If 9 digits, add +94 prefix
     if (cleaned.length === 9) {
       return '+94' + cleaned;
     }
-    
+
     return '+94' + cleaned;
   };
 
@@ -76,12 +76,12 @@ export default function PhoneAuthScreen() {
     try {
       // Send OTP using the auth service
       const result = await sendOtp(apiPhoneNumber);
-      
+
       // Navigate to OTP verification screen with the API format phone number
       router.push({
         pathname: '/(auth)/verify-otp',
-        params: { 
-          phoneNumber: apiPhoneNumber, 
+        params: {
+          phoneNumber: apiPhoneNumber,
           isNewUser: result.isNewUser || false
         }
       });
@@ -97,10 +97,15 @@ export default function PhoneAuthScreen() {
     <View className="flex-1 px-6 py-20 justify-start  bg-white">
       <StatusBar style="dark" />
 
-      <View className="items-center my-8">
-        <YathraGoLogo width={150} height={150}/>
+      <View className='my-8'>
+        <View className="items-center mb-4">
+          <YathraGoLinearLogo height={39.018} width={179.2} />
+        </View>
+        <Typography variant="title-1" weight='bold' className="text-center text-brand-brightOrange mb-4">
+          Driver
+        </Typography>
       </View>
-      
+
       <View className="mb-8">
         <Typography variant="large-title" className="text-center mb-2">
           You&apos;re On Track
@@ -139,9 +144,9 @@ export default function PhoneAuthScreen() {
             By continuing, you agree to our Terms of Service and Privacy Policy
           </Typography>
         </View>
-        
+
       </View>
-      
+
     </View>
   );
 }
