@@ -1,28 +1,41 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+import {useEffect} from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator } from 'react-native';
 import 'react-native-reanimated';
 import '../global.css';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useAuthState } from '@/hooks/useAuthState';
 
+
+SplashScreen.preventAutoHideAsync();
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const { isAuthenticated, isLoading } = useAuthState();
-  const [loaded] = useFonts({
-    Figtree: require('../assets/fonts/Figtree-VariableFont_wght.ttf'),
-    'Figtree-Italic': require('../assets/fonts/Figtree-Italic-VariableFont_wght.ttf'),
+  const { isAuthenticated, isAuthLoading } = useAuthState();
+  const [loaded, error] = useFonts({
+    'Figtree-Regular': require('../assets/fonts/Figtree-Regular.ttf'),
+    'Figtree-Medium': require('../assets/fonts/Figtree-Medium.ttf'),
+    'Figtree-SemiBold': require('../assets/fonts/Figtree-SemiBold.ttf'),
+    'Figtree-Bold': require('../assets/fonts/Figtree-Bold.ttf'),
   });
 
-  if (!loaded || isLoading) {
-    return (
-      <View className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
+  useEffect(() => {
+    if ((loaded || error) && !isAuthLoading) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded, error, isAuthLoading]);
+
+  if ((!loaded && !error) || isAuthLoading) {
+    return null;
+  }
+
+  
+  if (!loaded && !error) {
+    return null;
   }
 
   return (

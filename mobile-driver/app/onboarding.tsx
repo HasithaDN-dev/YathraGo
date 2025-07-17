@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Image } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Typography } from '@/components/Typography';
+import CustomButton from '@/components/ui/CustomButton';
 
 const onboardingData = [
   {
@@ -68,81 +70,68 @@ export default function OnboardingScreen() {
   const isLastScreen = currentIndex === onboardingData.length - 1;
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 flex-col justify-between bg-white px-8 py-16">
       <StatusBar style="dark" />
-      
+
       {/* Skip Button */}
-      <View className="absolute top-20 right-6 z-10">
+      <View className="flex-row justify-end mb-4 mt-6">
         <TouchableOpacity onPress={handleSkip}>
-          <Typography variant="label-large" className="text-brand-deepNavy">Skip</Typography>
+          <Typography variant="tappable" className="text-brand-warmYellow">Skip</Typography>
         </TouchableOpacity>
       </View>
 
       {/* Main Content */}
-      <View className="flex-1 items-center justify-center px-6">
-        {/* Logo for last screen only */}
-        {isLastScreen && (
-          <View className="mb-6">
-            <Image
-              source={require('../assets/images/logo.png')}
-              className="w-40 h-40"
-              resizeMode="contain"
-            />
-          </View>
-        )}
+      <View className="flex-1 items-center justify-center py-6">
 
         {/* Image */}
-        <View className="mb-8">
+        <View className="mb-8 w-[288px] h-[288px] items-center justify-center overflow-hidden self-center" >
           <Image
             source={currentItem.image}
-            className="w-72 h-72 rounded-2xl"
-            resizeMode="contain"
+            style={{ width: 288, height: 288, borderRadius: 24 }}
+            contentFit='contain'
           />
         </View>
 
         {/* Title */}
-        <Typography variant="headline-large" className="text-center mb-4">
+        <Typography variant="title-1" className="text-center mb-4">
           {currentItem.title}
         </Typography>
 
         {/* Description */}
-        <Typography variant="body-medium" className="text-center mb-8 px-4 text-brand-neutralGray">
+        <Typography variant="body" className="text-center mb-8 px-4 text-brand-neutralGray">
           {currentItem.description}
         </Typography>
 
         {/* Progress Dots */}
-        <View className="flex-row justify-center mb-4">
+        <View className="flex-row justify-center mb-16">
           {onboardingData.map((_, index) => (
             <View
               key={index}
-              className={`w-2 h-2 rounded-full mx-1 ${
-                index === currentIndex ? 'bg-brand-deepNavy' : 'bg-brand-lightGray'
-              }`}
+              className={`w-2 h-2 rounded-full mx-1 ${index === currentIndex ? 'bg-brand-brightOrange' : 'bg-brand-lightGray'
+                }`}
             />
           ))}
         </View>
       </View>
 
-      {/* Bottom Navigation */}
-      <View className="flex-row justify-between items-center px-6 pb-16">
+      {/* Bottom Navigation - Moved up */}
+      <View className="flex-row justify-between items-center w-full px-0">
         {/* Back Button */}
         <TouchableOpacity
           onPress={handleBack}
           className={`py-3 px-6 ${currentIndex === 0 ? 'opacity-0' : 'opacity-100'}`}
           disabled={currentIndex === 0}
         >
-          <Typography variant="label-large" className="text-brand-deepNavy">Back</Typography>
+          <Typography variant="tappable" className="text-brand-navyBlue">Back</Typography>
         </TouchableOpacity>
 
         {/* Next/Get Started Button */}
-        <TouchableOpacity
+        <CustomButton
+          title={isLastScreen ? 'Get Started' : 'Next'}
           onPress={isLastScreen ? handleGetStarted : handleNext}
-          className="bg-brand-deepNavy py-3 px-8 rounded-lg"
-        >
-          <Typography variant="label-large" className="text-white">
-            {currentIndex === 0 ? 'Continue' : isLastScreen ? 'Get Started' : 'Next'}
-          </Typography>
-        </TouchableOpacity>
+          size="large"
+          fullWidth={false}
+        />
       </View>
     </View>
   );

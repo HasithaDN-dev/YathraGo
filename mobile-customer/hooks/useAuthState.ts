@@ -21,5 +21,5 @@ export function useAuthState() {
     checkAuthState();
   }, []);
 
-  return { isAuthenticated, isLoading };
+  return { isAuthenticated, isAuthLoading: isLoading };
 }
