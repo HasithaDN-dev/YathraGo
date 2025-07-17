@@ -11,6 +11,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { useAuthState } from '@/hooks/useAuthState';
 import { ProfileProvider } from '@/contexts/ProfileContext';
 
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {

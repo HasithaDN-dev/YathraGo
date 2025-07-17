@@ -172,12 +172,12 @@ export default function VerifyOTPScreen() {
           {canResend ? (
             <TouchableOpacity onPress={handleResendOTP}>
               <Typography variant="body" weight="medium" className="text-center text-brand-warmYellow">
-                Resend OTP
+                Resend Code
               </Typography>
             </TouchableOpacity>
           ) : (
             <Typography variant="body" className="text-center text-brand-neutralGray">
-              Resend OTP in {resendTimer}s
+              Resend code in {resendTimer}s
             </Typography>
           )}
         </View>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Alert } from 'react-native';
+import YathraGoLogo from '../../assets/images/YathroGo-logo.svg';
 import { Typography } from '@/components/Typography';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -73,6 +74,7 @@ export default function PhoneAuthScreen() {
 
     setIsLoading(true);
     try {
+      // Send OTP using the auth service
       const result = await sendOtp(apiPhoneNumber);
       
       // Navigate to OTP verification screen with the API format phone number
@@ -92,14 +94,18 @@ export default function PhoneAuthScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 justify-center">
+    <View className="flex-1 px-6 py-20 justify-start  bg-white">
       <StatusBar style="dark" />
+
+      <View className="items-center my-8">
+        <YathraGoLogo width={150} height={150}/>
+      </View>
       
       <View className="mb-8">
-        <Typography variant="title-large" weight="bold" className="text-center text-black mb-2">
-          Welcome to YathraGo
+        <Typography variant="large-title" className="text-center mb-2">
+          You&apos;re On Track
         </Typography>
-        <Typography variant="body-medium" className="text-center text-brand-neutralGray">
+        <Typography variant="body" className="text-center text-brand-neutralGray">
           Enter your phone number to continue
         </Typography>
       </View>
@@ -110,25 +116,25 @@ export default function PhoneAuthScreen() {
           placeholder="07XXXXXXXX"
           value={phoneNumber}
           onChangeText={handlePhoneChange}
-          keyboardType="phone-pad"
-          maxLength={10}
           IconLeft={PhoneIcon}
           helperText="We'll send you a verification code"
-          variant="outline"
-          textSize="body-medium"
+          size="large"
+          inputMode="tel"
+          maxLength={10}
+          className=""
         />
 
         <CustomButton
           title={isLoading ? 'Sending Verification Code...' : 'Send Verification Code'}
-          textSize="body-large"
-          loading={isLoading}
           onPress={handleSendOTP}
+          loading={isLoading}
           fullWidth={true}
+          size="large"
           className="mt-6"
         />
 
         <View className="mt-6">
-          <Typography variant="label-small" className="text-center text-brand-neutralGray">
+          <Typography variant="caption-1" className="text-center text-brand-neutralGray">
             By continuing, you agree to our Terms of Service and Privacy Policy
           </Typography>
         </View>

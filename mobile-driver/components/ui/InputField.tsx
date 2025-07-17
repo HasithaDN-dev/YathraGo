@@ -1,59 +1,127 @@
 import React, { useState } from 'react';
+import { WarningCircleIcon } from 'phosphor-react-native';
 import { View, TextInput, TouchableOpacity } from 'react-native';
 import { Typography } from '@/components/Typography';
-import { InputProps, InputVariant } from '@/types/common.types';
+import { InputVariant, InputFieldProps, TypographyVariant } from '@/types/common.types';
 
-// Input variant styles
-const getInputVariantStyle = (variant: InputVariant, isFocused: boolean, hasError: boolean) => {
+// Focus color map for border and icon
+const focusColorMap = {
+  deepNavy: {
+    border: 'border-[1.5px] border-brand-deepNavy',
+    border2: 'border-2 border-brand-deepNavy',
+    borderB: 'border-b-2 border-brand-deepNavy',
+    hex: '#143373',
+  },
+  navyBlue: {
+    border: 'border-[1.5px] border-brand-navyBlue',
+    border2: 'border-2 border-brand-navyBlue',
+    borderB: 'border-b-2 border-brand-navyBlue',
+    hex: '#1e40af',
+  },
+  warmYellow: {
+    border: 'border-[1.5px] border-brand-warmYellow',
+    border2: 'border-2 border-brand-warmYellow',
+    borderB: 'border-b-2 border-brand-warmYellow',
+    hex: '#fbbf24',
+  },
+} as const;
+
+// Input variant styles with focusColor
+const getInputVariantStyle = (
+  variant: InputVariant,
+  isFocused: boolean,
+  hasError: boolean,
+  focusColor: keyof typeof focusColorMap
+) => {
   if (hasError) {
-    return 'border-2 border-red-500 bg-white';
+    return 'border-2 border-error bg-white';
   }
+  
+  const color = focusColorMap[focusColor];
   
   switch (variant) {
     case 'outline':
-      return isFocused 
-        ? 'border-2 border-brand-deepNavy bg-white' 
+      return isFocused
+        ? `${color.border2} bg-white`
         : 'border-2 border-gray-300 bg-white';
     case 'ghost':
-      return isFocused 
-        ? 'border-b-2 border-brand-deepNavy bg-transparent' 
+      return isFocused
+        ? `${color.borderB} bg-transparent`
         : 'border-b border-gray-300 bg-transparent';
     case 'error':
-      return 'border-2 border-red-500 bg-red-50';
+      return 'border-2 border-error bg-error-bg';
     case 'success':
-      return 'border-2 border-green-500 bg-green-50';
-    default: // default
-      return isFocused 
-        ? 'border border-brand-deepNavy bg-white' 
-        : 'border border-gray-300 bg-white';
+      return 'border-2 border-success bg-success-bg';
+    default:
+      return isFocused
+        ? `${color.border} bg-white`
+        : 'border-[1.5px] border-gray-300 bg-white';
   }
 };
 
-// Get icon color based on variant and state
-const getIconColor = (variant: InputVariant, isFocused: boolean, hasError: boolean) => {
-  if (hasError) return '#ef4444'; // red-500
-  if (isFocused) return '#143373'; // brand-deepNavy
+// Map theme color names to hex codes for icon coloring
+const themeHexMap = {
+  error: '#ef4444',
+  success: '#10b981',
+  neutralGray: '#6b7280',
+} as const;
+
+// Get icon color based on variant, state, and focusColor
+const getIconColor = (
+  variant: InputVariant,
+  isFocused: boolean,
+  hasError: boolean,
+  focusColor: keyof typeof focusColorMap
+) => {
+  if (hasError) return themeHexMap.error;
+  if (isFocused) return focusColorMap[focusColor].hex;
   
   switch (variant) {
     case 'success':
-      return '#10b981'; // green-500
+      return themeHexMap.success;
     case 'error':
-      return '#ef4444'; // red-500
+      return themeHexMap.error;
     default:
-      return '#6b7280'; // gray-500
+      return themeHexMap.neutralGray;
   }
 };
 
-const InputField: React.FC<InputProps> = ({
+// Size configuration with proper typing
+const sizeMap = {
+  small: {
+    label: { variant: 'footnote' as TypographyVariant, className: 'mb-1' },
+    input: { font: 'subhead', height: 'h-10', py: 'py-2', px: 'px-3' },
+    error: { variant: 'caption-1' as TypographyVariant, className: 'mt-1' },
+    helper: { variant: 'caption-1' as TypographyVariant, className: 'mt-1' },
+    icon: 16,
+  },
+  medium: {
+    label: { variant: 'subhead' as TypographyVariant, className: 'mb-2' },
+    input: { font: 'body', height: 'h-12', py: 'py-3', px: 'px-4' },
+    error: { variant: 'footnote' as TypographyVariant, className: 'mt-1' },
+    helper: { variant: 'footnote' as TypographyVariant, className: 'mt-1' },
+    icon: 20,
+  },
+  large: {
+    label: { variant: 'body' as TypographyVariant, className: 'mb-3' },
+    input: { font: 'title-3', height: 'h-14', py: 'py-4', px: 'px-5' },
+    error: { variant: 'subhead' as TypographyVariant, className: 'mt-2' },
+    helper: { variant: 'subhead' as TypographyVariant, className: 'mt-2' },
+    icon: 24,
+  },
+} as const;
+
+const InputField: React.FC<InputFieldProps> = ({
   label,
   placeholder,
   value,
   onChangeText,
   variant = 'default',
-  textSize = 'body-medium',
+  size = 'medium',
   IconLeft,
   IconRight,
-  keyboardType = 'default',
+  inputMode,
+  enterKeyHint,
   secureTextEntry = false,
   maxLength,
   editable = true,
@@ -64,6 +132,7 @@ const InputField: React.FC<InputProps> = ({
   className = '',
   onFocus,
   onBlur,
+  focusColor = 'navyBlue',
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -79,53 +148,64 @@ const InputField: React.FC<InputProps> = ({
     onBlur?.();
   };
 
-  // Dynamic sizing based on textSize
-  const getTextSizeStyle = () => {
-    if (textSize.startsWith('display-') || textSize.startsWith('headline-')) {
-      return `text-${textSize}`;
-    } else if (textSize.startsWith('title-')) {
-      return `text-${textSize}`;
-    } else {
-      return `text-${textSize}`;
-    }
-  };
-
-  const getIconSize = () => {
-    if (textSize.startsWith('display-')) return 28;
-    if (textSize.startsWith('headline-')) return 24;
-    if (textSize.startsWith('title-large')) return 22;
-    if (textSize.startsWith('title-')) return 20;
-    if (textSize.startsWith('body-large')) return 20;
-    if (textSize.startsWith('body-')) return 18;
-    if (textSize.startsWith('label-')) return 16;
-    return 18; // Default
-  };
+  const currentSize = sizeMap[size];
+  const iconSize = currentSize.icon;
+  const heightClass = multiline ? currentSize.input.py : currentSize.input.height;
+  const pxClass = currentSize.input.px;
+  const fontSizeClass = `text-${currentSize.input.font}`;
 
   const inputContainerClasses = [
-    'rounded-xl flex flex-row items-center',
-    getInputVariantStyle(variant, isFocused, hasError),
-    multiline ? 'py-3' : 'h-12',
-    'px-4',
+    'rounded-2xl flex flex-row items-center',
+    getInputVariantStyle(variant, isFocused, hasError, focusColor),
+    heightClass,
+    pxClass,
     !editable ? 'opacity-60' : '',
     className
   ].filter(Boolean).join(' ');
 
   const textInputClasses = [
     'flex-1',
-    getTextSizeStyle(),
+    'font-figtree-regular',
+    fontSizeClass,
     'text-black',
+    'h-full',         // Make input fill container height
+    'py-0',           // Remove extra vertical padding
     IconLeft ? 'ml-2' : '',
     IconRight ? 'mr-2' : '',
   ].filter(Boolean).join(' ');
 
-  const iconColor = getIconColor(variant, isFocused, hasError);
-  const iconSize = getIconSize();
+  const iconColor = getIconColor(variant, isFocused, hasError, focusColor);
+
+  // Determine which right icon to show
+  const getRightIcon = () => {
+    if (hasError) {
+      return (
+        <TouchableOpacity disabled>
+          <WarningCircleIcon size={iconSize} color={themeHexMap.error} weight="bold" />
+        </TouchableOpacity>
+      );
+    }
+    
+    if (IconRight) {
+      return (
+        <TouchableOpacity>
+          <IconRight size={iconSize} color={iconColor} weight="regular" />
+        </TouchableOpacity>
+      );
+    }
+    
+    return null;
+  };
 
   return (
     <View className="w-full">
       {/* Label */}
       {label && (
-        <Typography variant="label-medium" weight="semibold" className="text-black mb-2">
+        <Typography 
+          variant={currentSize.label.variant} 
+          weight="semibold" 
+          className={`text-black ${currentSize.label.className}`.trim()}
+        >
           {label}
         </Typography>
       )}
@@ -143,39 +223,50 @@ const InputField: React.FC<InputProps> = ({
         <TextInput
           className={textInputClasses}
           placeholder={placeholder}
-          placeholderTextColor="#9ca3af" // gray-400
+          placeholderTextColor="#9ca3af"
           value={value}
           onChangeText={onChangeText}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          keyboardType={keyboardType}
+          inputMode={inputMode}
+          enterKeyHint={enterKeyHint}
           secureTextEntry={secureTextEntry}
           maxLength={maxLength}
           editable={editable}
           multiline={multiline}
           numberOfLines={multiline ? numberOfLines : 1}
           textAlignVertical={multiline ? 'top' : 'center'}
+          // Accessibility improvements
+          accessible={true}
+          accessibilityLabel={label || placeholder}
+          accessibilityHint={helperText}
+          accessibilityState={{ 
+            disabled: !editable,
+            expanded: isFocused 
+          }}
           {...props}
         />
 
         {/* Right Icon */}
-        {IconRight && (
-          <TouchableOpacity>
-            <IconRight size={iconSize} color={iconColor} weight="regular" />
-          </TouchableOpacity>
-        )}
+        {getRightIcon()}
       </View>
 
       {/* Error Message */}
       {error && (
-        <Typography variant="label-small" className="text-red-500 mt-1">
+        <Typography 
+          variant={currentSize.error.variant} 
+          className={`text-error ${currentSize.error.className}`.trim()}
+        >
           {error}
         </Typography>
       )}
 
       {/* Helper Text */}
       {helperText && !error && (
-        <Typography variant="label-small" className="text-brand-neutralGray mt-1">
+        <Typography 
+          variant={currentSize.helper.variant} 
+          className={`text-brand-neutralGray ${currentSize.helper.className}`.trim()}
+        >
           {helperText}
         </Typography>
       )}

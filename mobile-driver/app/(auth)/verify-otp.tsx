@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, Alert, TouchableOpacity } from 'react-native';
-import { Typography } from '../../components/Typography';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import { View, TextInput, Alert, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ApiService } from '../../services/api';
+import { PasswordIcon} from 'phosphor-react-native';
+import { Typography } from '@/components/Typography';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import CustomButton from '../../components/ui/CustomButton';
 
 export default function VerifyOTPScreen() {
   const router = useRouter();
-  const { phoneNumber } = useLocalSearchParams<{
+  const { phoneNumber, isNewUser } = useLocalSearchParams<{
     phoneNumber: string;
     isNewUser: string;
   }>();
@@ -72,8 +73,8 @@ export default function VerifyOTPScreen() {
       
       // Navigate based on user status
       if (result.user.isNewUser) {
-        // New user - go to driver profile setup
-        router.replace('/(tabs)'); // You can create a driver-setup screen later
+        // New user - go to Driver profile setup
+        router.replace('/(tabs)');
       } else {
         // Existing user - go to main app
         router.replace('/(tabs)');
@@ -120,29 +121,34 @@ export default function VerifyOTPScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 justify-center">
+    <View className="flex-1 px-6 py-20 justify-start  bg-white">
       <StatusBar style="dark" />
-      
+
+      <View className="items-center my-8">
+        <PasswordIcon color="#143373" weight="duotone" size={150} duotoneColor="#fdc334" duotoneOpacity={0.3} />
+      </View>
+
+      {/* Title & Subtitle */}
       <View className="mb-8">
-        <Typography variant="title-large" weight="bold" className="text-center text-gray-800 mb-2">
-          Verify Phone Number
+        <Typography variant="large-title" className="text-center mb-4 text-brand-deepNavy">
+          Verification Code
         </Typography>
-        <Typography variant="body-medium" className="text-center text-gray-600 mb-2">
-          Enter the 6-digit code sent to
+        <Typography variant="body" className="text-center text-brand-neutralGray">
+          Enter the 6-digit code we&apos;ve sent to
         </Typography>
-        <Typography variant="body-medium" weight="semibold" className="text-center text-gray-800">
+        <Typography variant="body" weight="semibold" className="text-center text-brand-deepNavy">
           {phoneNumber}
         </Typography>
       </View>
 
-      <View className="space-y-6">
-        {/* OTP Input */}
-        <View className="flex-row justify-center space-x-3">
+      {/* OTP Input & Actions */}
+      <View className="gap-y-4">
+        <View className="flex-row justify-center items-center gap-x-3 mb-1">
           {otp.map((digit, index) => (
             <TextInput
               key={index}
               ref={(ref) => { inputRefs.current[index] = ref; }}
-              className="w-12 h-12 border-2 border-gray-300 rounded-lg text-center text-xl font-bold"
+              className="w-12 h-14 border-2 border-gray-300 rounded-2xl text-center text-title-3 font-figtree-regular text-black py-0 bg-white focus:border-brand-navyBlue"
               value={digit}
               onChangeText={(value) => handleOtpChange(value, index)}
               onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
@@ -154,34 +160,31 @@ export default function VerifyOTPScreen() {
         </View>
 
         <CustomButton
-          title={isLoading ? 'Verifying...' : 'Verify OTP'}
-          textSize="body-large"
+          title={isLoading ? 'Verifying...' : 'Verify Phone'}
           loading={isLoading}
           onPress={handleVerifyOTP}
           fullWidth={true}
+          size="large"
+          className="mt-1"
         />
 
-        {/* Resend OTP - text button */}
-        {canResend ? (
-          <View className="items-center mt-4">
+        <View className="mt-1">
+          {canResend ? (
             <TouchableOpacity onPress={handleResendOTP}>
-              <Typography variant="body-medium" weight="semibold" className="text-brand-warmYellow">
-                Resend OTP
+              <Typography variant="body" weight="medium" className="text-center text-brand-warmYellow">
+                Resend Code
               </Typography>
             </TouchableOpacity>
-          </View>
-        ) : (
-          <View className="items-center mt-4">
-            <Typography variant="body-medium" className="text-gray-500">
-              Resend OTP in {resendTimer}s
+          ) : (
+            <Typography variant="body" className="text-center text-brand-neutralGray">
+              Resend code in {resendTimer}s
             </Typography>
-          </View>
-        )}
+          )}
+        </View>
 
-        {/* Change number - text button */}
-        <View className="items-center mt-4">
+        <View className="mt-1">
           <TouchableOpacity onPress={() => router.back()}>
-            <Typography variant="body-medium" weight="semibold" className="text-gray-600">
+            <Typography variant="body" weight="medium" className="text-center text-brand-neutralGray">
               Change Phone Number
             </Typography>
           </TouchableOpacity>

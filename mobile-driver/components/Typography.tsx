@@ -1,130 +1,69 @@
 import React from 'react';
 import { Text, type TextProps } from 'react-native';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { FontWeight, TypographyVariant } from '@/types/common.types';
 
-export type TypographyVariant = 
-  | 'display-large' | 'display-medium' | 'display-small'
-  | 'headline-large' | 'headline-medium' | 'headline-small'
-  | 'title-large' | 'title-medium' | 'title-small'
-  | 'body-large' | 'body-medium' | 'body-small' | 'body-extra-small'
-  | 'label-large' | 'label-medium' | 'label-small';
-
-export type TypographyWeight = 'regular' | 'semibold' | 'bold' | 'medium';
-
-export type TypographyProps = TextProps & {
-  variant?: TypographyVariant;
-  weight?: TypographyWeight;
-  color?: string;
-  lightColor?: string;
-  darkColor?: string;
-  className?: string;
+interface TypographyProps extends TextProps {
+  variant: TypographyVariant;
+  weight?: FontWeight;
   children: React.ReactNode;
+}
+
+const variantSizes: Record<TypographyVariant, string> = {
+  'large-title': 'text-large-title',
+  'title-1': 'text-title-1',
+  'title-2': 'text-title-2',
+  'title-3': 'text-title-3',
+  'headline': 'text-headline',
+  'body': 'text-body',
+  'callout': 'text-callout',
+  'subhead': 'text-subhead',
+  'footnote': 'text-footnote',
+  'caption-1': 'text-caption-1',
+  'caption-2': 'text-caption-2',
+  'tappable': 'text-tappable',
 };
 
-export function Typography({
-  variant = 'body-medium',
+const defaultWeights: Record<TypographyVariant, FontWeight> = {
+  'large-title': 'bold',
+  'title-1': 'regular',
+  'title-2': 'regular',
+  'title-3': 'regular',
+  'headline': 'semibold',
+  'body': 'regular',
+  'callout': 'regular',
+  'subhead': 'regular',
+  'footnote': 'regular',
+  'caption-1': 'regular',
+  'caption-2': 'regular',
+  'tappable': 'medium',
+};
+
+const weightStyles: Record<FontWeight, string> = {
+  'light': 'font-figtree-light',
+  'regular': 'font-figtree-regular',
+  'medium': 'font-figtree-medium',
+  'semibold': 'font-figtree-semibold',
+  'bold': 'font-figtree-bold',
+  'extrabold': 'font-figtree-extrabold',
+};
+
+export const Typography: React.FC<TypographyProps> = ({ 
+  variant = 'body', 
   weight,
-  color,
-  lightColor,
-  darkColor,
-  className,
-  children,
-  style,
-  ...rest
-}: TypographyProps) {
-  const themeColor = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  children, 
+  className, 
+  ...props 
+}) => {
+  const finalWeight = weight || defaultWeights[variant];
+  const sizeClass = variantSizes[variant];
+  const weightClass = weightStyles[finalWeight];
   
-  // Get font weight based on variant and weight prop
-  const getFontWeight = () => {
-    if (weight) return weight;
-    
-    // Default weights based on YathraGo design system
-    if (variant.startsWith('title-') || variant.startsWith('label-')) {
-      return 'bold'; // 700
-    }
-    return 'regular'; // 400
-  };
-
-  const getVariantClasses = () => {
-    const fontWeight = getFontWeight();
-    return `font-figtree text-${variant} font-${fontWeight}`;
-  };
-
   return (
-    <Text
-      style={[
-        { color: color || themeColor },
-        style
-      ]}
-      className={`${getVariantClasses()} ${className || ''}`}
-      {...rest}
+    <Text 
+      className={`${weightClass} ${sizeClass} ${className}`}
+      {...props}
     >
       {children}
     </Text>
   );
-}
-
-// Convenience components for common typography patterns
-export const DisplayLarge = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="display-large" {...props} />
-);
-
-export const DisplayMedium = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="display-medium" {...props} />
-);
-
-export const DisplaySmall = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="display-small" {...props} />
-);
-
-export const HeadlineLarge = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="headline-large" {...props} />
-);
-
-export const HeadlineMedium = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="headline-medium" {...props} />
-);
-
-export const HeadlineSmall = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="headline-small" {...props} />
-);
-
-export const TitleLarge = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="title-large" {...props} />
-);
-
-export const TitleMedium = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="title-medium" {...props} />
-);
-
-export const TitleSmall = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="title-small" {...props} />
-);
-
-export const BodyLarge = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="body-large" {...props} />
-);
-
-export const BodyMedium = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="body-medium" {...props} />
-);
-
-export const BodySmall = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="body-small" {...props} />
-);
-
-export const BodyExtraSmall = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="body-extra-small" {...props} />
-);
-
-export const LabelLarge = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="label-large" {...props} />
-);
-
-export const LabelMedium = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="label-medium" {...props} />
-);
-
-export const LabelSmall = (props: Omit<TypographyProps, 'variant'>) => (
-  <Typography variant="label-small" {...props} />
-);
+};
