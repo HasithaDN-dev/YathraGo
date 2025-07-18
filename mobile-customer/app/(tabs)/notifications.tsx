@@ -82,10 +82,10 @@ export default function NotificationsScreen() {
         <View className="space-y-6">
           {/* Header */}
           <View className="space-y-2">
-            <Typography variant="headline-large" className="text-black">
+            <Typography variant="title-1" className="text-brand-deepNavy">
               Notifications
             </Typography>
-            <Typography variant="body-medium" className="text-brand-neutralGray">
+            <Typography variant="body" className="text-brand-neutralGray">
               {activeProfile?.type === 'child' 
                 ? `Stay updated on your trips, ${activeProfile.name}`
                 : `Updates for ${activeProfile?.name}&apos;s activities`
@@ -97,19 +97,19 @@ export default function NotificationsScreen() {
           <View className="flex-row justify-between items-center">
             <View className="flex-row">
               <TouchableOpacity className="bg-brand-deepNavy px-4 py-2 rounded-full">
-                <Typography variant="label-medium" className="text-white">
+                <Typography variant="subhead" className="text-white">
                   All
                 </Typography>
               </TouchableOpacity>
               <TouchableOpacity className="ml-3 bg-brand-lightGray px-4 py-2 rounded-full">
-                <Typography variant="label-medium" className="text-brand-neutralGray">
+                <Typography variant="subhead" className="text-brand-neutralGray">
                   Unread
                 </Typography>
               </TouchableOpacity>
             </View>
             
             <TouchableOpacity>
-              <Typography variant="label-medium" className="text-brand-brightOrange">
+              <Typography variant="subhead" className="text-brand-brightOrange">
                 Mark all read
               </Typography>
             </TouchableOpacity>
@@ -129,7 +129,7 @@ export default function NotificationsScreen() {
                 <View className="flex-row">
                   {/* Notification Icon */}
                   <View className={`w-10 h-10 rounded-full ${getNotificationColor(notification.type)} items-center justify-center`}>
-                    <Typography variant="label-medium" className="text-white">
+                    <Typography variant="subhead" className="text-white">
                       {getNotificationIcon(notification.type)}
                     </Typography>
                   </View>
@@ -138,19 +138,19 @@ export default function NotificationsScreen() {
                   <View className="ml-4 flex-1 space-y-1">
                     <View className="flex-row justify-between items-start">
                       <Typography 
-                        variant="label-large" 
-                        className={notification.read ? "text-black" : "text-brand-deepNavy"}
+                        variant="callout" 
+                        className={notification.read ? "text-brand-neutralGray" : "text-brand-deepNavy"}
                       >
                         {notification.title}
                       </Typography>
-                      <Typography variant="body-small" className="text-brand-neutralGray">
+                      <Typography variant="caption-1" className="text-brand-neutralGray">
                         {notification.time}
                       </Typography>
                     </View>
                     
                     <Typography 
-                      variant="body-medium" 
-                      className={notification.read ? "text-brand-neutralGray" : "text-black"}
+                      variant="body" 
+                      className={notification.read ? "text-brand-neutralGray" : "text-brand-deepNavy"}
                     >
                       {notification.message}
                     </Typography>
@@ -160,7 +160,7 @@ export default function NotificationsScreen() {
                       <View className="flex-row items-center pt-2">
                         <View className="w-2 h-2 bg-brand-brightOrange rounded-full" />
                         <View className="ml-2">
-                          <Typography variant="body-small" className="text-brand-brightOrange">
+                          <Typography variant="caption-1" className="text-brand-brightOrange">
                             New
                           </Typography>
                         </View>
@@ -175,10 +175,10 @@ export default function NotificationsScreen() {
           {/* Empty State */}
           {mockNotifications.length === 0 && (
             <View className="bg-brand-lightGray rounded-2xl p-8 items-center space-y-3">
-              <Typography variant="headline-medium" className="text-brand-neutralGray">
+              <Typography variant="headline" className="text-brand-neutralGray">
                 No notifications
               </Typography>
-              <Typography variant="body-medium" className="text-brand-neutralGray text-center">
+              <Typography variant="body" className="text-brand-neutralGray text-center">
                 {activeProfile?.type === 'child' 
                   ? "You&apos;ll receive updates about your trips here"
                   : "Notifications about family trips will appear here"
@@ -189,14 +189,14 @@ export default function NotificationsScreen() {
 
           {/* Notification Settings */}
           <View className="bg-brand-lightestBlue rounded-2xl p-4 space-y-3">
-            <Typography variant="headline-medium" className="text-black">
+            <Typography variant="headline" className="text-brand-deepNavy">
               Notification Settings
             </Typography>
-            <Typography variant="body-medium" className="text-brand-neutralGray">
+            <Typography variant="body" className="text-brand-neutralGray">
               Customize when and how you receive notifications for trips and updates.
             </Typography>
             <TouchableOpacity className="bg-brand-deepNavy rounded-xl p-3 items-center">
-              <Typography variant="label-medium" className="text-white">
+              <Typography variant="subhead" className="text-white">
                 Manage Settings
               </Typography>
             </TouchableOpacity>

@@ -1,12 +1,11 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-
 import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useProfile } from '@/contexts/ProfileContext';
+import { HouseIcon, ClockIcon, BellIcon, ListIcon } from 'phosphor-react-native';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -35,28 +34,28 @@ export default function TabLayout() {
         name="index"
         options={{
           title: getTabTitle('Home'),
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }) => <HouseIcon size={28} color={color} weight="fill" />,
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
           title: getTabTitle('History'),
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock" color={color} />,
+          tabBarIcon: ({ color }) => <ClockIcon size={28} color={color} weight="fill" />,
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
           title: getTabTitle('Alerts'),
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="bell" color={color} />,
+          tabBarIcon: ({ color }) => <BellIcon size={28} color={color} weight="fill" />,
         }}
       />
       <Tabs.Screen
         name="menu"
         options={{
           title: 'Menu',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="menu" color={color} />,
+          tabBarIcon: ({ color }) => <ListIcon size={28} color={color} weight="fill" />,
         }}
       />
     </Tabs>
