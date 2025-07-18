@@ -22,7 +22,6 @@ export default function PhoneAuthScreen() {
     // Limit to 10 digits max for display
     if (cleaned.length > 10) {
       return cleaned.substring(0, 10);
-
     }
     
     return cleaned;
