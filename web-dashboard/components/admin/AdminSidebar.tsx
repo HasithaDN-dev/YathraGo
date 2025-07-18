@@ -33,6 +33,11 @@ export default function AdminSidebar() {
       href: "/admin",
     },
     {
+      icon: Users,
+      label: "Role & Permission Management",
+      href: "/admin/roles",
+    },
+    {
       icon: Database,
       label: "Backup & Recovery",
       href: "/admin/backup",
@@ -47,11 +52,7 @@ export default function AdminSidebar() {
       label: "Audit Trails",
       href: "/admin/audit",
     },
-    {
-      icon: Users,
-      label: "Role & Permission Management",
-      href: "/admin/roles",
-    },
+    
     {
       icon: Monitor,
       label: "System Monitoring",
