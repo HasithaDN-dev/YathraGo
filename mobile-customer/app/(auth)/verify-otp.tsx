@@ -67,17 +67,16 @@ export default function VerifyOTPScreen() {
     try {
       const result = await ApiService.verifyCustomerOtp(phoneNumber!, otpCode);
 
-      // Store auth token and user data
-      await AsyncStorage.setItem('authToken', result.accessToken);
-      await AsyncStorage.setItem('userProfile', JSON.stringify(result.user));
+      // The ApiService.verifyCustomerOtp already stores the token and user data
+      // No need to store it again here
       
       // Navigate based on user status
       if (result.user.isNewUser) {
-        // New user - go to customer profile setup
-        router.replace('/(tabs)'); // You can create a customer-setup screen later
+        // New user - go to registration
+        router.replace('/(registration)/customer-register' as any);
       } else {
         // Existing user - go to main app
-        router.replace('/(tabs)');
+        router.replace('/(tabs)' as any);
       }
     } catch (error) {
       console.error('OTP verification error:', error);

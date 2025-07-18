@@ -240,7 +240,7 @@ model Ratings_and_Reviews {
 model Child {
   child_id       Int       @id @default(autoincrement())
   relationship   String
-  NearbyCity     String
+  nearbyCity     String
   schoolLocation String
   school         String
   childName      String
@@ -287,6 +287,7 @@ model Child_Assign_To {
 enum RegistrationStatus {
   OTP_PENDING
   OTP_VERIFIED
+  CUSTOMER_REGISTERED
   CHILD_REGISTERED
   STAFF_REGISTERED
   FULLY_REGISTERED

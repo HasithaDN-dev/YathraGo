@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsOptional, IsEmail } from 'class-validator';
+import { IsNumber, IsString } from 'class-validator';
 
 export class RegisterStaffPassengerDto {
   @IsNumber()
@@ -18,21 +18,4 @@ export class RegisterStaffPassengerDto {
 
   @IsString()
   pickupAddress: string;
-
-  @IsString()
-  name: string;
-
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  address: string;
-
-  @IsOptional()
-  @IsString()
-  profileImageUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  emergencyContact?: string;
 }

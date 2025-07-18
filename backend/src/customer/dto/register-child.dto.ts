@@ -1,6 +1,8 @@
-import { IsNumber, IsString, IsOptional, IsEmail } from 'class-validator';
+import { IsNumber, IsString, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class RegisterChildDto {
+  @Type(() => Number)
   @IsNumber()
   customerId: number;
 
@@ -11,7 +13,7 @@ export class RegisterChildDto {
   relationship: string;
 
   @IsString()
-  NearbyCity: string;
+  nearbyCity: string;
 
   @IsString()
   schoolLocation: string;
@@ -25,20 +27,4 @@ export class RegisterChildDto {
   @IsOptional()
   @IsString()
   childImageUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  parentImageUrl?: string;
-
-  @IsString()
-  emergencyContact: string;
-
-  @IsString()
-  parentName: string;
-
-  @IsEmail()
-  parentEmail: string;
-
-  @IsString()
-  parentAddress: string;
 }
