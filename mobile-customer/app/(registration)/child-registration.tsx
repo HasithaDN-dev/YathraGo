@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedView } from '../../components/ThemedView';
-import { ThemedText } from '../../components/ThemedText';
 import { CustomInput } from '../../components/ui/CustomInput';
 import { ButtonComponent } from '../../components/ui/ButtonComponent';
 import { ApiService } from '../../services/api';
 import { ChildRegistration } from '../../types/registration.types';
+import { Typography } from '../../components/Typography';
 
 export default function ChildRegistrationScreen() {
   const [loading, setLoading] = useState(false);
@@ -119,34 +118,25 @@ export default function ChildRegistrationScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ThemedView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
         <ScrollView 
           contentContainerStyle={{ flexGrow: 1, padding: 24 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
           <View style={{ marginBottom: 32 }}>
-            <ThemedText 
-              style={{ 
-                fontSize: 28, 
-                fontWeight: 'bold', 
-                color: '#1e293b',
-                textAlign: 'center',
-                marginBottom: 8
-              }}
+            <Typography 
+              variant="large-title" 
+              weight="bold"
+              className="text-brand-deepNavy text-center mb-2"
             >
               Child Registration
-            </ThemedText>
-            <ThemedText 
-              style={{ 
-                fontSize: 16, 
-                color: '#64748b',
-                textAlign: 'center',
-                lineHeight: 24
-              }}
+            </Typography>
+            <Typography 
+              variant="body"
+              className="text-brand-neutralGray text-center"
             >
               Please provide your child&apos;s school and transport details
-            </ThemedText>
+            </Typography>
           </View>
 
           {/* Form */}
@@ -237,16 +227,14 @@ export default function ChildRegistrationScreen() {
             borderLeftColor: '#3b82f6',
             marginTop: 20
           }}>
-            <ThemedText style={{ 
-              fontSize: 14, 
-              color: '#475569',
-              lineHeight: 20
-            }}>
+            <Typography 
+              variant="footnote"
+              className="text-slate-600"
+            >
               After completing this registration, you will be able to track your child&apos;s school transport and receive notifications about pickup times.
-            </ThemedText>
+            </Typography>
           </View>
         </ScrollView>
-      </ThemedView>
     </SafeAreaView>
   );
 }
