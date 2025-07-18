@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/ThemedView';
 import { ThemedText } from '../../components/ThemedText';
 import { CustomInput } from '../../components/ui/CustomInput';
-import { CustomButton } from '../../components/ui/CustomButton';
+import { ButtonComponent } from '../../components/ui/ButtonComponent';
 import { ApiService } from '../../services/api';
 import { ChildRegistration } from '../../types/registration.types';
 
@@ -212,7 +212,7 @@ export default function ChildRegistrationScreen() {
 
           {/* Action Buttons */}
           <View style={{ gap: 12 }}>
-            <CustomButton
+            <ButtonComponent
               title="Complete Registration"
               onPress={handleRegister}
               loading={loading}
@@ -220,7 +220,7 @@ export default function ChildRegistrationScreen() {
               size="large"
             />
 
-            <CustomButton
+            <ButtonComponent
               title="Back"
               onPress={handleBack}
               variant="secondary"

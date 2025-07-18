@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FormHeader } from '../../components/ui/FormHeader';
-import { CustomButton } from '../../components/ui/CustomButton';
+import { ButtonComponent } from '../../components/ui/ButtonComponent';
 import { Colors } from '../../constants/Colors';
 
 export default function RegistrationTypeScreen() {
@@ -149,7 +149,7 @@ export default function RegistrationTypeScreen() {
 
         {/* Continue Button */}
         <View className="mt-8">
-          <CustomButton
+          <ButtonComponent
             title="Continue"
             onPress={handleContinue}
             disabled={!selectedType}

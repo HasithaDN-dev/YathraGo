@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '../../components/ThemedView';
 import { ThemedText } from '../../components/ThemedText';
-import { CustomButton } from '../../components/ui/CustomButton';
+import { ButtonComponent } from '../../components/ui/ButtonComponent';
 import { CustomInput } from '../../components/ui/CustomInput';
 import { ApiService } from '../../services/api';
 import { CustomerRegistration } from '../../types/registration.types';
@@ -233,7 +233,7 @@ export default function CustomerRegisterScreen() {
           </View>
 
           {/* Register Button */}
-          <CustomButton
+          <ButtonComponent
             title="Register and Continue"
             onPress={handleRegisterAndContinue}
             loading={loading}
