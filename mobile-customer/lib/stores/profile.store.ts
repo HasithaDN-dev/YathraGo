@@ -3,67 +3,71 @@ import { create } from 'zustand';
 import { Profile, ChildProfile, StaffProfile } from '../../types/customer.types';
 import { getProfilesApi } from '../api/profile.api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from './auth.store';
 
 interface ProfileState {
   profiles: Profile[];
   activeProfile: Profile | null;
+  isLoading: boolean;
+  error: string | null;
   loadProfiles: (token: string) => Promise<void>;
   setActiveProfile: (profileId: string) => void;
   setDefaultProfile: (profileId: string) => Promise<void>;
+  refreshProfiles: (token: string) => Promise<void>;
+  clearError: () => void;
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
   profiles: [],
   activeProfile: null,
+  isLoading: false,
+  error: null,
+  
   loadProfiles: async (token) => {
-    const [parentProfile] = await getProfilesApi(token);
-    const defaultProfileId = await AsyncStorage.getItem('default-profile-id');
+    set({ isLoading: true, error: null });
+    try {
+      const profiles = await getProfilesApi(token);
+      const defaultProfileId = await AsyncStorage.getItem('default-profile-id');
 
-    // Use type assertions to access children and staffPassenger with correct types
-    const parentWithExtras = parentProfile as Profile & {
-      children?: ChildProfile[];
-      staffPassenger?: StaffProfile;
-    };
-
-    let profiles: Profile[] = [];
-    if (parentWithExtras) {
-      profiles.push({ ...parentWithExtras, type: 'parent' });
-      if (Array.isArray(parentWithExtras.children)) {
-        profiles = profiles.concat(
-          parentWithExtras.children.map((child) => ({
-            ...child,
-            name: child.childName,
-            type: 'child',
-          }))
-        );
+      let profileToActivate: Profile | null = null;
+      if (defaultProfileId) {
+        profileToActivate = profiles.find(p => p.id === defaultProfileId) || null;
       }
-      if (parentWithExtras.staffPassenger) {
-        profiles.push({
-          ...parentWithExtras.staffPassenger,
-          name: 'Staff Passenger', // Or use another relevant field if available
-          type: 'staff',
-        });
+      if (!profileToActivate && profiles.length > 0) {
+        profileToActivate = profiles[0];
       }
-    }
 
-    let profileToActivate: Profile | null = null;
-    if (defaultProfileId) {
-      profileToActivate = profiles.find(p => p.id === defaultProfileId) || null;
+      set({ profiles, activeProfile: profileToActivate, isLoading: false });
+      
+      // If we have profiles, mark profile as complete
+      if (profiles.length > 0) {
+        const { setProfileComplete } = useAuthStore.getState();
+        setProfileComplete(true);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load profiles';
+      set({ error: errorMessage, isLoading: false });
+      console.error('Profile loading error:', error);
     }
-    if (!profileToActivate) {
-      profileToActivate = profiles.find(p => p.type === 'parent') || profiles[0] || null;
-    }
-
-    set({ profiles, activeProfile: profileToActivate });
   },
+  
   setActiveProfile: (profileId) => {
     const profile = get().profiles.find(p => p.id === profileId);
     if (profile) {
       set({ activeProfile: profile });
     }
   },
+  
   setDefaultProfile: async (profileId) => {
     await AsyncStorage.setItem('default-profile-id', profileId);
     get().setActiveProfile(profileId); // Update active profile immediately for good UX
+  },
+  
+  refreshProfiles: async (token) => {
+    await get().loadProfiles(token);
+  },
+  
+  clearError: () => {
+    set({ error: null });
   },
 }));

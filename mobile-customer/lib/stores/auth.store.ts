@@ -4,19 +4,22 @@ import { persist } from 'zustand/middleware';
 import { User } from '../../types/customer.types';
 import * as SecureStore from 'expo-secure-store';
 
-
 interface AuthState {
   user: User | null;
   accessToken: string | null;
   isLoggedIn: boolean;
   isProfileComplete: boolean;
-  isProfileCreated: boolean;
+  isCustomerRegistered: boolean;
   hasHydrated: boolean;
+  isLoading: boolean;
   login: (accessToken: string, user: User) => Promise<void>;
   logout: () => Promise<void>;
-  setProfileComplete: () => void;
-  setProfileCreated: (created: boolean) => void;
+  setProfileComplete: (complete: boolean) => void;
+  setCustomerRegistered: (registered: boolean) => void;
   setHasHydrated: (value: boolean) => void;
+  setLoading: (loading: boolean) => void;
+  updateUser: (user: User) => void;
+  refreshToken: (newToken: string) => void;
 }
 
 // Custom storage adapter for Zustand persist using Expo Secure Store
@@ -33,33 +36,66 @@ const zustandSecureStore = {
   },
 };
 
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
       accessToken: null,
       isLoggedIn: false,
+      isProfileComplete: false,
+      isCustomerRegistered: false,
       hasHydrated: false,
-      isProfileCreated: false,
+      isLoading: false,
+      
       login: async (accessToken: string, user: User) => {
         await SecureStore.setItemAsync('user-auth-token', String(accessToken));
-        set({ accessToken: String(accessToken), user, isLoggedIn: true });
+        set({ 
+          accessToken: String(accessToken), 
+          user, 
+          isLoggedIn: true,
+          isProfileComplete: user.isProfileComplete || false
+        });
       },
+      
       logout: async () => {
         await SecureStore.deleteItemAsync('user-auth-token');
-        set({ accessToken: null, user: null, isLoggedIn: false, isProfileCreated: false });
+        set({ 
+          accessToken: null, 
+          user: null, 
+          isLoggedIn: false, 
+          isProfileComplete: false,
+          isCustomerRegistered: false,
+          isLoading: false
+        });
       },
-      setProfileComplete: () => {
+      
+      setProfileComplete: (complete: boolean) => {
         set((state: AuthState) => ({
-          user: state.user ? { ...state.user, isProfileComplete: true } : null
+          isProfileComplete: complete,
+          user: state.user ? { ...state.user, isProfileComplete: complete } : null
         }));
       },
-      setProfileCreated: (created: boolean) => {
-        set({ isProfileCreated: created });
+      
+      setCustomerRegistered: (registered: boolean) => {
+        set({ isCustomerRegistered: registered });
       },
+      
       setHasHydrated: (value: boolean) => {
         set({ hasHydrated: value });
+      },
+      
+      setLoading: (loading: boolean) => {
+        set({ isLoading: loading });
+      },
+      
+      updateUser: (user: User) => {
+        set((state: AuthState) => ({
+          user: { ...user, isProfileComplete: state.isProfileComplete }
+        }));
+      },
+      
+      refreshToken: (newToken: string) => {
+        set({ accessToken: newToken });
       },
     }),
     {
@@ -69,8 +105,9 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         accessToken: state.accessToken,
         isLoggedIn: state.isLoggedIn,
+        isProfileComplete: state.isProfileComplete,
+        isCustomerRegistered: state.isCustomerRegistered,
         hasHydrated: state.hasHydrated,
-        // Do not persist functions
       }),
       onRehydrateStorage: (state: any) => (persistedState: any, error?: unknown) => {
         if (!error) {
@@ -85,5 +122,3 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
-
-// No need for manual hydrate call; Zustand persist handles hydration and sets hasHydrated.

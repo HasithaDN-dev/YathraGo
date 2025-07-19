@@ -14,15 +14,12 @@ export interface AuthResponse {
 }
 
 // --- Profile and Registration ---
-export type ProfileType = 'parent' | 'child' | 'staff';
+export type ProfileType = 'child' | 'staff';
 
 export interface Profile {
   id: string;
   name: string;
   type: ProfileType;
-  // Parent-specific
-  children?: ChildProfile[];
-  staffPassenger?: StaffProfile;
   // Child-specific
   relationship?: string;
   school?: string;

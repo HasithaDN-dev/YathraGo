@@ -57,7 +57,7 @@ export default function StaffPassengerScreen() {
       await registerStaffApi(accessToken, formData as StaffProfileData);
       
       // 2. **CRITICAL STEP**: Update the global state to mark the profile as complete.
-      setProfileComplete();
+      setProfileComplete(true);
       
       // 3. That's it! The `app/(app)/_layout.tsx` guard will now automatically
       //    detect that `isProfileComplete` is true and will navigate the user

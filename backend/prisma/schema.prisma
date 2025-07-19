@@ -15,7 +15,6 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   phone     String   @unique
-  // Removed relation to Customer
 }
 
 model OtpCode {
@@ -69,7 +68,7 @@ model Manager {
 }
 
 model Vehicle {
-  id                  Int       @id @default(autoincrement())
+  id                  Int           @id @default(autoincrement())
   type                String
   brand               String
   model               String
@@ -78,8 +77,8 @@ model Vehicle {
   color               String
   route               String[]
   no_of_seats         Int
-  air_conditioned     Boolean   @default(false)
-  assistant           Boolean   @default(false)
+  air_conditioned     Boolean       @default(false)
+  assistant           Boolean       @default(false)
   rear_picture_url    String
   front_picture_url   String
   side_picture_url    String
@@ -88,11 +87,10 @@ model Vehicle {
   insurance_front_url String?
   insurance_back_url  String?
   vehicle_reg_url     String?
-  owner   VehicleOwner? @relation(fields: [ownerId], references: [id])
-  ownerId Int?
-
-  driver   Driver? @relation(fields: [driverId], references: [driver_id])
-  driverId Int?
+  ownerId             Int?
+  driverId            Int?
+  driver              Driver?       @relation(fields: [driverId], references: [driver_id])
+  owner               VehicleOwner? @relation(fields: [ownerId], references: [id])
 }
 
 model Chat {
@@ -168,16 +166,16 @@ model Driver {
   gender                   String
   nic_front_pic_url        String
   nice_back_pic_url        String
-  phone                    String // Standardized phone field name
+  phone                    String
   profile_picture_url      String
   second_phone             String
   vehicle_Reg_No           String
-  email                    String? // Added email field for consistency
+  email                    String?
   status                   String             @default("ACTIVE")
   registrationStatus       RegistrationStatus @default(OTP_PENDING)
   createdAt                DateTime           @default(now())
   updatedAt                DateTime           @updatedAt
-  vehicles Vehicle[] 
+  vehicles                 Vehicle[]
 }
 
 model FoundedBackupDrivers {
@@ -185,14 +183,14 @@ model FoundedBackupDrivers {
 }
 
 model VehicleOwner {
-  id         Int     @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   first_name String
   last_name  String
   phone      String
   email      String
   company    String?
   Address    String
-  vehicles    Vehicle[]
+  vehicles   Vehicle[]
 }
 
 model Customer {
@@ -246,8 +244,8 @@ model Child {
   childName      String
   childImageUrl  String?
   pickUpAddress  String
-  Customer       Customer? @relation(fields: [customerId], references: [customer_id])
   customerId     Int?
+  Customer       Customer? @relation(fields: [customerId], references: [customer_id])
 }
 
 model Child_Trip {
@@ -287,10 +285,9 @@ model Child_Assign_To {
 enum RegistrationStatus {
   OTP_PENDING
   OTP_VERIFIED
-  CUSTOMER_REGISTERED
-  CHILD_REGISTERED
-  STAFF_REGISTERED
+  HAVING_A_PROFILE
   FULLY_REGISTERED
+  CUSTOMER_REGISTERED
 }
 
 enum OtpPurpose {

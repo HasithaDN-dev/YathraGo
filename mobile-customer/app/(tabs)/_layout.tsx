@@ -1,16 +1,44 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { HapticTab } from '@/components/HapticTab';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import ProfileSwitcher from '../../components/ProfileSwitcher';
+import { ProfileLoading } from '../../components/ProfileLoading';
 import { HouseIcon, ClockIcon, BellIcon, ListIcon } from 'phosphor-react-native';
 import { useProfileStore } from '../../lib/stores/profile.store';
+import { useAuthStore } from '../../lib/stores/auth.store';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { activeProfile } = useProfileStore();
+  const { activeProfile, profiles, isLoading, error } = useProfileStore();
+  const { accessToken, isProfileComplete } = useAuthStore();
+
+  // Auto-load profiles when user is authenticated
+  useEffect(() => {
+    if (accessToken && profiles.length === 0 && !isLoading) {
+      const { loadProfiles } = useProfileStore.getState();
+      loadProfiles(accessToken);
+    }
+  }, [accessToken, profiles.length, isLoading]);
+
+  // Show loading state while profiles are being loaded
+  if (isLoading) {
+    return <ProfileLoading />;
+  }
+
+  // Show error state if profile loading failed
+  if (error) {
+    return (
+      <ProfileLoading message="Failed to load profiles. Please try again." />
+    );
+  }
+
+  // Show loading if no active profile is selected
+  if (profiles.length > 0 && !activeProfile) {
+    return <ProfileLoading message="Selecting profile..." />;
+  }
 
   // Show different tabs based on profile type
   const getTabTitle = (baseTitle: string) => {
