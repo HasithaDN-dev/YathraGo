@@ -44,7 +44,7 @@ export class CustomerService {
         const updatedCustomer = await tx.customer.update({
           where: { customer_id: dto.customerId },
           data: {
-            RegistrationStatusCustomer: 'HAVING_A_PROFILE',
+            registrationStatus: 'STAFF_REGISTERED',
           },
         });
 
@@ -93,7 +93,7 @@ export class CustomerService {
         await tx.customer.update({
           where: { customer_id: dto.customerId },
           data: {
-            RegistrationStatusCustomer: 'HAVING_A_PROFILE',
+            registrationStatus: 'CHILD_REGISTERED',
           },
         });
       });
@@ -202,7 +202,7 @@ export class CustomerService {
           address: dto.address,
           profileImageUrl: dto.profileImageUrl,
           emergencyContact: dto.emergencyContact,
-          RegistrationStatusCustomer: 'OTP_VERIFIED',
+          registrationStatus: 'OTP_VERIFIED',
         },
       });
       return {
