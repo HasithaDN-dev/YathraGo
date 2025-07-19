@@ -1,16 +1,19 @@
 import { API_BASE_URL } from '../../config/api';
-import { CustomerProfileData, ChildProfileData, StaffProfileData } from '../../types/registration.types';
-import { Profile } from '../../types/profile.types';
+import { Profile, CustomerProfileData, ChildProfileData, StaffProfileData } from '../../types/customer.types';
 
 /**
  * Fetches all profiles associated with the logged-in user (parent + children).
  */
 export const getProfilesApi = async (token: string): Promise<Profile[]> => {
-  const response = await fetch(`${API_BASE_URL}/customer/profile`, { // Assuming this is the correct endpoint
+  const response = await fetch(`${API_BASE_URL}/customer/profile`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) throw new Error('Failed to fetch profiles');
-  return response.json();
+  const data = await response.json();
+  // Backend returns { success: true, profile: customer }
+  // You may want to extract children and staffPassenger from data.profile
+  // For now, return [data.profile] for compatibility, or adjust as needed
+  return data.profile ? [data.profile] : [];
 };
 
 /**
@@ -19,7 +22,7 @@ export const getProfilesApi = async (token: string): Promise<Profile[]> => {
 export const completeCustomerProfileApi = async (
   token: string,
   data: CustomerProfileData
-): Promise<{ success: boolean }> => {
+): Promise<{ customerId: string; success: boolean; message: string }> => {
   const response = await fetch(`${API_BASE_URL}/customer/customer-register`, {
     method: 'POST',
     headers: {
@@ -28,7 +31,17 @@ export const completeCustomerProfileApi = async (
     },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error('Failed to complete customer profile');
+  if (!response.ok) {
+    let errorMsg = 'Failed to complete customer profile';
+    try {
+      const err = await response.json();
+      if (err && err.message) errorMsg = err.message;
+      console.error('Profile registration error:', err);
+    } catch (e) {
+      // ignore JSON parse error
+    }
+    throw new Error(errorMsg);
+  }
   return response.json();
 };
 
@@ -38,7 +51,7 @@ export const completeCustomerProfileApi = async (
 export const registerChildApi = async (
   token: string,
   data: ChildProfileData
-): Promise<{ success: boolean }> => {
+): Promise<{ success: boolean; message: string }> => {
   const response = await fetch(`${API_BASE_URL}/customer/register-child`, {
     method: 'POST',
     headers: {
@@ -57,7 +70,7 @@ export const registerChildApi = async (
 export const registerStaffApi = async (
   token: string,
   data: StaffProfileData
-): Promise<{ success: boolean }> => {
+): Promise<{ success: boolean; message: string }> => {
   const response = await fetch(`${API_BASE_URL}/customer/register-staff-passenger`, {
     method: 'POST',
     headers: {

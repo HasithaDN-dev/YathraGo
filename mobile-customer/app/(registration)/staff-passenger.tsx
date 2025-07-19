@@ -1,47 +1,23 @@
+
 import React, { useState } from 'react';
-import { View, ScrollView, Alert } from 'react-native';
+import { View, Alert, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomInput } from '../../components/ui/CustomInput';
 import { ButtonComponent } from '../../components/ui/ButtonComponent';
-
-import { ApiService } from '../../services/api';
-import { useAuth } from '../../hooks/useAuth';
-import { StaffPassengerRegistration } from '../../types/registration.types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Typography } from '../../components/Typography';
+import { registerStaffApi } from '../../lib/api/profile.api';
+import { useAuthStore } from '../../lib/stores/auth.store';
+import { StaffProfileData } from '../../types/customer.types';
 
 export default function StaffPassengerScreen() {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<StaffPassengerRegistration>>({
-    customerId: 0,
-    nearbyCity: '',
-    workLocation: '',
-    workAddress: '',
-    pickUpLocation: '',
-    pickupAddress: '',
-  });
-  const { refreshProfile } = useAuth();
+  const [formData, setFormData] = useState<Partial<StaffProfileData>>({});
+  
+  // Get the accessToken and the action to complete the profile from the global store.
+  const { accessToken, setProfileComplete } = useAuthStore();
 
-  // Load customer ID from stored user data on component mount
-  React.useEffect(() => {
-    const loadCustomerId = async () => {
-      try {
-        const storedUser = await ApiService.getStoredCustomer();
-        if (storedUser?.id) {
-          setFormData(prev => ({
-            ...prev,
-            customerId: storedUser.id
-          }));
-        }
-      } catch (error) {
-        console.error('Error loading customer ID:', error);
-      }
-    };
-    loadCustomerId();
-  }, []);
-
-  const handleInputChange = (field: keyof StaffPassengerRegistration, value: string) => {
+  const handleInputChange = (field: keyof StaffProfileData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -49,12 +25,8 @@ export default function StaffPassengerScreen() {
   };
 
   const validateForm = (): boolean => {
-    if (!formData.customerId || formData.customerId === 0) {
-      Alert.alert('Error', 'Customer ID not found. Please log in again.');
-      return false;
-    }
 
-    const requiredFields: (keyof StaffPassengerRegistration)[] = [
+    const requiredFields: (keyof StaffProfileData)[] = [
       'nearbyCity',
       'workLocation',
       'workAddress',
@@ -74,57 +46,40 @@ export default function StaffPassengerScreen() {
   };
 
   const handleRegister = async () => {
-    if (!validateForm()) return;
-
-    const token = await ApiService.getStoredToken();
-    if (!token) {
-      Alert.alert('Error', 'Authentication token not found');
+    if (!validateForm() || !accessToken) {
+      Alert.alert('Error', 'Form is invalid or you are not logged in.');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await ApiService.registerStaffPassenger(token, formData as StaffPassengerRegistration);
+      // 1. Call the final registration API function.
+      await registerStaffApi(accessToken, formData as StaffProfileData);
+      
+      // 2. **CRITICAL STEP**: Update the global state to mark the profile as complete.
+      setProfileComplete();
+      
+      // 3. That's it! The `app/(app)/_layout.tsx` guard will now automatically
+      //    detect that `isProfileComplete` is true and will navigate the user
+      //    to the main `(tabs)` layout. No `router.replace()` is needed here.
+      
+      Alert.alert('Success', 'Staff passenger registration completed successfully!');
 
-      if (response.success) {
-        Alert.alert(
-          'Success',
-          'Staff passenger registration completed successfully!',
-          [
-            {
-              text: 'Go to Dashboard',
-              onPress: async () => {
-                // Refresh authentication/profile state before navigating
-                try {
-                  await AsyncStorage.setItem('isRegistered', 'true');
-                  await refreshProfile();
-                } catch (e) {
-                  // If refreshProfile fails, continue navigation
-                }
-                setTimeout(() => {
-                  router.replace('/(tabs)');
-                }, 100);
-              }
-            }
-          ]
-        );
-} else {
-  Alert.alert('Error', response.message || 'Registration failed');
-}
-    } catch (error: any) {
-  console.error('Staff registration error:', error);
-  Alert.alert('Error', error.message || 'Registration failed');
-} finally {
-  setLoading(false);
-}
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Registration failed.';
+      Alert.alert('Error', message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-const handleBack = () => {
-  router.back();
-};
+  const handleBack = () => {
+    router.back();
+  };
 
 return (
   <SafeAreaView style={{ flex: 1 }}>
+    <View className="flex-1 bg-brand-lightNavy">
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, padding: 24 }}
         showsVerticalScrollIndicator={false}
@@ -228,6 +183,8 @@ return (
           </Typography>
         </View>
       </ScrollView>
+    </View>
   </SafeAreaView>
 );
 }
+

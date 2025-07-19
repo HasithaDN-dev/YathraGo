@@ -1,19 +1,22 @@
 // Manages the core authentication state: token, user object, and status.
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User } from '../../types/auth.types';
-import { saveToken, deleteToken } from '../storage/secure.storage';
+import { User } from '../../types/customer.types';
 import * as SecureStore from 'expo-secure-store';
 
 
 interface AuthState {
   user: User | null;
-  token: string | null;
-  status: 'isLoading' | 'isSignedOut' | 'isSignedIn';
+  accessToken: string | null;
+  isLoggedIn: boolean;
+  isProfileComplete: boolean;
+  isProfileCreated: boolean;
   hasHydrated: boolean;
-  login: (token: string, user: User) => Promise<void>;
+  login: (accessToken: string, user: User) => Promise<void>;
   logout: () => Promise<void>;
   setProfileComplete: () => void;
+  setProfileCreated: (created: boolean) => void;
+  setHasHydrated: (value: boolean) => void;
 }
 
 // Custom storage adapter for Zustand persist using Expo Secure Store
@@ -35,21 +38,28 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      token: null,
-      status: 'isLoading',
+      accessToken: null,
+      isLoggedIn: false,
       hasHydrated: false,
-      login: async (token: string, user: User) => {
-        await saveToken(token);
-        set({ token, user, status: 'isSignedIn' });
+      isProfileCreated: false,
+      login: async (accessToken: string, user: User) => {
+        await SecureStore.setItemAsync('user-auth-token', String(accessToken));
+        set({ accessToken: String(accessToken), user, isLoggedIn: true });
       },
       logout: async () => {
-        await deleteToken();
-        set({ token: null, user: null, status: 'isSignedOut' });
+        await SecureStore.deleteItemAsync('user-auth-token');
+        set({ accessToken: null, user: null, isLoggedIn: false, isProfileCreated: false });
       },
       setProfileComplete: () => {
         set((state: AuthState) => ({
           user: state.user ? { ...state.user, isProfileComplete: true } : null
         }));
+      },
+      setProfileCreated: (created: boolean) => {
+        set({ isProfileCreated: created });
+      },
+      setHasHydrated: (value: boolean) => {
+        set({ hasHydrated: value });
       },
     }),
     {
@@ -57,16 +67,19 @@ export const useAuthStore = create<AuthState>()(
       storage: zustandSecureStore,
       partialize: (state) => ({
         user: state.user,
-        token: state.token,
-        status: state.status,
+        accessToken: state.accessToken,
+        isLoggedIn: state.isLoggedIn,
         hasHydrated: state.hasHydrated,
         // Do not persist functions
       }),
       onRehydrateStorage: (state: any) => (persistedState: any, error?: unknown) => {
         if (!error) {
-          state.setState({ hasHydrated: true });
+          console.log('[Zustand] Hydration complete', persistedState);
+          state.setHasHydrated(true);
         } else {
-          state.setState({ hasHydrated: true, status: 'isSignedOut', token: null, user: null });
+          console.error('[Zustand] Hydration error:', error);
+          state.setHasHydrated(true);
+          state.logout && state.logout();
         }
       },
     }

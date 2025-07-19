@@ -3,10 +3,10 @@ import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
 import { ProfileSwitcher } from '@/components/ProfileSwitcher';
-import { useProfile } from '@/contexts/ProfileContext';
+import { useProfileStore } from '../../lib/stores/profile.store';
 
 export default function NotificationsScreen() {
-  const { activeProfile } = useProfile();
+  const { activeProfile } = useProfileStore();
 
   // Mock notifications data
   const mockNotifications = [

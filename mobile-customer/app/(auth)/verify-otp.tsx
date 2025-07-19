@@ -1,49 +1,44 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, Alert, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ApiService } from '../../services/api';
-import { PasswordIcon} from 'phosphor-react-native';
-import { Typography } from '@/components/Typography';
+import { View, TextInput, Alert, TouchableOpacity} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Typography } from '@/components/Typography';
 import CustomButton from '../../components/ui/CustomButton';
+import { PasswordIcon } from 'phosphor-react-native';
+import { verifyOtpApi, sendOtpApi } from '../../lib/api/auth.api';
+import { useAuthStore } from '../../lib/stores/auth.store';
 
 export default function VerifyOTPScreen() {
   const router = useRouter();
-  const { phoneNumber, isNewUser } = useLocalSearchParams<{
-    phoneNumber: string;
-    isNewUser: string;
-  }>();
+  const { phone } = useLocalSearchParams<{ phone: string }>();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
+  //Get the login action from our Zustand store.
+  const { login } = useAuthStore();
+
   useEffect(() => {
-    // Start countdown timer
-    const timer = setInterval(() => {
+    const timerInterval = setInterval(() => {
       setResendTimer((prev) => {
         if (prev <= 1) {
           setCanResend(true);
-          clearInterval(timer);
+          clearInterval(timerInterval);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
+    return () => clearInterval(timerInterval);
+  }, [canResend]); // Rerun effect when resend is triggered
 
   const handleOtpChange = (value: string, index: number) => {
     if (isNaN(Number(value))) return;
-
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-
-    // Auto-focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -57,32 +52,20 @@ export default function VerifyOTPScreen() {
 
   const handleVerifyOTP = async () => {
     const otpCode = otp.join('');
-    
     if (otpCode.length !== 6) {
-      Alert.alert('Error', 'Please enter complete OTP');
+      Alert.alert('Error', 'Please enter the complete 6-digit OTP.');
       return;
     }
 
     setIsLoading(true);
     try {
-      const result = await ApiService.verifyCustomerOtp(phoneNumber!, otpCode);
-
-      // Store auth token and user data
-      await AsyncStorage.setItem('authToken', result.accessToken);
-      await AsyncStorage.setItem('userProfile', JSON.stringify(result.user));
-      
-      // Navigate based on user status
-      if (result.user.isNewUser) {
-        // New user - go to customer profile setup
-        router.replace('/(registration)/customer-register' as any);
-      } else {
-        // Existing user - go to main app
-        router.replace('/(tabs)' as any);
-      }
+      const { accessToken, user } = await verifyOtpApi(phone!, otpCode);
+      await login(accessToken, user);
+      // Navigation is handled by root layout on login state change
     } catch (error) {
-      console.error('OTP verification error:', error);
-      Alert.alert('Verification Failed', error instanceof Error ? error.message : 'Invalid OTP');
-      // Clear OTP inputs
+      const message = error instanceof Error ? error.message : 'Invalid OTP.';
+      Alert.alert('Verification Failed', message);
+      console.log('OTP verification error:', error);
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
     } finally {
@@ -92,15 +75,13 @@ export default function VerifyOTPScreen() {
 
   const handleResendOTP = async () => {
     if (!canResend) return;
-
     setIsLoading(true);
     try {
-      await ApiService.sendCustomerOtp(phoneNumber!);
-      
-      Alert.alert('Success', 'OTP sent successfully');
+      await sendOtpApi(phone!);
+      Alert.alert('Success', 'A new OTP has been sent.');
       setCanResend(false);
       setResendTimer(60);
-      
+            
       // Restart timer
       const timer = setInterval(() => {
         setResendTimer((prev) => {
@@ -113,21 +94,20 @@ export default function VerifyOTPScreen() {
         });
       }, 1000);
     } catch (error) {
-      console.error('Resend OTP error:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to resend OTP');
+      const message = error instanceof Error ? error.message : 'Failed to resend OTP.';
+      Alert.alert('Error', message);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <View className="flex-1 px-6 py-20 justify-start  bg-white">
+    <View className="flex-1 px-6 py-20 justify-start bg-white">
       <StatusBar style="dark" />
-
       <View className="items-center my-8">
         <PasswordIcon color="#143373" weight="duotone" size={150} duotoneColor="#fdc334" duotoneOpacity={0.3} />
       </View>
-
+      
       {/* Title & Subtitle */}
       <View className="mb-8">
         <Typography variant="large-title" className="text-center mb-4 text-brand-deepNavy">
@@ -137,10 +117,10 @@ export default function VerifyOTPScreen() {
           Enter the 6-digit code we&apos;ve sent to
         </Typography>
         <Typography variant="body" weight="semibold" className="text-center text-brand-deepNavy">
-          {phoneNumber}
+          {phone}
         </Typography>
       </View>
-
+      
       {/* OTP Input & Actions */}
       <View className="gap-y-4">
         <View className="flex-row justify-center items-center gap-x-3 mb-1">

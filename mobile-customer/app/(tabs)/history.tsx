@@ -3,10 +3,10 @@ import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
 import { ProfileSwitcher } from '@/components/ProfileSwitcher';
-import { useProfile } from '@/contexts/ProfileContext';
+import { useProfileStore } from '../../lib/stores/profile.store';
 
 export default function HistoryScreen() {
-  const { activeProfile } = useProfile();
+  const { activeProfile } = useProfileStore();
 
   // Mock history data
   const mockHistoryItems = [
@@ -55,10 +55,10 @@ export default function HistoryScreen() {
         <View className="space-y-6">
           {/* Header */}
           <View className="space-y-2">
-            <Typography variant="headline-large" className="text-black">
+            <Typography variant="large-title" className="text-black">
               Trip History
             </Typography>
-            <Typography variant="body-medium" className="text-brand-neutralGray">
+            <Typography variant="body" className="text-brand-neutralGray">
               {activeProfile?.type === 'child' 
                 ? `Your recent trips, ${activeProfile.name}`
                 : `${activeProfile?.name}&apos;s travel history`
@@ -69,17 +69,17 @@ export default function HistoryScreen() {
           {/* Filter Options */}
           <View className="flex-row">
             <TouchableOpacity className="bg-brand-deepNavy px-4 py-2 rounded-full">
-              <Typography variant="label-medium" className="text-white">
+              <Typography variant="tappable" className="text-white">
                 All Trips
               </Typography>
             </TouchableOpacity>
             <TouchableOpacity className="ml-3 bg-brand-lightGray px-4 py-2 rounded-full">
-              <Typography variant="label-medium" className="text-brand-neutralGray">
+              <Typography variant="tappable" className="text-brand-neutralGray">
                 This Month
               </Typography>
             </TouchableOpacity>
             <TouchableOpacity className="ml-3 bg-brand-lightGray px-4 py-2 rounded-full">
-              <Typography variant="label-medium" className="text-brand-neutralGray">
+              <Typography variant="tappable" className="text-brand-neutralGray">
                 Completed
               </Typography>
             </TouchableOpacity>
@@ -94,10 +94,10 @@ export default function HistoryScreen() {
               >
                 <View className="flex-row justify-between items-start">
                   <View className="flex-1">
-                    <Typography variant="label-large" className="text-black">
+                    <Typography variant="title-1" className="text-black">
                       {item.from} → {item.to}
                     </Typography>
-                    <Typography variant="body-small" className="text-brand-neutralGray">
+                    <Typography variant="caption-1" className="text-brand-neutralGray">
                       {new Date(item.date).toLocaleDateString('en-US', {
                         weekday: 'short',
                         year: 'numeric',
@@ -108,12 +108,12 @@ export default function HistoryScreen() {
                   </View>
                   <View className="items-end">
                     <Typography 
-                      variant="label-medium" 
+                      variant="tappable" 
                       className={getStatusColor(item.status)}
                     >
                       {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                     </Typography>
-                    <Typography variant="label-medium" className="text-black">
+                    <Typography variant="tappable" className="text-black">
                       {item.cost}
                     </Typography>
                   </View>
@@ -124,7 +124,7 @@ export default function HistoryScreen() {
                   <View className="flex-row items-center">
                     <View className="w-2 h-2 bg-brand-brightOrange rounded-full" />
                     <View className="ml-2">
-                      <Typography variant="body-small" className="text-brand-neutralGray">
+                      <Typography variant="caption-1" className="text-brand-neutralGray">
                         Pick-up: 8:30 AM
                       </Typography>
                     </View>
@@ -132,7 +132,7 @@ export default function HistoryScreen() {
                   <View className="ml-4 flex-row items-center">
                     <View className="w-2 h-2 bg-success rounded-full" />
                     <View className="ml-2">
-                      <Typography variant="body-small" className="text-brand-neutralGray">
+                      <Typography variant="caption-1" className="text-brand-neutralGray">
                         Drop-off: 8:45 AM
                       </Typography>
                     </View>
@@ -145,10 +145,10 @@ export default function HistoryScreen() {
           {/* Empty State or Load More */}
           {mockHistoryItems.length === 0 ? (
             <View className="bg-brand-lightGray rounded-2xl p-8 items-center space-y-3">
-              <Typography variant="headline-medium" className="text-brand-neutralGray">
+              <Typography variant="subhead" className="text-brand-neutralGray">
                 No trips yet
               </Typography>
-              <Typography variant="body-medium" className="text-brand-neutralGray text-center">
+              <Typography variant="body" className="text-brand-neutralGray text-center">
                 {activeProfile?.type === 'child' 
                   ? "Your trip history will appear here once you start traveling"
                   : "Trip history will appear here once rides are booked"
@@ -157,7 +157,7 @@ export default function HistoryScreen() {
             </View>
           ) : (
             <TouchableOpacity className="bg-brand-lightestBlue rounded-2xl p-4 items-center">
-              <Typography variant="label-large" className="text-brand-deepNavy">
+              <Typography variant="title-1" className="text-brand-deepNavy">
                 Load More Trips
               </Typography>
             </TouchableOpacity>

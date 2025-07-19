@@ -3,10 +3,10 @@ import { View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
 import { ProfileSwitcher } from '@/components/ProfileSwitcher';
-import { useProfile } from '@/contexts/ProfileContext';
+import { useProfileStore } from '../../lib/stores/profile.store';
 
 export default function HomeScreen() {
-  const { activeProfile } = useProfile();
+  const { activeProfile } = useProfileStore();
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -19,7 +19,7 @@ export default function HomeScreen() {
             <Typography variant="headline-large" className="text-black">
               Welcome back{activeProfile ? `, ${activeProfile.name}` : ''}!
             </Typography>
-            <Typography variant="body-medium" className="text-brand-neutralGray">
+            <Typography variant="body" className="text-brand-neutralGray">
               {activeProfile?.type === 'child' 
                 ? "Let&apos;s plan your next trip safely"
                 : "Manage your family&apos;s travel needs"
@@ -29,17 +29,17 @@ export default function HomeScreen() {
 
           {/* Quick Actions */}
           <View className="bg-brand-lightestBlue rounded-2xl p-6 space-y-4">
-            <Typography variant="headline-medium" className="text-black">
+            <Typography variant="subhead" className="text-black">
               Quick Actions
             </Typography>
             
             <View className="space-y-3">
               <View className="bg-white rounded-xl p-4 flex-row items-center justify-between">
                 <View>
-                  <Typography variant="label-large" className="text-black">
+                  <Typography variant="title-1" className="text-black">
                     Book a Ride
                   </Typography>
-                  <Typography variant="body-small" className="text-brand-neutralGray">
+                  <Typography variant="caption-1" className="text-brand-neutralGray">
                     {activeProfile?.type === 'child' 
                       ? "Request a safe trip"
                       : "Book for yourself or your child"
@@ -47,7 +47,7 @@ export default function HomeScreen() {
                   </Typography>
                 </View>
                 <View className="w-8 h-8 bg-brand-brightOrange rounded-full items-center justify-center">
-                  <Typography variant="label-medium" className="text-white">
+                  <Typography variant="tappable" className="text-white">
                     🚗
                   </Typography>
                 </View>
@@ -55,10 +55,10 @@ export default function HomeScreen() {
 
               <View className="bg-white rounded-xl p-4 flex-row items-center justify-between">
                 <View>
-                  <Typography variant="label-large" className="text-black">
+                  <Typography variant="title-1" className="text-black">
                     Track Ride
                   </Typography>
-                  <Typography variant="body-small" className="text-brand-neutralGray">
+                  <Typography variant="caption-1" className="text-brand-neutralGray">
                     {activeProfile?.type === 'child' 
                       ? "See your current trip"
                       : "Monitor family trips"
@@ -66,7 +66,7 @@ export default function HomeScreen() {
                   </Typography>
                 </View>
                 <View className="w-8 h-8 bg-brand-deepNavy rounded-full items-center justify-center">
-                  <Typography variant="label-medium" className="text-white">
+                  <Typography variant="tappable" className="text-white">
                     📍
                   </Typography>
                 </View>
@@ -77,19 +77,19 @@ export default function HomeScreen() {
           {/* Profile-specific Content */}
           {activeProfile?.type === 'child' ? (
             <View className="bg-brand-softOrange rounded-2xl p-6 space-y-3">
-              <Typography variant="headline-medium" className="text-black">
+              <Typography variant="subhead" className="text-black">
                 Your School Routes
               </Typography>
-              <Typography variant="body-medium" className="text-brand-neutralGray">
+              <Typography variant="body" className="text-brand-neutralGray">
                 Quick access to your regular school routes and pickup locations.
               </Typography>
             </View>
           ) : (
             <View className="bg-brand-lightestBlue rounded-2xl p-6 space-y-3">
-              <Typography variant="headline-medium" className="text-black">
+              <Typography variant="subhead" className="text-black">
                 Family Overview
               </Typography>
-              <Typography variant="body-medium" className="text-brand-neutralGray">
+              <Typography variant="body" className="text-brand-neutralGray">
                 Monitor all family members&apos; trips and manage their travel preferences.
               </Typography>
             </View>

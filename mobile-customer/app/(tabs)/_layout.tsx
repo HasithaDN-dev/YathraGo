@@ -4,12 +4,13 @@ import { HapticTab } from '@/components/HapticTab';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { useProfile } from '@/contexts/ProfileContext';
+import ProfileSwitcher from '../../components/ProfileSwitcher';
 import { HouseIcon, ClockIcon, BellIcon, ListIcon } from 'phosphor-react-native';
+import { useProfileStore } from '../../lib/stores/profile.store';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { activeProfile } = useProfile();
+  const { activeProfile } = useProfileStore();
 
   // Show different tabs based on profile type
   const getTabTitle = (baseTitle: string) => {
@@ -22,6 +23,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        header: () => <ProfileSwitcher />,
         tabBarActiveTintColor: '#143373', // brand-deepNavy
         headerShown: false,
         tabBarButton: HapticTab,

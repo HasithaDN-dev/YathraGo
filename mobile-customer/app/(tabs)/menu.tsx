@@ -3,12 +3,11 @@ import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
 import { ProfileSwitcher } from '@/components/ProfileSwitcher';
-import { useProfile } from '@/contexts/ProfileContext';
 import { resetAppState, getAppState } from '../../utils/resetAppState';
+import { useProfileStore } from '../../lib/stores/profile.store';
 
 export default function MenuScreen() {
-  const { activeProfile } = useProfile();
-
+  const { activeProfile } = useProfileStore();
   const menuItems = [
     {
       id: '1',
@@ -93,7 +92,7 @@ export default function MenuScreen() {
             <Typography variant="headline-large" className="text-black">
               Menu
             </Typography>
-            <Typography variant="body-medium" className="text-brand-neutralGray">
+            <Typography variant="body" className="text-brand-neutralGray">
               {activeProfile?.type === 'child' 
                 ? `Manage your settings, ${activeProfile.name}`
                 : `Settings and preferences for ${activeProfile?.name}`
@@ -107,19 +106,19 @@ export default function MenuScreen() {
               <View className={`w-16 h-16 rounded-full items-center justify-center ${
                 activeProfile?.type === 'parent' ? 'bg-brand-brightOrange' : 'bg-brand-softOrange'
               }`}>
-                <Typography variant="headline-medium" className="text-white">
+                <Typography variant="subhead" className="text-white">
                   {activeProfile?.name.charAt(0).toUpperCase()}
                 </Typography>
               </View>
               <View className="ml-4 flex-1">
-                <Typography variant="headline-medium" className="text-black">
+                <Typography variant="subhead" className="text-black">
                   {activeProfile?.name}
                 </Typography>
-                <Typography variant="body-medium" className="text-brand-neutralGray">
+                <Typography variant="body" className="text-brand-neutralGray">
                   {activeProfile?.type === 'parent' ? 'Parent Account' : 'Child Account'}
                 </Typography>
                 {activeProfile?.type === 'child' && activeProfile?.school && (
-                  <Typography variant="body-small" className="text-brand-neutralGray">
+                  <Typography variant="caption-1" className="text-brand-neutralGray">
                     {activeProfile.school}
                   </Typography>
                 )}
@@ -142,20 +141,20 @@ export default function MenuScreen() {
                     <View className={`w-12 h-12 rounded-full items-center justify-center ${
                       item.highlight ? 'bg-brand-brightOrange' : 'bg-brand-lightGray'
                     }`}>
-                      <Typography variant="label-large" className="text-white">
+                      <Typography variant="title-1" className="text-white">
                         {item.icon}
                       </Typography>
                     </View>
                     
                     <View className="ml-4 flex-1">
                     <Typography 
-                      variant="label-large" 
+                      variant="title-1" 
                       className={item.highlight ? "text-brand-deepNavy" : "text-black"}
                     >
                       {item.title}
                     </Typography>
                     <Typography 
-                      variant="body-medium" 
+                      variant="body" 
                       className={item.highlight ? "text-black" : "text-brand-neutralGray"}
                     >
                       {item.description}
@@ -163,7 +162,7 @@ export default function MenuScreen() {
                   </View>
                   
                   <View className="w-6 h-6 items-center justify-center">
-                    <Typography variant="label-medium" className="text-brand-neutralGray">
+                    <Typography variant="tappable" className="text-brand-neutralGray">
                       →
                     </Typography>
                   </View>
@@ -186,16 +185,16 @@ export default function MenuScreen() {
                 >
                   <View className="flex-row items-center">
                     <View className="w-12 h-12 rounded-full items-center justify-center bg-red-500">
-                      <Typography variant="label-large" className="text-white">
+                      <Typography variant="title-1" className="text-white">
                         🔄
                       </Typography>
                     </View>
                     
                     <View className="ml-4 flex-1">
-                      <Typography variant="label-large" className="text-black">
+                      <Typography variant="title-1" className="text-black">
                         Reset App State
                       </Typography>
-                      <Typography variant="body-medium" className="text-brand-neutralGray">
+                      <Typography variant="body" className="text-brand-neutralGray">
                         Clear all data and restart as new user
                       </Typography>
                     </View>
@@ -208,16 +207,16 @@ export default function MenuScreen() {
                 >
                   <View className="flex-row items-center">
                     <View className="w-12 h-12 rounded-full items-center justify-center bg-blue-500">
-                      <Typography variant="label-large" className="text-white">
+                      <Typography variant="title-1" className="text-white">
                         🔍
                       </Typography>
                     </View>
                     
                     <View className="ml-4 flex-1">
-                      <Typography variant="label-large" className="text-black">
+                      <Typography variant="title-1" className="text-black">
                         Debug App State
                       </Typography>
-                      <Typography variant="body-medium" className="text-brand-neutralGray">
+                      <Typography variant="body" className="text-brand-neutralGray">
                         View current app data
                       </Typography>
                     </View>
@@ -229,7 +228,7 @@ export default function MenuScreen() {
 
           {/* App Version */}
           <View className="items-center pt-4">
-            <Typography variant="body-small" className="text-brand-neutralGray">
+            <Typography variant="caption-1" className="text-brand-neutralGray">
               YathraGo v1.0.0
             </Typography>
           </View>

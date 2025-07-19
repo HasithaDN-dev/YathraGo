@@ -25,7 +25,7 @@ export default function RegistrationTypeScreen() {
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: '#F9FAFB' }}>
-      <View className="flex-1 px-6 py-8">
+      <View className="flex-1 px-6 py-8 bg-bg-light-blue">
         <FormHeader
           title="Registration"
           subtitle="Choose your registration type to get started"

@@ -1,8 +1,8 @@
 // Manages the list of switchable profiles (staff-parent/children) and the active one.
 import { create } from 'zustand';
-import { Profile } from '../../types';
+import { Profile, ChildProfile, StaffProfile } from '../../types/customer.types';
 import { getProfilesApi } from '../api/profile.api';
-import { saveDefaultProfileId, getDefaultProfileId } from '../storage/async.storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ProfileState {
   profiles: Profile[];
@@ -16,15 +16,42 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   profiles: [],
   activeProfile: null,
   loadProfiles: async (token) => {
-    const profiles = await getProfilesApi(token);
-    const defaultProfileId = await getDefaultProfileId();
-    
+    const [parentProfile] = await getProfilesApi(token);
+    const defaultProfileId = await AsyncStorage.getItem('default-profile-id');
+
+    // Use type assertions to access children and staffPassenger with correct types
+    const parentWithExtras = parentProfile as Profile & {
+      children?: ChildProfile[];
+      staffPassenger?: StaffProfile;
+    };
+
+    let profiles: Profile[] = [];
+    if (parentWithExtras) {
+      profiles.push({ ...parentWithExtras, type: 'parent' });
+      if (Array.isArray(parentWithExtras.children)) {
+        profiles = profiles.concat(
+          parentWithExtras.children.map((child) => ({
+            ...child,
+            name: child.childName,
+            type: 'child',
+          }))
+        );
+      }
+      if (parentWithExtras.staffPassenger) {
+        profiles.push({
+          ...parentWithExtras.staffPassenger,
+          name: 'Staff Passenger', // Or use another relevant field if available
+          type: 'staff',
+        });
+      }
+    }
+
     let profileToActivate: Profile | null = null;
     if (defaultProfileId) {
-        profileToActivate = profiles.find(p => p.id === defaultProfileId) || null;
+      profileToActivate = profiles.find(p => p.id === defaultProfileId) || null;
     }
     if (!profileToActivate) {
-        profileToActivate = profiles.find(p => p.type === 'parent') || profiles[0] || null;
+      profileToActivate = profiles.find(p => p.type === 'parent') || profiles[0] || null;
     }
 
     set({ profiles, activeProfile: profileToActivate });
@@ -36,7 +63,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     }
   },
   setDefaultProfile: async (profileId) => {
-    await saveDefaultProfileId(profileId);
+    await AsyncStorage.setItem('default-profile-id', profileId);
     get().setActiveProfile(profileId); // Update active profile immediately for good UX
   },
 }));
