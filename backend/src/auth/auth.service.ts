@@ -151,7 +151,7 @@ export class AuthService {
         name: '', // Will be updated later
         phone: phone,
         status: 'ACTIVE',
-        RegistrationStatusCustomer: 'OTP_VERIFIED',
+        registrationStatus: 'OTP_VERIFIED',
       },
     })) as UserEntity;
   }

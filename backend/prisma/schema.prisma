@@ -87,8 +87,8 @@ model Vehicle {
   insurance_front_url String?
   insurance_back_url  String?
   vehicle_reg_url     String?
-  driverId            Int?
   ownerId             Int?
+  driverId            Int?
   driver              Driver?       @relation(fields: [driverId], references: [driver_id])
   owner               VehicleOwner? @relation(fields: [ownerId], references: [id])
 }
@@ -188,25 +188,25 @@ model VehicleOwner {
   last_name  String
   phone      String
   email      String
-  Address    String
   company    String?
+  Address    String
   vehicles   Vehicle[]
 }
 
 model Customer {
-  customer_id                Int                        @id @default(autoincrement())
-  name                       String
-  phone                      String                     @unique
-  email                      String?
-  address                    String?
-  profileImageUrl            String?
-  emergencyContact           String?
-  status                     String                     @default("ACTIVE")
-  createdAt                  DateTime                   @default(now())
-  updatedAt                  DateTime                   @updatedAt
-  registrationStatus         RegistrationStatus @default(OTP_PENDING)
-  children                   Child[]
-  staffPassenger             Staff_Passenger?
+  customer_id        Int                @id @default(autoincrement())
+  name               String
+  phone              String             @unique
+  email              String?
+  address            String?
+  profileImageUrl    String?
+  emergencyContact   String?
+  status             String             @default("ACTIVE")
+  registrationStatus RegistrationStatus @default(OTP_PENDING)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  children           Child[]
+  staffPassenger     Staff_Passenger?
 }
 
 model Complaints {
@@ -238,13 +238,13 @@ model Ratings_and_Reviews {
 model Child {
   child_id       Int       @id @default(autoincrement())
   relationship   String
+  nearbyCity     String
   schoolLocation String
   school         String
   childName      String
   childImageUrl  String?
   pickUpAddress  String
   customerId     Int?
-  nearbyCity     String
   Customer       Customer? @relation(fields: [customerId], references: [customer_id])
 }
 

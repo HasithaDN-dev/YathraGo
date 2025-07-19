@@ -54,11 +54,14 @@ export default function ChildRegistrationScreen() {
     }
     setLoading(true);
     try {
+      console.log('Child registration: Starting API call...');
       // 1. Call the final registration API function.
-      await registerChildApi(accessToken, formData as ChildProfileData);
+      const result = await registerChildApi(accessToken, formData as ChildProfileData);
+      console.log('Child registration: API call successful:', result);
 
       // 2. **CRITICAL STEP**: Update the global state to mark the profile as complete.
       setProfileComplete(true);
+      console.log('Child registration: Profile marked as complete');
 
       // 3. That's it! The `app/(app)/_layout.tsx` guard will now automatically
       //    detect that `isProfileComplete` is true and will navigate the user
@@ -67,7 +70,22 @@ export default function ChildRegistrationScreen() {
       Alert.alert('Success', 'Child registration completed successfully!');
 
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Registration failed.';
+      console.error('Child registration error:', error);
+      let message = 'Registration failed.';
+      
+      if (error instanceof Error) {
+        message = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        // Handle error objects
+        if ('message' in error && typeof error.message === 'string') {
+          message = error.message;
+        } else {
+          message = JSON.stringify(error);
+        }
+      } else if (typeof error === 'string') {
+        message = error;
+      }
+      
       Alert.alert('Error', message);
     } finally {
       setLoading(false);

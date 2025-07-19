@@ -77,6 +77,7 @@ export interface ChildProfileData {
   schoolLocation: string;
   pickUpAddress: string;
   childImageUrl?: string;
+  customerId?: string; // Optional since we add it in the API
 }
 
 export interface StaffProfileData {
@@ -85,4 +86,5 @@ export interface StaffProfileData {
   workAddress: string;
   pickUpLocation: string;
   pickupAddress: string;
+  customerId?: string; // Optional since we add it in the API
 }

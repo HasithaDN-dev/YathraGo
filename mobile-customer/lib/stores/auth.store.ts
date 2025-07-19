@@ -70,10 +70,12 @@ export const useAuthStore = create<AuthState>()(
       },
       
       setProfileComplete: (complete: boolean) => {
+        console.log('Auth store: Setting profile complete to:', complete);
         set((state: AuthState) => ({
           isProfileComplete: complete,
           user: state.user ? { ...state.user, isProfileComplete: complete } : null
         }));
+        console.log('Auth store: Profile complete set successfully');
       },
       
       setCustomerRegistered: (registered: boolean) => {

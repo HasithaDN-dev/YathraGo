@@ -1,6 +1,7 @@
 import { API_BASE_URL } from '../../config/api';
 import { Profile, CustomerProfileData, ChildProfileData, StaffProfileData } from '../../types/customer.types';
 import { tokenService } from '../services/token.service';
+import { useAuthStore } from '../stores/auth.store';
 
 /**
  * Fetches all profiles associated with the logged-in user (children + staff).
@@ -83,19 +84,49 @@ export const registerChildApi = async (
   data: ChildProfileData
 ): Promise<{ success: boolean; message: string }> => {
   const authenticatedFetch = tokenService.createAuthenticatedFetch();
+  
+  // Get the user from auth store to include customerId
+  const { user } = useAuthStore.getState();
+  const payload = {
+    ...data,
+    customerId: user?.id
+  };
+  
+  console.log('Child registration payload:', payload);
+  
   const response = await authenticatedFetch(`${API_BASE_URL}/customer/register-child`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   });
   
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Failed to register child' }));
-    throw new Error(error.message || 'Failed to register child');
+    console.error('Child registration API error:', error);
+    
+    // Handle different error response formats
+    let errorMessage = 'Failed to register child';
+    if (error.message) {
+      if (Array.isArray(error.message)) {
+        // Handle validation errors array
+        errorMessage = error.message.map((err: any) => 
+          `${err.field}: ${err.errors?.join(', ') || 'Invalid value'}`
+        ).join(', ');
+      } else if (typeof error.message === 'string') {
+        errorMessage = error.message;
+      } else {
+        errorMessage = JSON.stringify(error.message);
+      }
+    }
+    
+    throw new Error(errorMessage);
   }
-  return response.json();
+  
+  const result = await response.json();
+  console.log('Child registration API success:', result);
+  return result;
 };
 
 /**
@@ -106,17 +137,47 @@ export const registerStaffApi = async (
   data: StaffProfileData
 ): Promise<{ success: boolean; message: string }> => {
   const authenticatedFetch = tokenService.createAuthenticatedFetch();
+  
+  // Get the user from auth store to include customerId
+  const { user } = useAuthStore.getState();
+  const payload = {
+    ...data,
+    customerId: user?.id
+  };
+  
+  console.log('Staff registration payload:', payload);
+  
   const response = await authenticatedFetch(`${API_BASE_URL}/customer/register-staff-passenger`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   });
   
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Failed to register for staff transport' }));
-    throw new Error(error.message || 'Failed to register for staff transport');
+    console.error('Staff registration API error:', error);
+    
+    // Handle different error response formats
+    let errorMessage = 'Failed to register for staff transport';
+    if (error.message) {
+      if (Array.isArray(error.message)) {
+        // Handle validation errors array
+        errorMessage = error.message.map((err: any) => 
+          `${err.field}: ${err.errors?.join(', ') || 'Invalid value'}`
+        ).join(', ');
+      } else if (typeof error.message === 'string') {
+        errorMessage = error.message;
+      } else {
+        errorMessage = JSON.stringify(error.message);
+      }
+    }
+    
+    throw new Error(errorMessage);
   }
-  return response.json();
+  
+  const result = await response.json();
+  console.log('Staff registration API success:', result);
+  return result;
 };
