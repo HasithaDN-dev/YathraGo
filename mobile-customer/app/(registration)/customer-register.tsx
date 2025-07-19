@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { View, Alert, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedView } from '../../components/ThemedView';
-import { ThemedText } from '../../components/ThemedText';
 import { ButtonComponent } from '../../components/ui/ButtonComponent';
 import { CustomInput } from '../../components/ui/CustomInput';
+import { Typography } from '../../components/Typography';
 import { ApiService } from '../../services/api';
 import { CustomerRegistration } from '../../types/registration.types';
 
@@ -154,34 +153,26 @@ export default function CustomerRegisterScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ThemedView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+      <View className="flex-1 bg-bg-light-blue">
         <ScrollView 
           contentContainerStyle={{ flexGrow: 1, padding: 24 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
           <View style={{ marginBottom: 32 }}>
-            <ThemedText 
-              style={{ 
-                fontSize: 28, 
-                fontWeight: 'bold', 
-                color: '#1e293b',
-                textAlign: 'center',
-                marginBottom: 8
-              }}
+            <Typography
+              variant="large-title"
+              weight="bold"
+              className="text-brand-deepNavy text-center mb-2"
             >
               Complete Your Profile
-            </ThemedText>
-            <ThemedText 
-              style={{ 
-                fontSize: 16, 
-                color: '#64748b',
-                textAlign: 'center',
-                lineHeight: 24
-              }}
+            </Typography>
+            <Typography
+              variant="body"
+              className="text-brand-neutralGray text-center"
             >
               Please provide your details to continue with registration
-            </ThemedText>
+            </Typography>
           </View>
 
           {/* Form */}
@@ -250,16 +241,15 @@ export default function CustomerRegisterScreen() {
             borderLeftWidth: 4,
             borderLeftColor: '#3b82f6'
           }}>
-            <ThemedText style={{ 
-              fontSize: 14, 
-              color: '#475569',
-              lineHeight: 20
-            }}>
+            <Typography
+              variant="footnote"
+              className="text-slate-600"
+            >
               After completing your profile, you will be able to choose your registration type and continue with the specific registration process.
-            </ThemedText>
+            </Typography>
           </View>
         </ScrollView>
-      </ThemedView>
+      </View>
     </SafeAreaView>
   );
 }
