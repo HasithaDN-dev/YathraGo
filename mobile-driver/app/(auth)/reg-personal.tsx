@@ -1,21 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, Image, TouchableOpacity, ScrollView, Text, Alert } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import * as ImagePicker from 'expo-image-picker';
-import { ApiService } from '@/services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRegistration } from '@/contexts/RegistrationContext';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [dob, setDob] = useState('');
-  const [email, setEmail] = useState('');
-  const [secondaryPhone, setSecondaryPhone] = useState('');
-  const [city, setCity] = useState('');
-  const [profileImage, setProfileImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const { registrationData, updatePersonalInfo } = useRegistration();
+
+  const [firstName, setFirstName] = useState(registrationData.personalInfo.firstName);
+  const [lastName, setLastName] = useState(registrationData.personalInfo.lastName);
+  const [dob, setDob] = useState(registrationData.personalInfo.dateOfBirth);
+  const [email, setEmail] = useState(registrationData.personalInfo.email);
+  const [secondaryPhone, setSecondaryPhone] = useState(registrationData.personalInfo.secondaryPhone);
+  const [city, setCity] = useState(registrationData.personalInfo.city);
+  const [profileImage, setProfileImage] = useState<ImagePicker.ImagePickerAsset | null>(registrationData.personalInfo.profileImage);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Update context when form fields change
+  useEffect(() => {
+    updatePersonalInfo({
+      firstName,
+      lastName,
+      dateOfBirth: dob,
+      email,
+      secondaryPhone,
+      city,
+      profileImage,
+    });
+  }, [firstName, lastName, dob, email, secondaryPhone, city, profileImage]);
+
+  // Sync local state with context data
+  useEffect(() => {
+    setFirstName(registrationData.personalInfo.firstName);
+    setLastName(registrationData.personalInfo.lastName);
+    setDob(registrationData.personalInfo.dateOfBirth);
+    setEmail(registrationData.personalInfo.email);
+    setSecondaryPhone(registrationData.personalInfo.secondaryPhone);
+    setCity(registrationData.personalInfo.city);
+    setProfileImage(registrationData.personalInfo.profileImage);
+  }, [registrationData.personalInfo]);
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -42,42 +67,8 @@ export default function RegisterScreen() {
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const token = await AsyncStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('Authentication token not found.');
-      }
-
-      const formData = new FormData();
-      formData.append('firstName', firstName);
-      formData.append('lastName', lastName);
-      formData.append('dateOfBirth', dob);
-      formData.append('email', email);
-      formData.append('secondaryPhone', secondaryPhone);
-      formData.append('city', city);
-      
-      const uriParts = profileImage.uri.split('.');
-      const fileType = uriParts[uriParts.length - 1];
-
-      formData.append('profileImage', {
-        uri: profileImage.uri,
-        name: `photo.${fileType}`,
-        type: `image/${fileType}`,
-      } as any);
-
-      await ApiService.registerDriver(token, formData);
-      Alert.alert('Success', 'Registration successful!');
-       router.push({
-        pathname: '/(auth)/reg-verify',
-      
-      });
-    } catch (error) {
-      console.error('Registration error:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'An unknown error occurred.');
-    } finally {
-      setIsLoading(false);
-    }
+    // Data is already saved in context, just navigate to next screen
+    router.push('/(auth)/reg-verify');
   };
 
   return (
@@ -118,7 +109,7 @@ export default function RegisterScreen() {
 
         <View className="w-full mb-4">
           <Text className="text-sm font-medium text-gray-600 mb-1">Profile Image</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handlePickImage}
             className="w-full h-36 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 items-center justify-center"
           >
@@ -189,14 +180,14 @@ export default function RegisterScreen() {
           </Text>
         </TouchableOpacity>
 
-         <TouchableOpacity
+        <TouchableOpacity
           className={`w-full py-4 mt-20 rounded-lg ${isLoading ? 'bg-yellow-400' : 'bg-yellow-500'}`}
-          
+
           disabled={isLoading}
         >
-         <Link href={'/phone-auth'}>Back</Link>
+          <Link href={'/phone-auth'}>Back</Link>
         </TouchableOpacity>
-         <Link href={'/reg-verify'}>Next</Link>
+        <Link href={'/reg-verify'}>Next</Link>
       </View>
     </ScrollView>
   );
