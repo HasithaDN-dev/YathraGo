@@ -1,100 +1,117 @@
 import React from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { 
+  Broadcast, 
+  ChatCircle, 
+  ArrowRight,
+  Info 
+} from 'phosphor-react-native';
 import { Typography } from '@/components/Typography';
-import { ProfileSwitcher } from '@/components/ProfileSwitcher';
-import { useProfile } from '@/contexts/ProfileContext';
+import { Card } from '@/components/ui/Card';
+import { RideStatus } from '@/components/ui/RideStatus';
+import { DriverVehicleCard } from '@/components/ui/DriverVehicleCard';
+import { PaymentSection } from '@/components/ui/PaymentSection';
+import CustomButton from '@/components/ui/CustomButton';
 
-export default function HomeScreen() {
-  const { activeProfile } = useProfile();
+export default function StaffHomeScreen() {
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ProfileSwitcher />
-      
-      <ScrollView className="flex-1 px-4 py-6">
-        <View className="space-y-6">
-          {/* Welcome Section */}
-          <View className="space-y-2">
-            <Typography variant="headline-large" className="text-black">
-              Welcome back{activeProfile ? `, ${activeProfile.name}` : ''}!
+    <SafeAreaView className="flex-1 bg-gray-100 mb-0 mt-0">
+      <ScrollView className="px-4 space-y-6 min-h-screen">
+        {/* Current Ride Section */}
+        <Card className="mb-3">
+          <View className="flex-row items-center justify-between mb-4">
+            <Typography variant="title-3" weight="semibold" className="text-black">
+              Current Ride
             </Typography>
-            <Typography variant="body-medium" className="text-brand-neutralGray">
-              {activeProfile?.type === 'child' 
-                ? "Let&apos;s plan your next trip safely"
-                : "Manage your family&apos;s travel needs"
-              }
-            </Typography>
+            <TouchableOpacity 
+              className="flex-row items-center"
+              onPress={() => console.log('See more pressed')}
+              activeOpacity={0.8}
+            >
+              <Typography variant="subhead" weight="medium" className="text-brand-deepNavy mr-1">
+                See More
+              </Typography>
+              <ArrowRight size={16} color="#143373" weight="regular" />
+            </TouchableOpacity>
           </View>
-
-          {/* Quick Actions */}
-          <View className="bg-brand-lightestBlue rounded-2xl p-6 space-y-4">
-            <Typography variant="headline-medium" className="text-black">
-              Quick Actions
+          
+          <RideStatus
+            status="Picked Up"
+            pickupLocation="Maharagama Junction"
+            destination="Royal College"
+            eta="ETA 08:20"
+          />
+        </Card>
+        
+        {/* Driver & Vehicle Section */}
+        <Card className="mb-3">
+          <View className="flex-row items-center justify-between mb-4">
+            <Typography variant="title-3" weight="semibold" className="text-black">
+              Driver & Vehicle
             </Typography>
-            
-            <View className="space-y-3">
-              <View className="bg-white rounded-xl p-4 flex-row items-center justify-between">
-                <View>
-                  <Typography variant="label-large" className="text-black">
-                    Book a Ride
-                  </Typography>
-                  <Typography variant="body-small" className="text-brand-neutralGray">
-                    {activeProfile?.type === 'child' 
-                      ? "Request a safe trip"
-                      : "Book for yourself or your child"
-                    }
-                  </Typography>
-                </View>
-                <View className="w-8 h-8 bg-brand-brightOrange rounded-full items-center justify-center">
-                  <Typography variant="label-medium" className="text-white">
-                    🚗
-                  </Typography>
-                </View>
-              </View>
-
-              <View className="bg-white rounded-xl p-4 flex-row items-center justify-between">
-                <View>
-                  <Typography variant="label-large" className="text-black">
-                    Track Ride
-                  </Typography>
-                  <Typography variant="body-small" className="text-brand-neutralGray">
-                    {activeProfile?.type === 'child' 
-                      ? "See your current trip"
-                      : "Monitor family trips"
-                    }
-                  </Typography>
-                </View>
-                <View className="w-8 h-8 bg-brand-deepNavy rounded-full items-center justify-center">
-                  <Typography variant="label-medium" className="text-white">
-                    📍
-                  </Typography>
-                </View>
-              </View>
-            </View>
+            <TouchableOpacity 
+              className="flex-row items-center"
+              onPress={() => console.log('See info pressed')}
+              activeOpacity={0.8}
+            >
+              <Typography variant="subhead" weight="medium" className="text-brand-deepNavy mr-1">
+                See Info
+              </Typography>
+              <Info size={16} color="#143373" weight="regular" />
+            </TouchableOpacity>
           </View>
-
-          {/* Profile-specific Content */}
-          {activeProfile?.type === 'child' ? (
-            <View className="bg-brand-softOrange rounded-2xl p-6 space-y-3">
-              <Typography variant="headline-medium" className="text-black">
-                Your School Routes
-              </Typography>
-              <Typography variant="body-medium" className="text-brand-neutralGray">
-                Quick access to your regular school routes and pickup locations.
-              </Typography>
-            </View>
-          ) : (
-            <View className="bg-brand-lightestBlue rounded-2xl p-6 space-y-3">
-              <Typography variant="headline-medium" className="text-black">
-                Family Overview
-              </Typography>
-              <Typography variant="body-medium" className="text-brand-neutralGray">
-                Monitor all family members&apos; trips and manage their travel preferences.
-              </Typography>
-            </View>
-          )}
-        </View>
+          
+          {/* Driver and Vehicle Cards */}
+          <View className="flex-row gap-x-6 mb-4">
+            <DriverVehicleCard
+              type="driver"
+              name="Hemal Perera"
+              subtitle="Driver"
+              rating={4.9}
+            />
+            <DriverVehicleCard
+              type="vehicle"
+              name="WP-5562"
+              subtitle="Toyota HIACE"
+            />
+          </View>
+          
+          {/* Action Buttons */}
+          <View className="flex-row justify-center items-center">
+            <CustomButton
+              title="Inform"
+              bgVariant="secondary"
+              textVariant="white"
+              size="medium"
+              IconLeft={Broadcast}
+              className="mx-2 w-[160px]"
+              onPress={() => console.log('Inform pressed')}
+            />
+            <CustomButton
+              title="Message"
+              bgVariant="outline"
+              textVariant="primary"
+              size="medium"
+              IconLeft={ChatCircle}
+              className="w-[160px]"
+              onPress={() => console.log('Message pressed')}
+            />
+          </View>
+        </Card>
+        
+        {/* Payment Section */}
+        <Card>
+          <PaymentSection
+            daysInMonth={25}
+            totalPayable="Rs. 12000.45"
+            dueDate="25 Oct 2025"
+            onSummaryPress={() => console.log('Summary pressed')}
+            onPayNowPress={() => console.log('Pay now pressed')}
+            onHistoryPress={() => console.log('Payment history pressed')}
+          />
+        </Card>
       </ScrollView>
     </SafeAreaView>
   );

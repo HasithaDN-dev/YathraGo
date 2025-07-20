@@ -1,151 +1,102 @@
-// mobile-customer/hooks/useAuth.ts
-import { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ApiService } from '../services/api';
+import { useEffect } from 'react';
+import { useAuthStore } from '../lib/stores/auth.store';
+import { useProfileStore } from '../lib/stores/profile.store';
+import { tokenService } from '../lib/services/token.service';
 
-interface User {
-  id?: number;
-  phone: string;
-  userType: string;
-  isVerified: boolean;
-  isNewUser: boolean;
-  registrationStatus?: string;
-}
+export function useAuth() {
+  const {
+    isLoggedIn,
+    isProfileComplete,
+    hasHydrated,
+    accessToken,
+    user,
+    login,
+    logout,
+    setProfileComplete,
+    updateUser,
+  } = useAuthStore();
 
-interface Profile {
-  customer_id: number;
-  name: string;
-  phone: string;
-  email?: string;
-  status: string;
-  registrationStatus: string;
-}
+  const {
+    profiles,
+    activeProfile,
+    isLoading: profilesLoading,
+    error: profilesError,
+    loadProfiles,
+    refreshProfiles,
+    clearError,
+  } = useProfileStore();
 
-export const useAuth = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+  // Auto-load profiles when user is authenticated and profile is complete
   useEffect(() => {
-    checkAuthState();
-  }, []);
-
-  const checkAuthState = async () => {
-    try {
-      const token = await ApiService.getStoredToken();
-      if (token) {
-        const response = await ApiService.validateToken(token);
-        setIsAuthenticated(true);
-        setUser(response.user);
-        
-        // Get full profile
-        const profileResponse = await ApiService.getProfile(token);
-        setProfile(profileResponse.profile);
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      await AsyncStorage.multiRemove(['authToken', 'customer_data']);
-    } finally {
-      setLoading(false);
+    if (hasHydrated && isLoggedIn && isProfileComplete && accessToken && profiles.length === 0 && !profilesLoading) {
+      loadProfiles(accessToken);
     }
-  };
+  }, [hasHydrated, isLoggedIn, isProfileComplete, accessToken, profiles.length, profilesLoading]);
 
-  const sendOtp = async (phone: string) => {
-    setError(null);
-    setLoading(true);
-    try {
-      const response = await ApiService.sendCustomerOtp(phone);
-      setLoading(false);
-      return response;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send OTP';
-      setError(errorMessage);
-      setLoading(false);
-      throw err;
+  // Validate token on app start
+  useEffect(() => {
+    if (hasHydrated && isLoggedIn && accessToken) {
+      const validateToken = async () => {
+        try {
+          await tokenService.validateToken(accessToken);
+        } catch (error) {
+          console.error('Token validation failed:', error);
+          // Token is invalid, logout user
+          await logout();
+        }
+      };
+      validateToken();
     }
+  }, [hasHydrated, isLoggedIn, accessToken]);
+
+  const handleLogin = async (accessToken: string, user: any) => {
+    await login(accessToken, user);
   };
 
-  const verifyOtp = async (phone: string, otp: string) => {
-    setError(null);
-    setLoading(true);
-    try {
-      const response = await ApiService.verifyCustomerOtp(phone, otp);
-      
-      // The ApiService already stores the token and user data correctly
-      // No need to store it again here with different keys
-      
-      setIsAuthenticated(true);
-      setUser(response.user);
-      setProfile(response.profile);
-      setLoading(false);
-      
-      return response;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Invalid OTP';
-      setError(errorMessage);
-      setLoading(false);
-      throw err;
-    }
+  const handleLogout = async () => {
+    await logout();
   };
 
-  const logout = async () => {
-    setLoading(true);
-    try {
-      const token = await ApiService.getStoredToken();
-      if (token) {
-        await ApiService.logout(token);
-      }
-    } catch (error) {
-      console.error('Logout API call failed:', error);
-    } finally {
-      await AsyncStorage.multiRemove(['authToken', 'customer_data']);
-      setIsAuthenticated(false);
-      setUser(null);
-      setProfile(null);
-      setLoading(false);
-    }
+  const handleProfileComplete = (complete: boolean) => {
+    setProfileComplete(complete);
   };
 
-  const checkRegistrationStatus = async (phone: string) => {
-    // Registration status will be determined by the customer module
-    // after OTP verification, so no need for separate check
-    return { exists: false, registrationStatus: 'NEW' };
+  const handleProfileUpdate = (updatedUser: any) => {
+    updateUser(updatedUser);
   };
 
-  const refreshProfile = async () => {
-    try {
-      const token = await ApiService.getStoredToken();
-      if (token) {
-        const profileResponse = await ApiService.getProfile(token);
-        setProfile(profileResponse.profile);
-        setUser(profileResponse.user);
-        setIsAuthenticated(true);
-      } else {
-        setIsAuthenticated(false);
-        setUser(null);
-        setProfile(null);
-      }
-    } catch (error) {
-      console.error('Profile refresh failed:', error);
-      setIsAuthenticated(false);
-      setUser(null);
-      setProfile(null);
+  const handleProfileRefresh = async () => {
+    if (accessToken) {
+      await refreshProfiles(accessToken);
     }
   };
 
   return {
-    isAuthenticated,
+    // Auth state
+    isLoggedIn,
+    isProfileComplete,
+    hasHydrated,
+    accessToken,
     user,
-    profile,
-    loading,
-    error,
-    sendOtp,
-    verifyOtp,
-    logout,
-    checkRegistrationStatus,
-    refreshProfile,
-    clearError: () => setError(null),
+    
+    // Profile state
+    profiles,
+    activeProfile,
+    profilesLoading,
+    profilesError,
+    
+    // Actions
+    login: handleLogin,
+    logout: handleLogout,
+    setProfileComplete: handleProfileComplete,
+    updateUser: handleProfileUpdate,
+    loadProfiles,
+    refreshProfiles: handleProfileRefresh,
+    clearError,
+    
+    // Computed
+    isAuthenticated: isLoggedIn && isProfileComplete,
+    needsProfileSetup: isLoggedIn && !isProfileComplete,
+    isReady: hasHydrated && (isLoggedIn ? isProfileComplete : true),
   };
-};
+} 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Animated, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -8,6 +8,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { ApiService } from '@/services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRegistration } from '@/contexts/RegistrationContext';
 
 interface FileUploadItemProps {
   file: DocumentPicker.DocumentPickerSuccessResult | null;
@@ -67,13 +68,36 @@ const LicenseUploadBox: React.FC<LicenseUploadBoxProps> = ({ image, onUpload, si
 
 export default function VehicleDocScreen() {
   const router = useRouter();
-  const [revenueLicense, setRevenueLicense] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(null);
-  const [vehicleInsurance, setVehicleInsurance] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(null);
-  const [registrationDoc, setRegistrationDoc] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(null);
-  const [licenseFront, setLicenseFront] = useState<ImagePicker.ImagePickerAsset | null>(null);
-  const [licenseBack, setLicenseBack] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const { registrationData, updateVehicleDocuments, isRegistrationComplete } = useRegistration();
+
+  const [revenueLicense, setRevenueLicense] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(registrationData.vehicleDocuments.revenueLicense);
+  const [vehicleInsurance, setVehicleInsurance] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(registrationData.vehicleDocuments.vehicleInsurance);
+  const [registrationDoc, setRegistrationDoc] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(registrationData.vehicleDocuments.registrationDoc);
+  const [licenseFront, setLicenseFront] = useState<ImagePicker.ImagePickerAsset | null>(registrationData.vehicleDocuments.licenseFront);
+  const [licenseBack, setLicenseBack] = useState<ImagePicker.ImagePickerAsset | null>(registrationData.vehicleDocuments.licenseBack);
 
   const [progress, setProgress] = useState<{ [key: string]: number }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Update context when documents change
+  useEffect(() => {
+    updateVehicleDocuments({
+      revenueLicense,
+      vehicleInsurance,
+      registrationDoc,
+      licenseFront,
+      licenseBack,
+    });
+  }, [revenueLicense, vehicleInsurance, registrationDoc, licenseFront, licenseBack]);
+
+  // Sync local state with context data
+  useEffect(() => {
+    setRevenueLicense(registrationData.vehicleDocuments.revenueLicense);
+    setVehicleInsurance(registrationData.vehicleDocuments.vehicleInsurance);
+    setRegistrationDoc(registrationData.vehicleDocuments.registrationDoc);
+    setLicenseFront(registrationData.vehicleDocuments.licenseFront);
+    setLicenseBack(registrationData.vehicleDocuments.licenseBack);
+  }, [registrationData.vehicleDocuments]);
 
   const startProgress = (key: string) => {
     setProgress(prev => ({ ...prev, [key]: 0 }));
@@ -109,19 +133,142 @@ export default function VehicleDocScreen() {
   };
 
   const handleVerify = async () => {
-    const formData = new FormData();
-    if (revenueLicense) formData.append('revenueLicense', { uri: revenueLicense.assets[0].uri, name: revenueLicense.assets[0].name, type: revenueLicense.assets[0].mimeType } as any);
-    if (vehicleInsurance) formData.append('vehicleInsurance', { uri: vehicleInsurance.assets[0].uri, name: vehicleInsurance.assets[0].name, type: vehicleInsurance.assets[0].mimeType } as any);
-    if (registrationDoc) formData.append('registrationDoc', { uri: registrationDoc.assets[0].uri, name: registrationDoc.assets[0].name, type: registrationDoc.assets[0].mimeType } as any);
-    if (licenseFront) formData.append('licenseFront', { uri: licenseFront.uri, name: 'licenseFront.jpg', type: 'image/jpeg' } as any);
-    if (licenseBack) formData.append('licenseBack', { uri: licenseBack.uri, name: 'licenseBack.jpg', type: 'image/jpeg' } as any);
+    if (!isRegistrationComplete()) {
+      Alert.alert('Error', 'Please complete all required fields before submitting.');
+      return;
+    }
 
-    const token = await AsyncStorage.getItem('authToken');
-    if (token) {
-      await ApiService.uploadVehicleDocuments(token, formData);
-      router.push('/(auth)/success');
-    } else {
-      alert('Authentication error');
+    setIsSubmitting(true);
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('Authentication token not found.');
+      }
+
+      const formData = new FormData();
+
+      // Personal Information
+      const { personalInfo } = registrationData;
+      formData.append('firstName', personalInfo.firstName);
+      formData.append('lastName', personalInfo.lastName);
+      formData.append('dateOfBirth', personalInfo.dateOfBirth);
+      formData.append('email', personalInfo.email);
+      formData.append('secondaryPhone', personalInfo.secondaryPhone);
+      formData.append('city', personalInfo.city);
+
+      if (personalInfo.profileImage) {
+        const uriParts = personalInfo.profileImage.uri.split('.');
+        const fileType = uriParts[uriParts.length - 1];
+        formData.append('profileImage', {
+          uri: personalInfo.profileImage.uri,
+          name: `profile.${fileType}`,
+          type: `image/${fileType}`,
+        } as any);
+      }
+
+      // ID Verification
+      const { idVerification } = registrationData;
+      if (idVerification.frontImage) {
+        formData.append('idFrontImage', {
+          uri: idVerification.frontImage.uri,
+          name: 'idFront.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+      if (idVerification.backImage) {
+        formData.append('idBackImage', {
+          uri: idVerification.backImage.uri,
+          name: 'idBack.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      // Vehicle Information
+      const { vehicleInfo } = registrationData;
+      formData.append('vehicleType', vehicleInfo.vehicleType);
+      formData.append('vehicleBrand', vehicleInfo.vehicleBrand);
+      formData.append('vehicleModel', vehicleInfo.vehicleModel);
+      formData.append('yearOfManufacture', vehicleInfo.yearOfManufacture);
+      formData.append('vehicleColor', vehicleInfo.vehicleColor);
+      formData.append('licensePlate', vehicleInfo.licensePlate);
+      formData.append('seats', vehicleInfo.seats.toString());
+      formData.append('femaleAssistant', String(vehicleInfo.femaleAssistant));
+
+      if (vehicleInfo.frontView) {
+        formData.append('vehicleFrontView', {
+          uri: vehicleInfo.frontView.uri,
+          name: 'vehicleFront.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+      if (vehicleInfo.sideView) {
+        formData.append('vehicleSideView', {
+          uri: vehicleInfo.sideView.uri,
+          name: 'vehicleSide.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+      if (vehicleInfo.rearView) {
+        formData.append('vehicleRearView', {
+          uri: vehicleInfo.rearView.uri,
+          name: 'vehicleRear.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+      if (vehicleInfo.interiorView) {
+        formData.append('vehicleInteriorView', {
+          uri: vehicleInfo.interiorView.uri,
+          name: 'vehicleInterior.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      // Vehicle Documents
+      const { vehicleDocuments } = registrationData;
+      if (vehicleDocuments.revenueLicense) {
+        formData.append('revenueLicense', {
+          uri: vehicleDocuments.revenueLicense.assets[0].uri,
+          name: vehicleDocuments.revenueLicense.assets[0].name,
+          type: vehicleDocuments.revenueLicense.assets[0].mimeType,
+        } as any);
+      }
+      if (vehicleDocuments.vehicleInsurance) {
+        formData.append('vehicleInsurance', {
+          uri: vehicleDocuments.vehicleInsurance.assets[0].uri,
+          name: vehicleDocuments.vehicleInsurance.assets[0].name,
+          type: vehicleDocuments.vehicleInsurance.assets[0].mimeType,
+        } as any);
+      }
+      if (vehicleDocuments.registrationDoc) {
+        formData.append('registrationDoc', {
+          uri: vehicleDocuments.registrationDoc.assets[0].uri,
+          name: vehicleDocuments.registrationDoc.assets[0].name,
+          type: vehicleDocuments.registrationDoc.assets[0].mimeType,
+        } as any);
+      }
+      if (vehicleDocuments.licenseFront) {
+        formData.append('licenseFront', {
+          uri: vehicleDocuments.licenseFront.uri,
+          name: 'licenseFront.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+      if (vehicleDocuments.licenseBack) {
+        formData.append('licenseBack', {
+          uri: vehicleDocuments.licenseBack.uri,
+          name: 'licenseBack.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      await ApiService.completeDriverRegistration(token, formData);
+      Alert.alert('Success', 'Registration completed successfully!');
+      router.push('../success');
+    } catch (error) {
+      console.error('Registration error:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'An unknown error occurred.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -177,8 +324,14 @@ export default function VehicleDocScreen() {
       </ScrollView>
 
       <View className="p-6">
-        <TouchableOpacity className="bg-brand-goldenYellow py-4 rounded-lg items-center" onPress={handleVerify}>
-          <Text className="text-white text-lg font-bold">Verify</Text>
+        <TouchableOpacity
+          className={`py-4 rounded-lg items-center ${isSubmitting ? 'bg-gray-400' : 'bg-brand-goldenYellow'}`}
+          onPress={handleVerify}
+          disabled={isSubmitting}
+        >
+          <Text className="text-white text-lg font-bold">
+            {isSubmitting ? 'Submitting...' : 'Complete Registration'}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

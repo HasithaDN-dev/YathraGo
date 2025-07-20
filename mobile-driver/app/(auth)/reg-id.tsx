@@ -4,9 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { StatusBar } from 'expo-status-bar';
-import { useIdVerification } from '@/contexts/IdVerificationContext';
-import { ApiService } from '@/services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRegistration } from '@/contexts/RegistrationContext';
 
 const IdCardPlaceholder = ({ onPress, imageUri }: { onPress: () => void; imageUri?: string | null }) => (
   <View className="w-full h-48 bg-brand-lightGray rounded-lg border-2 border-dashed border-gray-300 overflow-hidden">
@@ -27,24 +25,15 @@ const IdCardPlaceholder = ({ onPress, imageUri }: { onPress: () => void; imageUr
 
 export default function RegIdScreen() {
   const router = useRouter();
-  const { frontImage, backImage } = useIdVerification();
+  const { registrationData } = useRegistration();
+  const { frontImage, backImage } = registrationData.idVerification;
 
-  const handleVerify = async () => {
+  const handleVerify = () => {
     if (frontImage && backImage) {
-      try {
-        const token = await AsyncStorage.getItem('authToken');
-        if (token) {
-          // We are calling the API but not handling the response since the backend is not implemented
-          ApiService.uploadIdDocuments(token, frontImage, backImage);
-          router.push('/(auth)/ownership');
-        } else {
-          Alert.alert('Authentication Error', 'You are not logged in.');
-        }
-      } catch (error) {
-        console.error(error);
-        // Even if the API call fails, navigate to the next screen as per the instructions
-        router.back();
-      }
+      // Data is already saved in context, just navigate to next screen
+      router.push('/(auth)/ownership');
+    } else {
+      Alert.alert('Error', 'Please upload both front and back images of your ID.');
     }
   };
 
@@ -64,23 +53,23 @@ export default function RegIdScreen() {
 
         <View className="mb-6">
           <Text className="text-lg font-semibold mb-2">Front</Text>
-          <IdCardPlaceholder 
+          <IdCardPlaceholder
             imageUri={frontImage?.uri}
-            onPress={() => router.push({ pathname: '/(auth)/reg-uploadId', params: { side: 'front' }})} 
+            onPress={() => router.push({ pathname: '/(auth)/reg-uploadId', params: { side: 'front' } })}
           />
         </View>
 
         <View>
           <Text className="text-lg font-semibold mb-2">Back</Text>
-          <IdCardPlaceholder 
+          <IdCardPlaceholder
             imageUri={backImage?.uri}
-            onPress={() => router.push({ pathname: '/(auth)/reg-uploadId', params: { side: 'back' }})} 
+            onPress={() => router.push({ pathname: '/(auth)/reg-uploadId', params: { side: 'back' } })}
           />
         </View>
       </View>
       <View className="p-6">
-        <TouchableOpacity 
-          className={`py-4 rounded-lg items-center ${frontImage && backImage ? 'bg-brand-goldenYellow' : 'bg-gray-300'}`} 
+        <TouchableOpacity
+          className={`py-4 rounded-lg items-center ${frontImage && backImage ? 'bg-brand-goldenYellow' : 'bg-gray-300'}`}
           onPress={handleVerify}
           disabled={!frontImage || !backImage}
         >

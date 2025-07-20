@@ -75,6 +75,12 @@ export class AuthController {
   @Post('driver/send-otp')
   @HttpCode(HttpStatus.OK)
   async sendDriverOtp(@Body() body: { phone: string }) {
+
+    console.log('Received body:', body); // Debug log
+    
+    if (!body || !body.phone) {
+      throw new Error('Phone number is required');
+    }
     const sendOtpDto = {
       phone: body.phone,
       userType: 'DRIVER' as const,
