@@ -1,62 +1,45 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
 export default function SuccessScreen() {
   const router = useRouter();
 
-  const handleContinue = async () => {
-    try {
-      // Verify that we have an auth token
-      const authToken = await AsyncStorage.getItem('authToken');
-      if (!authToken) {
-        console.error('No auth token found');
-        return;
-      }
-
-      // Use replace to navigate to tabs and clear the auth stack
-      router.replace('/(tabs)');
-    } catch (error) {
-      console.error('Navigation error:', error);
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       {/* Corner Triangles */}
-      <Image source={require('../assets/images/right.png')} style={styles.topRightTriangle} />
-
+      <Image source={require('../../assets/images/right.png')} style={styles.topRightTriangle} />
+    
       {/* Circles + Checkmark */}
       <View style={styles.circleWrapper}>
         <View style={styles.outerCircle} />
         <View style={styles.middleCircle} />
         <View style={styles.innerCircle} />
         <Image
-          source={require('../assets/images/tick.png')}
+          source={require('../../assets/images/tick.png')}
           style={styles.checkIcon}
         />
       </View>
 
-      <Image source={require('../assets/images/left.png')} style={styles.bottomLeftTriangle} />
+       <Image source={require('../../assets/images/left.png')} style={styles.bottomLeftTriangle} /> 
 
 
       {/* Success Title */}
-      <View> <Text style={styles.successText}>Success</Text>
+     <View> <Text style={styles.successText}>Success</Text>
 
-        {/* Description */}
-        <Text style={styles.descriptionText}>
-          Your documents have been successfully submitted{'\n'}
-          and are now under review
-        </Text></View>
+      {/* Description */}
+      <Text style={styles.descriptionText}>
+        Your documents have been successfully submitted{'\n'}
+        and are now under review
+      </Text></View>
 
       {/* Continue Button */}
       <TouchableOpacity
         style={styles.button}
-        onPress={handleContinue}
+        onPress={() => router.push('/(tabs)')}
       >
         <Text style={styles.buttonText}>Continue</Text>
       </TouchableOpacity>
@@ -71,7 +54,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 24,
     position: 'relative',
-    justifyContent: 'space-between'
+    justifyContent:'space-between'
   },
   topRightTriangle: {
     position: 'absolute',
@@ -80,11 +63,11 @@ const styles = StyleSheet.create({
     width: 200,
     height: 300,
     resizeMode: 'contain',
-
+    
   },
   bottomLeftTriangle: {
     position: 'absolute',
-    top: 300,
+    top:300,
     left: -55,
     width: 200,
     height: 300,
@@ -92,8 +75,8 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '0deg' }],
   },
   circleWrapper: {
-    marginTop: 270,
-    marginBottom: 0,
+    marginTop:270,
+    marginBottom:0,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -133,16 +116,16 @@ const styles = StyleSheet.create({
     marginTop: 80,
     marginBottom: 18,
     textAlign: 'center',
-    fontFamily: 'Figtree'
+    fontFamily:'Figtree'
   },
   descriptionText: {
     fontSize: 16,
-    fontWeight: '400',
+    fontWeight:'400',
     color: '#6B7280',
     textAlign: 'center',
     paddingHorizontal: 10,
     marginBottom: 60,
-    fontFamily: 'Figtree'
+    fontFamily:'Figtree'
   },
   button: {
     backgroundColor: '#FBBF24',

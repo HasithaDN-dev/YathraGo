@@ -5,16 +5,16 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Icon } from '@/components/ui/Icon';
 import { StatusBar } from 'expo-status-bar';
-import { useRegistration } from '@/contexts/RegistrationContext';
+import { useIdVerification } from '@/contexts/IdVerificationContext';
 
 export default function RegUploadIdScreen() {
   const router = useRouter();
   const { side } = useLocalSearchParams<{ side: 'front' | 'back' }>();
-  const { updateIdVerification } = useRegistration();
+  const { setFrontImage, setBackImage } = useIdVerification();
   const [image, setImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
 
   const handleImageAction = async (action: 'camera' | 'library') => {
-    const permission = action === 'camera'
+    const permission = action === 'camera' 
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -35,9 +35,9 @@ export default function RegUploadIdScreen() {
   const handleSuccess = () => {
     if (image) {
       if (side === 'front') {
-        updateIdVerification({ frontImage: image });
+        setFrontImage(image);
       } else {
-        updateIdVerification({ backImage: image });
+        setBackImage(image);
       }
       router.back();
     }
