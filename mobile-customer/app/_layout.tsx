@@ -14,8 +14,10 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const {
     isLoggedIn,
-    isProfileCreated,
+    isProfileComplete,
+    isCustomerRegistered,
     hasHydrated,
+    isLoading,
   } = useAuthStore();
   const [loaded, error] = useFonts({
     'Figtree-Regular': require('../assets/fonts/Figtree-Regular.ttf'),
@@ -25,7 +27,12 @@ export default function RootLayout() {
   });
 
   // Debug hydration and font loading
-  console.log('RootLayout hydration/font:', { loaded, error, hasHydrated, isLoggedIn, isProfileCreated });
+  console.log('RootLayout hydration/font:', { loaded, error, hasHydrated, isLoggedIn, isProfileComplete, isCustomerRegistered });
+  console.log('RootLayout route guards:', {
+    authGuard: !isLoggedIn,
+    registrationGuard: isLoggedIn && !isProfileComplete,
+    tabsGuard: isLoggedIn && isProfileComplete
+  });
 
   useEffect(() => {
     if ((loaded || error) && hasHydrated) {
@@ -33,20 +40,22 @@ export default function RootLayout() {
     }
   }, [loaded, error, hasHydrated]);
 
-  if ((!loaded && !error) || !hasHydrated) {
-    // Show nothing until fonts and hydration are ready
+  if ((!loaded && !error) || !hasHydrated || isLoading) {
+    // Show nothing until fonts, hydration, and profile checking are ready
     return null;
   }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        {/* Protected routes - only accessible when authenticated */}
-        <Stack.Protected guard={isLoggedIn && isProfileCreated}>
+        {/* Protected routes - only accessible when authenticated and profile complete */}
+        <Stack.Protected guard={isLoggedIn && isProfileComplete}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(main)" options={{ headerShown: false }} />
         </Stack.Protected>
 
-        <Stack.Protected guard={isLoggedIn && !isProfileCreated}>
+        {/* Registration routes - accessible when authenticated but no profiles created yet */}
+        <Stack.Protected guard={isLoggedIn && !isProfileComplete}>
           <Stack.Screen name="(registration)" options={{ headerShown: false }} />
         </Stack.Protected>
 

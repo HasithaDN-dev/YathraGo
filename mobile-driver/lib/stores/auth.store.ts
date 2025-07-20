@@ -1,25 +1,22 @@
 // Manages the core authentication state: token, user object, and status.
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User } from '../../types/customer.types';
+import { User } from '../../types/driver.types';
 import * as SecureStore from 'expo-secure-store';
+
 
 interface AuthState {
   user: User | null;
   accessToken: string | null;
   isLoggedIn: boolean;
   isProfileComplete: boolean;
-  isCustomerRegistered: boolean;
+  isProfileCreated: boolean;
   hasHydrated: boolean;
-  isLoading: boolean;
   login: (accessToken: string, user: User) => Promise<void>;
   logout: () => Promise<void>;
-  setProfileComplete: (complete: boolean) => void;
-  setCustomerRegistered: (registered: boolean) => void;
+  setProfileComplete: () => void;
+  setProfileCreated: (created: boolean) => void;
   setHasHydrated: (value: boolean) => void;
-  setLoading: (loading: boolean) => void;
-  updateUser: (user: User) => void;
-  refreshToken: (newToken: string) => void;
 }
 
 // Custom storage adapter for Zustand persist using Expo Secure Store
@@ -36,68 +33,33 @@ const zustandSecureStore = {
   },
 };
 
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
       accessToken: null,
       isLoggedIn: false,
-      isProfileComplete: false,
-      isCustomerRegistered: false,
       hasHydrated: false,
-      isLoading: false,
-      
+      isProfileCreated: false,
       login: async (accessToken: string, user: User) => {
         await SecureStore.setItemAsync('user-auth-token', String(accessToken));
-        set({ 
-          accessToken: String(accessToken), 
-          user, 
-          isLoggedIn: true,
-          isProfileComplete: false // Will be set to true if profiles are found
-        });
+        set({ accessToken: String(accessToken), user, isLoggedIn: true });
       },
-      
       logout: async () => {
         await SecureStore.deleteItemAsync('user-auth-token');
-        set({ 
-          accessToken: null, 
-          user: null, 
-          isLoggedIn: false, 
-          isProfileComplete: false,
-          isCustomerRegistered: false,
-          isLoading: false
-        });
+        set({ accessToken: null, user: null, isLoggedIn: false, isProfileCreated: false });
       },
-      
-      setProfileComplete: (complete: boolean) => {
-        console.log('Auth store: Setting profile complete to:', complete);
+      setProfileComplete: () => {
         set((state: AuthState) => ({
-          isProfileComplete: complete,
-          user: state.user ? { ...state.user, isProfileComplete: complete } : null
+          user: state.user ? { ...state.user, isProfileComplete: true } : null
         }));
-        console.log('Auth store: Profile complete set successfully');
       },
-      
-      setCustomerRegistered: (registered: boolean) => {
-        set({ isCustomerRegistered: registered });
+      setProfileCreated: (created: boolean) => {
+        set({ isProfileCreated: created });
       },
-      
       setHasHydrated: (value: boolean) => {
         set({ hasHydrated: value });
-      },
-      
-      setLoading: (loading: boolean) => {
-        set({ isLoading: loading });
-      },
-      
-      updateUser: (user: User) => {
-        set((state: AuthState) => ({
-          user: { ...user, isProfileComplete: state.isProfileComplete }
-        }));
-      },
-      
-      refreshToken: (newToken: string) => {
-        set({ accessToken: newToken });
       },
     }),
     {
@@ -107,9 +69,8 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         accessToken: state.accessToken,
         isLoggedIn: state.isLoggedIn,
-        isProfileComplete: state.isProfileComplete,
-        isCustomerRegistered: state.isCustomerRegistered,
         hasHydrated: state.hasHydrated,
+        // Do not persist functions
       }),
       onRehydrateStorage: (state: any) => (persistedState: any, error?: unknown) => {
         if (!error) {
@@ -124,3 +85,5 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+// No need for manual hydrate call; Zustand persist handles hydration and sets hasHydrated.

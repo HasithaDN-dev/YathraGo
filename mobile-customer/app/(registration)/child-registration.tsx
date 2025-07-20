@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Alert, ScrollView } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomInput } from '../../components/ui/CustomInput';
 import { ButtonComponent } from '../../components/ui/ButtonComponent';
@@ -12,6 +12,8 @@ import { ChildProfileData } from '../../types/customer.types';
 export default function ChildRegistrationScreen() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<ChildProfileData>>({});
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const isAddMode = mode === 'add';
 
   // Get the accessToken and the action to complete the profile from the store.
   const { accessToken, setProfileComplete } = useAuthStore();
@@ -54,20 +56,43 @@ export default function ChildRegistrationScreen() {
     }
     setLoading(true);
     try {
+      console.log('Child registration: Starting API call...');
       // 1. Call the final registration API function.
-      await registerChildApi(accessToken, formData as ChildProfileData);
+      const result = await registerChildApi(accessToken, formData as ChildProfileData);
+      console.log('Child registration: API call successful:', result);
 
       // 2. **CRITICAL STEP**: Update the global state to mark the profile as complete.
-      setProfileComplete();
+      if (!isAddMode) {
+        setProfileComplete(true);
+        console.log('Child registration: Profile marked as complete');
+      }
 
-      // 3. That's it! The `app/(app)/_layout.tsx` guard will now automatically
-      //    detect that `isProfileComplete` is true and will navigate the user
-      //    to the main `(tabs)` layout. No `router.replace()` is needed here.
-
-      Alert.alert('Success', 'Child registration completed successfully!');
+      // 3. Navigate based on mode
+      if (isAddMode) {
+        Alert.alert('Success', 'Child profile added successfully!');
+        router.back(); // Go back to add profile screen
+      } else {
+        Alert.alert('Success', 'Child registration completed successfully!');
+        // The `app/(app)/_layout.tsx` guard will automatically navigate to main app
+      }
 
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Registration failed.';
+      console.error('Child registration error:', error);
+      let message = 'Registration failed.';
+      
+      if (error instanceof Error) {
+        message = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        // Handle error objects
+        if ('message' in error && typeof error.message === 'string') {
+          message = error.message;
+        } else {
+          message = JSON.stringify(error);
+        }
+      } else if (typeof error === 'string') {
+        message = error;
+      }
+      
       Alert.alert('Error', message);
     } finally {
       setLoading(false);
@@ -92,7 +117,7 @@ export default function ChildRegistrationScreen() {
               weight="bold"
               className="text-brand-deepNavy text-center mb-2"
             >
-              Child Registration
+              {isAddMode ? 'Add Child Profile' : 'Child Registration'}
             </Typography>
             <Typography
               variant="body"
@@ -166,7 +191,7 @@ export default function ChildRegistrationScreen() {
           {/* Action Buttons */}
           <View style={{ gap: 12 }}>
             <ButtonComponent
-              title="Complete Registration"
+              title={isAddMode ? "Add Child Profile" : "Complete Registration"}
               onPress={handleRegister}
               loading={loading}
               variant="primary"

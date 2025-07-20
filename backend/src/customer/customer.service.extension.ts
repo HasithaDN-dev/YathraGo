@@ -21,7 +21,7 @@ export class CustomerServiceExtension {
           address: dto.address,
           profileImageUrl: dto.profileImageUrl,
           emergencyContact: dto.emergencyContact,
-          registrationStatus: 'CUSTOMER_REGISTERED' as any,
+          registrationStatus: 'HAVING_A_PROFILE' as any,
         },
       });
       return {

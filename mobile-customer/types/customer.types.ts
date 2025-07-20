@@ -14,15 +14,12 @@ export interface AuthResponse {
 }
 
 // --- Profile and Registration ---
-export type ProfileType = 'parent' | 'child' | 'staff';
+export type ProfileType = 'child' | 'staff';
 
 export interface Profile {
   id: string;
   name: string;
   type: ProfileType;
-  // Parent-specific
-  children?: ChildProfile[];
-  staffPassenger?: StaffProfile;
   // Child-specific
   relationship?: string;
   school?: string;
@@ -80,6 +77,7 @@ export interface ChildProfileData {
   schoolLocation: string;
   pickUpAddress: string;
   childImageUrl?: string;
+  customerId?: string; // Optional since we add it in the API
 }
 
 export interface StaffProfileData {
@@ -88,4 +86,5 @@ export interface StaffProfileData {
   workAddress: string;
   pickUpLocation: string;
   pickupAddress: string;
+  customerId?: string; // Optional since we add it in the API
 }

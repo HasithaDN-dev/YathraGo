@@ -14,7 +14,7 @@ export default function CustomerRegisterScreen() {
   const [formData, setFormData] = useState<Partial<CustomerProfileData>>({});
   
   // Get the accessToken from our global auth store
-  const { accessToken, setProfileCreated, user } = useAuthStore();
+  const { accessToken, setCustomerRegistered, user } = useAuthStore();
   // // Debug: log accessToken to verify it's set
   // console.log('RegisterScreen accessToken:', accessToken);
 
@@ -107,8 +107,8 @@ export default function CustomerRegisterScreen() {
       console.log('RegisterScreen payload:', payload);
       // **THE CHANGE**: Call our new, clean API function.
       await completeCustomerProfileApi(accessToken, payload as CustomerProfileData);
-      setProfileCreated(true);
-      // On success, simply navigate to the next step in the flow.
+      // Navigate to the profile type selection without changing any state
+      console.log('Customer registration successful, navigating to registration-type');
       router.push('/(registration)/registration-type');
     } catch (error) {
       let message = 'Registration failed.';

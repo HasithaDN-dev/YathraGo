@@ -6,7 +6,9 @@ import { Typography } from '@/components/Typography';
 import CustomButton from '../../components/ui/CustomButton';
 import { PasswordIcon } from 'phosphor-react-native';
 import { verifyOtpApi, sendOtpApi } from '../../lib/api/auth.api';
+import { getProfilesApi } from '../../lib/api/profile.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
+import { useProfileStore } from '../../lib/stores/profile.store';
 
 export default function VerifyOTPScreen() {
   const router = useRouter();
@@ -18,7 +20,8 @@ export default function VerifyOTPScreen() {
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
   //Get the login action from our Zustand store.
-  const { login } = useAuthStore();
+  const { login, setProfileComplete, setLoading } = useAuthStore();
+  const { refreshProfiles } = useProfileStore();
 
   useEffect(() => {
     const timerInterval = setInterval(() => {
@@ -57,19 +60,57 @@ export default function VerifyOTPScreen() {
       return;
     }
 
+    console.log('Starting OTP verification for:', phone);
     setIsLoading(true);
     try {
       const { accessToken, user } = await verifyOtpApi(phone!, otpCode);
+      
+      // Only set global loading after successful OTP verification
+      setLoading(true);
+      
       await login(accessToken, user);
+      
+      // Check if user has already completed customer registration
+      try {
+        const profiles = await getProfilesApi(accessToken);
+        console.log('User profiles after login:', profiles);
+        
+        // If user has any profiles (children or staff), they've completed registration
+        if (profiles.length > 0) {
+          console.log('User has existing profiles, marking profile as complete');
+          setProfileComplete(true);
+          // Load profiles into profile store
+          await refreshProfiles(accessToken);
+        } else {
+          console.log('User has no profiles, needs to complete registration');
+          // Check if customer registration is already completed
+          if (user.isProfileComplete) {
+            console.log('Customer registration already completed, marking as complete');
+            setProfileComplete(true);
+          }
+        }
+      } catch (profileError) {
+        console.log('Error checking user profiles:', profileError);
+        // If we can't check profiles, assume user needs to complete registration
+        // Don't fail the login process - user can still proceed to registration
+      } finally {
+        setLoading(false); // Clear global loading state only after profile check
+      }
+      
       // Navigation is handled by root layout on login state change
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Invalid OTP.';
       Alert.alert('Verification Failed', message);
       console.log('OTP verification error:', error);
+      // Clear OTP inputs
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
+      
+      // Ensure auth state remains consistent on error
+      console.log('OTP verification failed - staying on OTP screen');
     } finally {
       setIsLoading(false);
+      // Don't clear global loading here - it was never set for failed OTP
     }
   };
 
