@@ -1,4 +1,5 @@
 import { Circle, User, Database, Settings } from "lucide-react";
+import Link from "next/link";
 
 const activities = [
   {
@@ -41,12 +42,12 @@ const activities = [
 
 export default function RecentActivities() {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Recent Activities</h3>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 flex-grow">
         {activities.map((activity) => (
           <div key={activity.id} className="flex items-start space-x-3">
             <div className={`${activity.iconBg} p-2 rounded-full`}>
@@ -61,9 +62,11 @@ export default function RecentActivities() {
       </div>
 
       <div className="mt-6">
-        <button className="w-full bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 transition-colors">
-          View Full Logs
-        </button>
+        <Link href="/admin/audit">
+          <button className="w-full bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 transition-colors">
+            View Full Logs
+          </button>
+        </Link>
       </div>
     </div>
   );
