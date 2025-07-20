@@ -139,7 +139,7 @@ export default function AddProfileScreen() {
           onPress={handleBack}
           fullWidth={true}
           size="large"
-          variant="outline"
+          bg-variant="outline"
           className="mb-6"
         />
       </ScrollView>

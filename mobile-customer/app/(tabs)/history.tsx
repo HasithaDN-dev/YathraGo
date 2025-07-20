@@ -1,12 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
-import { ProfileSwitcher } from '@/components/ProfileSwitcher';
-import { useProfileStore } from '../../lib/stores/profile.store';
+import { Header } from '@/components/ui/Header';
+import { Card } from '@/components/ui/Card';
+
+// Profile data
+const profiles = [
+  {
+    id: '1',
+    name: 'My Elder Son',
+    fullName: 'Supun Thilina',
+    type: 'child' as const
+  },
+  {
+    id: '2',
+    name: 'Kevin',
+    fullName: 'Kevin Silva',
+    type: 'child' as const
+  },
+  {
+    id: '3',
+    name: 'My',
+    fullName: 'My Account',
+    type: 'parent' as const
+  }
+];
 
 export default function HistoryScreen() {
-  const { activeProfile } = useProfileStore();
+  const [selectedProfile, setSelectedProfile] = useState(profiles[0]);
+  const [selectedFilter, setSelectedFilter] = useState('All Trips');
+
+  const handleProfileSelect = (profile: typeof profiles[0]) => {
+    setSelectedProfile(profile);
+    console.log('Profile selected:', profile.name);
+  };
+
+  const handleRefresh = () => {
+    console.log('Refresh pressed');
+  };
 
   // Mock history data
   const mockHistoryItems = [
@@ -22,7 +54,7 @@ export default function HistoryScreen() {
       id: '2',
       date: '2024-01-14',
       from: 'School',
-      to: 'Park',
+      to: 'Home',
       status: 'completed',
       cost: '$8.00'
     },
@@ -30,7 +62,79 @@ export default function HistoryScreen() {
       id: '3',
       date: '2024-01-13',
       from: 'Home',
-      to: 'Library',
+      to: 'School',
+      status: 'cancelled',
+      cost: '$0.00'
+    },
+    {
+      id: '4',
+      date: '2024-01-16',
+      from: 'School',
+      to: 'Home',
+      status: 'completed',
+      cost: '$10.00'
+    },
+    {
+      id: '5',
+      date: '2024-01-17',
+      from: 'Home',
+      to: 'School',
+      status: 'cancelled',
+      cost: '$0.00'
+    },
+    {
+      id: '6',
+      date: '2024-01-18',
+      from: 'School',
+      to: 'Home',
+      status: 'completed',
+      cost: '$15.00'
+    },
+    {
+      id: '7',
+      date: '2024-01-19',
+      from: 'Home',
+      to: 'School',
+      status: 'completed',
+      cost: '$15.00'
+    },
+    {
+      id: '8',
+      date: '2024-01-20',
+      from: 'School',
+      to: 'Home',
+      status: 'cancelled',
+      cost: '$0.00'
+    },
+    {
+      id: '9',
+      date: '2024-01-21',
+      from: 'Home',
+      to: 'School',
+      status: 'completed',
+      cost: '$20.00'
+    },
+    {
+      id: '10',
+      date: '2024-01-22',
+      from: 'School',
+      to: 'Home',
+      status: 'completed',
+      cost: '$18.00'
+    },
+    {
+      id: '11',
+      date: '2024-01-23',
+      from: 'Home',
+      to: 'School',
+      status: 'completed',
+      cost: '$18.00'
+    },
+    {
+      id: '12',
+      date: '2024-01-24',
+      from: 'School',
+      to: 'Home',
       status: 'cancelled',
       cost: '$0.00'
     }
@@ -48,120 +152,99 @@ export default function HistoryScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ProfileSwitcher />
+    <SafeAreaView className="flex-1 bg-gray-100">
+      {/* Header Component */}
+      <Header
+        profiles={profiles}
+        selectedProfile={selectedProfile}
+        onProfileSelect={handleProfileSelect}
+        onRefreshPress={handleRefresh}
+      />
       
       <ScrollView className="flex-1 px-4 py-6">
         <View className="space-y-6">
-          {/* Header */}
-          <View className="space-y-2">
-            <Typography variant="large-title" className="text-black">
-              Trip History
-            </Typography>
-            <Typography variant="body" className="text-brand-neutralGray">
-              {activeProfile?.type === 'child' 
-                ? `Your recent trips, ${activeProfile.name}`
-                : `${activeProfile?.name}&apos;s travel history`
-              }
-            </Typography>
-          </View>
-
           {/* Filter Options */}
-          <View className="flex-row">
-            <TouchableOpacity className="bg-brand-deepNavy px-4 py-2 rounded-full">
-              <Typography variant="tappable" className="text-white">
-                All Trips
-              </Typography>
-            </TouchableOpacity>
-            <TouchableOpacity className="ml-3 bg-brand-lightGray px-4 py-2 rounded-full">
-              <Typography variant="tappable" className="text-brand-neutralGray">
-                This Month
-              </Typography>
-            </TouchableOpacity>
-            <TouchableOpacity className="ml-3 bg-brand-lightGray px-4 py-2 rounded-full">
-              <Typography variant="tappable" className="text-brand-neutralGray">
-                Completed
-              </Typography>
-            </TouchableOpacity>
-          </View>
+          <Card className="p-4">
+            <View className="flex-row">
+              {['All Trips', 'Completed', 'Cancelled'].map((filter) => (
+                <TouchableOpacity
+                  key={filter}
+                  className={`px-4 py-2 rounded-full${selectedFilter === filter ? ' bg-brand-deepNavy' : ' bg-brand-lightGray'}${filter !== 'All Trips' ? ' ml-3' : ''}`}
+                  onPress={() => setSelectedFilter(filter)}
+                >
+                  <Typography
+                    variant="subhead"
+                    className={selectedFilter === filter ? 'text-white' : 'text-brand-neutralGray'}
+                  >
+                    {filter}
+                  </Typography>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Card>
 
           {/* History Items */}
           <View className="space-y-4">
-            {mockHistoryItems.map((item) => (
-              <TouchableOpacity 
-                key={item.id}
-                className="bg-white border border-brand-lightGray rounded-2xl p-4 space-y-3"
-              >
-                <View className="flex-row justify-between items-start">
-                  <View className="flex-1">
-                    <Typography variant="title-1" className="text-black">
-                      {item.from} → {item.to}
-                    </Typography>
-                    <Typography variant="caption-1" className="text-brand-neutralGray">
-                      {new Date(item.date).toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                      })}
-                    </Typography>
-                  </View>
-                  <View className="items-end">
-                    <Typography 
-                      variant="tappable" 
-                      className={getStatusColor(item.status)}
-                    >
-                      {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                    </Typography>
-                    <Typography variant="tappable" className="text-black">
-                      {item.cost}
-                    </Typography>
-                  </View>
-                </View>
+            {mockHistoryItems
+              .filter((item) => {
+                if (selectedFilter === 'All Trips') return true;
+                if (selectedFilter === 'Completed') return item.status === 'completed';
+                if (selectedFilter === 'Cancelled') return item.status === 'cancelled';
+                return true;
+              })
+              .map((item) => (
+                <Card key={item.id + item.date + item.from + item.to} className="p-4 mt-3">
+                  <View className="space-y-3">
+                    <View className="flex-row justify-between items-start">
+                      <View className="flex-1">
+                        <Typography variant="subhead" className="text-black">
+                          {item.from} → {item.to}
+                        </Typography>
+                        <Typography variant="footnote" className="text-brand-neutralGray">
+                          {new Date(item.date).toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </Typography>
+                      </View>
+                      <View className="items-end">
+                        <Typography 
+                          variant="subhead" 
+                          className={getStatusColor(item.status)}
+                        >
+                          {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                        </Typography>
+                        <Typography variant="subhead" className="text-black">
+                          {item.cost}
+                        </Typography>
+                      </View>
+                    </View>
 
-                {/* Trip Details */}
-                <View className="flex-row items-center pt-2 border-t border-brand-lightGray">
-                  <View className="flex-row items-center">
-                    <View className="w-2 h-2 bg-brand-brightOrange rounded-full" />
-                    <View className="ml-2">
-                      <Typography variant="caption-1" className="text-brand-neutralGray">
-                        Pick-up: 8:30 AM
-                      </Typography>
+                    {/* Trip Details */}
+                    <View className="flex-row items-center pt-2 border-t border-brand-lightGray">
+                      <View className="flex-row items-center">
+                        <View className="w-2 h-2 bg-brand-brightOrange rounded-full" />
+                        <View className="ml-2">
+                          <Typography variant="footnote" className="text-brand-neutralGray">
+                            Pick-up: 8:30 AM
+                          </Typography>
+                        </View>
+                      </View>
+                      <View className="ml-4 flex-row items-center">
+                        <View className="w-2 h-2 bg-success rounded-full" />
+                        <View className="ml-2">
+                          <Typography variant="footnote" className="text-brand-neutralGray">
+                            Drop-off: 8:45 AM
+                          </Typography>
+                        </View>
+                      </View>
                     </View>
                   </View>
-                  <View className="ml-4 flex-row items-center">
-                    <View className="w-2 h-2 bg-success rounded-full" />
-                    <View className="ml-2">
-                      <Typography variant="caption-1" className="text-brand-neutralGray">
-                        Drop-off: 8:45 AM
-                      </Typography>
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+                </Card>
+              ))}
           </View>
-
-          {/* Empty State or Load More */}
-          {mockHistoryItems.length === 0 ? (
-            <View className="bg-brand-lightGray rounded-2xl p-8 items-center space-y-3">
-              <Typography variant="subhead" className="text-brand-neutralGray">
-                No trips yet
-              </Typography>
-              <Typography variant="body" className="text-brand-neutralGray text-center">
-                {activeProfile?.type === 'child' 
-                  ? "Your trip history will appear here once you start traveling"
-                  : "Trip history will appear here once rides are booked"
-                }
-              </Typography>
-            </View>
-          ) : (
-            <TouchableOpacity className="bg-brand-lightestBlue rounded-2xl p-4 items-center">
-              <Typography variant="title-1" className="text-brand-deepNavy">
-                Load More Trips
-              </Typography>
-            </TouchableOpacity>
-          )}
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -6,7 +6,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import ProfileSwitcher from '../../components/ProfileSwitcher';
 import { ProfileLoading } from '../../components/ProfileLoading';
-import { HouseIcon, ClockIcon, BellIcon, ListIcon } from 'phosphor-react-native';
+import { HouseIcon, ClockIcon, BellIcon, ListIcon, NavigationArrowIcon } from 'phosphor-react-native';
 import { useProfileStore } from '../../lib/stores/profile.store';
 import { useAuthStore } from '../../lib/stores/auth.store';
 
@@ -41,51 +41,76 @@ export default function TabLayout() {
   }
 
   // Show different tabs based on profile type
-  const getTabTitle = (baseTitle: string) => {
-    if (!activeProfile) return baseTitle;
-    return activeProfile.type === 'child' 
-      ? `${activeProfile.name}'s ${baseTitle}`
-      : baseTitle;
-  };
+  // const getTabTitle = (baseTitle: string) => {
+  //   if (!activeProfile) return baseTitle;
+  //   return activeProfile.type === 'child' 
+  //     ? `${activeProfile.name}'s ${baseTitle}`
+  //     : baseTitle;
+  // };
+
 
   return (
     <Tabs
       screenOptions={{
         header: () => <ProfileSwitcher />,
-        tabBarActiveTintColor: '#143373', // brand-deepNavy
+        tabBarActiveTintColor: '#143373',
+        tabBarInactiveTintColor: '#222',
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '400',
+          marginTop: 4,
+        },
+        tabBarItemStyle: {
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
         tabBarStyle: {
           backgroundColor: Colors[colorScheme ?? 'light'].background,
+          height: 95,
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
         },
       }}>
+        
       <Tabs.Screen
         name="index"
         options={{
-          title: getTabTitle('Home'),
-          tabBarIcon: ({ color }) => <HouseIcon size={28} color={color} weight="fill" />,
+          title: 'Home',
+          tabBarIcon: ({ color }) => <HouseIcon size={22} color={color} weight="regular" />,
+        }}
+      />
+      <Tabs.Screen
+        name="navigate"
+        options={{
+          title: 'Navigate',
+          tabBarIcon: ({ color }) => <NavigationArrowIcon size={22} color={color} weight="regular" />,
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
-          title: getTabTitle('History'),
-          tabBarIcon: ({ color }) => <ClockIcon size={28} color={color} weight="fill" />,
+          title: 'History',
+          tabBarIcon: ({ color }) => <ClockIcon size={22} color={color} weight="regular" />,
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
-          title: getTabTitle('Alerts'),
-          tabBarIcon: ({ color }) => <BellIcon size={28} color={color} weight="fill" />,
+          title: 'Notifications',
+          tabBarIcon: ({ color }) => <BellIcon size={22} color={color} weight="regular" />,
         }}
       />
       <Tabs.Screen
         name="menu"
         options={{
           title: 'Menu',
-          tabBarIcon: ({ color }) => <ListIcon size={28} color={color} weight="fill" />,
+          tabBarIcon: ({ color }) => <ListIcon size={22} color={color} weight="regular" />,
         }}
       />
     </Tabs>
