@@ -8,6 +8,7 @@ import { PasswordIcon } from 'phosphor-react-native';
 import { verifyOtpApi, sendOtpApi } from '../../lib/api/auth.api';
 import { getProfilesApi } from '../../lib/api/profile.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
+import { useProfileStore } from '../../lib/stores/profile.store';
 
 export default function VerifyOTPScreen() {
   const router = useRouter();
@@ -19,7 +20,8 @@ export default function VerifyOTPScreen() {
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
   //Get the login action from our Zustand store.
-  const { login, setProfileComplete } = useAuthStore();
+  const { login, setProfileComplete, setLoading } = useAuthStore();
+  const { refreshProfiles } = useProfileStore();
 
   useEffect(() => {
     const timerInterval = setInterval(() => {
@@ -59,6 +61,7 @@ export default function VerifyOTPScreen() {
     }
 
     setIsLoading(true);
+    setLoading(true); // Set global loading state
     try {
       const { accessToken, user } = await verifyOtpApi(phone!, otpCode);
       await login(accessToken, user);
@@ -72,8 +75,15 @@ export default function VerifyOTPScreen() {
         if (profiles.length > 0) {
           console.log('User has existing profiles, marking profile as complete');
           setProfileComplete(true);
+          // Load profiles into profile store
+          await refreshProfiles(accessToken);
         } else {
           console.log('User has no profiles, needs to complete registration');
+          // Check if customer registration is already completed
+          if (user.isProfileComplete) {
+            console.log('Customer registration already completed, marking as complete');
+            setProfileComplete(true);
+          }
         }
       } catch (profileError) {
         console.log('Error checking user profiles:', profileError);
@@ -89,6 +99,7 @@ export default function VerifyOTPScreen() {
       inputRefs.current[0]?.focus();
     } finally {
       setIsLoading(false);
+      setLoading(false); // Clear global loading state
     }
   };
 

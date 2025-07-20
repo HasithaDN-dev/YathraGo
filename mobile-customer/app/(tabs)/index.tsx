@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Typography } from '../../components/Typography';
 import { useAuth } from '../../hooks/useAuth';
 import { useProfileStore } from '../../lib/stores/profile.store';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const { user, logout, refreshProfiles } = useAuth();
   const { activeProfile, profiles } = useProfileStore();
 
@@ -146,6 +148,16 @@ export default function HomeScreen() {
 
         {/* Actions */}
         <View className="space-y-4 mb-6">
+          <TouchableOpacity 
+            onPress={() => router.push('/(tabs)/add-profile')}
+            className="bg-brand-warmYellow py-4 px-6 rounded-xl flex-row items-center justify-center"
+          >
+            <Ionicons name="add-circle-outline" size={20} color="white" />
+            <Typography variant="body" weight="medium" className="text-white ml-2">
+              Add New Profile
+            </Typography>
+          </TouchableOpacity>
+
           <TouchableOpacity 
             onPress={handleRefresh}
             className="bg-brand-navyBlue py-4 px-6 rounded-xl flex-row items-center justify-center"

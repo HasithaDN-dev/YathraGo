@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { View, Alert, ScrollView } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomInput } from '../../components/ui/CustomInput';
 import { ButtonComponent } from '../../components/ui/ButtonComponent';
@@ -13,6 +13,8 @@ import { StaffProfileData } from '../../types/customer.types';
 export default function StaffPassengerScreen() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<StaffProfileData>>({});
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const isAddMode = mode === 'add';
   
   // Get the accessToken and the action to complete the profile from the global store.
   const { accessToken, setProfileComplete } = useAuthStore();
@@ -59,14 +61,19 @@ export default function StaffPassengerScreen() {
       console.log('Staff registration: API call successful:', result);
       
       // 2. **CRITICAL STEP**: Update the global state to mark the profile as complete.
-      setProfileComplete(true);
-      console.log('Staff registration: Profile marked as complete');
-      
-      // 3. That's it! The `app/(app)/_layout.tsx` guard will now automatically
-      //    detect that `isProfileComplete` is true and will navigate the user
-      //    to the main `(tabs)` layout. No `router.replace()` is needed here.
-      
-      Alert.alert('Success', 'Staff passenger registration completed successfully!');
+      if (!isAddMode) {
+        setProfileComplete(true);
+        console.log('Staff registration: Profile marked as complete');
+      }
+
+      // 3. Navigate based on mode
+      if (isAddMode) {
+        Alert.alert('Success', 'Staff profile added successfully!');
+        router.back(); // Go back to add profile screen
+      } else {
+        Alert.alert('Success', 'Staff passenger registration completed successfully!');
+        // The `app/(app)/_layout.tsx` guard will automatically navigate to main app
+      }
 
     } catch (error) {
       console.error('Staff registration error:', error);
@@ -109,7 +116,7 @@ return (
             weight="bold"
             className="text-brand-deepNavy text-center mb-2"
           >
-            Staff Passenger Registration
+            {isAddMode ? 'Add Staff Profile' : 'Staff Passenger Registration'}
           </Typography>
           <Typography
             variant="body"
@@ -169,7 +176,7 @@ return (
         {/* Action Buttons */}
         <View style={{ gap: 12 }}>
           <ButtonComponent
-            title="Complete Registration"
+            title={isAddMode ? "Add Staff Profile" : "Complete Registration"}
             onPress={handleRegister}
             loading={loading}
             variant="primary"

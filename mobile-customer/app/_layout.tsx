@@ -17,6 +17,7 @@ export default function RootLayout() {
     isProfileComplete,
     isCustomerRegistered,
     hasHydrated,
+    isLoading,
   } = useAuthStore();
   const [loaded, error] = useFonts({
     'Figtree-Regular': require('../assets/fonts/Figtree-Regular.ttf'),
@@ -39,8 +40,8 @@ export default function RootLayout() {
     }
   }, [loaded, error, hasHydrated]);
 
-  if ((!loaded && !error) || !hasHydrated) {
-    // Show nothing until fonts and hydration are ready
+  if ((!loaded && !error) || !hasHydrated || isLoading) {
+    // Show nothing until fonts, hydration, and profile checking are ready
     return null;
   }
 
