@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Typography } from '@/components/Typography';
 import {
   Car, MapPin, Clock, CurrencyDollar, Star, Bell, Play, Pause, CompassIcon, Calendar,
   User, House, Building, CaretDown, ChatCircle, Megaphone, List, CreditCard, FileText,
-  CheckCircle, Clock as ClockIcon, Users
+  CheckCircle, Clock as ClockIcon, Users,
+  ToggleLeftIcon
 } from 'phosphor-react-native';
 import CustomButton from '@/components/ui/CustomButton';
 import { useRouter } from 'expo-router';
@@ -13,6 +14,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(true);
   const [tripStarted, setTripStarted] = useState(false);
+  const [isButtonEnabled, setIsButtonEnabled] = useState(false);
   const [currentTripStatus, setCurrentTripStatus] = useState<'pending' | 'on-the-way' | 'completed'>('pending');
 
   const toggleOnlineStatus = () => {
@@ -20,12 +22,24 @@ export default function HomeScreen() {
   };
 
   const startTrip = () => {
-    setTripStarted(true);
+    setTripStarted(!tripStarted);
     setCurrentTripStatus('on-the-way');
+    setIsButtonEnabled(true);
     console.log('Starting trip...');
     // Navigate to navigation tab
-    router.push('/(tabs)/navigation');
+    //router.push('/(tabs)/navigation');
   };
+
+  // useEffect(() => {
+  //   if (tripStarted) {
+  //     setIsOnline(true);
+  //   }
+  // }, [tripStarted]);
+
+  setTimeout(() => {
+    setIsButtonEnabled(false);
+    
+  }, 6000);
 
   const viewTrip = () => {
     console.log('Viewing trip...');
@@ -38,50 +52,47 @@ export default function HomeScreen() {
 
   return (
     <ScrollView className="flex-1 bg-gray-50">
-      {/* Header Section */}
-      <View className="bg-white px-6 pt-12 pb-4 border-b border-gray-100">
-        <View className="flex-row items-center justify-between mb-4">
+      {/* Blue Header with rounded bottom corners */}
+      <View className="bg-brand-deepNavy px-6 pt-20 pb-8 rounded-b-3xl">
+        <View className="flex-row items-center justify-between mb-3">
           <View className="flex-row items-center">
-            <View className="bg-brand-warmYellow w-12 h-12 rounded-full items-center justify-center mr-3">
-              <User size={24} color="#143373" weight="regular" />
+            <View className="bg-brand-warmYellow w-10 h-10 rounded-full items-center justify-center mr-3">
+              <User size={20} color="#143373" weight="regular" />
             </View>
             <View>
-              <View className="flex-row items-center">
-                <Typography variant="headline" weight="bold" className="text-brand-deepNavy mr-2">
-                  My Driver Account
-                </Typography>
-                <CaretDown size={16} color="#143373" weight="regular" />
-              </View>
-              <Typography variant="body" className="text-brand-neutralGray">
+              <Typography variant="headline" weight="bold" className="text-white">
+                Welcome Back
+              </Typography>
+              <Typography variant="body" className="text-white opacity-80">
                 Hemal Perera
               </Typography>
             </View>
           </View>
-        </View>
-
-        {/* Online Status Toggle */}
-        <View className="bg-brand-lightGray rounded-xl p-4">
-          <View className="flex-row items-center justify-between mb-3">
-            <Typography variant="headline" weight="semibold" className="text-brand-deepNavy">
-              Driver Status
+          <View className={`px-3 py-1 rounded-full ${isOnline ? 'bg-success' : 'bg-brand-neutralGray'}`}>
+            <Typography variant="caption-1" weight="medium" className="text-white">
+              {isOnline ? 'ONLINE' : 'OFFLINE'}
             </Typography>
-            <View className={`px-3 py-1 rounded-full ${isOnline ? 'bg-success' : 'bg-brand-neutralGray'}`}>
-              <Typography variant="caption-1" weight="medium" className="text-white">
-                {isOnline ? 'ONLINE' : 'OFFLINE'}
-              </Typography>
-            </View>
           </View>
-
-          <CustomButton
-            title={isOnline ? 'Go Offline' : 'Go Online'}
-            onPress={toggleOnlineStatus}
-            bgVariant={isOnline ? 'danger' : 'success'}
-            size="medium"
-            fullWidth
-            IconLeft={isOnline ? Pause : Play}
-          />
         </View>
       </View>
+
+
+      {/* <View className="mx-6 mt-4 bg-white rounded-xl p-4 shadow-sm">
+        <View className="flex-row items-center justify-between mb-3">
+          <Typography variant="headline" weight="semibold" className="text-brand-deepNavy">
+            Driver Status
+          </Typography>
+        </View>
+
+        <CustomButton
+          title={isOnline ? 'Go Offline' : 'Go Online'}
+          onPress={toggleOnlineStatus}
+          bgVariant={isOnline ? 'danger' : 'success'}
+          size="medium"
+          fullWidth
+          IconLeft={isOnline ? Pause : Play}
+        />
+      </View> */}
 
       {/* Current Trip Section */}
       <View className="bg-white mx-6 mt-4 rounded-xl p-4 shadow-sm">
@@ -137,13 +148,13 @@ export default function HomeScreen() {
         {/* Trip Action Buttons */}
         <View className="flex-row gap-3">
           <CustomButton
-            title={tripStarted ? "Trip Started" : "Start Trip"}
+            title={tripStarted ? "End Trip" : "Start Trip"}
             onPress={startTrip}
-            bgVariant={tripStarted ? "success" : "success"}
+            bgVariant={!tripStarted ? "success" : "danger"}
             size="medium"
             fullWidth
             IconLeft={tripStarted ? CheckCircle : Play}
-            disabled={tripStarted}
+            disabled={isButtonEnabled}
           />
 
         </View>

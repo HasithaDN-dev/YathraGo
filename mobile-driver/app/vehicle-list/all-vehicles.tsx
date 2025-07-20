@@ -1,108 +1,160 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Typography } from '@/components/Typography';
-import { ArrowLeft } from 'phosphor-react-native';
+import CustomButton from '@/components/ui/CustomButton';
+import { ArrowLeft, Plus } from 'phosphor-react-native';
 import { useRouter } from 'expo-router';
-import VehicleCard from '@/components/vehicle/VehicleCard';
+import { VehicleCard } from '@/components/vehicle/VehicleCard';
+
+type TabType = 'all' | 'assigned' | 'unassigned';
 
 interface Vehicle {
-  id: string;
-  vehicleId: string;
-  model: string;
-  assignedDriver: string;
-  status: 'active' | 'inactive';
-  image?: any;
+    id: string;
+    licensePlate: string;
+    model: string;
+    driver: string;
+    status: 'active' | 'inactive';
+    image: any;
 }
 
-// Sample vehicle data with asset images
-const sampleVehicles: Vehicle[] = [
-  {
-    id: '1',
-    vehicleId: 'WP CAB 4645',
-    model: 'TOYOTA GDH 223 GL',
-    assignedDriver: 'Hemal Perera',
-    status: 'active',
-    image: require('../../assets/images/vehicle1.png'),
-  },
-  {
-    id: '2',
-    vehicleId: 'WP FFD 1206',
-    model: 'TOYOTA TownACE',
-    assignedDriver: 'Wishwa Namal',
-    status: 'active',
-    image: require('../../assets/images/vehicle1.png'),
-  },
-  {
-    id: '3',
-    vehicleId: 'WP ABC 7890',
-    model: 'TOYOTA HIACE',
-    assignedDriver: 'Unassigned',
-    status: 'inactive',
-    image: require('../../assets/images/vehicle2.png'),
-  },
+const mockVehicles: Vehicle[] = [
+    {
+        id: '1',
+        licensePlate: 'WP CAB 4645',
+        model: 'TOYOTA GDH 223 GL',
+        driver: 'Hemal Perera',
+        status: 'active',
+        image: require('@/assets/images/vehicle1.png'),
+    },
+    {
+        id: '2',
+        licensePlate: 'WP FFD 1206',
+        model: 'TOYOTA TownACE',
+        driver: 'Wishwa Namal',
+        status: 'active',
+        image: require('@/assets/images/vehicle2.png'),
+    },
+    {
+        id: '3',
+        licensePlate: 'WP CAB 4645',
+        model: 'TOYOTA GDH 223 GL',
+        driver: 'Hemal Perera',
+        status: 'inactive',
+        image: require('@/assets/images/vehicle1.png'),
+    },
+    {
+        id: '4',
+        licensePlate: 'WP ABC 1234',
+        model: 'TOYOTA Hiace',
+        driver: 'Kamal Silva',
+        status: 'active',
+        image: require('@/assets/images/vehicle2.png'),
+    },
+    {
+        id: '5',
+        licensePlate: 'WP XYZ 5678',
+        model: 'NISSAN Caravan',
+        driver: 'Sunil Fernando',
+        status: 'active',
+        image: require('@/assets/images/vehicle1.png'),
+    },
 ];
 
-export default function AllVehiclesScreen() {
-  const router = useRouter();
-  const [vehicles, setVehicles] = useState<Vehicle[]>(sampleVehicles);
+export default function VehicleListScreen() {
+    const router = useRouter();
+    const [activeTab, setActiveTab] = useState<TabType>('all');
 
-  const handleBack = () => {
-    router.back();
-  };
+    const handleBack = () => {
+        router.back();
+    };
 
-  const handleViewVehicle = (vehicleId: string) => {
-    console.log('View vehicle:', vehicleId);
-    // Navigate to vehicle details screen
-  };
+    const handleAddVehicle = () => {
+        // TODO: Navigate to add vehicle screen
+        console.log('Add vehicle pressed');
+    };
 
-  return (
-    <View className="flex-1 bg-white">
-      {/* Header */}
-      <View className="bg-brand-deepNavy px-6 pt-12 pb-4 rounded-b-3xl">
-        <View className="flex-row items-center mb-4">
-          <TouchableOpacity onPress={handleBack} className="mr-4">
-            <ArrowLeft size={24} color="#ffffff" weight="regular" />
-          </TouchableOpacity>
-          <Typography variant="title-1" weight="bold" className="text-white">
-            Vehicle List
-          </Typography>
-        </View>
+    const handleViewMore = (vehicleId: string) => {
+        // TODO: Navigate to vehicle details screen
+        console.log('View more for vehicle:', vehicleId);
+    };
 
-        {/* Filter Tabs */}
-        <View className="flex-row space-x-8">
-          {(['all', 'assigned', 'unassigned'] as const).map((filter) => (
-            <TouchableOpacity
-              key={filter}
-              className="items-center"
+    const getFilteredVehicles = () => {
+        switch (activeTab) {
+            case 'assigned':
+                return mockVehicles.filter(vehicle => vehicle.driver !== 'Unassigned');
+            case 'unassigned':
+                return mockVehicles.filter(vehicle => vehicle.driver === 'Unassigned');
+            default:
+                return mockVehicles;
+        }
+    };
+
+    const TabButton = ({ tab, label }: { tab: TabType; label: string }) => (
+        <TouchableOpacity
+            onPress={() => setActiveTab(tab)}
+            className="flex-1 items-center py-3"
+        >
+            <Typography
+                variant="subhead"
+                weight={activeTab === tab ? 'semibold' : 'medium'}
+                className={`${activeTab === tab ? 'text-white' : 'text-brand-neutralGray'}`}
             >
-              <Typography 
-                variant="body" 
-                weight="medium" 
-                className={`text-white capitalize ${filter === 'all' ? 'opacity-100' : 'opacity-70'}`}
-              >
-                {filter}
-              </Typography>
-              {filter === 'all' && (
-                <View className="w-8 h-1 bg-brand-brightOrange rounded-full mt-1" />
-              )}
-            </TouchableOpacity>
-          ))}
+                {label}
+            </Typography>
+            {activeTab === tab && (
+                <View className="w-8 h-1 bg-brand-warmYellow rounded-full mt-2" />
+            )}
+        </TouchableOpacity>
+    );
+
+
+
+    return (
+        <View className="flex-1 bg-gray-50">
+            {/* Blue Header with rounded bottom corners */}
+            <View className="bg-brand-deepNavy px-6 py-12 pb-4 rounded-b-3xl">
+                <View className="flex-row items-center mb-3">
+                    <TouchableOpacity onPress={handleBack} className="mr-4 mt-5 mb-4">
+                        <ArrowLeft size={24} color="#ffffff" weight="regular" />
+                    </TouchableOpacity>
+                    <Typography
+                        variant="title-2"
+                        weight="bold"
+                        className="text-white flex-1 mt-5 mb-4"
+                    >
+                        Vehicle List
+                    </Typography>
+                </View>
+
+                {/* Tabs */}
+                <View className="flex-row justify-between">
+                    <TabButton tab="all" label="All" />
+                    <TabButton tab="assigned" label="Assigned" />
+                    <TabButton tab="unassigned" label="Unassigned" />
+                </View>
+            </View>
+
+            {/* Content */}
+            <ScrollView className="flex-1 px-6 pt-4">
+                {getFilteredVehicles().map((vehicle) => (
+                    <VehicleCard key={vehicle.id} vehicle={vehicle} onViewMore={handleViewMore} />
+                ))}
+
+                {/* Add Vehicle Button - Only show in All tab */}
+                {activeTab === 'all' && (
+                    <View className="pt-4 pb-6">
+                        <CustomButton
+                            title="Add another vehicle"
+                            bgVariant="navyBlue"
+                            textVariant="white"
+                            size="large"
+                            fullWidth
+                            IconLeft={Plus}
+                            onPress={handleAddVehicle}
+                        />
+                    </View>
+                )}
+            </ScrollView>
         </View>
-      </View>
-
-      {/* Vehicle List */}
-      <ScrollView className="flex-1 px-6 py-4">
-        {vehicles.map((vehicle) => (
-          <VehicleCard
-            key={vehicle.id}
-            vehicle={vehicle}
-            onViewMore={() => handleViewVehicle(vehicle.id)}
-          />
-        ))}
-
-        {/* Bottom Spacing for Tab Bar */}
-        <View className="h-20" />
-      </ScrollView>
-    </View>
-  );
+    );
 } 

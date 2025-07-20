@@ -49,6 +49,7 @@ export default function RootLayout() {
           {/* Protected routes - only accessible when authenticated */}
           <Stack.Protected guard={isAuthenticated === true}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="vehicle-list" options={{ headerShown: false }} />
           </Stack.Protected>
 
           {/* Unauthenticated user routes */}

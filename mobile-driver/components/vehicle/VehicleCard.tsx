@@ -5,83 +5,84 @@ import { User } from 'phosphor-react-native';
 
 interface Vehicle {
     id: string;
-    vehicleId: string;
+    licensePlate: string;
     model: string;
-    assignedDriver: string;
+    driver: string;
     status: 'active' | 'inactive';
-    image?: any;
+    image: any;
 }
 
 interface VehicleCardProps {
     vehicle: Vehicle;
-    onViewMore: () => void;
+    onViewMore: (vehicleId: string) => void;
 }
 
-export default function VehicleCard({ vehicle, onViewMore }: VehicleCardProps) {
-    const getStatusColor = (status: 'active' | 'inactive') => {
-        return status === 'active'
-            ? 'bg-success bg-opacity-20 text-success'
-            : 'bg-danger bg-opacity-20 text-danger';
-    };
-
+export const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onViewMore }) => {
     return (
-        <View className="bg-white rounded-xl p-4 shadow-sm mb-4 border border-gray-100">
-            <View className="flex-row">
-                {/* Vehicle Image */}
-                <View className="w-20 h-16 bg-gray-100 rounded-lg mr-4 items-center justify-center overflow-hidden">
-                    {vehicle.image ? (
-                        <Image
-                            source={vehicle.image}
-                            className="w-full h-full"
-                            resizeMode="cover"
-                        />
-                    ) : (
-                        <View className="w-16 h-12 bg-brand-lightGray rounded-lg items-center justify-center">
-                            {/* Placeholder for vehicle icon */}
-                            <View className="w-8 h-6 bg-brand-deepNavy rounded-sm" />
-                        </View>
-                    )}
-                </View>
-
-                {/* Vehicle Details */}
+        <View className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-100">
+            <View className="flex-row items-center">
+                <Image
+                    source={vehicle.image}
+                    className="w-16 h-12 rounded-lg mr-4"
+                    resizeMode="cover"
+                />
                 <View className="flex-1">
-                    <View className="flex-row items-start justify-between mb-2">
-                        <View className="flex-1">
-                            <Typography variant="body" weight="bold" className="text-brand-deepNavy mb-1">
-                                {vehicle.vehicleId}
-                            </Typography>
-                            <Typography variant="caption-1" className="text-brand-neutralGray">
-                                {vehicle.model}
-                            </Typography>
-                        </View>
-
-                        {/* Status Tag */}
-                        <View className={`px-2 py-1 rounded-full ${getStatusColor(vehicle.status)}`}>
-                            <Typography variant="caption-1" weight="medium" className="capitalize">
-                                {vehicle.status}
-                            </Typography>
-                        </View>
-                    </View>
-
-                    {/* Assigned Driver */}
-                    <View className="flex-row items-center mb-3">
-                        <User size={14} color="#6b7280" weight="regular" />
-                        <Typography variant="caption-1" className="text-brand-neutralGray ml-1">
-                            {vehicle.assignedDriver}
-                        </Typography>
-                    </View>
-
-                    {/* View More Button */}
-                    <TouchableOpacity
-                        className="bg-brand-navyBlue bg-opacity-10 rounded-lg px-3 py-2 self-start"
-                        onPress={onViewMore}
+                    <Typography
+                        variant="headline"
+                        weight="bold"
+                        className="text-brand-deepNavy mb-1"
                     >
-                        <Typography variant="caption-1" weight="medium" className="text-brand-navyBlue">
-                            View More
+                        {vehicle.licensePlate}
+                    </Typography>
+                    <Typography
+                        variant="body"
+                        className="text-brand-neutralGray mb-2"
+                    >
+                        {vehicle.model}
+                    </Typography>
+                    <View className="flex-row items-center">
+                        <User size={16} color="#6b7280" weight="regular" />
+                        <Typography
+                            variant="body"
+                            className="text-brand-neutralGray ml-2"
+                        >
+                            {vehicle.driver}
                         </Typography>
-                    </TouchableOpacity>
+                    </View>
+                </View>
+                <View className="items-end">
+                    <View
+                        className={`px-3 py-1 rounded-full ${vehicle.status === 'active'
+                                ? 'bg-success-bg'
+                                : 'bg-danger-bg'
+                            }`}
+                    >
+                        <Typography
+                            variant="caption-1"
+                            weight="medium"
+                            className={
+                                vehicle.status === 'active'
+                                    ? 'text-success'
+                                    : 'text-danger'
+                            }
+                        >
+                            {vehicle.status === 'active' ? 'Active' : 'Inactive'}
+                        </Typography>
+                    </View>
                 </View>
             </View>
+            <TouchableOpacity
+                onPress={() => onViewMore(vehicle.id)}
+                className="mt-4 bg-brand-lightGray py-3 rounded-lg items-center"
+            >
+                <Typography
+                    variant="subhead"
+                    weight="medium"
+                    className="text-brand-deepNavy"
+                >
+                    View More
+                </Typography>
+            </TouchableOpacity>
         </View>
     );
-} 
+}; 

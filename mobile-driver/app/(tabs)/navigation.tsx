@@ -29,6 +29,7 @@ interface NextPassenger {
     location: string;
     eta: string;
     profileImage?: string;
+    distance:string;
 }
 
 interface NavigationScreenProps {
@@ -47,12 +48,14 @@ const defaultTripDetails: TripDetails = {
     currentLocation: 'Colombo',
     seatsFilled: 6,
     totalSeats: 8,
+
 };
 
 const defaultNextPassenger: NextPassenger = {
     name: 'Supun Thilina',
     location: 'Maharagama Junction',
     eta: '7:15 AM',
+    distance:'2.5km'
 };
 
 export default function NavigationScreen({
@@ -176,28 +179,25 @@ export default function NavigationScreen({
               
                 {/* Next Passenger Card */}
                 <View className="absolute bottom-4 left-4 right-4">
-                    <View className="bg-white rounded-xl p-4 shadow-lg">
-                    <View className="flex-row items-center justify-between mb-2">
+                    <View className="bg-white rounded-xl p-4 shadow-lg flex-col justify-between">
+                        <View className="flex-row items-center justify-between mb-2">
                         <Typography variant="headline" weight="semibold" className="text-brand-deepNavy">
                             Next Passenger
                         </Typography>
-
                         <View className="flex-col space-y-1 items-end">
                             <View className="bg-brand-brightOrange px-2 py-1  rounded-full">
                             <Typography variant="caption-1" weight="medium" className="text-brand-deepNavy">
                                 ETA {nextPassenger.eta}
                             </Typography>
                             </View>
-                            <View className="bg-brand-brightOrange px-2 py-1 rounded-full">
-                            <Typography variant="caption-1" weight="medium" className="text-brand-deepNavy">
-                                ETA {nextPassenger.eta}
-                            </Typography>
-                            </View>
+                           
                         </View>
+
+                       
                         </View>
 
 
-                        <View className="flex-row items-center">
+                        <View className="flex-row items-center ">
                             <View className="bg-brand-warmYellow w-10 h-10 rounded-full items-center justify-center mr-3">
                                 {nextPassenger.profileImage ? (
                                     <View className="w-10 h-10 rounded-full overflow-hidden">
@@ -216,8 +216,15 @@ export default function NavigationScreen({
                                     {nextPassenger.location}
                                 </Typography>
                             </View>
+                            <View className="px-2 py-1 rounded-full">
+                            <Typography variant="callout" weight="medium" className="text-brand-deepNavy">
+                                Distance {nextPassenger.distance}
+                            </Typography>
+                            </View>
                         </View>
+                        
                     </View>
+                    
                 </View>
             </View>
 
