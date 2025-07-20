@@ -21,10 +21,7 @@ module.exports = {
           'lightNavy': '#2d4a8a',    // Light brand color
           'softOrange': '#fde63a',   // Soft accent
           'neutralGray': '#6b7280',  // Secondary text
-          'lightGray': '#f3f4f6', 
-          'goldenYellow':'#FFB425',
-          'birghtOrange':'#FDC334'
-            // Light backgrounds
+          'lightGray': '#f3f4f6',    // Light backgrounds
         },
         
         // Basic colors

@@ -143,23 +143,6 @@ export class ApiService {
     return response.json();
   }
 
-  static async completeDriverRegistration(token: string, registrationData: FormData) {
-    const response = await fetch(`${API_BASE_URL}/driver/register`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: registrationData,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Request failed');
-    }
-
-    return response.json();
-  }
-
   static async uploadVehicleDocuments(token: string, documents: FormData) {
     const response = await fetch(`${API_BASE_URL}/vehicle/upload-documents`, {
       method: 'POST',

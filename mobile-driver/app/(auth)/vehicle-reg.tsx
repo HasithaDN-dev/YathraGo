@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Icon } from '@/components/ui/Icon';
 import * as ImagePicker from 'expo-image-picker';
-import { useRegistration } from '@/contexts/RegistrationContext';
+import { ApiService } from '@/services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface PhotoUploadBoxProps {
   label: string;
@@ -28,55 +29,19 @@ const PhotoUploadBox: React.FC<PhotoUploadBoxProps> = ({ label, image, onUpload 
 
 export default function VehicleRegScreen() {
   const router = useRouter();
-  const { registrationData, updateVehicleInfo } = useRegistration();
+  const [vehicleType, setVehicleType] = useState('');
+  const [vehicleBrand, setVehicleBrand] = useState('');
+  const [vehicleModel, setVehicleModel] = useState('');
+  const [yearOfManufacture, setYearOfManufacture] = useState('');
+  const [vehicleColor, setVehicleColor] = useState('');
+  const [licensePlate, setLicensePlate] = useState('');
+  const [seats, setSeats] = useState(10);
+  const [femaleAssistant, setFemaleAssistant] = useState(false);
 
-  const [vehicleType, setVehicleType] = useState(registrationData.vehicleInfo.vehicleType);
-  const [vehicleBrand, setVehicleBrand] = useState(registrationData.vehicleInfo.vehicleBrand);
-  const [vehicleModel, setVehicleModel] = useState(registrationData.vehicleInfo.vehicleModel);
-  const [yearOfManufacture, setYearOfManufacture] = useState(registrationData.vehicleInfo.yearOfManufacture);
-  const [vehicleColor, setVehicleColor] = useState(registrationData.vehicleInfo.vehicleColor);
-  const [licensePlate, setLicensePlate] = useState(registrationData.vehicleInfo.licensePlate);
-  const [seats, setSeats] = useState(registrationData.vehicleInfo.seats);
-  const [femaleAssistant, setFemaleAssistant] = useState(registrationData.vehicleInfo.femaleAssistant);
-
-  const [frontView, setFrontView] = useState<ImagePicker.ImagePickerAsset | null>(registrationData.vehicleInfo.frontView);
-  const [sideView, setSideView] = useState<ImagePicker.ImagePickerAsset | null>(registrationData.vehicleInfo.sideView);
-  const [rearView, setRearView] = useState<ImagePicker.ImagePickerAsset | null>(registrationData.vehicleInfo.rearView);
-  const [interiorView, setInteriorView] = useState<ImagePicker.ImagePickerAsset | null>(registrationData.vehicleInfo.interiorView);
-
-  // Update context when form fields change
-  useEffect(() => {
-    updateVehicleInfo({
-      vehicleType,
-      vehicleBrand,
-      vehicleModel,
-      yearOfManufacture,
-      vehicleColor,
-      licensePlate,
-      seats,
-      femaleAssistant,
-      frontView,
-      sideView,
-      rearView,
-      interiorView,
-    });
-  }, [vehicleType, vehicleBrand, vehicleModel, yearOfManufacture, vehicleColor, licensePlate, seats, femaleAssistant, frontView, sideView, rearView, interiorView]);
-
-  // Sync local state with context data
-  useEffect(() => {
-    setVehicleType(registrationData.vehicleInfo.vehicleType);
-    setVehicleBrand(registrationData.vehicleInfo.vehicleBrand);
-    setVehicleModel(registrationData.vehicleInfo.vehicleModel);
-    setYearOfManufacture(registrationData.vehicleInfo.yearOfManufacture);
-    setVehicleColor(registrationData.vehicleInfo.vehicleColor);
-    setLicensePlate(registrationData.vehicleInfo.licensePlate);
-    setSeats(registrationData.vehicleInfo.seats);
-    setFemaleAssistant(registrationData.vehicleInfo.femaleAssistant);
-    setFrontView(registrationData.vehicleInfo.frontView);
-    setSideView(registrationData.vehicleInfo.sideView);
-    setRearView(registrationData.vehicleInfo.rearView);
-    setInteriorView(registrationData.vehicleInfo.interiorView);
-  }, [registrationData.vehicleInfo]);
+  const [frontView, setFrontView] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [sideView, setSideView] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [rearView, setRearView] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [interiorView, setInteriorView] = useState<ImagePicker.ImagePickerAsset | null>(null);
 
   const handleImageUpload = async (setImage: React.Dispatch<React.SetStateAction<ImagePicker.ImagePickerAsset | null>>) => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -86,20 +51,40 @@ export default function VehicleRegScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
 
     if (!result.canceled) {
       setImage(result.assets[0]);
     }
   };
 
-  const handleNext = () => {
-    // Data is already saved in context, just navigate to next screen
-    router.push('/(auth)/vehicle-doc');
+  const handleNext = async () => {
+    const formData = new FormData();
+    formData.append('vehicleType', vehicleType);
+    formData.append('vehicleBrand', vehicleBrand);
+    formData.append('vehicleModel', vehicleModel);
+    formData.append('yearOfManufacture', yearOfManufacture);
+    formData.append('vehicleColor', vehicleColor);
+    formData.append('licensePlate', licensePlate);
+    formData.append('seats', seats.toString());
+    formData.append('femaleAssistant', String(femaleAssistant));
+
+    if (frontView) formData.append('frontView', { uri: frontView.uri, name: 'front.jpg', type: 'image/jpeg' } as any);
+    if (sideView) formData.append('sideView', { uri: sideView.uri, name: 'side.jpg', type: 'image/jpeg' } as any);
+    if (rearView) formData.append('rearView', { uri: rearView.uri, name: 'rear.jpg', type: 'image/jpeg' } as any);
+    if (interiorView) formData.append('interiorView', { uri: interiorView.uri, name: 'interior.jpg', type: 'image/jpeg' } as any);
+
+    const token = await AsyncStorage.getItem('authToken');
+    if (token) {
+      await ApiService.registerVehicle(token, formData);
+      router.push('/(auth)/vehicle-doc');
+    } else {
+      alert('Authentication error');
+    }
   };
 
   return (
@@ -117,45 +102,45 @@ export default function VehicleRegScreen() {
         <View className="space-y-4">
           <View>
             <Text className="text-sm font-medium text-black mb-2">Vehicle Type *</Text>
-            <TextInput className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              placeholder="Select your vehicle type"
-              placeholderTextColor="#A0A0A0"
-              value={vehicleType} onChangeText={setVehicleType} />
+            <TextInput className="w-full px-4 py-3 border border-gray-300 rounded-lg" 
+            placeholder="Select your vehicle type"
+            placeholderTextColor="#A0A0A0"
+            value={vehicleType} onChangeText={setVehicleType} />
           </View>
           <View>
             <Text className="text-sm font-medium text-black mb-2">Vehicle Brand *</Text>
             <TextInput className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              placeholder="e.g. Toyota, Honda"
-              placeholderTextColor="#A0A0A0"
-              value={vehicleBrand} onChangeText={setVehicleBrand} />
+             placeholder="e.g. Toyota, Honda" 
+             placeholderTextColor="#A0A0A0"
+             value={vehicleBrand} onChangeText={setVehicleBrand} />
           </View>
           <View>
             <Text className="text-sm font-medium text-black mb-2">Vehicle Model *</Text>
-            <TextInput className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              placeholder="e.g. TownAce, Hiace"
-              placeholderTextColor="#A0A0A0"
-              value={vehicleModel} onChangeText={setVehicleModel} />
+            <TextInput className="w-full px-4 py-3 border border-gray-300 rounded-lg" 
+            placeholder="e.g. TownAce, Hiace" 
+            placeholderTextColor="#A0A0A0" 
+            value={vehicleModel} onChangeText={setVehicleModel} />
           </View>
           <View>
             <Text className="text-sm font-medium text-black mb-2">Year of Manufacture *</Text>
-            <TextInput className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              placeholder="Select Year"
-              placeholderTextColor="#A0A0A0"
-              value={yearOfManufacture} onChangeText={setYearOfManufacture} />
+            <TextInput className="w-full px-4 py-3 border border-gray-300 rounded-lg" 
+            placeholder="Select Year" 
+            placeholderTextColor="#A0A0A0"
+            value={yearOfManufacture} onChangeText={setYearOfManufacture} />
           </View>
           <View>
             <Text className="text-sm font-medium text-black mb-2">Vehicle Color *</Text>
-            <TextInput className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              placeholder="Type vehicle color"
-              placeholderTextColor="#A0A0A0"
-              value={vehicleColor} onChangeText={setVehicleColor} />
+            <TextInput className="w-full px-4 py-3 border border-gray-300 rounded-lg" 
+            placeholder="Type vehicle color" 
+            placeholderTextColor="#A0A0A0"
+            value={vehicleColor} onChangeText={setVehicleColor} />
           </View>
           <View>
             <Text className="text-sm font-medium text-black mb-2">Vehicle Number (License Plate) *</Text>
-            <TextInput className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              placeholder="e.g. WP KJP - 2356"
-              placeholderTextColor="#A0A0A0"
-              value={licensePlate} onChangeText={setLicensePlate} />
+            <TextInput className="w-full px-4 py-3 border border-gray-300 rounded-lg" 
+            placeholder="e.g. WP KJP - 2356" 
+            placeholderTextColor="#A0A0A0" 
+            value={licensePlate} onChangeText={setLicensePlate} />
           </View>
 
           <View>
