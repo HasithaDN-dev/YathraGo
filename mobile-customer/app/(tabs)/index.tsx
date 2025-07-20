@@ -149,7 +149,7 @@ export default function HomeScreen() {
         {/* Actions */}
         <View className="space-y-4 mb-6">
           <TouchableOpacity 
-            onPress={() => router.push('/(tabs)/add-profile')}
+            onPress={() => router.push('/(main)/add-profile')}
             className="bg-brand-warmYellow py-4 px-6 rounded-xl flex-row items-center justify-center"
           >
             <Ionicons name="add-circle-outline" size={20} color="white" />

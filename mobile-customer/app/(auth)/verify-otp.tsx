@@ -60,10 +60,14 @@ export default function VerifyOTPScreen() {
       return;
     }
 
+    console.log('Starting OTP verification for:', phone);
     setIsLoading(true);
-    setLoading(true); // Set global loading state
     try {
       const { accessToken, user } = await verifyOtpApi(phone!, otpCode);
+      
+      // Only set global loading after successful OTP verification
+      setLoading(true);
+      
       await login(accessToken, user);
       
       // Check if user has already completed customer registration
@@ -88,6 +92,9 @@ export default function VerifyOTPScreen() {
       } catch (profileError) {
         console.log('Error checking user profiles:', profileError);
         // If we can't check profiles, assume user needs to complete registration
+        // Don't fail the login process - user can still proceed to registration
+      } finally {
+        setLoading(false); // Clear global loading state only after profile check
       }
       
       // Navigation is handled by root layout on login state change
@@ -95,11 +102,15 @@ export default function VerifyOTPScreen() {
       const message = error instanceof Error ? error.message : 'Invalid OTP.';
       Alert.alert('Verification Failed', message);
       console.log('OTP verification error:', error);
+      // Clear OTP inputs
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
+      
+      // Ensure auth state remains consistent on error
+      console.log('OTP verification failed - staying on OTP screen');
     } finally {
       setIsLoading(false);
-      setLoading(false); // Clear global loading state
+      // Don't clear global loading here - it was never set for failed OTP
     }
   };
 
