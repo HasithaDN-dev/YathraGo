@@ -1,75 +1,61 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { View, ScrollView } from 'react-native';
+import { Typography } from '@/components/Typography';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <ScrollView className="flex-1 bg-white">
+      {/* Header */}
+      <View className="bg-success p-6 pt-12">
+        <Typography variant="display-large" className="text-white text-center font-bold">🚗 YathraGo Driver</Typography>
+        <Typography variant="body-medium" className="text-green-100 text-center mt-2">Professional Ride Service Platform</Typography>
+      </View>
+      
+      {/* YathraGo Driver Welcome Section */}
+      <View className="flex-1 items-center justify-center bg-white p-6 mb-4 rounded-lg shadow-sm">
+        <Typography variant="display-large" className="text-green-600 font-bold mb-4">🚗 YathraGo Driver</Typography>
+        <View className="bg-brand-successGreen p-6 rounded-lg shadow-lg w-full">
+          <Typography variant="title-large" className="text-white text-center font-semibold">Professional Ride Service Platform</Typography>
+        </View>
+        <Typography variant="body-medium" className="text-gray-600 text-center mt-4">Start earning with Sri Lanka&apos;s trusted ride-sharing platform</Typography>
+      </View>
+      
+      {/* Driver Action Cards */}
+      <View className="space-y-4 mb-6">
+        <View className="bg-brand-successGreen p-6 rounded-lg shadow-sm">
+          <Typography variant="title-large" className="text-white font-bold mb-2">� Go Online</Typography>
+          <Typography variant="body-small" className="text-green-100">Start receiving ride requests</Typography>
+        </View>
+        
+        <View className="bg-brand-deepNavy p-6 rounded-lg shadow-sm">
+          <Typography variant="title-large" className="text-white font-bold mb-2">📊 View Earnings</Typography>
+          <Typography variant="body-small" className="text-brand-lightNavy">Track your daily and weekly income</Typography>
+        </View>
+        
+        <View className="bg-brand-brightOrange p-6 rounded-lg shadow-sm">
+          <Typography variant="title-large" className="text-white font-bold mb-2">🗺️ Navigation</Typography>
+          <Typography variant="body-small" className="text-orange-100">GPS guidance to passenger locations</Typography>
+        </View>
+      </View>
+
+      <View className="flex-row items-center gap-2">
+        <Typography variant="headline-large" className="font-bold">Driver Hub</Typography>
+      </View>
+      
+      <View className="gap-2 mb-2">
+        <Typography variant="title-medium" className="font-semibold">Step 1: Go Online</Typography>
+        <Typography variant="body-medium">Toggle your availability to start receiving ride requests from passengers in your area.</Typography>
+      </View>
+      
+      <View className="gap-2 mb-2">
+        <Typography variant="title-medium" className="font-semibold">Step 2: Accept Rides</Typography>
+        <Typography variant="body-medium">Review ride details and accept requests that match your preferences and location.</Typography>
+      </View>
+      
+      <View className="gap-2 mb-2">
+        <Typography variant="title-medium" className="font-semibold">Step 3: Navigate & Complete</Typography>
+        <Typography variant="body-medium">Use built-in navigation to reach passengers and complete rides safely and efficiently.</Typography>
+      </View>
+    </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});

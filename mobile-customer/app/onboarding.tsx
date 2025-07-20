@@ -1,0 +1,144 @@
+import React, { useState } from 'react';
+import { View, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { Typography } from '@/components/Typography';
+import CustomButton from '@/components/ui/CustomButton';
+
+const onboardingData = [
+  {
+    id: 1,
+    title: "What is YathraGo?",
+    description: "Your trusted partner for secure and convenient school and staff transportation. Make every journey safe, timely, and reliable for your loved ones and colleagues.",
+    image: require('../assets/images/preview1.png'),
+  },
+  {
+    id: 2,
+    title: "Child's Safe Journey",
+    description: "Effortlessly book school transport, track your child's journey in real-time, and receive instant alerts for boarding and arrival. Your child's safety is our priority.",
+    image: require('../assets/images/preview2.png'),
+  },
+  {
+    id: 3,
+    title: "Seamless Commutes",
+    description: "Book convenient office transport, track your ride's ETA, and get location alarms. Enjoy a stress-free journey to and from work every day.",
+    image: require('../assets/images/preview3.png'),
+  },
+  {
+    id: 4,
+    title: "Real-time Tracking Safety Features",
+    description: "Live tracking of your vehicle, instant notifications for arrivals and departures, direct access to emergency contacts, and the assurance of backup vehicles and drivers for peace of mind on every trip.",
+    image: require('../assets/images/preview4.png'),
+  },
+  {
+    id: 5,
+    title: "Easy Payments & Support",
+    description: "Securely manage payments, view your trip history, provide feedback, and easily communicate with drivers or support staff, all within the app.",
+    image: require('../assets/images/preview5.png'),
+  },
+  {
+    id: 6,
+    title: "Ready to Simplify Your Commute?",
+    description: "Whether it's a safe journey for your child to school or a convenient ride for you to work, YathraGo is here to make transportation easy and reliable.",
+    image: require('../assets/images/preview6.png'),
+  },
+];
+
+export default function OnboardingScreen() {
+  const router = useRouter();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const currentItem = onboardingData[currentIndex];
+
+  const handleNext = () => {
+    if (currentIndex < onboardingData.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      // Navigate to phone auth after completing onboarding
+      router.replace('/(auth)/phone-auth');
+    }
+  };
+
+  const handleBack = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const handleSkip = () => {
+    router.replace('/(auth)/phone-auth');
+  };
+
+  const handleGetStarted = () => {
+    router.replace('/(auth)/phone-auth');
+  };
+
+  const isLastScreen = currentIndex === onboardingData.length - 1;
+
+  return (
+    <View className="flex-1 flex-col justify-between bg-white px-8 py-16">
+      <StatusBar style="dark" />
+
+      {/* Skip Button */}
+      <View className="flex-row justify-end mb-4 mt-6">
+        <TouchableOpacity onPress={handleSkip}>
+          <Typography variant="tappable" className="text-brand-warmYellow">Skip</Typography>
+        </TouchableOpacity>
+      </View>
+
+      {/* Main Content */}
+      <View className="flex-1 items-center justify-center py-6">
+
+        {/* Image */}
+        <View className="mb-8 w-[288px] h-[288px] items-center justify-center overflow-hidden self-center" >
+          <Image
+            source={currentItem.image}
+            style={{ width: 288, height: 288, borderRadius: 24 }}
+            contentFit='contain'
+          />
+        </View>
+
+        {/* Title */}
+        <Typography variant="title-1" className="text-center mb-4">
+          {currentItem.title}
+        </Typography>
+
+        {/* Description */}
+        <Typography variant="body" className="text-center mb-8 px-4 text-brand-neutralGray">
+          {currentItem.description}
+        </Typography>
+
+        {/* Progress Dots */}
+        <View className="flex-row justify-center mb-16">
+          {onboardingData.map((_, index) => (
+            <View
+              key={index}
+              className={`w-2 h-2 rounded-full mx-1 ${index === currentIndex ? 'bg-brand-brightOrange' : 'bg-brand-lightGray'
+                }`}
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Bottom Navigation - Moved up */}
+      <View className="flex-row justify-between items-center w-full px-0">
+        {/* Back Button */}
+        <TouchableOpacity
+          onPress={handleBack}
+          className={`py-3 px-6 ${currentIndex === 0 ? 'opacity-0' : 'opacity-100'}`}
+          disabled={currentIndex === 0}
+        >
+          <Typography variant="tappable" className="text-brand-navyBlue">Back</Typography>
+        </TouchableOpacity>
+
+        {/* Next/Get Started Button */}
+        <CustomButton
+          title={isLastScreen ? 'Get Started' : 'Next'}
+          onPress={isLastScreen ? handleGetStarted : handleNext}
+          size="large"
+          fullWidth={false}
+        />
+      </View>
+    </View>
+  );
+}

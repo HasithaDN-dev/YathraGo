@@ -1,4 +1,9 @@
-import { Injectable, Logger, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { OtpService } from '../common/services/otp.service';
@@ -20,7 +25,14 @@ export interface AuthResponse {
     userType: UserType;
     isVerified: boolean;
     isNewUser: boolean;
+    registrationStatus?: string;
   };
+}
+
+interface UserEntity {
+  customer_id?: number;
+  driver_id?: number;
+  phone: string;
 }
 
 @Injectable()
@@ -33,7 +45,9 @@ export class AuthService {
     private otpService: OtpService,
   ) {}
 
-  async sendGetStartedOtp(sendOtpDto: SendOtpDto): Promise<{ message: string; isNewUser: boolean }> {
+  async sendGetStartedOtp(
+    sendOtpDto: SendOtpDto,
+  ): Promise<{ message: string; isNewUser: boolean }> {
     const { phone, userType } = sendOtpDto;
 
     // Check if user already exists
@@ -41,9 +55,9 @@ export class AuthService {
     const isNewUser = !existingUser;
 
     const result = await this.otpService.generateAndSendOtp(
-      phone, 
-      userType, 
-      isNewUser ? OtpPurpose.PHONE_VERIFICATION : OtpPurpose.LOGIN
+      phone,
+      userType,
+      isNewUser ? OtpPurpose.PHONE_VERIFICATION : OtpPurpose.LOGIN,
     );
 
     if (!result.success) {
@@ -64,8 +78,15 @@ export class AuthService {
     const isNewUser = !existingUser;
 
     // Verify OTP with appropriate purpose
-    const otpPurpose = isNewUser ? OtpPurpose.PHONE_VERIFICATION : OtpPurpose.LOGIN;
-    const otpResult = await this.otpService.verifyOtp(phone, otp, userType, otpPurpose);
+    const otpPurpose = isNewUser
+      ? OtpPurpose.PHONE_VERIFICATION
+      : OtpPurpose.LOGIN;
+    const otpResult = await this.otpService.verifyOtp(
+      phone,
+      otp,
+      userType,
+      otpPurpose,
+    );
 
     if (!otpResult.success) {
       throw new UnauthorizedException(otpResult.error);
@@ -80,15 +101,16 @@ export class AuthService {
       } else if (userType === UserType.DRIVER) {
         user = await this.createDriverUser(phone);
       }
-    } else {
-      // Update existing user as verified if needed
-      user = await this.markUserAsVerified(user.id || user.user_id, userType);
+    }
+
+    if (!user) {
+      throw new UnauthorizedException('User creation failed');
     }
 
     // Generate JWT token
     const payload: JwtPayload = {
-      sub: user.id?.toString() || user.user_id?.toString(),
-      phone: user.phone || user.contact,
+      sub: (user.customer_id || user.driver_id)?.toString() || '',
+      phone: user.phone,
       userType,
       isVerified: true,
     };
@@ -98,8 +120,8 @@ export class AuthService {
     return {
       accessToken,
       user: {
-        id: user.id || user.user_id,
-        phone: user.phone || user.contact,
+        id: user.customer_id || user.driver_id,
+        phone: user.phone,
         userType,
         isVerified: true,
         isNewUser,
@@ -107,68 +129,77 @@ export class AuthService {
     };
   }
 
-  private async findUserByPhone(phone: string, userType: UserType): Promise<any> {
+  private async findUserByPhone(
+    phone: string,
+    userType: UserType,
+  ): Promise<UserEntity | null> {
     if (userType === UserType.CUSTOMER) {
-      return await this.prisma.customer.findFirst({
-        where: { contact: phone },
-      });
-    } else if (userType === UserType.DRIVER) {
-      return await this.prisma.driver.findFirst({
+      return (await this.prisma.customer.findFirst({
         where: { phone: phone },
-      });
+      })) as UserEntity | null;
+    } else if (userType === UserType.DRIVER) {
+      return (await this.prisma.driver.findFirst({
+        where: { phone: phone },
+      })) as UserEntity | null;
     }
     return null;
   }
 
-  private async createCustomerUser(phone: string): Promise<any> {
-    return await this.prisma.customer.create({
+  private async createCustomerUser(phone: string): Promise<UserEntity> {
+    return (await this.prisma.customer.create({
       data: {
         name: '', // Will be updated later
-        email: '',
-        contact: phone,
-        otp: '',
-        address: '',
-        profileImageUrl: '',
-        emergencyContact: '',
+        phone: phone,
         status: 'ACTIVE',
-        createdAt: new Date(),
+        registrationStatus: 'OTP_VERIFIED',
       },
-    });
+    })) as UserEntity;
   }
 
-  private async createDriverUser(phone: string): Promise<any> {
-    return await this.prisma.driver.create({
+  private async createDriverUser(phone: string): Promise<UserEntity> {
+    return (await this.prisma.driver.create({
       data: {
+        name: '',
+        phone: phone,
+        status: 'ACTIVE',
+        registrationStatus: 'OTP_VERIFIED',
         NIC: '',
         address: '',
         date_of_birth: new Date(),
+        date_of_joining: new Date(),
         driver_license_back_url: '',
         driver_license_front_url: '',
-        first_name: '',
         gender: '',
-        last_name: '',
         nic_front_pic_url: '',
         nice_back_pic_url: '',
-        phone: phone,
         profile_picture_url: '',
         second_phone: '',
         vehicle_Reg_No: '',
       },
-    });
+    })) as UserEntity;
   }
 
-  private async markUserAsVerified(userId: number, userType: UserType): Promise<any> {
-    if (userType === UserType.CUSTOMER) {
-      return await this.prisma.customer.update({
-        where: { user_id: userId },
-        data: { status: 'VERIFIED' },
-      });
-    } else if (userType === UserType.DRIVER) {
-      // Driver model doesn't have isVerified field, so we'll return as is
-      return await this.prisma.driver.findUnique({
-        where: { id: userId },
-      });
-    }
-    return null;
+  // Simple JWT utility methods (NestJS best practice)
+  refreshToken(user: JwtPayload): { accessToken: string } {
+    const payload: JwtPayload = {
+      sub: user.sub,
+      phone: user.phone,
+      userType: user.userType,
+      isVerified: user.isVerified,
+    };
+
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: '7d', // Extended expiry for refresh
+    });
+
+    return { accessToken };
+  }
+
+  logout(user: JwtPayload): { message: string } {
+    // Here you could implement token blacklisting if needed
+    // For now, just return success since JWT tokens are stateless
+    this.logger.log(`User ${user.phone} logged out`);
+
+    return { message: 'Logged out successfully' };
   }
 }

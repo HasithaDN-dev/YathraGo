@@ -10,8 +10,7 @@ import { VehicleModule } from './vehicle/vehicle.module';
 import { AuthWebModule } from './auth-web/auth-web.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CustomerModule } from './customer/customer.module';
-import { StaffPassengerModule } from './staff-passenger/staff-passenger.module';
-import { ChildModule } from './child/child.module';
+import { OwnerModule } from './owner/owner.module';
 
 @Module({
   imports: [
@@ -26,8 +25,7 @@ import { ChildModule } from './child/child.module';
     VehicleModule,
     AuthWebModule,
     CustomerModule,
-    StaffPassengerModule,
-    ChildModule,
+    OwnerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

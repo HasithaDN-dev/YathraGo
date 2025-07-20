@@ -1,6 +1,14 @@
-# Welcome to your Expo app 👋
+# YathraGo Mobile Customer App �
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This is the YathraGo customer mobile app built with [Expo](https://expo.dev) and React Native.
+
+## Features ✨
+
+- **Beautiful Splash Screen** with YathraGo logo animation
+- **Modern UI** with NativeWind (Tailwind CSS for React Native)
+- **File-based Routing** with Expo Router
+- **Cross-platform** support (iOS, Android, Web)
+- **TypeScript** for type safety
 
 ## Get started
 
@@ -13,8 +21,53 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 2. Start the app
 
    ```bash
-   npx expo start
+   npx expo start --clear
    ```
+
+3. **Development with Auto-Reload** (Recommended)
+
+   ```bash
+   npm run dev
+   ```
+   
+   This command enables:
+   - 🔄 Automatic hot reload
+   - 🧹 Auto cache clearing
+   - ⚡ Fast refresh
+   - 📱 Live updates on save
+
+## Available Scripts 📋
+
+```bash
+# Development with auto-reload (Best for development)
+npm run dev
+
+# Start with clear cache
+npm run start:clear
+
+# Platform-specific with auto-reload
+npm run android:dev
+npm run ios:dev
+
+# Regular start commands
+npm start
+npm run android
+npm run ios
+npm run web
+```
+
+## Project Structure 📁
+
+```
+mobile-customer/
+├── app/                    # File-based routing
+│   ├── welcome.tsx         # Splash screen with logo animation
+│   ├── index.tsx          # App entry point
+│   └── (tabs)/            # Tab navigation
+├── assets/                # Images and fonts
+├── components/            # Reusable UI components
+└── constants/             # App constants and colors
+```
 
 In the output, you'll find options to open the app in a
 
@@ -23,17 +76,29 @@ In the output, you'll find options to open the app in a
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
 - [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Development Tips 💡
 
-## Get a fresh project
+- **Hot Reload**: Changes to your code will automatically appear in the app
+- **Clear Cache**: Use `--clear` flag if you encounter caching issues
+- **Fast Refresh**: React components update instantly while preserving state
+- **File-based Routing**: Add new screens by creating files in the `app/` directory
 
-When you're ready, run:
+## Current Implementation 🎯
 
-```bash
-npm run reset-project
-```
+✅ **Welcome Screen** - Animated splash screen with YathraGo logo  
+✅ **Navigation Setup** - Tab-based navigation structure  
+✅ **Styling System** - NativeWind (Tailwind CSS) integration  
+✅ **TypeScript** - Full type safety and IntelliSense  
+✅ **Cross-platform** - Works on iOS, Android, and Web  
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Next Development Steps 🚀
+
+- [ ] User Authentication
+- [ ] Map Integration for Ride Booking
+- [ ] Real-time Driver Tracking
+- [ ] Payment Integration
+- [ ] Ride History
+- [ ] Push Notifications
 
 ## Learn more
 
@@ -48,3 +113,7 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+# for the css used
+Tailwind: All layout, colors, typography, spacing
+StyleSheet: Animations, complex transforms, dynamic styles

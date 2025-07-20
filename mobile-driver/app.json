@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mobile-driver",
+    "name": "YathraGo Driver",
     "slug": "mobile-driver",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,6 +8,9 @@
     "scheme": "mobiledriver",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
       "supportsTablet": true
     },
@@ -25,15 +28,7 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ]
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

@@ -15,7 +15,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET', 'your-default-secret-key'),
+      secretOrKey: configService.get<string>(
+        'JWT_SECRET',
+        'your-default-secret-key',
+      ),
     });
   }
 
@@ -25,7 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // Find user based on userType
     if (payload.userType === UserType.CUSTOMER) {
       user = await this.prisma.customer.findFirst({
-        where: { contact: payload.phone },
+        where: { phone: payload.phone },
       });
     } else if (payload.userType === UserType.DRIVER) {
       user = await this.prisma.driver.findFirst({
@@ -38,7 +41,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     return {
-      userId: user.user_id || user.id,
+      sub: payload.sub, // Use the original sub from JWT payload
       phone: payload.phone,
       userType: payload.userType,
       isVerified: payload.isVerified,

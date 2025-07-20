@@ -9,45 +9,40 @@ datasource db {
 }
 
 model User {
-  id                 Int                @id @default(autoincrement())
-  email              String?            @unique
-  firstName          String?
-  lastName           String?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  accountType        AccountType?
-  phone              String             @unique
-  registrationStatus RegistrationStatus @default(OTP_PENDING)
-  isVerified         Boolean            @default(false)
-  Child              Child[]
-  Staff_Passenger    Staff_Passenger?
+  id        Int      @id @default(autoincrement())
+  email     String?  @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  phone     String   @unique
+  // Removed relation to Customer
 }
 
 model OtpCode {
-  id        Int      @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   phone     String
-  code      String   // Stored as Argon2 hash for security
+  code      String
   userType  UserType
   purpose   OtpPurpose @default(PHONE_VERIFICATION)
   expiresAt DateTime
-  isUsed    Boolean  @default(false)
-  attempts  Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isUsed    Boolean    @default(false)
+  attempts  Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
-  @@index([phone])
   @@index([phone, userType, purpose])
 }
 
-model Webuser{
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  password    String
+model Webuser {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
   username  String
-  role        String   @default("USER")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  role      String   @default("USER")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
+
 model Admin {
   id          Int      @id @default(autoincrement())
   email       String   @unique
@@ -74,7 +69,7 @@ model Manager {
 }
 
 model Vehicle {
-  id                  Int      @id @default(autoincrement())
+  id                  Int       @id @default(autoincrement())
   type                String
   brand               String
   model               String
@@ -83,16 +78,21 @@ model Vehicle {
   color               String
   route               String[]
   no_of_seats         Int
-  air_conditioned     Boolean  @default(false)
-  assistant           Boolean  @default(false)
+  air_conditioned     Boolean   @default(false)
+  assistant           Boolean   @default(false)
   rear_picture_url    String
   front_picture_url   String
   side_picture_url    String
   inside_picture_url  String
-  revenue_license_url String
-  insurance_front_url String
-  insurance_back_url  String
-  vehicle_reg_url     String
+  revenue_license_url String?
+  insurance_front_url String?
+  insurance_back_url  String?
+  vehicle_reg_url     String?
+  owner   VehicleOwner? @relation(fields: [ownerId], references: [id])
+  ownerId Int?
+
+  driver   Driver? @relation(fields: [driverId], references: [driver_id])
+  driverId Int?
 }
 
 model Chat {
@@ -157,22 +157,27 @@ model ChildEmergency {
 }
 
 model Driver {
-  id                       Int      @id @default(autoincrement())
+  driver_id                Int                @id @default(autoincrement())
   NIC                      String
   address                  String
   date_of_birth            DateTime
-  date_of_joining          DateTime @default(now())
+  date_of_joining          DateTime           @default(now())
   driver_license_back_url  String
   driver_license_front_url String
-  first_name               String
+  name                     String
   gender                   String
-  last_name                String
   nic_front_pic_url        String
   nice_back_pic_url        String
-  phone                    String
+  phone                    String // Standardized phone field name
   profile_picture_url      String
   second_phone             String
   vehicle_Reg_No           String
+  email                    String? // Added email field for consistency
+  status                   String             @default("ACTIVE")
+  registrationStatus       RegistrationStatus @default(OTP_PENDING)
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  vehicles Vehicle[] 
 }
 
 model FoundedBackupDrivers {
@@ -180,24 +185,30 @@ model FoundedBackupDrivers {
 }
 
 model VehicleOwner {
-  id         Int    @id @default(autoincrement())
+  id         Int     @id @default(autoincrement())
   first_name String
   last_name  String
   phone      String
   email      String
+  company    String?
+  Address    String
+  vehicles    Vehicle[]
 }
 
 model Customer {
-  user_id          Int      @id @default(autoincrement())
-  name             String
-  email            String
-  contact          String
-  otp              String
-  address          String
-  profileImageUrl  String
-  emergencyContact String
-  status           String
-  createdAt        DateTime
+  customer_id        Int                @id @default(autoincrement())
+  name               String
+  phone              String             @unique
+  email              String?
+  address            String?
+  profileImageUrl    String?
+  emergencyContact   String?
+  status             String             @default("ACTIVE")
+  registrationStatus RegistrationStatus @default(OTP_PENDING)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  children           Child[]
+  staffPassenger     Staff_Passenger?
 }
 
 model Complaints {
@@ -227,18 +238,16 @@ model Ratings_and_Reviews {
 }
 
 model Child {
-  child_id        Int    @id @default(autoincrement())
-  userId          Int?   // FK to User
-  staffPassengerId Int?  // Nullable FK to Staff_Passenger
-  relationship    String
-  NearbyCity      String
-  schoolLocation  String
-  school          String
-  childName       String
-  childImageUrl   String?
-  pickUpAddress   String
-  user            User? @relation(fields: [userId], references: [id])
-  staffPassenger  Staff_Passenger? @relation(fields: [staffPassengerId], references: [staff_id])
+  child_id       Int       @id @default(autoincrement())
+  relationship   String
+  nearbyCity     String
+  schoolLocation String
+  school         String
+  childName      String
+  childImageUrl  String?
+  pickUpAddress  String
+  Customer       Customer? @relation(fields: [customerId], references: [customer_id])
+  customerId     Int?
 }
 
 model Child_Trip {
@@ -251,15 +260,14 @@ model Child_Trip {
 }
 
 model Staff_Passenger {
-  staff_id       Int     @id @default(autoincrement())
-  userId         Int     @unique
+  id             Int      @id @default(autoincrement())
+  customerId     Int      @unique
   nearbyCity     String
   workLocation   String
   workAddress    String
   pickUpLocation String
   pickupAddress  String
-  children       Child[]
-  User           User    @relation(fields: [userId], references: [id])
+  Customer       Customer @relation(fields: [customerId], references: [customer_id])
 }
 
 model Staff_Trip {
@@ -276,26 +284,22 @@ model Child_Assign_To {
   createdAt DateTime @default(now())
 }
 
-enum AccountType {
-  CHILD
-  STAFF
-}
-
 enum RegistrationStatus {
   OTP_PENDING
   OTP_VERIFIED
-  TYPE_SELECTED
+  CUSTOMER_REGISTERED
   CHILD_REGISTERED
   STAFF_REGISTERED
+  FULLY_REGISTERED
+}
+
+enum OtpPurpose {
+  PHONE_VERIFICATION
+  PASSWORD_RESET
+  LOGIN
 }
 
 enum UserType {
   CUSTOMER
   DRIVER
-}
-
-enum OtpPurpose {
-  PHONE_VERIFICATION
-  LOGIN
-  PASSWORD_RESET
 }
