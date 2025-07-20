@@ -6,6 +6,7 @@ import { Typography } from '@/components/Typography';
 import CustomButton from '../../components/ui/CustomButton';
 import { PasswordIcon } from 'phosphor-react-native';
 import { verifyOtpApi, sendOtpApi } from '../../lib/api/auth.api';
+import { getProfilesApi } from '../../lib/api/profile.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
 
 export default function VerifyOTPScreen() {
@@ -18,7 +19,7 @@ export default function VerifyOTPScreen() {
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
   //Get the login action from our Zustand store.
-  const { login } = useAuthStore();
+  const { login, setProfileComplete } = useAuthStore();
 
   useEffect(() => {
     const timerInterval = setInterval(() => {
@@ -61,6 +62,24 @@ export default function VerifyOTPScreen() {
     try {
       const { accessToken, user } = await verifyOtpApi(phone!, otpCode);
       await login(accessToken, user);
+      
+      // Check if user has already completed customer registration
+      try {
+        const profiles = await getProfilesApi(accessToken);
+        console.log('User profiles after login:', profiles);
+        
+        // If user has any profiles (children or staff), they've completed registration
+        if (profiles.length > 0) {
+          console.log('User has existing profiles, marking profile as complete');
+          setProfileComplete(true);
+        } else {
+          console.log('User has no profiles, needs to complete registration');
+        }
+      } catch (profileError) {
+        console.log('Error checking user profiles:', profileError);
+        // If we can't check profiles, assume user needs to complete registration
+      }
+      
       // Navigation is handled by root layout on login state change
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Invalid OTP.';

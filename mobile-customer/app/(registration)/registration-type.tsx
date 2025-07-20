@@ -9,7 +9,7 @@ import { Colors } from '../../constants/Colors';
 export default function RegistrationTypeScreen() {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState<'staff' | 'child' | null>(null);
-  
+
   console.log('RegistrationTypeScreen: Component rendered');
 
   const handleContinue = () => {

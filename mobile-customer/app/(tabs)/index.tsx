@@ -25,11 +25,11 @@ export default function HomeScreen() {
         <View className="mb-6">
           <Typography variant="large-title" weight="bold" className="text-brand-deepNavy mb-2">
             Welcome Back!
-          </Typography>
-          <Typography variant="body" className="text-brand-neutralGray">
+            </Typography>
+            <Typography variant="body" className="text-brand-neutralGray">
             You're logged in as {user?.phone}
-          </Typography>
-        </View>
+            </Typography>
+          </View>
 
         {/* Current Profile Card */}
         {activeProfile && (
@@ -48,10 +48,10 @@ export default function HomeScreen() {
                 </Typography>
                 <Typography variant="caption-1" className="text-brand-neutralGray capitalize">
                   {activeProfile.type} Profile
-                </Typography>
+            </Typography>
               </View>
             </View>
-
+            
             {/* Profile Details */}
             <View className="space-y-3">
               {activeProfile.email && (
@@ -130,19 +130,19 @@ export default function HomeScreen() {
                   <View className="flex-1">
                     <Typography variant="body" weight="medium" className="text-brand-deepNavy">
                       {profile.name}
-                    </Typography>
+              </Typography>
                     <Typography variant="caption-1" className="text-brand-neutralGray capitalize">
                       {profile.type}
-                    </Typography>
-                  </View>
+              </Typography>
+            </View>
                   {activeProfile?.id === profile.id && (
                     <Ionicons name="checkmark-circle" size={20} color="#143373" />
                   )}
                 </View>
               ))}
             </View>
-          </View>
-        )}
+            </View>
+          )}
 
         {/* Actions */}
         <View className="space-y-4 mb-6">

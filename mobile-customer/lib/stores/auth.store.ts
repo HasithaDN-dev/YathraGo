@@ -53,7 +53,7 @@ export const useAuthStore = create<AuthState>()(
           accessToken: String(accessToken), 
           user, 
           isLoggedIn: true,
-          isProfileComplete: user.isProfileComplete || false
+          isProfileComplete: false // Will be set to true if profiles are found
         });
       },
       
