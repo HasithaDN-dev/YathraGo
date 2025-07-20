@@ -142,7 +142,7 @@ export default function NotificationsScreen() {
     <SafeAreaView className="flex-1 bg-gray-100">
       <ScrollView className="flex-1 px-4 space-y-6">
         {/* Search/Filter Section */}
-        <Card className="p-1 mb-2">
+        <Card className="p-0 mb-2">
           <View className="bg-white rounded-xl p-3">
             <View className="flex-row items-center">
               <MagnifyingGlass size={20} color="#000000" weight="regular" />
