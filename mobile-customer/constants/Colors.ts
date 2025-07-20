@@ -8,6 +8,10 @@ const deepNavyBlue = '#143373';      // Primary brand color
 const neutralGray = '#6b7280';       // Secondary text/icons
 const white = '#ffffff';             // Background
 const black = '#000000';             // Primary text
+const errorRed = '#EF4444';
+const softOrange = '#FDE63A';
+const lightGray = '#F3F4F6';
+
 
 export const Colors = {
   // For tab navigation (React Navigation requirement)

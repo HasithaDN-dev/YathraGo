@@ -1,239 +1,173 @@
-import React from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { 
+  ArrowLeft,
+  CreditCard,
+  Phone,
+  MapPin,
+  Headset,
+  Info,
+  SignOut
+} from 'phosphor-react-native';
 import { Typography } from '@/components/Typography';
-import { ProfileSwitcher } from '@/components/ProfileSwitcher';
-import { useProfile } from '@/contexts/ProfileContext';
-import { resetAppState, getAppState } from '../../utils/resetAppState';
+import { Header } from '@/components/ui/Header';
+import { Card } from '@/components/ui/Card';
+
+// Profile data
+const profiles = [
+  {
+    id: '1',
+    name: 'My Elder Son',
+    fullName: 'Supun Thilina',
+    type: 'child' as const
+  },
+  {
+    id: '2',
+    name: 'Kevin',
+    fullName: 'Kevin Silva',
+    type: 'child' as const
+  },
+  {
+    id: '3',
+    name: 'My',
+    fullName: 'My Account',
+    type: 'parent' as const
+  }
+];
 
 export default function MenuScreen() {
-  const { activeProfile } = useProfile();
+  const [selectedProfile, setSelectedProfile] = useState(profiles[0]);
+
+  const handleProfileSelect = (profile: typeof profiles[0]) => {
+    setSelectedProfile(profile);
+    console.log('Profile selected:', profile.name);
+  };
+
+  const handleRefresh = () => {
+    console.log('Refresh pressed');
+  };
 
   const menuItems = [
     {
       id: '1',
-      title: 'Profile Settings',
-      description: 'Edit personal information and preferences',
-      icon: '👤',
-      action: () => console.log('Profile Settings')
+      title: 'Payment Method',
+      icon: CreditCard,
+      action: () => console.log('Payment Method pressed')
     },
     {
       id: '2',
-      title: 'Payment Methods',
-      description: 'Manage cards and payment options',
-      icon: '💳',
-      action: () => console.log('Payment Methods')
+      title: 'Complaints and Inquiries',
+      icon: Phone,
+      action: () => console.log('Complaints and Inquiries pressed')
     },
     {
       id: '3',
-      title: 'Saved Places',
-      description: 'Home, school, and favorite locations',
-      icon: '📍',
-      action: () => console.log('Saved Places')
+      title: 'Saved Locations',
+      icon: MapPin,
+      action: () => console.log('Saved Locations pressed')
     },
     {
       id: '4',
-      title: 'Trip Preferences',
-      description: 'Set default options for rides',
-      icon: '⚙️',
-      action: () => console.log('Trip Preferences')
+      title: 'Help and Support',
+      icon: Headset,
+      action: () => console.log('Help and Support pressed')
     },
     {
       id: '5',
-      title: 'Safety Settings',
-      description: 'Emergency contacts and safety features',
-      icon: '🛡️',
-      action: () => console.log('Safety Settings'),
-      highlight: activeProfile?.type === 'child'
+      title: 'About us',
+      icon: Info,
+      action: () => console.log('About us pressed')
     },
     {
       id: '6',
-      title: 'Help & Support',
-      description: 'Get help and contact support',
-      icon: '❓',
-      action: () => console.log('Help & Support')
-    },
-    {
-      id: '7',
-      title: 'About YathraGo',
-      description: 'App version and information',
-      icon: 'ℹ️',
-      action: () => console.log('About YathraGo')
+      title: 'Logout',
+      icon: SignOut,
+      action: () => console.log('Logout pressed'),
+      isLogout: true
     }
   ];
 
-  // Development menu items (only show in development)
-  const devMenuItems = __DEV__ ? [
-    {
-      id: 'dev1',
-      title: 'Reset App State',
-      description: 'Clear all data and restart as new user',
-      icon: '🔄',
-      action: resetAppState,
-      highlight: true
-    },
-    {
-      id: 'dev2',
-      title: 'Debug App State',
-      description: 'Log current app state to console',
-      icon: '🐛',
-      action: getAppState,
-      highlight: false
-    }
-  ] : [];
-
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ProfileSwitcher />
+    <SafeAreaView className="flex-1 bg-gray-100">
+      {/* Header Component */}
+      <Header
+        profiles={profiles}
+        selectedProfile={selectedProfile}
+        onProfileSelect={handleProfileSelect}
+        onRefreshPress={handleRefresh}
+      />
       
-      <ScrollView className="flex-1 px-4 py-6">
-        <View className="space-y-6">
-          {/* Header */}
-          <View className="space-y-2">
-            <Typography variant="headline-large" className="text-black">
-              Menu
-            </Typography>
-            <Typography variant="body-medium" className="text-brand-neutralGray">
-              {activeProfile?.type === 'child' 
-                ? `Manage your settings, ${activeProfile.name}`
-                : `Settings and preferences for ${activeProfile?.name}`
-              }
-            </Typography>
-          </View>
-
-          {/* Profile Summary */}
-          <View className="bg-brand-lightestBlue rounded-2xl p-6 space-y-4">
-            <View className="flex-row items-center">
-              <View className={`w-16 h-16 rounded-full items-center justify-center ${
-                activeProfile?.type === 'parent' ? 'bg-brand-brightOrange' : 'bg-brand-softOrange'
-              }`}>
-                <Typography variant="headline-medium" className="text-white">
-                  {activeProfile?.name.charAt(0).toUpperCase()}
-                </Typography>
-              </View>
-              <View className="ml-4 flex-1">
-                <Typography variant="headline-medium" className="text-black">
-                  {activeProfile?.name}
-                </Typography>
-                <Typography variant="body-medium" className="text-brand-neutralGray">
-                  {activeProfile?.type === 'parent' ? 'Parent Account' : 'Child Account'}
-                </Typography>
-                {activeProfile?.type === 'child' && activeProfile?.school && (
-                  <Typography variant="body-small" className="text-brand-neutralGray">
-                    {activeProfile.school}
-                  </Typography>
-                )}
-              </View>
+      <ScrollView className="flex-1 px-4 space-y-6">
+        {/* User Profile Card */}
+        <Card className="mb-3 py-6">
+          <View className="flex-row items-center min-h-[96px]">
+            {/* Profile Image */}
+            <View className="mr-4">
+              <Image
+                source={require('../../assets/images/profile_Picture.png')}
+                style={{ width: 64, height: 64, borderRadius: 32, resizeMode: 'cover' }}
+              />
             </View>
+            
+            {/* Profile Info */}
+            <View className="flex-1">
+              <Typography variant="subhead" weight="semibold" className="text-black mb-2">
+                078 - 456 7891
+              </Typography>
+              <Typography variant="footnote" className="text-brand-neutralGray">
+                Kasun Fernando
+              </Typography>
+            </View>
+            
+            {/* Profile Link */}
+            <TouchableOpacity 
+              className="flex-row items-center"
+              onPress={() => console.log('Profile pressed')}
+              activeOpacity={0.8}
+            >
+              <Typography variant="subhead" weight="medium" className="text-black mr-1">
+                profile
+              </Typography>
+              <ArrowLeft size={16} color="#000000" weight="regular" style={{ transform: [{ rotate: '180deg' }] }} />
+            </TouchableOpacity>
           </View>
-
-          {/* Menu Items */}
-          <View className="space-y-2">
-            {[...menuItems, ...devMenuItems].map((item) => (
-              <TouchableOpacity 
+        </Card>
+        
+        {/* Menu Items */}
+        <Card className="p-6">
+          <View className="space-y-5">
+            {menuItems.map((item) => (
+              <TouchableOpacity
                 key={item.id}
+                className="flex-row items-center justify-between py-5 px-3 bg-white rounded-xl shadow-sm min-h-[64px]"
                 onPress={item.action}
-                className={`rounded-2xl p-4 border ${
-                  item.highlight 
-                    ? 'bg-brand-lightestBlue border-brand-deepNavy' 
-                    : 'bg-white border-brand-lightGray'                  }`}
-                >
-                  <View className="flex-row items-center">
-                    <View className={`w-12 h-12 rounded-full items-center justify-center ${
-                      item.highlight ? 'bg-brand-brightOrange' : 'bg-brand-lightGray'
-                    }`}>
-                      <Typography variant="label-large" className="text-white">
-                        {item.icon}
-                      </Typography>
-                    </View>
-                    
-                    <View className="ml-4 flex-1">
-                    <Typography 
-                      variant="label-large" 
-                      className={item.highlight ? "text-brand-deepNavy" : "text-black"}
-                    >
-                      {item.title}
-                    </Typography>
-                    <Typography 
-                      variant="body-medium" 
-                      className={item.highlight ? "text-black" : "text-brand-neutralGray"}
-                    >
-                      {item.description}
-                    </Typography>
-                  </View>
-                  
-                  <View className="w-6 h-6 items-center justify-center">
-                    <Typography variant="label-medium" className="text-brand-neutralGray">
-                      →
-                    </Typography>
-                  </View>
+                activeOpacity={0.8}
+              >
+                <View className="flex-row items-center flex-1">
+                  <item.icon 
+                    size={24} 
+                    color={item.isLogout ? "#ef4444" : "#000000"} 
+                    weight="regular" 
+                  />
+                  <Typography 
+                    variant="subhead" 
+                    weight="medium" 
+                    className={`ml-4 ${item.isLogout ? 'text-red-500' : 'text-black'}`}
+                  >
+                    {item.title}
+                  </Typography>
                 </View>
+                <ArrowLeft 
+                  size={18} 
+                  color={item.isLogout ? "#ef4444" : "#000000"} 
+                  weight="regular" 
+                  style={{ transform: [{ rotate: '180deg' }] }} 
+                />
               </TouchableOpacity>
             ))}
           </View>
-
-          {/* Development Tools (Only in dev mode) */}
-          {__DEV__ && (
-            <View className="mt-6">
-              <Typography variant="title-large" className="text-black mb-4">
-                Developer Tools
-              </Typography>
-              
-              <View className="space-y-2">
-                <TouchableOpacity
-                  className="bg-brand-lightGray p-4 rounded-xl"
-                  onPress={() => resetAppState()}
-                >
-                  <View className="flex-row items-center">
-                    <View className="w-12 h-12 rounded-full items-center justify-center bg-red-500">
-                      <Typography variant="label-large" className="text-white">
-                        🔄
-                      </Typography>
-                    </View>
-                    
-                    <View className="ml-4 flex-1">
-                      <Typography variant="label-large" className="text-black">
-                        Reset App State
-                      </Typography>
-                      <Typography variant="body-medium" className="text-brand-neutralGray">
-                        Clear all data and restart as new user
-                      </Typography>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  className="bg-brand-lightGray p-4 rounded-xl"
-                  onPress={() => getAppState()}
-                >
-                  <View className="flex-row items-center">
-                    <View className="w-12 h-12 rounded-full items-center justify-center bg-blue-500">
-                      <Typography variant="label-large" className="text-white">
-                        🔍
-                      </Typography>
-                    </View>
-                    
-                    <View className="ml-4 flex-1">
-                      <Typography variant="label-large" className="text-black">
-                        Debug App State
-                      </Typography>
-                      <Typography variant="body-medium" className="text-brand-neutralGray">
-                        View current app data
-                      </Typography>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {/* App Version */}
-          <View className="items-center pt-4">
-            <Typography variant="body-small" className="text-brand-neutralGray">
-              YathraGo v1.0.0
-            </Typography>
-          </View>
-        </View>
+        </Card>
       </ScrollView>
     </SafeAreaView>
   );

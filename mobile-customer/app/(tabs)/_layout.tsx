@@ -1,11 +1,12 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { HapticTab } from '@/components/HapticTab';
+import { View } from 'react-native';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useProfile } from '@/contexts/ProfileContext';
-import { HouseIcon, ClockIcon, BellIcon, ListIcon } from 'phosphor-react-native';
+import { HouseIcon, ClockIcon, BellIcon, ListIcon, UserIcon, NavigationArrow } from 'phosphor-react-native';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -22,40 +23,63 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#143373', // brand-deepNavy
+        tabBarActiveTintColor: '#143373',
+        tabBarInactiveTintColor: '#222',
         headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '400',
+          marginTop: 4,
+        },
+        tabBarItemStyle: {
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
         tabBarStyle: {
           backgroundColor: Colors[colorScheme ?? 'light'].background,
+          height: 95,
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
         },
-      }}>
+        tabBarBackground: TabBarBackground,
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: getTabTitle('Home'),
-          tabBarIcon: ({ color }) => <HouseIcon size={28} color={color} weight="fill" />,
+          title: 'Home',
+          tabBarIcon: ({ color }) => <HouseIcon size={22} color={color} weight="regular" />,
+        }}
+      />
+      <Tabs.Screen
+        name="navigate"
+        options={{
+          title: 'Navigate',
+          tabBarIcon: ({ color }) => <NavigationArrow size={22} color={color} weight="regular" />,
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
-          title: getTabTitle('History'),
-          tabBarIcon: ({ color }) => <ClockIcon size={28} color={color} weight="fill" />,
+          title: 'History',
+          tabBarIcon: ({ color }) => <ClockIcon size={22} color={color} weight="regular" />,
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
-          title: getTabTitle('Alerts'),
-          tabBarIcon: ({ color }) => <BellIcon size={28} color={color} weight="fill" />,
+          title: 'Notifications',
+          tabBarIcon: ({ color }) => <BellIcon size={22} color={color} weight="regular" />,
         }}
       />
       <Tabs.Screen
         name="menu"
         options={{
           title: 'Menu',
-          tabBarIcon: ({ color }) => <ListIcon size={28} color={color} weight="fill" />,
+          tabBarIcon: ({ color }) => <ListIcon size={22} color={color} weight="regular" />,
         }}
       />
     </Tabs>

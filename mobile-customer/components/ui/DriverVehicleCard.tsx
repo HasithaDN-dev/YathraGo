@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, Image } from 'react-native';
 import { Star, Truck } from 'phosphor-react-native';
 import { Typography } from '@/components/Typography';
 
@@ -21,9 +21,12 @@ export const DriverVehicleCard: React.FC<DriverVehicleCardProps> = ({
   return (
     <View className={`bg-brand-deepNavy rounded-2xl p-4 flex-1 ${className}`}> 
       {/* Icon */}
-      <View className="w-12 h-12 bg-brand-brightOrange rounded-full items-center justify-center mb-3">
+      <View className="w-12 h-12 rounded-full items-center justify-center mb-3 overflow-hidden bg-brand-brightOrange">
         {type === 'driver' ? (
-          <View className="w-6 h-6 bg-brand-lightNavy rounded-full" />
+          <Image
+            source={require('../../assets/images/profile_Picture.png')}
+            style={{ width: 48, height: 48, borderRadius: 24, resizeMode: 'cover' }}
+          />
         ) : (
           <Truck size={24} color="#143373" weight="fill" />
         )}
