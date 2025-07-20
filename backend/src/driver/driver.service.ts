@@ -66,7 +66,7 @@ export class DriverService {
         gender: profileData.gender,
         second_phone: profileData.second_phone,
         profile_picture_url: profileData.profile_picture_url,
-        // registrationStatus: 'FULLY_REGISTERED', // This might be set by the initial registration
+        // registrationStatus: 'ACCOUNT_CREATED', // This might be set by the initial registration
       },
     });
 
@@ -89,7 +89,7 @@ export class DriverService {
         nic_front_pic_url: documentsData.nic_front_pic_url,
         nice_back_pic_url: documentsData.nic_back_pic_url,
         vehicle_Reg_No: documentsData.vehicle_registration,
-        // registrationStatus: 'FULLY_REGISTERED', // This might be set by the initial registration
+        // registrationStatus: 'ACCOUNT_CREATED', // This might be set by the initial registration
       },
     });
 
@@ -118,7 +118,7 @@ export class DriverService {
     // Driver must be OTP_VERIFIED to proceed with registration
     if (driver.registrationStatus !== RegistrationStatus.OTP_VERIFIED) {
       // If already fully registered, prevent re-registration
-      if (driver.registrationStatus === RegistrationStatus.FULLY_REGISTERED) {
+      if (driver.registrationStatus === RegistrationStatus.ACCOUNT_CREATED) {
         throw new BadRequestException('Driver is already fully registered.');
       }
       throw new BadRequestException(
@@ -158,7 +158,7 @@ export class DriverService {
           nice_back_pic_url: registrationData.nice_back_pic_url,
           second_phone: registrationData.second_phone,
           vehicle_Reg_No: registrationData.vehicle_Reg_No, // This field is in your Driver model
-          registrationStatus: RegistrationStatus.FULLY_REGISTERED, // Set to FULLY_REGISTERED after all details
+          registrationStatus: RegistrationStatus.ACCOUNT_CREATED, // Set to ACCOUNT_CREATED after all details
         },
       });
       return updatedDriver;

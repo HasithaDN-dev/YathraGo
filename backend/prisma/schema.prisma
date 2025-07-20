@@ -285,9 +285,8 @@ model Child_Assign_To {
 enum RegistrationStatus {
   OTP_PENDING
   OTP_VERIFIED
+  ACCOUNT_CREATED
   HAVING_A_PROFILE
-  FULLY_REGISTERED
-  CUSTOMER_REGISTERED
 }
 
 enum OtpPurpose {
