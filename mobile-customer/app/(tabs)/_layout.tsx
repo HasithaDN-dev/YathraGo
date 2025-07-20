@@ -1,44 +1,48 @@
 import { Tabs } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { HapticTab } from '@/components/HapticTab';
+import { View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import ProfileSwitcher from '../../components/ProfileSwitcher';
-import { ProfileLoading } from '../../components/ProfileLoading';
 import { HouseIcon, ClockIcon, BellIcon, ListIcon, NavigationArrowIcon } from 'phosphor-react-native';
-import { useProfileStore } from '../../lib/stores/profile.store';
-import { useAuthStore } from '../../lib/stores/auth.store';
+import { Header } from '@/components/ui/Header';
+
+// Profile data
+const profiles = [
+  {
+    id: '1',
+    name: 'My Elder Son',
+    fullName: 'Supun Thilina',
+    type: 'child' as const
+  },
+  {
+    id: '2',
+    name: 'Kevin',
+    fullName: 'Kevin Silva',
+    type: 'child' as const
+  },
+  {
+    id: '3',
+    name: 'My',
+    fullName: 'My Account',
+    type: 'parent' as const
+  }
+];
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { activeProfile, profiles, isLoading, error } = useProfileStore();
-  const { accessToken, isProfileComplete } = useAuthStore();
+  const [selectedProfile, setSelectedProfile] = useState(profiles[0]);
 
-  // Auto-load profiles when user is authenticated
-  useEffect(() => {
-    if (accessToken && profiles.length === 0 && !isLoading) {
-      const { loadProfiles } = useProfileStore.getState();
-      loadProfiles(accessToken);
-    }
-  }, [accessToken, profiles.length, isLoading]);
+  const handleProfileSelect = (profile: typeof profiles[0]) => {
+    setSelectedProfile(profile);
+    console.log('Profile selected:', profile.name);
+  };
 
-  // Show loading state while profiles are being loaded
-  if (isLoading) {
-    return <ProfileLoading />;
-  }
-
-  // Show error state if profile loading failed
-  if (error) {
-    return (
-      <ProfileLoading message="Failed to load profiles. Please try again." />
-    );
-  }
-
-  // Show loading if no active profile is selected
-  if (profiles.length > 0 && !activeProfile) {
-    return <ProfileLoading message="Selecting profile..." />;
-  }
+  const handleRefresh = () => {
+    console.log('Refresh pressed');
+  };
 
   // Show different tabs based on profile type
   // const getTabTitle = (baseTitle: string) => {
@@ -50,69 +54,79 @@ export default function TabLayout() {
 
 
   return (
-    <Tabs
-      screenOptions={{
-        header: () => <ProfileSwitcher />,
-        tabBarActiveTintColor: '#143373',
-        tabBarInactiveTintColor: '#222',
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarShowLabel: true,
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '400',
-          marginTop: 4,
-        },
-        tabBarItemStyle: {
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-        },
-        tabBarStyle: {
-          backgroundColor: Colors[colorScheme ?? 'light'].background,
-          height: 95,
-          borderTopWidth: 0,
-          elevation: 0,
-          shadowOpacity: 0,
-        },
-      }}>
-        
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <HouseIcon size={22} color={color} weight="regular" />,
+    <View style={{ flex: 1 }}>
+      {/* Header Component - Shared across all tabs, now below the device header */}
+      <SafeAreaView edges={["top"]} className="bg-gray-100">
+        <Header
+          profiles={profiles}
+          selectedProfile={selectedProfile}
+          onProfileSelect={handleProfileSelect}
+          onRefreshPress={handleRefresh}
+        />
+      </SafeAreaView>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: '#143373',
+          tabBarInactiveTintColor: '#222',
+          headerShown: false,
+          tabBarButton: HapticTab,
+          tabBarShowLabel: true,
+          tabBarLabelStyle: {
+            fontSize: 10,
+            fontWeight: '400',
+            marginTop: 4,
+          },
+          tabBarItemStyle: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+          },
+          tabBarStyle: {
+            backgroundColor: Colors[colorScheme ?? 'light'].background,
+            height: 95,
+            borderTopWidth: 0,
+            elevation: 0,
+            shadowOpacity: 0,
+          },
+          tabBarBackground: TabBarBackground,
         }}
-      />
-      <Tabs.Screen
-        name="navigate"
-        options={{
-          title: 'Navigate',
-          tabBarIcon: ({ color }) => <NavigationArrowIcon size={22} color={color} weight="regular" />,
-        }}
-      />
-      <Tabs.Screen
-        name="history"
-        options={{
-          title: 'History',
-          tabBarIcon: ({ color }) => <ClockIcon size={22} color={color} weight="regular" />,
-        }}
-      />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: 'Notifications',
-          tabBarIcon: ({ color }) => <BellIcon size={22} color={color} weight="regular" />,
-        }}
-      />
-      <Tabs.Screen
-        name="menu"
-        options={{
-          title: 'Menu',
-          tabBarIcon: ({ color }) => <ListIcon size={22} color={color} weight="regular" />,
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Home',
+            tabBarIcon: ({ color }) => <HouseIcon size={22} color={color} weight="regular" />,
+          }}
+        />
+        <Tabs.Screen
+          name="navigate"
+          options={{
+            title: 'Navigate',
+            tabBarIcon: ({ color }) => <NavigationArrowIcon size={22} color={color} weight="regular" />,
+          }}
+        />
+        <Tabs.Screen
+          name="history"
+          options={{
+            title: 'History',
+            tabBarIcon: ({ color }) => <ClockIcon size={22} color={color} weight="regular" />,
+          }}
+        />
+        <Tabs.Screen
+          name="notifications"
+          options={{
+            title: 'Notifications',
+            tabBarIcon: ({ color }) => <BellIcon size={22} color={color} weight="regular" />,
+          }}
+        />
+        <Tabs.Screen
+          name="menu"
+          options={{
+            title: 'Menu',
+            tabBarIcon: ({ color }) => <ListIcon size={22} color={color} weight="regular" />,
+          }}
+        />
+      </Tabs>
+    </View>
   );
 }

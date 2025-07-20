@@ -7,34 +7,10 @@ import {
   CaretDown,
   Gear,
   User,
-  Warning,
-  ArrowRight
+  Warning
 } from 'phosphor-react-native';
 import { Typography } from '@/components/Typography';
-import { Header } from '@/components/ui/Header';
 import { Card } from '@/components/ui/Card';
-
-// Profile data
-const profiles = [
-  {
-    id: '1',
-    name: 'My Elder Son',
-    fullName: 'Supun Thilina',
-    type: 'child' as const
-  },
-  {
-    id: '2',
-    name: 'Kevin',
-    fullName: 'Kevin Silva',
-    type: 'child' as const
-  },
-  {
-    id: '3',
-    name: 'My',
-    fullName: 'My Account',
-    type: 'parent' as const
-  }
-];
 
 interface Notification {
   id: string;
@@ -46,7 +22,6 @@ interface Notification {
 }
 
 export default function NotificationsScreen() {
-  const [selectedProfile, setSelectedProfile] = useState(profiles[0]);
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [searchInput, setSearchInput] = useState('');
   const [suggestedSenders, setSuggestedSenders] = useState<string[]>([]);
@@ -105,14 +80,7 @@ export default function NotificationsScreen() {
     }
   ]);
 
-  const handleProfileSelect = (profile: typeof profiles[0]) => {
-    setSelectedProfile(profile);
-    console.log('Profile selected:', profile.name);
-  };
 
-  const handleRefresh = () => {
-    console.log('Refresh pressed');
-  };
 
   const toggleNotification = (id: string) => {
     setNotifications(prev => 
@@ -172,16 +140,9 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
-      {/* Header Component */}
-      <Header
-        profiles={profiles}
-        selectedProfile={selectedProfile}
-        onProfileSelect={handleProfileSelect}
-        onRefreshPress={handleRefresh}
-      />
       <ScrollView className="flex-1 px-4 space-y-6">
         {/* Search/Filter Section */}
-        <Card className="p-4">
+        <Card className="p-1 mb-2">
           <View className="bg-white rounded-xl p-3">
             <View className="flex-row items-center">
               <MagnifyingGlass size={20} color="#000000" weight="regular" />

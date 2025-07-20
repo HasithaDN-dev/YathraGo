@@ -2,43 +2,10 @@ import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
-import { Header } from '@/components/ui/Header';
 import { Card } from '@/components/ui/Card';
 
-// Profile data
-const profiles = [
-  {
-    id: '1',
-    name: 'My Elder Son',
-    fullName: 'Supun Thilina',
-    type: 'child' as const
-  },
-  {
-    id: '2',
-    name: 'Kevin',
-    fullName: 'Kevin Silva',
-    type: 'child' as const
-  },
-  {
-    id: '3',
-    name: 'My',
-    fullName: 'My Account',
-    type: 'parent' as const
-  }
-];
-
 export default function HistoryScreen() {
-  const [selectedProfile, setSelectedProfile] = useState(profiles[0]);
   const [selectedFilter, setSelectedFilter] = useState('All Trips');
-
-  const handleProfileSelect = (profile: typeof profiles[0]) => {
-    setSelectedProfile(profile);
-    console.log('Profile selected:', profile.name);
-  };
-
-  const handleRefresh = () => {
-    console.log('Refresh pressed');
-  };
 
   // Mock history data
   const mockHistoryItems = [
@@ -153,15 +120,7 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
-      {/* Header Component */}
-      <Header
-        profiles={profiles}
-        selectedProfile={selectedProfile}
-        onProfileSelect={handleProfileSelect}
-        onRefreshPress={handleRefresh}
-      />
-      
-      <ScrollView className="flex-1 px-4 py-6">
+      <ScrollView className="flex-1 px-4 pb-6">
         <View className="space-y-6">
           {/* Filter Options */}
           <Card className="p-4">

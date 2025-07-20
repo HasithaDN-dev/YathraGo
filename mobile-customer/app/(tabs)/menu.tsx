@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../hooks/useAuth';
@@ -12,46 +12,14 @@ import {
   SignOutIcon
 } from 'phosphor-react-native';
 import { Typography } from '@/components/Typography';
-import { Header } from '@/components/ui/Header';
 import { Card } from '@/components/ui/Card';
 
-// Profile data
-const profiles = [
-  {
-    id: '1',
-    name: 'My Elder Son',
-    fullName: 'Supun Thilina',
-    type: 'child' as const
-  },
-  {
-    id: '2',
-    name: 'Kevin',
-    fullName: 'Kevin Silva',
-    type: 'child' as const
-  },
-  {
-    id: '3',
-    name: 'My',
-    fullName: 'My Account',
-    type: 'parent' as const
-  }
-];
-
 export default function MenuScreen() {
-  const {logout, refreshProfiles } = useAuth();
-  const [selectedProfile, setSelectedProfile] = useState(profiles[0]);
+  const { logout } = useAuth();
 
-  const handleProfileSelect = (profile: typeof profiles[0]) => {
-    setSelectedProfile(profile);
-    console.log('Profile selected:', profile.name);
-  };
 
     const handleLogout = async () => {
     await logout();
-  };
-
-    const handleRefresh = async () => {
-    await refreshProfiles();
   };
 
   const menuItems = [
@@ -96,14 +64,6 @@ export default function MenuScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
-      {/* Header Component */}
-      <Header
-        profiles={profiles}
-        selectedProfile={selectedProfile}
-        onProfileSelect={handleProfileSelect}
-        onRefreshPress={handleRefresh}
-      />
-      
       <ScrollView className="flex-1 px-4 space-y-6">
         {/* User Profile Card */}
         <Card className="mb-3 py-6">

@@ -90,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <View className={`bg-white rounded-2xl p-4 mx-4 mt-4 mb-6 ${className}`}>
+      <View className={`bg-white rounded-2xl p-4 mx-4 mt-4 mb-0 ${className}`}>
         <View className="flex-row items-center justify-between">
           <TouchableOpacity 
             className="flex-row items-center flex-1"

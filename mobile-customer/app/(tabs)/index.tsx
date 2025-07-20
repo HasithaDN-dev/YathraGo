@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -8,51 +8,16 @@ import {
   Info 
 } from 'phosphor-react-native';
 import { Typography } from '@/components/Typography';
-import { Header } from '@/components/ui/Header';
 import { Card } from '@/components/ui/Card';
 import { RideStatus } from '@/components/ui/RideStatus';
 import { DriverVehicleCard } from '@/components/ui/DriverVehicleCard';
 import { PaymentSection } from '@/components/ui/PaymentSection';
 import CustomButton from '@/components/ui/CustomButton';
 
-// Profile data
-const profiles = [
-  {
-    id: '1',
-    name: 'My Elder Son',
-    fullName: 'Supun Thilina',
-    type: 'child' as const
-  },
-  {
-    id: '2',
-    name: 'Kevin',
-    fullName: 'Kevin Silva',
-    type: 'child' as const
-  }
-];
-
 export default function StaffHomeScreen() {
-  const [selectedProfile, setSelectedProfile] = useState(profiles[0]);
-
-  const handleProfileSelect = (profile: typeof profiles[0]) => {
-    setSelectedProfile(profile);
-    console.log('Profile selected:', profile.name);
-  };
-
-  const handleRefresh = () => {
-    console.log('Refresh pressed');
-  };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100 mb-0">
-      {/* Header Component */}
-      <Header
-        profiles={profiles}
-        selectedProfile={selectedProfile}
-        onProfileSelect={handleProfileSelect}
-        onRefreshPress={handleRefresh}
-      />
-      
+    <SafeAreaView className="flex-1 bg-gray-100 mb-0 mt-0">
       <ScrollView className="px-4 space-y-6 min-h-screen">
         {/* Current Ride Section */}
         <Card className="mb-3">
