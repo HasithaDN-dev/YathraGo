@@ -315,16 +315,16 @@ const roleUsers = {
 const getUserTypeFromId = (userId: string) => {
   const prefix = userId.substring(0, 3);
   const userTypes: { [key: string]: { label: string; color: string } } = {
-    'PAR': { label: 'Parent', color: 'bg-blue-100 text-blue-800' },
-    'STP': { label: 'Staff Passenger', color: 'bg-purple-100 text-purple-800' },
-    'DRV': { label: 'Driver', color: 'bg-yellow-100 text-yellow-800' },
-    'OWN': { label: 'Owner', color: 'bg-green-100 text-green-800' },
-    'ADM': { label: 'Admin', color: 'bg-red-100 text-red-800' },
-    'MGR': { label: 'Manager', color: 'bg-indigo-100 text-indigo-800' },
-    'DCO': { label: 'Driver Coordinator', color: 'bg-orange-100 text-orange-800' },
-    'FMG': { label: 'Finance Manager', color: 'bg-pink-100 text-pink-800' },
+    'PAR': { label: 'Parent', color: 'text-white' },
+    'STP': { label: 'Staff Passenger', color: 'text-white' },
+    'DRV': { label: 'Driver', color: 'text-white' },
+    'OWN': { label: 'Owner', color: 'text-white' },
+    'ADM': { label: 'Admin', color: 'text-white' },
+    'MGR': { label: 'Manager', color: 'text-white' },
+    'DCO': { label: 'Driver Coordinator', color: 'text-white' },
+    'FMG': { label: 'Finance Manager', color: 'text-white' },
   };
-  return userTypes[prefix] || { label: 'Unknown', color: 'bg-gray-100 text-gray-800' };
+  return userTypes[prefix] || { label: 'Unknown', color: 'text-white' };
 };
 
 // User Profile Modal Component
@@ -334,27 +334,113 @@ const UserProfileModal = ({
   onClose, 
   onEdit 
 }: { 
-  user: any; 
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    mobile: string;
+    address: string;
+    status: string;
+    joinDate: string;
+    profileImage?: string;
+    emergencyContact?: string;
+    children?: Array<{ name: string; age: number; grade: string }>;
+    department?: string;
+    employeeId?: string;
+    workLocation?: string;
+    licenseNumber?: string;
+    licenseExpiry?: string;
+    vehicleAssigned?: string;
+    experienceYears?: number;
+    rating?: number;
+    totalTrips?: number;
+    businessName?: string;
+    adminLevel?: string;
+    lastLogin?: string;
+    managementArea?: string;
+    teamSize?: number;
+    coordinationArea?: string;
+    driversManaged?: number;
+    financialAccess?: string;
+    certifications?: string[];
+    reviews?: Array<{
+      id: number;
+      rating: number;
+      comment: string;
+      date: string;
+      driverId?: string;
+      driverName?: string;
+      passengerId?: string;
+      passengerName?: string;
+    }>;
+    complaints?: Array<{
+      id: number;
+      type: string;
+      description: string;
+      date: string;
+      status: string;
+      driverId?: string;
+      driverName?: string;
+      passengerId?: string;
+      passengerName?: string;
+    }>;
+  };
   isOpen: boolean; 
   onClose: () => void; 
-  onEdit: (user: any) => void; 
+  onEdit: (user: {
+    id: string;
+    name: string;
+    email: string;
+    mobile: string;
+    address: string;
+    status: string;
+    joinDate: string;
+    profileImage?: string;
+    emergencyContact?: string;
+    children?: Array<{ name: string; age: number; grade: string }>;
+    department?: string;
+    employeeId?: string;
+    workLocation?: string;
+    licenseNumber?: string;
+    licenseExpiry?: string;
+    vehicleAssigned?: string;
+    experienceYears?: number;
+    rating?: number;
+    totalTrips?: number;
+    businessName?: string;
+    adminLevel?: string;
+    lastLogin?: string;
+    managementArea?: string;
+    teamSize?: number;
+    coordinationArea?: string;
+    driversManaged?: number;
+    financialAccess?: string;
+    certifications?: string[];
+    reviews?: Array<{
+      id: number;
+      rating: number;
+      comment: string;
+      date: string;
+      driverId?: string;
+      driverName?: string;
+      passengerId?: string;
+      passengerName?: string;
+    }>;
+    complaints?: Array<{
+      id: number;
+      type: string;
+      description: string;
+      date: string;
+      status: string;
+      driverId?: string;
+      driverName?: string;
+      passengerId?: string;
+      passengerName?: string;
+    }>;
+  }) => void; 
 }) => {
   if (!isOpen || !user) return null;
 
-  const getUserTypeFromId = (userId: string) => {
-    const prefix = userId.substring(0, 3);
-    const userTypes: { [key: string]: string } = {
-      'PAR': 'Parent',
-      'STP': 'Staff Passenger',
-      'DRV': 'Driver',
-      'OWN': 'Owner',
-      'ADM': 'Admin',
-      'MGR': 'Manager',
-      'DCO': 'Driver Coordinator',
-      'FMG': 'Finance Manager',
-    };
-    return userTypes[prefix] || 'Unknown';
-  };
 
   const renderStarRating = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -378,7 +464,7 @@ const UserProfileModal = ({
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
-              <p className="text-gray-600">{getUserTypeFromId(user.id)} - {user.id}</p>
+              <p className="text-gray-600">{getUserTypeFromId(user.id).label} - {user.id}</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
@@ -468,7 +554,7 @@ const UserProfileModal = ({
                       <div>
                         <p className="text-sm text-gray-500">Children</p>
                         <div className="space-y-2">
-                          {user.children.map((child: any, index: number) => (
+                          {user.children.map((child: { name: string; age: number; grade: string }, index: number) => (
                             <div key={index} className="bg-gray-50 p-2 rounded">
                               <p className="font-medium">{child.name}</p>
                               <p className="text-sm text-gray-600">Age: {child.age} | Grade: {child.grade}</p>
@@ -527,7 +613,7 @@ const UserProfileModal = ({
                     <div>
                       <p className="text-sm text-gray-500">Rating</p>
                       <div className="flex items-center space-x-2">
-                        <div className="flex">{renderStarRating(Math.floor(user.rating))}</div>
+                        <div className="flex">{renderStarRating(Math.floor(user.rating ?? 0))}</div>
                         <span className="font-medium">{user.rating}</span>
                       </div>
                     </div>
@@ -568,7 +654,16 @@ const UserProfileModal = ({
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {user.reviews.map((review: any) => (
+                  {user.reviews.map((review: {
+                    id: number;
+                    rating: number;
+                    comment: string;
+                    date: string;
+                    driverId?: string;
+                    driverName?: string;
+                    passengerId?: string;
+                    passengerName?: string;
+                  }) => (
                     <div key={review.id} className="border-b pb-4 last:border-b-0">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
@@ -604,7 +699,17 @@ const UserProfileModal = ({
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {user.complaints.map((complaint: any) => (
+                  {user.complaints.map((complaint: {
+                    id: number;
+                    type: string;
+                    description: string;
+                    date: string;
+                    status: string;
+                    driverId?: string;
+                    driverName?: string;
+                    passengerId?: string;
+                    passengerName?: string;
+                  }) => (
                     <div key={complaint.id} className="border-b pb-4 last:border-b-0">
                       <div className="flex items-center justify-between mb-2">
                         <Badge 
@@ -670,6 +775,58 @@ const UserProfileModal = ({
 };
 
 // Edit User Modal Component
+type UserType = {
+  id: string;
+  name: string;
+  email: string;
+  mobile: string;
+  address: string;
+  status: string;
+  joinDate: string;
+  profileImage?: string;
+  emergencyContact?: string;
+  children?: Array<{ name: string; age: number; grade: string }>;
+  department?: string;
+  employeeId?: string;
+  workLocation?: string;
+  licenseNumber?: string;
+  licenseExpiry?: string;
+  vehicleAssigned?: string;
+  experienceYears?: number;
+  rating?: number;
+  totalTrips?: number;
+  businessName?: string;
+  adminLevel?: string;
+  lastLogin?: string;
+  managementArea?: string;
+  teamSize?: number;
+  coordinationArea?: string;
+  driversManaged?: number;
+  financialAccess?: string;
+  certifications?: string[];
+  reviews?: Array<{
+    id: number;
+    rating: number;
+    comment: string;
+    date: string;
+    driverId?: string;
+    driverName?: string;
+    passengerId?: string;
+    passengerName?: string;
+  }>;
+  complaints?: Array<{
+    id: number;
+    type: string;
+    description: string;
+    date: string;
+    status: string;
+    driverId?: string;
+    driverName?: string;
+    passengerId?: string;
+    passengerName?: string;
+  }>;
+};
+
 const EditUserModal = ({ 
   user, 
   isOpen, 
@@ -677,7 +834,7 @@ const EditUserModal = ({
   onSave, 
   onStatusChange 
 }: { 
-  user: any; 
+  user: UserType; 
   isOpen: boolean; 
   onClose: () => void; 
   onSave: () => void; 
@@ -806,10 +963,10 @@ const EditUserModal = ({
 export default function RolePermissionManagementPage() {
   const [selectedRole, setSelectedRole] = useState("Staff Passengers");
   const [showUserTable, setShowUserTable] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editingUser, setEditingUser] = useState<UserType | null>(null);
 
   const roles = [
     { name: "Parents", userCount: 24 },
@@ -864,7 +1021,7 @@ export default function RolePermissionManagementPage() {
     setShowUserTable(false);
   };
 
-  const handleViewUser = (user: any) => {
+  const handleViewUser = (user: UserType) => {
     setSelectedUser(user);
     setShowUserProfile(true);
   };
@@ -874,7 +1031,7 @@ export default function RolePermissionManagementPage() {
     setSelectedUser(null);
   };
 
-  const handleEditUser = (user: any) => {
+  const handleEditUser = (user: UserType) => {
     setEditingUser({ ...user });
     setShowEditModal(true);
   };
@@ -1010,21 +1167,25 @@ export default function RolePermissionManagementPage() {
         </div>
 
         {/* User Profile Modal */}
-        <UserProfileModal 
-          user={selectedUser} 
-          isOpen={showUserProfile} 
-          onClose={handleCloseProfile}
-          onEdit={handleEditUser}
-        />
+        {selectedUser && (
+          <UserProfileModal 
+            user={selectedUser} 
+            isOpen={showUserProfile} 
+            onClose={handleCloseProfile}
+            onEdit={handleEditUser}
+          />
+        )}
 
         {/* Edit User Modal */}
-        <EditUserModal
-          user={editingUser}
-          isOpen={showEditModal}
-          onClose={handleCloseEditModal}
-          onSave={handleSaveUserChanges}
-          onStatusChange={handleStatusChange}
-        />
+        {editingUser && (
+          <EditUserModal
+            user={editingUser}
+            isOpen={showEditModal}
+            onClose={handleCloseEditModal}
+            onSave={handleSaveUserChanges}
+            onStatusChange={handleStatusChange}
+          />
+        )}
       </>
     );
   }
@@ -1048,7 +1209,7 @@ export default function RolePermissionManagementPage() {
                   <Users className="w-5 h-5" />
                   <span>Roles</span>
                 </CardTitle>
-                <Button className="bg-yellow-500 hover:bg-yellow-600 text-white">
+                <Button className="text-white" style={{ backgroundColor: '#ffb425' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#faaa21'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffb425'}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add New Role
                 </Button>

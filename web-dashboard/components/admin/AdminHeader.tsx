@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Bell } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ export default function AdminHeader() {
     <header className="flex justify-between bg-white shadow-sm border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Left side - YathraGo Logo */}
+        <Link href="/" className="cursor-pointer">
           <Image
             src="/logo.svg"
             alt="YathraGo Logo"
@@ -24,6 +26,7 @@ export default function AdminHeader() {
             className="h-8 w-auto object-contain"
             priority
           />
+        </Link>
         </div>
 
         {/* Right side - Notifications, Settings, and Admin Profile */}
