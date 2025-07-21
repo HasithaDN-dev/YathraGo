@@ -13,58 +13,19 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import Cookies from "js-cookie";
+import { useEffect } from "react";
 
 interface Vehicle {
   id: string;
-  vehicleNo: string;
+  registrationNumber: string;
   type: string;
-  capacity: number;
+  no_of_seats: number;
   status: "Active" | "Inactive";
-  assignedDriver: string;
+  driver?: {
+    name: string;
+  } | null;
 }
-
-const mockVehicles: Vehicle[] = [
-  {
-    id: "1",
-    vehicleNo: "ABC-123",
-    type: "Bus",
-    capacity: 40,
-    status: "Active",
-    assignedDriver: "John Smith",
-  },
-  {
-    id: "2",
-    vehicleNo: "XYZ-789",
-    type: "Van",
-    capacity: 15,
-    status: "Active",
-    assignedDriver: "Sarah Johnson",
-  },
-  {
-    id: "3",
-    vehicleNo: "DEF-456",
-    type: "Bus",
-    capacity: 35,
-    status: "Inactive",
-    assignedDriver: "Mike Wilson",
-  },
-  {
-    id: "4",
-    vehicleNo: "GHI-321",
-    type: "Mini Bus",
-    capacity: 25,
-    status: "Active",
-    assignedDriver: "Emily Davis",
-  },
-  {
-    id: "5",
-    vehicleNo: "JKL-654",
-    type: "Van",
-    capacity: 12,
-    status: "Active",
-    assignedDriver: "David Brown",
-  },
-];
 
 export default function VehicleListPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -72,7 +33,33 @@ export default function VehicleListPage() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [filteredVehicles, setFilteredVehicles] = useState(mockVehicles);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [filteredVehicles, setFilteredVehicles] = useState(vehicles);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      setLoading(true);
+      try {
+        const token = Cookies.get("access_token");
+        const response = await fetch("http://localhost:3000/vehicles", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) throw new Error("Failed to fetch vehicles");
+        const data = await response.json();
+        setVehicles(data);
+        setFilteredVehicles(data);
+      } catch (err) {
+        setVehicles([]);
+        setFilteredVehicles([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVehicles();
+  }, []);
 
   const itemsPerPage = 5;
   const totalPages = Math.ceil(filteredVehicles.length / itemsPerPage);
@@ -81,13 +68,13 @@ export default function VehicleListPage() {
   const currentVehicles = filteredVehicles.slice(startIndex, endIndex);
 
   const handleFilter = () => {
-    let filtered = mockVehicles;
+    let filtered = vehicles;
 
     if (searchTerm) {
       filtered = filtered.filter(
         (vehicle) =>
-          vehicle.vehicleNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          vehicle.assignedDriver.toLowerCase().includes(searchTerm.toLowerCase())
+          vehicle.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (vehicle.driver?.name?.toLowerCase() || "").includes(searchTerm.toLowerCase())
       );
     }
 
@@ -108,7 +95,7 @@ export default function VehicleListPage() {
     setSelectedRoute("");
     setSelectedStatus("");
     setSelectedType("");
-    setFilteredVehicles(mockVehicles);
+    setFilteredVehicles(vehicles);
     setCurrentPage(1);
   };
 
@@ -126,6 +113,14 @@ export default function VehicleListPage() {
       </Badge>
     );
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <span className="text-[var(--color-deep-navy)] text-lg font-semibold">Loading vehicles...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -252,19 +247,19 @@ export default function VehicleListPage() {
                   className="hover:bg-[var(--light-gray)] transition-colors cursor-pointer"
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--color-deep-navy)]">
-                    {vehicle.vehicleNo}
+                    {vehicle.registrationNumber}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
                     {vehicle.type}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
-                    {vehicle.capacity} passengers
+                    {vehicle.no_of_seats} passengers
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <StatusBadge status={vehicle.status} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
-                    {vehicle.assignedDriver}
+                    {vehicle.driver?.name || "Unassigned"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
@@ -307,21 +302,20 @@ export default function VehicleListPage() {
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                
+
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 rounded-lg transition-colors ${
-                      currentPage === page
-                        ? "bg-[var(--color-deep-navy)] text-white"
-                        : "text-[var(--bright-orange)] hover:bg-[var(--color-deep-navy)] hover:text-white"
-                    }`}
+                    className={`px-3 py-1 rounded-lg transition-colors ${currentPage === page
+                      ? "bg-[var(--color-deep-navy)] text-white"
+                      : "text-[var(--bright-orange)] hover:bg-[var(--color-deep-navy)] hover:text-white"
+                      }`}
                   >
                     {page}
                   </button>
                 ))}
-                
+
                 <button
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
