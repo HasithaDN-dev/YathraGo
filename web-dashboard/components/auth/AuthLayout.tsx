@@ -22,7 +22,7 @@ export default function AuthLayout({
       <div className="w-full max-w-md">
         {/* Back Button */}
         {showBackButton && (
-          <div className="mb-6">
+          <div className="mb-6 mt-10">
             <Button
               variant="ghost"
               className="text-white hover:bg-white/10 p-2"

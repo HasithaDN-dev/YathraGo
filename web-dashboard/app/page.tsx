@@ -1,5 +1,4 @@
-import Image from "next/image";
-import { Search, MapPin, Users, FileText, CheckCircle, Star } from "lucide-react";
+import { Search, MapPin, Users, FileText, CheckCircle } from "lucide-react";
 
 export default function Home() {
   return (

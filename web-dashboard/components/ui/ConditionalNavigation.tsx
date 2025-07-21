@@ -8,12 +8,33 @@ import {
   NavigationMenuLink
 } from "@/components/ui/navigation-menu";
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 
 export default function ConditionalNavigation() {
   const pathname = usePathname();
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isClicked && !(event.target as Element).closest('.roles-dropdown')) {
+        setIsClicked(false);
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      // Clear timeout on unmount
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [isClicked, timeoutId]);
 
   // Don't show navigation on admin and owner pages
   if (pathname.startsWith('/admin') || pathname.startsWith('/owner')) {
@@ -23,8 +44,6 @@ export default function ConditionalNavigation() {
   const handleMouseEnter = () => {
     setDropdownOpen(true);
   };
-
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
   const handleMouseLeave = () => {
     // Clear any existing timeout
@@ -52,34 +71,14 @@ export default function ConditionalNavigation() {
     setDropdownOpen(!isDropdownOpen);
   };
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (isClicked && !(event.target as Element).closest('.roles-dropdown')) {
-        setIsClicked(false);
-        setDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-      // Clear timeout on unmount
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [isClicked, timeoutId]);
-
   return (
     <NavigationMenu className="bg-light-gray text-deep-navy w-full py-2 fixed top-0 z-50">
       <div className="flex justify-between items-center w-full px-4">
         {/* Left corner: Logo */}
-        <div className="flex items-center ml-2">
-          <a href="/" className="block">
+          <Link href="/" className="block">
             <Image src="/logo.svg" alt="Yathra-Go" width={100} height={40} />
-          </a>
-        </div>
+          </Link>
+      
 
         {/* Center: Navigation items */}
         <NavigationMenuList className="flex space-x-8">

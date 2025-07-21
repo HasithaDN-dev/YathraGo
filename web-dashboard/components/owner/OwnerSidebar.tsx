@@ -57,11 +57,11 @@ export default function OwnerSidebar() {
   ];
 
   return (
-    <div className="w-64 bg-blue-900 text-white flex flex-col h-full">
+    <div className="w-64 bg-[var(--color-deep-navy)] text-white flex flex-col h-full">
       {/* Logo/Brand */}
-      <div className="p-6 border-b border-blue-800">
+      <div className="p-6 border-b border-[var(--light-navy)]">
         <h2 className="text-xl font-bold">YathraGo Owner</h2>
-        <p className="text-blue-200 text-sm mt-1">Fleet Management</p>
+        <p className="text-[var(--light-gray)] text-sm mt-1">Fleet Management</p>
       </div>
 
       {/* Navigation Menu */}
@@ -74,8 +74,8 @@ export default function OwnerSidebar() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center px-6 py-3 text-sm font-medium transition-colors duration-200 hover:bg-blue-800",
-                    isActive && "bg-blue-700 text-white"
+                    "flex items-center px-6 py-3 text-sm font-medium transition-colors duration-200 hover:bg-[var(--light-navy)]",
+                    isActive && "bg-[var(--bright-orange)] text-[var(--black)]"
                   )}
                 >
                   <item.icon className="w-5 h-5 mr-3" />
@@ -88,9 +88,9 @@ export default function OwnerSidebar() {
       </nav>
 
       {/* Logout */}
-      <div className="p-4 border-t border-blue-800">
+      <div className="p-4 border-t border-[var(--light-navy)]">
         <button
-          className="flex items-center w-full px-2 py-3 text-sm font-medium text-white hover:bg-blue-800 rounded-lg transition-colors duration-200"
+          className="flex items-center w-full px-2 py-3 text-sm font-medium text-white hover:bg-[var(--light-navy)] rounded-lg transition-colors duration-200"
           onClick={() => {
             // Handle logout
             console.log("Logout clicked");
@@ -102,7 +102,7 @@ export default function OwnerSidebar() {
       </div>
 
       {/* Footer */}
-      <div className="p-4 text-xs text-blue-200 border-t border-blue-800">
+      <div className="p-4 text-xs text-[var(--light-gray)] border-t border-[var(--light-navy)]">
         <div>Fleet Dashboard v1.0</div>
         <div>Last Login: {new Date().toLocaleDateString()}</div>
       </div>
