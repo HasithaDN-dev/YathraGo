@@ -16,6 +16,7 @@ import { Card } from '@/components/ui/Card';
 
 export default function MenuScreen() {
   const { logout } = useAuth();
+  const router = require('expo-router').useRouter();
 
 
     const handleLogout = async () => {
@@ -27,38 +28,38 @@ export default function MenuScreen() {
       id: '1',
       title: 'Payment Method',
       icon: CreditCardIcon,
-      action: () => console.log('Payment Method pressed')
+      action: () => router.push('/(menu)/payment_method'),
     },
     {
       id: '2',
       title: 'Complaints and Inquiries',
       icon: PhoneIcon,
-      action: () => console.log('Complaints and Inquiries pressed')
+      action: () => router.push('/(menu)/complaint_Inquiries'),
     },
     {
       id: '3',
       title: 'Saved Locations',
       icon: MapPinIcon,
-      action: () => console.log('Saved Locations pressed')
+      action: () => console.log('Saved Locations pressed'),
     },
     {
       id: '4',
       title: 'Help and Support',
       icon: HeadsetIcon,
-      action: () => console.log('Help and Support pressed')
+      action: () => console.log('Help and Support pressed'),
     },
     {
       id: '5',
       title: 'About us',
       icon: InfoIcon,
-      action: () => console.log('About us pressed')
+      action: () => console.log('About us pressed'),
     },
     {
       id: '6',
       title: 'Logout',
       icon: SignOutIcon,
       action: () => {handleLogout()},
-      isLogout: true
+      isLogout: true,
     }
   ];
 
@@ -89,7 +90,7 @@ export default function MenuScreen() {
             {/* Profile Link */}
             <TouchableOpacity 
               className="flex-row items-center"
-              onPress={() => console.log('Profile pressed')}
+              onPress={() => router.push('/(menu)/profile')}
               activeOpacity={0.8}
             >
               <Typography variant="subhead" weight="medium" className="text-black mr-1">
