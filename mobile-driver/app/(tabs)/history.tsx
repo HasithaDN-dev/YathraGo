@@ -98,6 +98,7 @@ export default function HistoryScreen() {
           <MapPin size={16} color="#4B5563" />
           <Text className="ml-2 text-sm text-gray-600">{item.endLocation}</Text>
         </View>
+      </View>
 
       <View className="flex-row justify-between items-center border-t border-gray-100 pt-4">
         <View className="flex-row items-center space-x-4">

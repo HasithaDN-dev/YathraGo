@@ -12,7 +12,7 @@ const vehicleData = {
   name: 'TOYOTA GDH 223 GL',
   rating: 4.1,
   type: 'Hiace',
-  image: require('@/assets/images/vehicle.png'),
+  image: require('@/assets/images/vehicle1.png'),
   licensePlate: 'WP CAB 1245',
   assistant: 'Include',
   seatingCapacity: '12/14',

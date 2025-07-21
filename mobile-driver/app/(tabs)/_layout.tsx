@@ -26,7 +26,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <House size={28} color={color} weight={focused ? 'fill' : 'regular'} />
+            <HouseIcon size={28} color={color} weight={focused ? 'fill' : 'regular'} />
           ),
         }}
       />
@@ -42,7 +42,7 @@ export default function TabLayout() {
         options={{
           title: 'History',
           tabBarIcon: ({ color, focused }) => (
-            <ClockCounterClockwise size={28} color={color} weight={focused ? 'fill' : 'regular'} />
+            <ClockIcon size={28} color={color} weight={focused ? 'fill' : 'regular'} />
           ),
         }}
       />
@@ -51,7 +51,7 @@ export default function TabLayout() {
         options={{
           title: 'Notifications',
           tabBarIcon: ({ color, focused }) => (
-            <Bell size={28} color={color} weight={focused ? 'fill' : 'regular'} />
+            <BellIcon size={28} color={color} weight={focused ? 'fill' : 'regular'} />
           ),
         }}
       />
@@ -60,7 +60,7 @@ export default function TabLayout() {
         options={{
           title: 'Menu',
           tabBarIcon: ({ color, focused }) => (
-            <List size={28} color={color} weight={focused ? 'fill' : 'regular'} />
+            <ListIcon size={28} color={color} weight={focused ? 'fill' : 'regular'} />
           ),
         }}
       />
