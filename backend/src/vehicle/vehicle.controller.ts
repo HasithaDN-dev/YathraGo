@@ -34,9 +34,10 @@ export class VehicleController {
 
   //fetching vehicles by owner id
   @UseGuards(JwtGuard, RolesGuard)
-  @Get('vehicles')
   @Roles('owner')
+  @Get('vehicles')
   async getVehicles(@User() user: Webuser): Promise<VehicleResponseDto[]> {
+    //console.log(user);
     return this.vehicleService.getVehicles(user.id);
   }
 
