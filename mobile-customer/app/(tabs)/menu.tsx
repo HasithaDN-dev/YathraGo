@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { 
   ArrowLeftIcon,
@@ -16,6 +17,7 @@ import { Card } from '@/components/ui/Card';
 
 export default function MenuScreen() {
   const { logout } = useAuth();
+  const router = useRouter();
 
 
     const handleLogout = async () => {
@@ -89,7 +91,7 @@ export default function MenuScreen() {
             {/* Profile Link */}
             <TouchableOpacity 
               className="flex-row items-center"
-              onPress={() => console.log('Profile pressed')}
+              onPress={() => router.push('/(menu)/profile')}
               activeOpacity={0.8}
             >
               <Typography variant="subhead" weight="medium" className="text-black mr-1">
