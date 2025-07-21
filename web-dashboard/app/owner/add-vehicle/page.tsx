@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -83,6 +83,7 @@ export default function AddVehiclePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // In the vehicleTypes array, only include Bus and Van
   const vehicleTypes = [
@@ -138,16 +139,6 @@ export default function AddVehiclePage() {
       newErrors.no_of_seats = "Please enter a valid number";
     } else if (Number(formData.no_of_seats) > 100) {
       newErrors.no_of_seats = "Seating capacity cannot exceed 100";
-    }
-
-    // Air Conditioned validation
-    if (typeof formData.air_conditioned === "undefined") {
-      newErrors.air_conditioned = "Air conditioned status is required";
-    }
-
-    // Assistant validation
-    if (typeof formData.assistant === "undefined") {
-      newErrors.assistant = "Assistant status is required";
     }
 
     // File upload validation
@@ -252,6 +243,7 @@ export default function AddVehiclePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     
     if (!validateForm()) {
       return;
@@ -284,7 +276,27 @@ export default function AddVehiclePage() {
       // }
 
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const token = typeof document !== 'undefined' ? document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1] : undefined;
+      const response = await fetch("http://localhost:3000/owner/add-vehicle", {
+        method: "POST",
+        body: formDataToSend,
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) {
+        let msg = "Failed to add vehicle";
+        try {
+          const data = await response.json();
+          msg = data.message || JSON.stringify(data);
+        } catch (e) {
+          // fallback to text
+          try {
+            msg = await response.text();
+          } catch {}
+        }
+        setErrorMessage(msg);
+        throw new Error(msg);
+      }
       
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 5000);
@@ -366,6 +378,14 @@ export default function AddVehiclePage() {
               <X className="w-4 h-4" />
             </button>
           </div>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="mb-4 flex items-center bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <AlertCircle className="w-5 h-5 mr-2" />
+          <span className="block sm:inline font-medium">{errorMessage}</span>
+          <button onClick={() => setErrorMessage(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3 text-red-700 hover:text-red-900 focus:outline-none">&times;</button>
         </div>
       )}
 
@@ -567,7 +587,7 @@ export default function AddVehiclePage() {
               {/* Air Conditioned */}
               <div>
                 <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
-                  Air Conditioned *
+                  Air Conditioned
                 </label>
                 <input
                   type="checkbox"
@@ -586,7 +606,7 @@ export default function AddVehiclePage() {
               {/* Assistant */}
               <div>
                 <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
-                  Assistant *
+                  Assistant
                 </label>
                 <input
                   type="checkbox"

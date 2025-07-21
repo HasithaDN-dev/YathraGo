@@ -74,6 +74,11 @@ export class VehicleController {
     @User() user: Webuser,
     @Body() vehicleDto: any,
   ): Promise<any> {
+    // Debug logging
+    console.log('--- Add Vehicle Debug ---');
+    console.log('User:', user);
+    console.log('Body:', vehicleDto);
+    console.log('Files:', Object.keys(files).reduce((acc, key) => ({ ...acc, [key]: files[key]?.map(f => f.originalname) }), {}));
     // Parse and convert types
     const parsedVehicleDto = {
       ...vehicleDto,
