@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, Settings } from "lucide-react";
+import Image from "next/image";
+import { Bell } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,14 +13,16 @@ import {
 
 export default function AdminHeader() {
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+    <header className="flex justify-between bg-white shadow-sm border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Left side - YathraGo Logo */}
-        <div className="flex items-center space-x-3">
-          <img 
-            src="/logo.svg" 
-            alt="YathraGo Logo" 
+          <Image
+            src="/logo.svg"
+            alt="YathraGo Logo"
+            width={100}
+            height={32}
             className="h-8 w-auto object-contain"
+            priority
           />
         </div>
 
@@ -35,10 +38,7 @@ export default function AdminHeader() {
             </Button>
           </div>
 
-          {/* Settings */}
-          <Button variant="ghost" size="icon">
-            <Settings className="h-5 w-5" />
-          </Button>
+          
 
           {/* Admin Profile with Name */}
           <div className="flex items-center space-x-3">
@@ -75,7 +75,6 @@ export default function AdminHeader() {
             </DropdownMenu>
           </div>
         </div>
-      </div>
     </header>
   );
 }

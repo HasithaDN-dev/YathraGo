@@ -2,12 +2,7 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
 import { HapticTab } from '@/components/HapticTab';
-import {
-  House,
-  ClockCounterClockwise,
-  Bell,
-  List,
-} from 'phosphor-react-native';
+import { HouseIcon, ClockIcon, BellIcon, ListIcon, NavigationArrowIcon as NavigationIcon } from 'phosphor-react-native';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 
 export default function TabLayout() {
@@ -33,6 +28,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <House size={28} color={color} weight={focused ? 'fill' : 'regular'} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="navigation"
+        options={{
+          title: 'Navigation',
+          tabBarIcon: ({ color }) => <NavigationIcon size={28} color={color} weight="fill" />,
         }}
       />
       <Tabs.Screen

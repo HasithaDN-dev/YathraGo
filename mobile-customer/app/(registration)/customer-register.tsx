@@ -2,23 +2,21 @@ import React, { useState } from 'react';
 import { View, Alert, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedView } from '../../components/ThemedView';
-import { ThemedText } from '../../components/ThemedText';
 import { ButtonComponent } from '../../components/ui/ButtonComponent';
 import { CustomInput } from '../../components/ui/CustomInput';
-import { ApiService } from '../../services/api';
-import { CustomerRegistration } from '../../types/registration.types';
+import { Typography } from '../../components/Typography';
+import { completeCustomerProfileApi } from '../../lib/api/profile.api';
+import { useAuthStore } from '../../lib/stores/auth.store';
+import { CustomerProfileData } from '../../types/customer.types';
 
 export default function CustomerRegisterScreen() {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<CustomerRegistration>>({
-    customerId: 0,
-    name: '',
-    email: '',
-    address: '',
-    profileImageUrl: '',
-    emergencyContact: '',
-  });
+  const [formData, setFormData] = useState<Partial<CustomerProfileData>>({});
+  
+  // Get the accessToken from our global auth store
+  const { accessToken, setCustomerRegistered, user } = useAuthStore();
+  // // Debug: log accessToken to verify it's set
+  // console.log('RegisterScreen accessToken:', accessToken);
 
   // Format phone number function
   const formatPhoneNumber = (text: string) => {
@@ -44,25 +42,7 @@ export default function CustomerRegisterScreen() {
     return text; // Return original if unprocessable
   };
 
-  // Load customer ID from stored user data on component mount
-  React.useEffect(() => {
-    const loadCustomerId = async () => {
-      try {
-        const storedUser = await ApiService.getStoredCustomer();
-        if (storedUser?.id) {
-          setFormData(prev => ({
-            ...prev,
-            customerId: storedUser.id
-          }));
-        }
-      } catch (error) {
-        console.error('Error loading customer ID:', error);
-      }
-    };
-    loadCustomerId();
-  }, []);
-
-  const handleInputChange = (field: keyof CustomerRegistration, value: string) => {
+  const handleInputChange = (field: keyof CustomerProfileData, value: string) => {
     if (field === 'emergencyContact') {
       // Format phone number for emergency contact
       const formattedValue = formatPhoneNumber(value);
@@ -79,10 +59,7 @@ export default function CustomerRegisterScreen() {
   };
 
   const validateForm = (): boolean => {
-    if (!formData.customerId || formData.customerId === 0) {
-      Alert.alert('Error', 'Customer ID not found. Please log in again.');
-      return false;
-    }
+    // Basic validation checks
     if (!formData.name?.trim()) {
       Alert.alert('Error', 'Name is required');
       return false;
@@ -118,35 +95,31 @@ export default function CustomerRegisterScreen() {
   };
 
   const handleRegisterAndContinue = async () => {
-    if (!validateForm()) return;
-    
-    const token = await ApiService.getStoredToken();
-    if (!token) {
-      Alert.alert('Error', 'Authentication token not found');
+    if (!validateForm() || !accessToken) {
+      Alert.alert('Error', 'Form is invalid or you are not logged in.');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await ApiService.registerCustomer(token, formData as CustomerRegistration);
-      
-      if (response.success) {
-        Alert.alert(
-          'Success', 
-          'Customer registration completed successfully!',
-          [
-            {
-              text: 'Continue',
-              onPress: () => router.push('./registration-type')
-            }
-          ]
-        );
-      } else {
-        Alert.alert('Error', response.message || 'Registration failed');
+      // Add customerId from user to payload
+      const payload = { ...formData, customerId: user?.id };
+      console.log('RegisterScreen payload:', payload);
+      // **THE CHANGE**: Call our new, clean API function.
+      await completeCustomerProfileApi(accessToken, payload as CustomerProfileData);
+      // Navigate to the profile type selection without changing any state
+      console.log('Customer registration successful, navigating to registration-type');
+      router.push('/(registration)/registration-type');
+    } catch (error) {
+      let message = 'Registration failed.';
+      if (error instanceof Error) {
+        if (typeof error.message === 'object') {
+          message = JSON.stringify(error.message);
+        } else {
+          message = error.message;
+        }
       }
-    } catch (error: any) {
-      console.error('Customer registration error:', error);
-      Alert.alert('Error', error.message || 'Registration failed');
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
@@ -154,34 +127,26 @@ export default function CustomerRegisterScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ThemedView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+      <View className="flex-1 bg-bg-light-blue">
         <ScrollView 
           contentContainerStyle={{ flexGrow: 1, padding: 24 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
           <View style={{ marginBottom: 32 }}>
-            <ThemedText 
-              style={{ 
-                fontSize: 28, 
-                fontWeight: 'bold', 
-                color: '#1e293b',
-                textAlign: 'center',
-                marginBottom: 8
-              }}
+            <Typography
+              variant="large-title"
+              weight="bold"
+              className="text-brand-deepNavy text-center mb-2"
             >
               Complete Your Profile
-            </ThemedText>
-            <ThemedText 
-              style={{ 
-                fontSize: 16, 
-                color: '#64748b',
-                textAlign: 'center',
-                lineHeight: 24
-              }}
+            </Typography>
+            <Typography
+              variant="body"
+              className="text-brand-neutralGray text-center"
             >
               Please provide your details to continue with registration
-            </ThemedText>
+            </Typography>
           </View>
 
           {/* Form */}
@@ -250,16 +215,15 @@ export default function CustomerRegisterScreen() {
             borderLeftWidth: 4,
             borderLeftColor: '#3b82f6'
           }}>
-            <ThemedText style={{ 
-              fontSize: 14, 
-              color: '#475569',
-              lineHeight: 20
-            }}>
+            <Typography
+              variant="footnote"
+              className="text-slate-600"
+            >
               After completing your profile, you will be able to choose your registration type and continue with the specific registration process.
-            </ThemedText>
+            </Typography>
           </View>
         </ScrollView>
-      </ThemedView>
+      </View>
     </SafeAreaView>
   );
 }

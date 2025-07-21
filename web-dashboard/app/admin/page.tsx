@@ -16,13 +16,6 @@ export default function AdminDashboard() {
       {/* Dashboard Stats */}
       <DashboardStats />
 
-      {/* View Trip Monitor Button */}
-      <div className="flex">
-        <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-          View Trip Monitor
-        </button>
-      </div>
-
       {/* Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Latest Backups */}
