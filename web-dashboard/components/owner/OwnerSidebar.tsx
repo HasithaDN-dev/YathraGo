@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   List,
+  FileText,
 } from "lucide-react";
 
 interface MenuItem {
@@ -48,6 +49,11 @@ export default function OwnerSidebar() {
       icon: CreditCard,
       label: "Payment History",
       href: "/owner/payment-history",
+    },
+    {
+      icon: FileText,
+      label: "Generate Report",
+      href: "/owner/generate-report",
     },
     {
       icon: Settings,

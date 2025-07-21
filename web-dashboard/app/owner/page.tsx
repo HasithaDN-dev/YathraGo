@@ -73,7 +73,7 @@ export default function OwnerDashboard() {
   const stats = {
     totalVehicles: 12,
     totalDrivers: 8,
-    monthlyEarnings: "₹45,320",
+    monthlyEarnings: "Rs 45,320",
     pendingPayments: 3
   };
 

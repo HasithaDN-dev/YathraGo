@@ -374,7 +374,7 @@ export default function PaymentHistoryPage() {
                     {payment.schoolName}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                    ₹{payment.amount.toLocaleString()}
+                    Rs {payment.amount.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <PaymentStatusBadge status={payment.status} />
@@ -466,7 +466,7 @@ export default function PaymentHistoryPage() {
               <div>
                 <p className="text-sm text-gray-600">Total Revenue</p>
                 <p className="text-xl font-bold text-blue-900">
-                  ₹{totalRevenue.toLocaleString()}
+                  Rs {totalRevenue.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -479,7 +479,7 @@ export default function PaymentHistoryPage() {
               <div>
                 <p className="text-sm text-gray-600">Pending Dues</p>
                 <p className="text-xl font-bold text-red-600">
-                  ₹{pendingDues.toLocaleString()}
+                  Rs {pendingDues.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -492,7 +492,7 @@ export default function PaymentHistoryPage() {
               <div>
                 <p className="text-sm text-gray-600">Failed Payments</p>
                 <p className="text-xl font-bold text-red-600">
-                  ₹{failedPayments.toLocaleString()}
+                  Rs {failedPayments.toLocaleString()}
                 </p>
               </div>
             </div>
