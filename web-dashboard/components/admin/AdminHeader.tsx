@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Bell, Settings } from "lucide-react";
+import { Bell } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +13,7 @@ import {
 
 export default function AdminHeader() {
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+    <header className="flex justify-between bg-white shadow-sm border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Left side - YathraGo Logo */}
           <Image
