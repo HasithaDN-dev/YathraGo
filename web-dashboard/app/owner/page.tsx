@@ -13,6 +13,7 @@ import {
   Eye,
   UserPlus
 } from "lucide-react";
+import Link from "next/link";
 
 interface StatCardProps {
   title: string;
@@ -54,9 +55,9 @@ const StatCard: React.FC<StatCardProps> = ({
 
 const ActivityBadge: React.FC<{ status: ActivityEntry["status"] }> = ({ status }) => {
   const statusStyles = {
-    Completed: "bg-green-100 text-green-600",
-    Paid: "bg-green-100 text-green-600",
-    Pending: "bg-yellow-100 text-yellow-600"
+    Completed: "bg-[var(--success-bg)] text-[var(--success-green)]",
+    Paid: "bg-[var(--success-bg)] text-[var(--success-green)]",
+    Pending: "bg-[var(--warm-yellow)]/20 text-[var(--warning-amber)]"
   };
 
   return (
@@ -107,11 +108,11 @@ export default function OwnerDashboard() {
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h1 className="text-3xl font-bold text-gray-900">
+      <div className="bg-white rounded-lg shadow-sm border border-[var(--neutral-gray)] p-6">
+        <h1 className="text-3xl font-bold text-[var(--color-deep-navy)]">
           Welcome, {ownerName}
         </h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-[var(--neutral-gray)] mt-2">
           Here&apos;s an overview of your fleet operations
         </p>
       </div>
@@ -122,15 +123,15 @@ export default function OwnerDashboard() {
             title="Total Vehicles"
             value={stats.totalVehicles}
             icon={<Truck className="h-6 w-6" />}
-            bgColor="bg-blue-600"
-            textColor="text-white"
+            bgColor="bg-[var(--bright-orange)]"
+            textColor="text-[var(--black)]"
           />
           
           <StatCard
             title="Total Drivers"
             value={stats.totalDrivers}
             icon={<Users className="h-6 w-6" />}
-            bgColor="bg-green-600"
+            bgColor="bg-[var(--success-green)]"
             textColor="text-white"
           />
           
@@ -138,7 +139,7 @@ export default function OwnerDashboard() {
             title="Monthly Earnings"
             value={stats.monthlyEarnings}
             icon={<CreditCard className="h-6 w-6" />}
-            bgColor="bg-purple-600"
+            bgColor="bg-[var(--color-deep-navy)]"
             textColor="text-white"
           />
           
@@ -146,7 +147,7 @@ export default function OwnerDashboard() {
             title="Pending Payments"
             value={stats.pendingPayments}
             icon={<AlertCircle className="h-6 w-6" />}
-            bgColor="bg-red-600"
+            bgColor="bg-[var(--error-red)]"
             textColor="text-white"
           />
         </div>
@@ -157,30 +158,35 @@ export default function OwnerDashboard() {
             Quick Actions
           </h2>
           <div className="flex flex-wrap gap-4">
-            <Button 
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
-              size="lg"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Add Vehicle
-            </Button>
+            <Link href="/owner/add-vehicle">
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                size="lg"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Add Vehicle
+              </Button>
+            </Link>
             
-            <Button 
-              className="bg-green-600 hover:bg-green-700 text-white font-medium"
-              size="lg"
-            >
-              <UserPlus className="h-5 w-5 mr-2" />
-              Add Driver
-            </Button>
+            <Link href="/owner/add-driver">
+              <Button 
+                className="bg-green-600 hover:bg-green-700 text-white font-medium"
+                size="lg"
+              >
+                <UserPlus className="h-5 w-5 mr-2" />
+                Add Driver
+              </Button>
+            </Link>
             
-            <Button 
-              variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
-              size="lg"
-            >
-              <Eye className="h-5 w-5 mr-2" />
-              View Payments
-            </Button>
+            <Link href="/owner/vehicle-list">
+              <Button 
+                className="bg-yellow-600 hover:bg-yellow-700 text-white font-medium"
+                size="lg"
+              >
+                <Eye className="h-5 w-5 mr-2" />
+                View Vehicles
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -193,13 +199,13 @@ export default function OwnerDashboard() {
             {recentActivities.map((activity, index) => (
               <div 
                 key={index}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-4 border border-[var(--neutral-gray)] rounded-lg hover:bg-[var(--light-gray)] transition-colors"
               >
                 <div className="flex-1">
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-[var(--color-deep-navy)] font-medium">
                     {activity.description}
                   </p>
-                  <p className="text-gray-600 text-sm mt-1">
+                  <p className="text-[var(--neutral-gray)] text-sm mt-1">
                     {activity.timestamp}
                   </p>
                 </div>
@@ -210,7 +216,7 @@ export default function OwnerDashboard() {
           
           {recentActivities.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-600">
+              <p className="text-[var(--neutral-gray)]">
                 No recent activity to display
               </p>
             </div>

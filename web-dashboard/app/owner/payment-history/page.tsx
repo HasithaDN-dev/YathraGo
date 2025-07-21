@@ -206,9 +206,9 @@ export default function PaymentHistoryPage() {
 
   const PaymentStatusBadge: React.FC<{ status: Payment["status"] }> = ({ status }) => {
     const statusConfig = {
-      Paid: "bg-green-100 text-green-600",
-      Failed: "bg-red-100 text-red-600",
-      Pending: "bg-yellow-100 text-yellow-600",
+      Paid: "bg-[var(--success-bg)] text-[var(--success-green)]",
+      Failed: "bg-[var(--error-bg)] text-[var(--error-red)]",
+      Pending: "bg-[var(--warm-yellow)]/20 text-[var(--warning-amber)]",
     };
 
     return (
@@ -221,17 +221,17 @@ export default function PaymentHistoryPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h1 className="text-2xl font-bold text-gray-900">Payment History</h1>
-        <p className="text-gray-600 mt-2">
+      <div className="bg-white rounded-lg shadow-sm border border-[var(--neutral-gray)] p-6">
+        <h1 className="text-2xl font-bold text-[var(--color-deep-navy)]">Payment History</h1>
+        <p className="text-[var(--neutral-gray)] mt-2">
           View all payment transactions and earnings
         </p>
       </div>
 
       {/* Filters */}
-      <Card className="shadow-sm border border-gray-200">
+      <Card className="shadow-sm border border-[var(--neutral-gray)]">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+          <CardTitle className="text-lg font-semibold text-[var(--color-deep-navy)] flex items-center gap-2">
             <Filter className="w-5 h-5" />
             Filters
           </CardTitle>
@@ -240,13 +240,13 @@ export default function PaymentHistoryPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--neutral-gray)] w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search school name or payment ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-[var(--neutral-gray)] rounded-lg focus:ring-2 focus:ring-[var(--bright-orange)] focus:border-transparent"
               />
             </div>
 

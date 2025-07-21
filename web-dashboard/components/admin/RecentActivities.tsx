@@ -1,4 +1,4 @@
-import { Circle, User, Database, Settings } from "lucide-react";
+import {User, Database, Settings } from "lucide-react";
 import Link from "next/link";
 
 const activities = [

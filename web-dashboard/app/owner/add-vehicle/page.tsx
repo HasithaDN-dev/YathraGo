@@ -198,9 +198,9 @@ export default function AddVehiclePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h1 className="text-2xl font-bold text-gray-900">Add Vehicle</h1>
-        <p className="text-gray-600 mt-2">
+      <div className="bg-white rounded-lg shadow-sm border border-[var(--neutral-gray)] p-6">
+        <h1 className="text-2xl font-bold text-[var(--color-deep-navy)]">Add Vehicle</h1>
+        <p className="text-[var(--neutral-gray)] mt-2">
           Register a new vehicle to your fleet
         </p>
       </div>
@@ -208,12 +208,12 @@ export default function AddVehiclePage() {
       {/* Success Toast */}
       {showSuccess && (
         <div className="fixed top-4 right-4 z-50">
-          <div className="bg-green-100 border border-green-200 text-green-600 px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3">
+          <div className="bg-[var(--success-bg)] border border-[var(--success-green)] text-[var(--success-green)] px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3">
             <CheckCircle className="w-5 h-5" />
             <span className="font-medium">Vehicle added successfully!</span>
             <button
               onClick={() => setShowSuccess(false)}
-              className="text-green-600 hover:text-green-800"
+              className="text-[var(--success-green)] hover:text-[var(--color-deep-navy)]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -223,9 +223,9 @@ export default function AddVehiclePage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Vehicle Form */}
-        <Card className="shadow-sm border border-gray-200">
+        <Card className="shadow-sm border border-[var(--neutral-gray)]">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-gray-900">
+            <CardTitle className="text-lg font-semibold text-[var(--color-deep-navy)]">
               Vehicle Information
             </CardTitle>
           </CardHeader>
@@ -233,7 +233,7 @@ export default function AddVehiclePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Vehicle No */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
                   Vehicle No. *
                 </label>
                 <input
@@ -241,12 +241,12 @@ export default function AddVehiclePage() {
                   placeholder="e.g., ABC-123"
                   value={formData.vehicleNo}
                   onChange={(e) => handleInputChange("vehicleNo", e.target.value.toUpperCase())}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.vehicleNo ? "border-red-500 bg-red-50" : "border-gray-400"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--bright-orange)] focus:border-transparent ${
+                    errors.vehicleNo ? "border-[var(--error-red)] bg-[var(--error-bg)]" : "border-[var(--neutral-gray)]"
                   }`}
                 />
                 {errors.vehicleNo && (
-                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
+                  <div className="mt-1 flex items-center space-x-1 text-[var(--error-red)] bg-[var(--error-bg)] px-2 py-1 rounded text-sm">
                     <AlertCircle className="w-4 h-4" />
                     <span>{errors.vehicleNo}</span>
                   </div>
@@ -419,14 +419,14 @@ export default function AddVehiclePage() {
             type="button"
             variant="outline"
             onClick={handleCancel}
-            className="border-gray-400 text-gray-600 hover:bg-gray-50"
+            className="border-[var(--neutral-gray)] text-[var(--neutral-gray)] hover:bg-[var(--light-gray)]"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-orange-500 hover:bg-orange-600 text-black font-medium"
+            className="bg-[var(--bright-orange)] hover:bg-[var(--warm-yellow)] text-[var(--black)] font-medium"
           >
             {isSubmitting ? "Adding Vehicle..." : "Add Vehicle"}
           </Button>
