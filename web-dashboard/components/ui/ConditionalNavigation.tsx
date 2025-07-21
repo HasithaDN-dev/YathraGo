@@ -136,7 +136,7 @@ export default function ConditionalNavigation() {
             <NavigationMenuLink href="/login">Login</NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <NavigationMenuLink href="/sign-in">Sign In</NavigationMenuLink>
+            <NavigationMenuLink href="/signup">Sign Up</NavigationMenuLink>
           </NavigationMenuItem>
         </NavigationMenuList>
       </div>
