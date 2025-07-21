@@ -5,12 +5,15 @@ import { useAuth } from '@/hooks/useAuth';
 import ProfileMenuItem from '@/components/ui/ProfileMenuItem';
 import { Icon } from '@/components/ui/Icon';
 
-export default function MenuScreen() {
+export default function Profile() {
   const { profile, logout } = useAuth();
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Icon name="ArrowLeft" size={24} color="#143373" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
         <View style={styles.profileImageContainer}>
           <Image
@@ -27,9 +30,9 @@ export default function MenuScreen() {
 
       <View style={{ marginTop: 24 }}>
         <ProfileMenuItem icon="User" text="Personal Details" onPress={() => {}} />
-        <ProfileMenuItem icon="Receipt" text="Transactions" onPress={() => router.push('/profile/earnings')} />
-        <ProfileMenuItem icon="ChartLineUp" text="Trip Statistics" onPress={() => router.push('/profile/rides')} />
-        <ProfileMenuItem icon="Car" text="Manage Vehicles" onPress={() => router.push('/profile/vehicle-details')} />
+        <ProfileMenuItem icon="Receipt" text="Transactions" onPress={() => router.push({ pathname: 'profile/earnings' } as any)} />
+        <ProfileMenuItem icon="ChartLineUp" text="Trip Statistics" onPress={() => router.push({ pathname: 'profile/rides' } as any)} />
+        <ProfileMenuItem icon="Car" text="Manage Vehicles" onPress={() => router.push({ pathname: 'profile/vehicle-details' } as any)} />
         <ProfileMenuItem icon="Headset" text="Help and Support" onPress={() => {}} />
         <ProfileMenuItem icon="Info" text="About Us" onPress={() => {}} />
         <ProfileMenuItem icon="SignOut" text="Logout" onPress={logout} />
@@ -53,6 +56,11 @@ const styles = StyleSheet.create({
     padding: 24,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
   },
   headerTitle: {
     fontSize: 22,

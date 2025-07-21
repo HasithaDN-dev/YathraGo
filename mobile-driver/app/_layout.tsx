@@ -50,6 +50,7 @@ export default function RootLayout() {
           <Stack.Protected guard={isAuthenticated === true}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="vehicle-list" options={{ headerShown: false }} />
+            <Stack.Screen name="profile" options={{ headerShown: false }} />
           </Stack.Protected>
 
           {/* Unauthenticated user routes */}
