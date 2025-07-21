@@ -4,30 +4,30 @@ import { Platform } from 'react-native';
 import { HapticTab } from '@/components/HapticTab';
 import { HouseIcon, ClockIcon, BellIcon, ListIcon, NavigationArrowIcon as NavigationIcon } from 'phosphor-react-native';
 import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.tabIconSelected,
-        tabBarInactiveTintColor: Colors.tabIconDefault,
+        tabBarActiveTintColor: '#000000', // Black
+        tabBarInactiveTintColor: '#000000', // Black
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
+        tabBarStyle: {
+          backgroundColor: '#F3F4F6', // Light Gray
+          borderTopWidth: 0, // Removes top border
+        },
+        tabBarLabelStyle: {
+          fontWeight: '600',
+        },
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <HouseIcon size={28} color={color} weight="fill" />,
+          tabBarIcon: ({ color, focused }) => (
+            <House size={28} color={color} weight={focused ? 'fill' : 'regular'} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -41,21 +41,27 @@ export default function TabLayout() {
         name="history"
         options={{
           title: 'History',
-          tabBarIcon: ({ color }) => <ClockIcon size={28} color={color} weight="fill" />,
+          tabBarIcon: ({ color, focused }) => (
+            <ClockCounterClockwise size={28} color={color} weight={focused ? 'fill' : 'regular'} />
+          ),
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
           title: 'Notifications',
-          tabBarIcon: ({ color }) => <BellIcon size={28} color={color} weight="fill" />,
+          tabBarIcon: ({ color, focused }) => (
+            <Bell size={28} color={color} weight={focused ? 'fill' : 'regular'} />
+          ),
         }}
       />
       <Tabs.Screen
         name="menu"
         options={{
           title: 'Menu',
-          tabBarIcon: ({ color }) => <ListIcon size={28} color={color} weight="fill" />,
+          tabBarIcon: ({ color, focused }) => (
+            <List size={28} color={color} weight={focused ? 'fill' : 'regular'} />
+          ),
         }}
       />
     </Tabs>
