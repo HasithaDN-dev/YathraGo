@@ -17,8 +17,8 @@ export default function ConditionalNavigation() {
   }
 
   return (
-    <NavigationMenu className="bg-light-gray text-deep-navy w-full p-4">
-      <div className="flex justify-between items-center w-full">
+    <NavigationMenu className="bg-light-gray text-deep-navy w-full max-w-none p-4">
+      <div className="w-full max-w-none flex justify-between items-center">
         <NavigationMenuList>
           <NavigationMenuItem className="no-hover">
             <NavigationMenuLink href="/">
@@ -41,7 +41,7 @@ export default function ConditionalNavigation() {
             <NavigationMenuLink href="/admin">Admin</NavigationMenuLink>
           </NavigationMenuItem>
         </NavigationMenuList>
-        <NavigationMenuList className="ml-auto">
+        <NavigationMenuList>
           <NavigationMenuItem>
             <NavigationMenuLink href="/login">Login</NavigationMenuLink>
           </NavigationMenuItem>
