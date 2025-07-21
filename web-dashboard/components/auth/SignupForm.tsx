@@ -11,7 +11,7 @@ interface SignupFormProps {
   onSubmit?: (data: {
     name: string;
     email: string;
-    phone: string;
+    //phone: string;
     password: string;
     confirmPassword: string;
   }) => void;
@@ -21,21 +21,21 @@ export default function SignupForm({ onSubmit }: SignupFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    phone: "",
+    //phone: "",
     password: "",
     confirmPassword: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
+    const newErrors: { [key: string]: string } = {};
 
     // Name validation
     if (!formData.name.trim()) {
-      newErrors.name = "Full name is required";
+      newErrors.name = "Username is required";
     } else if (formData.name.trim().length < 2) {
       newErrors.name = "Name must be at least 2 characters";
     }
@@ -48,11 +48,11 @@ export default function SignupForm({ onSubmit }: SignupFormProps) {
     }
 
     // Phone validation
-    if (!formData.phone) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^\+?[\d\s-()]{10,}$/.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid phone number";
-    }
+    // if (!formData.phone) {
+    //   newErrors.phone = "Phone number is required";
+    // } else if (!/^\+?[\d\s-()]{10,}$/.test(formData.phone)) {
+    //   newErrors.phone = "Please enter a valid phone number";
+    // }
 
     // Password validation
     if (!formData.password) {
@@ -76,22 +76,43 @@ export default function SignupForm({ onSubmit }: SignupFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
-    
+    setErrors({});
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Send signup request to backend
+      const response = await fetch("http://localhost:3000/auth-web/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          username: formData.name,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        // Backend error (e.g., credentials taken)
+        setErrors({ general: data.message || "Signup failed. Please try again." });
+        setIsLoading(false);
+        return;
+      }
+      // // Save JWT token to localStorage
+      // if (data.access_token) {
+      //   localStorage.setItem("access_token", data.access_token);
+      // }
       
+      // Call onSubmit if provided
       if (onSubmit) {
         onSubmit(formData);
       } else {
-        // Default behavior - redirect to login or dashboard
+        // Redirect to dashboard or login
         window.location.href = "/login";
       }
     } catch (error) {
+      setErrors({ general: "Network error. Please try again." });
       console.error("Signup error:", error);
     } finally {
       setIsLoading(false);
@@ -111,14 +132,14 @@ export default function SignupForm({ onSubmit }: SignupFormProps) {
       {/* Name Field */}
       <div className="space-y-2">
         <Label htmlFor="name" className="text-[var(--color-deep-navy)] font-medium">
-          Full Name
+          Username
         </Label>
         <div className="relative">
           <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--neutral-gray)] w-4 h-4" />
           <Input
             id="name"
             type="text"
-            placeholder="Enter your full name"
+            placeholder="Enter your username"
             value={formData.name}
             onChange={(e) => handleInputChange("name", e.target.value)}
             className={`pl-10 ${errors.name ? "border-[var(--error-red)]" : ""}`}
@@ -153,7 +174,7 @@ export default function SignupForm({ onSubmit }: SignupFormProps) {
       </div>
 
       {/* Phone Field */}
-      <div className="space-y-2">
+      {/* <div className="space-y-2">
         <Label htmlFor="phone" className="text-[var(--color-deep-navy)] font-medium">
           Phone Number
         </Label>
@@ -172,7 +193,7 @@ export default function SignupForm({ onSubmit }: SignupFormProps) {
         {errors.phone && (
           <p className="text-[var(--error-red)] text-sm">{errors.phone}</p>
         )}
-      </div>
+      </div> */}
 
       {/* Password Field */}
       <div className="space-y-2">
@@ -254,12 +275,16 @@ export default function SignupForm({ onSubmit }: SignupFormProps) {
       >
         {isLoading ? "Creating Account..." : "Create Account"}
       </Button>
+      {/* Error Message */}
+      {errors.general && (
+        <div className="text-[var(--error-red)] text-center text-sm mt-2">{errors.general}</div>
+      )}
 
       {/* Login Link */}
       <div className="text-center text-sm text-[var(--neutral-gray)]">
         Already have an account?{" "}
-        <Link 
-          href="/login" 
+        <Link
+          href="/login"
           className="text-[var(--bright-orange)] hover:text-[var(--warm-yellow)] font-medium transition-colors"
         >
           Sign in here
