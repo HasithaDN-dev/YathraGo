@@ -47,12 +47,14 @@ export default function RootLayout() {
         {/* Protected routes - only accessible when authenticated */}
         <Stack.Protected guard={isAuthenticated === true}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="profile" options={{ headerShown: false }} />
         </Stack.Protected>
 
         {/* Unauthenticated user routes */}
         <Stack.Protected guard={isAuthenticated === false}>
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          
         </Stack.Protected>
 
         <Stack.Screen name="+not-found" />

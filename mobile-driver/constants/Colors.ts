@@ -13,6 +13,7 @@ const birghtOrange = '#FDC334';
 const lightNavy  = '#2D4A8A'   // Primary text
 
 export const Colors = {
+  primary: deepNavyBlue,
   // For tab navigation (React Navigation requirement)
   tabIconDefault: neutralGray,
   tabIconSelected: deepNavyBlue,
