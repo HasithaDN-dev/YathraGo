@@ -37,9 +37,11 @@ model Webuser {
   email     String   @unique
   password  String
   username  String
-  role      String   @default("USER")
+  role      String   @default("owner")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  vehicleOwner VehicleOwner?
 }
 
 model Admin {
@@ -183,14 +185,15 @@ model FoundedBackupDrivers {
 }
 
 model VehicleOwner {
-  id         Int       @id @default(autoincrement())
-  first_name String
-  last_name  String
-  phone      String
-  email      String
+  id         Int      @id
+  first_name String?
+  last_name  String?
+  phone      String?
+  email      String?
   company    String?
-  Address    String
+  Address    String?
   vehicles   Vehicle[]
+  webuser    Webuser  @relation(fields: [id], references: [id])
 }
 
 model Customer {

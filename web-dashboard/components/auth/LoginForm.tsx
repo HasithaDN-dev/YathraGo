@@ -6,6 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import Link from "next/link";
+import {
+  AlertCircle,
+  AlertTriangle,
+  XCircle,
+  X,
+  ShieldAlert
+} from "lucide-react";
+import Cookies from "js-cookie";
 
 interface LoginFormProps {
   onSubmit?: (email: string, password: string) => void;
@@ -18,10 +26,10 @@ export default function LoginForm({ onSubmit }: LoginFormProps) {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
+    const newErrors: { [key: string]: string } = {};
 
     // Email validation
     if (!formData.email) {
@@ -43,15 +51,42 @@ export default function LoginForm({ onSubmit }: LoginFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Send login creadentials
+      const response = await fetch("http://localhost:3000/auth-web/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrors({ general: data.message || "Login failed. Please try again." });
+        setIsLoading(false);
+        return;
+      }
+      if (data.access_token) {
+        Cookies.set("access_token", data.access_token, { expires: 7 }); // expires in 7 days
+      }
+
+      console.log(data.access_token);
+
+
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
       if (onSubmit) {
         onSubmit(formData.email, formData.password);
       } else {
@@ -129,13 +164,32 @@ export default function LoginForm({ onSubmit }: LoginFormProps) {
 
       {/* Forgot Password */}
       <div className="text-right">
-        <Link 
-          href="/forgot-password" 
+        <Link
+          href="/forgot-password"
           className="text-sm text-[var(--bright-orange)] hover:text-[var(--warm-yellow)] transition-colors"
         >
           Forgot your password?
         </Link>
       </div>
+
+
+      {/* General Error */}
+      {errors.general && (
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-red-50 via-orange-50 to-red-50 border border-[var(--error-red)]/20 p-4 animate-in fade-in duration-500">
+          <div className="absolute inset-0 bg-gradient-to-r from-[var(--error-red)]/5 to-transparent"></div>
+          <div className="relative flex items-center justify-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center">
+                <ShieldAlert className="w-5 h-5 text-[var(--error-red)]" />
+              </div>
+            </div>
+            <p className="text-[var(--error-red)] text-sm font-medium text-center leading-relaxed">
+              {errors.general}
+            </p>
+          </div>
+        </div>
+      )}
+
 
       {/* Submit Button */}
       <Button
@@ -149,8 +203,8 @@ export default function LoginForm({ onSubmit }: LoginFormProps) {
       {/* Sign Up Link */}
       <div className="text-center text-sm text-[var(--neutral-gray)]">
         Don&apos;t have an account?{" "}
-        <Link 
-          href="/signup" 
+        <Link
+          href="/signup"
           className="text-[var(--bright-orange)] hover:text-[var(--warm-yellow)] font-medium transition-colors"
         >
           Sign up here

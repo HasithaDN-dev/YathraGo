@@ -25,9 +25,17 @@ export class AuthWebService {
           email: credentials.email,
           password: hashPassword,
           username: credentials.username,
-          role: credentials.role,
         },
       });
+
+      // If the user is an owner, create a VehicleOwner record with the same id
+      if (user.role === 'owner') {
+        await this.prisma.vehicleOwner.create({
+          data: {
+            id:user.id,
+          },
+        });
+      }
 
       return this.signToken(user.id, user.email, user.role);
     } catch (error) {
