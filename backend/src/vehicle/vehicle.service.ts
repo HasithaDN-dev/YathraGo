@@ -15,7 +15,12 @@ export class VehicleService {
       where: {
         ownerId: userID,
       },
+      include: {
+        driver: true,
+      },
     });
+
+    
 
     if (vehicleList.length === 0) {
       throw new NotFoundException('No vehicle found');

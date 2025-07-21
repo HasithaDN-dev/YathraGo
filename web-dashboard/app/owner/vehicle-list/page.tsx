@@ -13,17 +13,20 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import Cookies from "js-cookie";
+import { useEffect } from "react";
 
 interface Vehicle {
-  id: number;
+
+  id: string;
+  registrationNumber: string;
   type: string;
-  brand: string;
-  model: string;
-  color: string;
   no_of_seats: number;
-  air_conditioned: boolean;
-  assistant: boolean;
-  registrationNumber?: string;
+  status: "Active" | "Inactive";
+  driver?: {
+    name: string;
+  } | null;
+
 }
 
 export default function VehicleListPage() {
@@ -34,6 +37,36 @@ export default function VehicleListPage() {
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [filteredVehicles, setFilteredVehicles] = useState(vehicles);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      setLoading(true);
+      try {
+        const token = Cookies.get("access_token");
+        const response = await fetch("http://localhost:3000/vehicles", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) throw new Error("Failed to fetch vehicles");
+        const data = await response.json();
+        setVehicles(data);
+        setFilteredVehicles(data);
+      } catch (err) {
+        setVehicles([]);
+        setFilteredVehicles([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVehicles();
+  }, []);
+
+
   const itemsPerPage = 5;
 
   useEffect(() => {
@@ -70,18 +103,61 @@ export default function VehicleListPage() {
   const currentVehicles = filteredVehicles.slice(startIndex, endIndex);
 
   const handleFilter = () => {
-    // This function is no longer needed as filtering is done in the useEffect hook
-    // Keeping it for now, but it will be removed in a subsequent edit if not used.
+
+    let filtered = vehicles;
+
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (vehicle) =>
+          vehicle.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (vehicle.driver?.name?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (selectedStatus) {
+      filtered = filtered.filter((vehicle) => vehicle.status === selectedStatus);
+    }
+
+    if (selectedType) {
+      filtered = filtered.filter((vehicle) => vehicle.type === selectedType);
+    }
+
+    setFilteredVehicles(filtered);
+    setCurrentPage(1);
+
   };
 
   const clearFilters = () => {
     setSearchTerm("");
     setSelectedType("");
-    setSelectedBrand("");
-    setSelectedModel("");
-    setSelectedColor("");
+
+    setFilteredVehicles(vehicles);
     setCurrentPage(1);
   };
+
+  const StatusBadge: React.FC<{ status: Vehicle["status"] }> = ({ status }) => {
+    return (
+      <Badge
+        variant="secondary"
+        className={
+          status === "Active"
+            ? "bg-[var(--success-bg)] text-[var(--success-green)]"
+            : "bg-[var(--light-gray)] text-[var(--neutral-gray)]"
+        }
+      >
+        {status}
+      </Badge>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <span className="text-[var(--color-deep-navy)] text-lg font-semibold">Loading vehicles...</span>
+      </div>
+    );
+  }
+
 
   return (
     <div className="space-y-6">
@@ -236,13 +312,9 @@ export default function VehicleListPage() {
                     {vehicle.type}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
-                    {vehicle.brand}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
-                    {vehicle.model}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
-                    {vehicle.color}
+
+                    {vehicle.no_of_seats} passengers
+
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
                     {vehicle.no_of_seats}
@@ -251,7 +323,9 @@ export default function VehicleListPage() {
                     {vehicle.air_conditioned ? "Yes" : "No"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
-                    {vehicle.assistant ? "Yes" : "No"}
+
+                    {vehicle.driver?.name || "Unassigned"}
+
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
@@ -294,21 +368,20 @@ export default function VehicleListPage() {
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                
+
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 rounded-lg transition-colors ${
-                      currentPage === page
-                        ? "bg-[var(--color-deep-navy)] text-white"
-                        : "text-[var(--bright-orange)] hover:bg-[var(--color-deep-navy)] hover:text-white"
-                    }`}
+                    className={`px-3 py-1 rounded-lg transition-colors ${currentPage === page
+                      ? "bg-[var(--color-deep-navy)] text-white"
+                      : "text-[var(--bright-orange)] hover:bg-[var(--color-deep-navy)] hover:text-white"
+                      }`}
                   >
                     {page}
                   </button>
                 ))}
-                
+
                 <button
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
