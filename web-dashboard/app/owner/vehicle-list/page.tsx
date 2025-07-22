@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -17,7 +17,6 @@ import Cookies from "js-cookie";
 import { useEffect } from "react";
 
 interface Vehicle {
-
   id: string;
   registrationNumber: string;
   type: string;
@@ -26,18 +25,14 @@ interface Vehicle {
   driver?: {
     name: string;
   } | null;
-
 }
 
 export default function VehicleListPage() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRoute, setSelectedRoute] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedType, setSelectedType] = useState("");
-  const [selectedBrand, setSelectedBrand] = useState("");
-  const [selectedModel, setSelectedModel] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState(vehicles);
   const [loading, setLoading] = useState(true);
@@ -66,44 +61,13 @@ export default function VehicleListPage() {
     fetchVehicles();
   }, []);
 
-
   const itemsPerPage = 5;
-
-  useEffect(() => {
-    async function fetchVehicles() {
-      try {
-        const res = await fetch("/owner/vehicles", { credentials: "include" });
-        if (!res.ok) throw new Error("Failed to fetch vehicles");
-        const data = await res.json();
-        setVehicles(data);
-      } catch (err) {
-        setVehicles([]);
-      }
-    }
-    fetchVehicles();
-  }, []);
-
-  const filteredVehicles = vehicles.filter((vehicle) => {
-    return (
-      (!searchTerm ||
-        vehicle.registrationNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vehicle.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vehicle.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vehicle.model.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (!selectedType || vehicle.type === selectedType) &&
-      (!selectedBrand || vehicle.brand === selectedBrand) &&
-      (!selectedModel || vehicle.model === selectedModel) &&
-      (!selectedColor || vehicle.color === selectedColor)
-    );
-  });
-
   const totalPages = Math.ceil(filteredVehicles.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentVehicles = filteredVehicles.slice(startIndex, endIndex);
 
   const handleFilter = () => {
-
     let filtered = vehicles;
 
     if (searchTerm) {
@@ -124,13 +88,13 @@ export default function VehicleListPage() {
 
     setFilteredVehicles(filtered);
     setCurrentPage(1);
-
   };
 
   const clearFilters = () => {
     setSearchTerm("");
+    setSelectedRoute("");
+    setSelectedStatus("");
     setSelectedType("");
-
     setFilteredVehicles(vehicles);
     setCurrentPage(1);
   };
@@ -158,7 +122,6 @@ export default function VehicleListPage() {
     );
   }
 
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -184,7 +147,30 @@ export default function VehicleListPage() {
             />
           </div>
 
-          {/* Type Filter */}
+          {/* Route Filter */}
+          <select
+            value={selectedRoute}
+            onChange={(e) => setSelectedRoute(e.target.value)}
+            className="px-3 py-2 border border-[var(--neutral-gray)] rounded-lg focus:ring-2 focus:ring-[var(--bright-orange)] focus:border-transparent"
+          >
+            <option value="">All Routes</option>
+            <option value="Route A">Route A</option>
+            <option value="Route B">Route B</option>
+            <option value="Route C">Route C</option>
+          </select>
+
+          {/* Status Filter */}
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-3 py-2 border border-[var(--neutral-gray)] rounded-lg focus:ring-2 focus:ring-[var(--bright-orange)] focus:border-transparent"
+          >
+            <option value="">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+
+          {/* Vehicle Type Filter */}
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
@@ -192,44 +178,8 @@ export default function VehicleListPage() {
           >
             <option value="">All Types</option>
             <option value="Bus">Bus</option>
-            <option value="Van">Van</option>
             <option value="Mini Bus">Mini Bus</option>
-          </select>
-
-          {/* Brand Filter */}
-          <select
-            value={selectedBrand}
-            onChange={(e) => setSelectedBrand(e.target.value)}
-            className="px-3 py-2 border border-[var(--neutral-gray)] rounded-lg focus:ring-2 focus:ring-[var(--bright-orange)] focus:border-transparent"
-          >
-            <option value="">All Brands</option>
-            <option value="Toyota">Toyota</option>
-            <option value="Honda">Honda</option>
-            <option value="Ford">Ford</option>
-          </select>
-
-          {/* Model Filter */}
-          <select
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
-            className="px-3 py-2 border border-[var(--neutral-gray)] rounded-lg focus:ring-2 focus:ring-[var(--bright-orange)] focus:border-transparent"
-          >
-            <option value="">All Models</option>
-            <option value="Corolla">Corolla</option>
-            <option value="Civic">Civic</option>
-            <option value="Mustang">Mustang</option>
-          </select>
-
-          {/* Color Filter */}
-          <select
-            value={selectedColor}
-            onChange={(e) => setSelectedColor(e.target.value)}
-            className="px-3 py-2 border border-[var(--neutral-gray)] rounded-lg focus:ring-2 focus:ring-[var(--bright-orange)] focus:border-transparent"
-          >
-            <option value="">All Colors</option>
-            <option value="Red">Red</option>
-            <option value="Blue">Blue</option>
-            <option value="Black">Black</option>
+            <option value="Van">Van</option>
           </select>
 
           {/* Action Buttons */}
@@ -271,28 +221,19 @@ export default function VehicleListPage() {
             <thead className="bg-[var(--light-gray)] border-b border-[var(--neutral-gray)]">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
-                  Registration No.
+                  Vehicle No.
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
                   Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
-                  Brand
+                  Capacity
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
-                  Model
+                  Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
-                  Color
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
-                  Seats
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
-                  AC
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
-                  Assistant
+                  Assigned Driver
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
                   Actions
@@ -312,20 +253,13 @@ export default function VehicleListPage() {
                     {vehicle.type}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
-
                     {vehicle.no_of_seats} passengers
-
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <StatusBadge status={vehicle.status} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
-                    {vehicle.no_of_seats}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
-                    {vehicle.air_conditioned ? "Yes" : "No"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
-
                     {vehicle.driver?.name || "Unassigned"}
-
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
@@ -334,9 +268,9 @@ export default function VehicleListPage() {
                       </button>
                       <button
                         className={
-                          // This logic needs to be updated based on the new 'status' field
-                          // For now, it's a placeholder.
-                          "text-[var(--success-green)] hover:text-[var(--warm-yellow)]"
+                          vehicle.status === "Active"
+                            ? "text-[var(--error-red)] hover:text-[var(--warning-amber)]"
+                            : "text-[var(--success-green)] hover:text-[var(--warm-yellow)]"
                         }
                       >
                         <Power className="w-4 h-4" />
