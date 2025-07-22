@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Alert, ScrollView } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { View, Alert, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomInput } from '../../components/ui/CustomInput';
@@ -8,10 +9,13 @@ import { Typography } from '../../components/Typography';
 import { registerChildApi } from '../../lib/api/profile.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
 import { ChildProfileData } from '../../types/customer.types';
+import { Colors } from '@/constants/Colors'; // Ensure this import is correct
+
 
 export default function ChildRegistrationScreen() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<ChildProfileData>>({});
+  const [childImageUri, setChildImageUri] = useState<string | null>(null);
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isAddMode = mode === 'add';
 
@@ -104,8 +108,8 @@ export default function ChildRegistrationScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View className="flex-1 bg-bg-light-blue">
+    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+      <View style={{ flex: 1, backgroundColor: "white" }}>
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, padding: 24 }}
           showsVerticalScrollIndicator={false}
@@ -179,13 +183,42 @@ export default function ChildRegistrationScreen() {
               required
             />
 
-            <CustomInput
-              label="Child Image URL (Optional)"
-              placeholder="Enter child's image URL"
-              value={formData.childImageUrl || ''}
-              onChangeText={(value: string) => handleInputChange('childImageUrl', value)}
-              autoCapitalize="none"
-            />
+            {/* Child Image Picker (Optional) */}
+            <View>
+              <Typography variant="body" className="mb-2 font-medium">Child Image (Optional)</Typography>
+              {childImageUri ? (
+                <Image source={{ uri: childImageUri }} style={{ width: 100, height: 100, borderRadius: 50, marginBottom: 8 }} />
+              ) : null}
+              <TouchableOpacity
+                onPress={async () => {
+                  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                  if (permission.status !== 'granted') {
+                    Alert.alert('Permission Denied', 'We need media library permissions to select a child image.');
+                    return;
+                  }
+                  const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    allowsEditing: true,
+                    aspect: [1, 1],
+                    quality: 0.7,
+                  });
+                  if (!result.canceled && result.assets && result.assets.length > 0) {
+                    const asset = result.assets[0];
+                    // Show preview
+                    setChildImageUri(asset.uri);
+                    // Use the filename if available, otherwise generate one
+                    const filename = asset.fileName || `child_${Date.now()}.jpg`;
+                    setFormData(prev => ({ ...prev, childImageUrl: filename }));
+                  }
+                }}
+                style={{ backgroundColor: '#e5e7eb', padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 8 }}
+              >
+                <Typography variant="body" className="font-medium">{childImageUri ? 'Change Image' : 'Pick Child Image'}</Typography>
+              </TouchableOpacity>
+              {formData.childImageUrl ? (
+                <Typography variant="subhead" className="text-xs text-green-600">Image selected: {formData.childImageUrl}</Typography>
+              ) : null}
+            </View>
           </View>
 
           {/* Action Buttons */}

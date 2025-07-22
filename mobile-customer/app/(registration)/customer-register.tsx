@@ -216,7 +216,7 @@ export default function CustomerRegisterScreen() {
             />
 
             <View>
-              <Typography variant="subhead" className="mb-2 font-medium">Profile Image (Optional)</Typography>
+              <Typography variant="body" className="mb-2 font-medium">Profile Image (Optional)</Typography>
               {profileImage ? (
                 <Image source={{ uri: profileImage }} style={{ width: 100, height: 100, borderRadius: 50, marginBottom: 8 }} />
               ) : null}
