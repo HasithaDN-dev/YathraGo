@@ -13,9 +13,7 @@ import {
   TextInput,
   Image,
 } from 'react-native';
-// For icons, you would typically install a library like react-native-vector-icons
-// For this example, we'll use simple text placeholders and emojis.
-// import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 
 // --- Type Definitions ---
 
@@ -32,8 +30,7 @@ interface Driver {
 }
 
 // --- Mock Data ---
-// Updated with more details for the search view
-const driversData: Driver[] = [
+const allDriversData: Driver[] = [
   {
     id: '1',
     name: 'Robert Davis',
@@ -72,6 +69,28 @@ const driversData: Driver[] = [
   },
 ];
 
+// This simulates the data for "Backup Drivers"
+const backupDriversData: Driver[] = [
+  {
+    id: '1',
+    name: 'Robert Davis',
+    regNo: '457',
+    status: 'Accepted',
+    currentLocation: 'Maharagama',
+    avatarUrl: 'https://placehold.co/120x120/E3F2FD/333?text=RD',
+    vehicleImageUrl: 'https://placehold.co/600x400/F9A825/white?text=Bus',
+  },
+  {
+    id: '3',
+    name: 'Supun Thilina',
+    regNo: '589',
+    status: 'Accepted',
+    currentLocation: 'Nugegoda',
+    avatarUrl: 'https://placehold.co/120x120/E3F2FD/333?text=ST',
+    vehicleImageUrl: 'https://placehold.co/600x400/F9A825/white?text=Bus',
+  },
+];
+
 // --- Color Palette & Theme ---
 const theme = {
   colors: {
@@ -102,14 +121,16 @@ const theme = {
 
 // --- Reusable Components ---
 
-// Status Badge for the List View
 interface StatusBadgeProps {
   status: Status;
 }
+
+// Status Badge Component (Used in List View)
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const badgeStyle: StyleProp<ViewStyle> = {
     backgroundColor: status === 'Accepted' ? theme.colors.success : theme.colors.secondary,
   };
+
   return (
     <View style={[styles.badge, badgeStyle]}>
       <Text style={styles.badgeText}>{status}</Text>
@@ -117,14 +138,17 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   );
 };
 
-// Driver List Item for the List View
 interface DriverListItemProps {
   driver: Driver;
 }
+
+// Driver List Item Component (Used in List View) - Retains original design
 const DriverListItem: React.FC<DriverListItemProps> = ({ driver }) => (
   <View style={styles.driverItemContainer}>
     <View style={styles.driverInfo}>
-      <Image source={{ uri: driver.avatarUrl }} style={styles.avatar} />
+      <View style={styles.avatarPlaceholder}>
+        <Image source={{ uri: driver.avatarUrl }} style={styles.avatarImage} />
+      </View>
       <View>
         <Text style={styles.driverName}>{driver.name}</Text>
         <Text style={styles.driverRegNo}>Reg No: {driver.regNo}</Text>
@@ -136,41 +160,40 @@ const DriverListItem: React.FC<DriverListItemProps> = ({ driver }) => (
 
 // Search Result Card for the Search View
 interface SearchResultCardProps {
-    driver: Driver;
+  driver: Driver;
 }
 const SearchResultCard: React.FC<SearchResultCardProps> = ({ driver }) => (
-    <View style={styles.searchCard}>
-        <View style={styles.searchCardHeader}>
-            <Image source={{ uri: driver.avatarUrl }} style={styles.searchAvatar} />
-            <View>
-                <Text style={styles.searchDriverName}>{driver.name}</Text>
-                <Text style={styles.searchRegNo}>Reg No: {driver.regNo}</Text>
-            </View>
-        </View>
-        <View style={styles.searchCardBody}>
-            <Text style={styles.locationLabel}>Current Location</Text>
-            <View style={styles.locationContainer}>
-                <Text style={styles.locationIcon}>📍</Text>
-                <Text style={styles.locationText}>{driver.currentLocation}</Text>
-            </View>
-        </View>
-        <Image source={{ uri: driver.vehicleImageUrl }} style={styles.vehicleImage} resizeMode="cover" />
+  <View style={styles.searchCard}>
+    <View style={styles.searchCardHeader}>
+      <Image source={{ uri: driver.avatarUrl }} style={styles.searchAvatar} />
+      <View>
+        <Text style={styles.searchDriverName}>{driver.name}</Text>
+        <Text style={styles.searchRegNo}>Reg No: {driver.regNo}</Text>
+      </View>
     </View>
+    <View style={styles.searchCardBody}>
+      <Text style={styles.locationLabel}>Current Location</Text>
+      <View style={styles.locationContainer}>
+        <Text style={styles.locationIcon}>📍</Text>
+        <Text style={styles.locationText}>{driver.currentLocation}</Text>
+      </View>
+    </View>
+    <Image source={{ uri: driver.vehicleImageUrl }} style={styles.vehicleImage} resizeMode="cover" />
+  </View>
 );
-
 
 // --- Main App Screen Component ---
 const VehicleIssuesScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState('List');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredDrivers, setFilteredDrivers] = useState<Driver[]>(driversData);
+  const [filteredDrivers, setFilteredDrivers] = useState<Driver[]>(allDriversData); // All drivers for search
   const tabs = ['List', 'Search', 'Requests'];
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
-      setFilteredDrivers(driversData);
+      setFilteredDrivers(allDriversData);
     } else {
-      const filtered = driversData.filter(driver =>
+      const filtered = allDriversData.filter(driver =>
         driver.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredDrivers(filtered);
@@ -183,11 +206,11 @@ const VehicleIssuesScreen: React.FC = () => {
         return (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Backup Drivers</Text>
-            <View>
-              {driversData.map((driver, index) => (
+            <View style={styles.listContainer}>
+              {backupDriversData.map((driver, index) => (
                 <React.Fragment key={driver.id}>
                   <DriverListItem driver={driver} />
-                  {index < driversData.length - 1 && <View style={styles.divider} />}
+                  {index < backupDriversData.length - 1 && <View style={styles.divider} />}
                 </React.Fragment>
               ))}
             </View>
@@ -207,16 +230,16 @@ const VehicleIssuesScreen: React.FC = () => {
               />
             </View>
             {filteredDrivers.map(driver => (
-                <SearchResultCard key={driver.id} driver={driver} />
+              <SearchResultCard key={driver.id} driver={driver} />
             ))}
           </View>
         );
       case 'Requests':
         return (
-            <View style={styles.card}>
-                <Text style={styles.cardTitle}>Requests</Text>
-                <Text style={styles.bodyText}>Requests will be shown here.</Text>
-            </View>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Requests</Text>
+            <Text style={styles.bodyText}>Requests will be shown here.</Text>
+          </View>
         );
       default:
         return null;
@@ -229,7 +252,7 @@ const VehicleIssuesScreen: React.FC = () => {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton}>
-            <Text style={{ fontSize: 24 }}>‹</Text>
+            <MaterialIcons name="arrow-back" size={24} color={theme.colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Vehicle Issues</Text>
           <View style={{ width: 40 }} />
@@ -305,7 +328,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeTabText: {
-    color: theme.colors.primary,
+    color: theme.colors.primary, // Keeps "List" tab text colored
     fontWeight: 'bold',
   },
   activeTabIndicator: {
@@ -341,6 +364,9 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.body,
     color: theme.colors.subtleText,
   },
+  listContainer: {
+    // This style helps manage the list item's layout if needed
+  },
   driverItemContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -351,11 +377,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatar: {
+  avatarPlaceholder: {
     width: 48,
     height: 48,
     borderRadius: 24,
     marginRight: theme.spacing.m,
+    overflow: 'hidden', // Ensures the image respects the border radius
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   driverName: {
     fontSize: theme.typography.body,
@@ -410,7 +441,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 8,
-    overflow: 'hidden', // to keep image corners rounded
+    overflow: 'hidden',
   },
   searchCardHeader: {
     flexDirection: 'row',
