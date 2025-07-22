@@ -24,6 +24,80 @@ import {
   Car
 } from "lucide-react";
 
+// Type definitions
+interface Child {
+  name: string;
+  age: number;
+  grade: string;
+}
+
+interface Review {
+  id: number;
+  rating: number;
+  comment: string;
+  date: string;
+  driverId?: string;
+  driverName?: string;
+  ownerId?: string;
+  passengerId?: string;
+  passengerName?: string;
+}
+
+interface Vehicle {
+  id: string;
+  type: string;
+  model: string;
+  capacity: number;
+  plateNumber: string;
+  status: string;
+}
+
+interface Complaint {
+  id: number;
+  type: string;
+  description: string;
+  date: string;
+  status: string;
+  reportedBy?: string;
+  driverId?: string;
+  driverName?: string;
+  passengerId?: string;
+  passengerName?: string;
+}
+
+interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  mobile: string;
+  address: string;
+  status: string;
+  joinDate: string;
+  profileImage: string;
+  emergencyContact?: string;
+  children?: Child[];
+  reviews?: Review[];
+  complaints?: Complaint[];
+  licenseNumber?: string;
+  licenseExpiry?: string;
+  experience?: string;
+  experienceYears?: number;
+  vehicles?: Vehicle[];
+  totalTrips?: number;
+  rating?: number;
+  completedTrips?: number;
+  earnings?: string;
+  businessName?: string;
+  businessLicense?: string;
+  fleetSize?: number;
+  department?: string;
+  employeeId?: string;
+  workLocation?: string;
+  vehicleAssigned?: string;
+  adminLevel?: string;
+  managementArea?: string;
+}
+
 // Sample user data for different roles with ID prefixes for identification
 const roleUsers = {
   "Parents": [
@@ -311,22 +385,6 @@ const roleUsers = {
   ]
 };
 
-// Helper function to get user type from ID prefix
-const getUserTypeFromId = (userId: string) => {
-  const prefix = userId.substring(0, 3);
-  const userTypes: { [key: string]: { label: string; color: string } } = {
-    'PAR': { label: 'Parent', color: 'bg-blue-100 text-blue-800' },
-    'STP': { label: 'Staff Passenger', color: 'bg-purple-100 text-purple-800' },
-    'DRV': { label: 'Driver', color: 'bg-yellow-100 text-yellow-800' },
-    'OWN': { label: 'Owner', color: 'bg-green-100 text-green-800' },
-    'ADM': { label: 'Admin', color: 'bg-red-100 text-red-800' },
-    'MGR': { label: 'Manager', color: 'bg-indigo-100 text-indigo-800' },
-    'DCO': { label: 'Driver Coordinator', color: 'bg-orange-100 text-orange-800' },
-    'FMG': { label: 'Finance Manager', color: 'bg-pink-100 text-pink-800' },
-  };
-  return userTypes[prefix] || { label: 'Unknown', color: 'bg-gray-100 text-gray-800' };
-};
-
 // User Profile Modal Component
 const UserProfileModal = ({ 
   user, 
@@ -334,10 +392,10 @@ const UserProfileModal = ({
   onClose, 
   onEdit 
 }: { 
-  user: any; 
+  user: UserData | null; 
   isOpen: boolean; 
   onClose: () => void; 
-  onEdit: (user: any) => void; 
+  onEdit: (user: UserData) => void; 
 }) => {
   if (!isOpen || !user) return null;
 
@@ -468,7 +526,7 @@ const UserProfileModal = ({
                       <div>
                         <p className="text-sm text-gray-500">Children</p>
                         <div className="space-y-2">
-                          {user.children.map((child: any, index: number) => (
+                          {user.children.map((child: Child, index: number) => (
                             <div key={index} className="bg-gray-50 p-2 rounded">
                               <p className="font-medium">{child.name}</p>
                               <p className="text-sm text-gray-600">Age: {child.age} | Grade: {child.grade}</p>
@@ -527,7 +585,7 @@ const UserProfileModal = ({
                     <div>
                       <p className="text-sm text-gray-500">Rating</p>
                       <div className="flex items-center space-x-2">
-                        <div className="flex">{renderStarRating(Math.floor(user.rating))}</div>
+                        <div className="flex">{renderStarRating(Math.floor(user.rating || 0))}</div>
                         <span className="font-medium">{user.rating}</span>
                       </div>
                     </div>
@@ -568,7 +626,7 @@ const UserProfileModal = ({
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {user.reviews.map((review: any) => (
+                  {user.reviews.map((review: Review) => (
                     <div key={review.id} className="border-b pb-4 last:border-b-0">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
@@ -604,7 +662,7 @@ const UserProfileModal = ({
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {user.complaints.map((complaint: any) => (
+                  {user.complaints.map((complaint: Complaint) => (
                     <div key={complaint.id} className="border-b pb-4 last:border-b-0">
                       <div className="flex items-center justify-between mb-2">
                         <Badge 
@@ -677,7 +735,7 @@ const EditUserModal = ({
   onSave, 
   onStatusChange 
 }: { 
-  user: any; 
+  user: UserData | null; 
   isOpen: boolean; 
   onClose: () => void; 
   onSave: () => void; 
@@ -806,10 +864,10 @@ const EditUserModal = ({
 export default function RolePermissionManagementPage() {
   const [selectedRole, setSelectedRole] = useState("Staff Passengers");
   const [showUserTable, setShowUserTable] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editingUser, setEditingUser] = useState<UserData | null>(null);
 
   const roles = [
     { name: "Parents", userCount: 24 },
@@ -864,7 +922,7 @@ export default function RolePermissionManagementPage() {
     setShowUserTable(false);
   };
 
-  const handleViewUser = (user: any) => {
+  const handleViewUser = (user: UserData) => {
     setSelectedUser(user);
     setShowUserProfile(true);
   };
@@ -874,7 +932,7 @@ export default function RolePermissionManagementPage() {
     setSelectedUser(null);
   };
 
-  const handleEditUser = (user: any) => {
+  const handleEditUser = (user: UserData) => {
     setEditingUser({ ...user });
     setShowEditModal(true);
   };

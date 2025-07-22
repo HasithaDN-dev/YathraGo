@@ -131,7 +131,7 @@ export default function BackupRecoveryPage() {
     });
   };
 
-  const handleFormChange = (field: string, value: any) => {
+  const handleFormChange = (field: string, value: string | boolean) => {
     setBackupForm(prev => ({ ...prev, [field]: value }));
   };
 

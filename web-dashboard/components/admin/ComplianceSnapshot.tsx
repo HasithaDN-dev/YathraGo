@@ -1,4 +1,4 @@
-import { CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
 export default function ComplianceSnapshot() {

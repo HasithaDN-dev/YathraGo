@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -24,7 +23,6 @@ interface MenuItem {
 
 export default function AdminSidebar() {
   const pathname = usePathname();
-  const [activeItem, setActiveItem] = useState("Dashboard");
 
   const menuItems: MenuItem[] = [
     {
@@ -80,7 +78,6 @@ export default function AdminSidebar() {
                     "flex items-center px-6 py-3 text-sm font-medium transition-colors duration-200 hover:bg-blue-800",
                     isActive && "bg-blue-700 text-white"
                   )}
-                  onClick={() => setActiveItem(item.label)}
                 >
                   <item.icon className="w-5 h-5 mr-3" />
                   {item.label}

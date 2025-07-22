@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -66,7 +66,7 @@ export default function AdminSettingsPage() {
   const [adminDepartment, setAdminDepartment] = useState("IT Department");
   const [adminJoinDate, setAdminJoinDate] = useState("2023-01-15");
   const [adminRole, setAdminRole] = useState("Super Admin");
-  const [profileImage, setProfileImage] = useState("");
+  const profileImage = "/api/placeholder/100/100"; // Default profile image
 
   const settingsTabs = [
     { id: "general", label: "General", icon: Settings },
@@ -359,9 +359,11 @@ export default function AdminSettingsPage() {
       <div className="flex items-center space-x-6">
         <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
           {profileImage ? (
-            <img 
+            <Image 
               src={profileImage} 
               alt="Profile" 
+              width={80}
+              height={80}
               className="w-20 h-20 rounded-full object-cover"
             />
           ) : (
