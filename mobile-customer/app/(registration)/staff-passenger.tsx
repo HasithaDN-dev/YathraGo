@@ -9,6 +9,7 @@ import { Typography } from '../../components/Typography';
 import { registerStaffApi } from '../../lib/api/profile.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
 import { StaffProfileData } from '../../types/customer.types';
+import { Colors } from '@/constants/Colors'; // Ensure this import is correct
 
 export default function StaffPassengerScreen() {
   const [loading, setLoading] = useState(false);
@@ -103,8 +104,8 @@ export default function StaffPassengerScreen() {
   };
 
 return (
-  <SafeAreaView style={{ flex: 1 }}>
-    <View className="flex-1 bg-brand-lightNavy">
+  <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+    <View className="flex-1 bg-white">
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, padding: 24 }}
         showsVerticalScrollIndicator={false}
