@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,13 +22,17 @@ import {
   Smartphone,
 } from "lucide-react";
 
+import Cookies from "js-cookie";
+
 type TabType = "profile" | "notifications" | "security" | "preferences";
 
 interface ProfileData {
-  ownerName: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   companyName: string;
+  address: string;
 }
 
 interface NotificationSettings {
@@ -51,6 +55,36 @@ interface PreferenceSettings {
 }
 
 export default function SettingsPage() {
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = Cookies.get("access_token");
+      //console.log(token);
+      //if (!token) return;
+      try {
+        const response = await fetch("http://localhost:3000/owner/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        console.log(data);
+
+        setProfileData({
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          companyName: data.companyName || "",
+          address: data.address || "",
+        });
+      } catch (err) {
+        // handle error
+      }
+    };
+    fetchUserData();
+  }, []);
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   const [showSuccess, setShowSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState({
@@ -61,10 +95,12 @@ export default function SettingsPage() {
 
   // Profile state
   const [profileData, setProfileData] = useState<ProfileData>({
-    ownerName: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 (555) 123-4567",
-    companyName: "Doe Transport Services",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    companyName: "",
+    address: "",
   });
   const [profileErrors, setProfileErrors] = useState<Partial<ProfileData>>({});
 
@@ -101,8 +137,14 @@ export default function SettingsPage() {
   const validateProfile = (): boolean => {
     const errors: Partial<ProfileData> = {};
 
-    if (!profileData.ownerName.trim()) {
-      errors.ownerName = "Owner name is required";
+    if (!profileData.firstName.trim()) {
+      errors.firstName = "First name is required";
+    }
+    if (!profileData.lastName.trim()) {
+      errors.lastName = "Last name is required";
+    }
+    if (!profileData.address.trim()) {
+      errors.address = "Address is required";
     }
 
     if (!profileData.email.trim()) {
@@ -150,8 +192,16 @@ export default function SettingsPage() {
     if (!validateProfile()) return;
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const token = Cookies.get("access_token");
+      const response = await fetch("http://localhost:3000/owner/update-profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(profileData),
+      });
+      if (!response.ok) throw new Error("Failed to update profile");
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
@@ -198,14 +248,12 @@ export default function SettingsPage() {
       </div>
       <button
         onClick={onChange}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          checked ? "bg-green-600" : "bg-gray-300"
-        }`}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${checked ? "bg-green-600" : "bg-gray-300"
+          }`}
       >
         <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-            checked ? "translate-x-6" : "translate-x-1"
-          }`}
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${checked ? "translate-x-6" : "translate-x-1"
+            }`}
         />
       </button>
     </div>
@@ -221,23 +269,41 @@ export default function SettingsPage() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Owner Name */}
+          {/* First Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Owner Name *
+              First Name *
             </label>
             <input
               type="text"
-              value={profileData.ownerName}
+              value={profileData.firstName}
               onChange={(e) =>
-                setProfileData((prev) => ({ ...prev, ownerName: e.target.value }))
+                setProfileData((prev) => ({ ...prev, firstName: e.target.value }))
               }
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                profileErrors.ownerName ? "border-red-500 bg-red-50" : "border-gray-400"
-              }`}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${profileErrors.firstName ? "border-red-500 bg-red-50" : "border-gray-400"
+                }`}
             />
-            {profileErrors.ownerName && (
-              <p className="mt-1 text-sm text-red-600">{profileErrors.ownerName}</p>
+            {profileErrors.firstName && (
+              <p className="mt-1 text-sm text-red-600">{profileErrors.firstName}</p>
+            )}
+          </div>
+
+          {/* Last Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Last Name *
+            </label>
+            <input
+              type="text"
+              value={profileData.lastName}
+              onChange={(e) =>
+                setProfileData((prev) => ({ ...prev, lastName: e.target.value }))
+              }
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${profileErrors.lastName ? "border-red-500 bg-red-50" : "border-gray-400"
+                }`}
+            />
+            {profileErrors.lastName && (
+              <p className="mt-1 text-sm text-red-600">{profileErrors.lastName}</p>
             )}
           </div>
 
@@ -254,9 +320,8 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setProfileData((prev) => ({ ...prev, email: e.target.value }))
                 }
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  profileErrors.email ? "border-red-500 bg-red-50" : "border-gray-400"
-                }`}
+                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${profileErrors.email ? "border-red-500 bg-red-50" : "border-gray-400"
+                  }`}
               />
             </div>
             {profileErrors.email && (
@@ -277,9 +342,8 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setProfileData((prev) => ({ ...prev, phone: e.target.value }))
                 }
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  profileErrors.phone ? "border-red-500 bg-red-50" : "border-gray-400"
-                }`}
+                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${profileErrors.phone ? "border-red-500 bg-red-50" : "border-gray-400"
+                  }`}
               />
             </div>
             {profileErrors.phone && (
@@ -300,13 +364,31 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setProfileData((prev) => ({ ...prev, companyName: e.target.value }))
                 }
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  profileErrors.companyName ? "border-red-500 bg-red-50" : "border-gray-400"
-                }`}
+                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${profileErrors.companyName ? "border-red-500 bg-red-50" : "border-gray-400"
+                  }`}
               />
             </div>
             {profileErrors.companyName && (
               <p className="mt-1 text-sm text-red-600">{profileErrors.companyName}</p>
+            )}
+          </div>
+
+          {/* Address */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Address *
+            </label>
+            <input
+              type="text"
+              value={profileData.address}
+              onChange={(e) =>
+                setProfileData((prev) => ({ ...prev, address: e.target.value }))
+              }
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${profileErrors.address ? "border-red-500 bg-red-50" : "border-gray-400"
+                }`}
+            />
+            {profileErrors.address && (
+              <p className="mt-1 text-sm text-red-600">{profileErrors.address}</p>
             )}
           </div>
         </div>
@@ -387,9 +469,8 @@ export default function SettingsPage() {
                       currentPassword: e.target.value,
                     }))
                   }
-                  className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    securityErrors.currentPassword ? "border-red-500 bg-red-50" : "border-gray-400"
-                  }`}
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${securityErrors.currentPassword ? "border-red-500 bg-red-50" : "border-gray-400"
+                    }`}
                 />
                 <button
                   type="button"
@@ -418,9 +499,8 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setSecuritySettings((prev) => ({ ...prev, newPassword: e.target.value }))
                   }
-                  className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    securityErrors.newPassword ? "border-red-500 bg-red-50" : "border-gray-400"
-                  }`}
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${securityErrors.newPassword ? "border-red-500 bg-red-50" : "border-gray-400"
+                    }`}
                 />
                 <button
                   type="button"
@@ -452,9 +532,8 @@ export default function SettingsPage() {
                       confirmPassword: e.target.value,
                     }))
                   }
-                  className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    securityErrors.confirmPassword ? "border-red-500 bg-red-50" : "border-gray-400"
-                  }`}
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${securityErrors.confirmPassword ? "border-red-500 bg-red-50" : "border-gray-400"
+                    }`}
                 />
                 <button
                   type="button"
@@ -515,14 +594,12 @@ export default function SettingsPage() {
                   twoFactorEnabled: !prev.twoFactorEnabled,
                 }))
               }
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                securitySettings.twoFactorEnabled ? "bg-green-600" : "bg-gray-300"
-              }`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${securitySettings.twoFactorEnabled ? "bg-green-600" : "bg-gray-300"
+                }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  securitySettings.twoFactorEnabled ? "translate-x-6" : "translate-x-1"
-                }`}
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${securitySettings.twoFactorEnabled ? "translate-x-6" : "translate-x-1"
+                  }`}
               />
             </button>
           </div>
@@ -638,11 +715,10 @@ export default function SettingsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === tab.id
-                      ? "border-blue-600 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
+                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    }`}
                 >
                   <IconComponent className="w-4 h-4" />
                   {tab.label}

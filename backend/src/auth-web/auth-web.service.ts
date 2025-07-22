@@ -33,6 +33,7 @@ export class AuthWebService {
         await this.prisma.vehicleOwner.create({
           data: {
             id:user.id,
+            email:user.email
           },
         });
       }
