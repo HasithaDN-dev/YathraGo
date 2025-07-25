@@ -66,7 +66,7 @@ export default function EarningsScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ArrowLeft size={24} color="#143373" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Earnings</Text>
+          <Text style={styles.headerTitle}>Transactions</Text>
           <View style={{ width: 20 }} /> {/* Spacer for alignment */}
         </View>
 

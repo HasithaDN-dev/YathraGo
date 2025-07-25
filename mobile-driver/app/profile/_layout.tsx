@@ -32,6 +32,13 @@ export default function ProfileLayout() {
           title: 'Vehicle Details'
         }}
       />
+      <Stack.Screen
+        name="vehicle-issues"
+        options={{
+          headerShown: false,
+          title: 'Vehicle Issues'
+        }}
+      />
     </Stack>
   );
 }
