@@ -38,7 +38,7 @@ export default function HomeScreen() {
 
   setTimeout(() => {
     setIsButtonEnabled(false);
-    
+
   }, 6000);
 
   const viewTrip = () => {
@@ -46,8 +46,8 @@ export default function HomeScreen() {
   };
 
   const viewAllStudents = () => {
-    console.log('Navigating to all students view...');
-    // Navigate to students list screen
+    //console.log('Navigating to all students view...');
+    router.push('/(tabs)/current-students');
   };
 
   return (
@@ -100,11 +100,11 @@ export default function HomeScreen() {
           <Typography variant="headline" weight="semibold" className="text-brand-deepNavy">
             Current Trip
           </Typography>
-          <TouchableOpacity>
+          {/* <TouchableOpacity>
             <Typography variant="body" weight="medium" className="text-brand-brightOrange">
               See More
             </Typography>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* Trip Progress Timeline */}
@@ -167,7 +167,7 @@ export default function HomeScreen() {
             Assigned Students
           </Typography>
           <TouchableOpacity onPress={viewAllStudents}>
-            <Typography variant="body" weight="medium" className="text-brand-brightOrange">
+            <Typography variant="subhead" weight="medium" className="text-brand-warmYellow">
               See All Students
             </Typography>
           </TouchableOpacity>
@@ -262,7 +262,11 @@ export default function HomeScreen() {
         </Typography>
 
         <View className="flex-row gap-3">
-          <TouchableOpacity className="flex-1 bg-brand-brightOrange p-4 rounded-xl items-center">
+          <TouchableOpacity
+            className="flex-1 bg-brand-brightOrange p-4 rounded-xl items-center"
+            onPress={() => router.push('../(homeLinks)/inform')}
+            activeOpacity={0.8}
+          >
             <Megaphone size={24} color="#ffffff" weight="regular" />
             <Typography variant="caption-1" weight="medium" className="text-white mt-2">
               Inform
