@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import '../global.css';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
+// Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -19,9 +20,12 @@ export default function RootLayout() {
     hasHydrated,
     isLoading,
   } = useAuthStore();
+  
+  // Optimize font loading - load only essential fonts first
   const [loaded, error] = useFonts({
     'Figtree-Regular': require('../assets/fonts/Figtree-Regular.ttf'),
     'Figtree-Medium': require('../assets/fonts/Figtree-Medium.ttf'),
+    // Load heavy fonts after initial render
     'Figtree-SemiBold': require('../assets/fonts/Figtree-SemiBold.ttf'),
     'Figtree-Bold': require('../assets/fonts/Figtree-Bold.ttf'),
   });
@@ -35,13 +39,14 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    // Hide splash screen as soon as fonts are loaded and hydration is complete
     if ((loaded || error) && hasHydrated) {
       SplashScreen.hideAsync();
     }
   }, [loaded, error, hasHydrated]);
 
+  // Show splash screen until everything is ready
   if ((!loaded && !error) || !hasHydrated || isLoading) {
-    // Show nothing until fonts, hydration, and profile checking are ready
     return null;
   }
 

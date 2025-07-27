@@ -27,9 +27,9 @@ export class CustomerService {
       }
 
       // Use transaction to ensure data consistency and proper connection management
-      const result = await this.prisma.$transaction(async (tx) => {
+      await this.prisma.$transaction(async (tx) => {
         // Create Staff_Passenger
-        const staffPassenger = await tx.staff_Passenger.create({
+        await tx.staff_Passenger.create({
           data: {
             customerId: dto.customerId,
             nearbyCity: dto.nearbyCity,
@@ -41,14 +41,12 @@ export class CustomerService {
         });
 
         // Update Customer profile
-        const updatedCustomer = await tx.customer.update({
+        await tx.customer.update({
           where: { customer_id: dto.customerId },
           data: {
             registrationStatus: 'HAVING_A_PROFILE',
           },
         });
-
-        return { staffPassenger, updatedCustomer };
       });
 
       const response = {
@@ -114,11 +112,41 @@ export class CustomerService {
     console.log('[SERVICE] getCustomerProfile - Input customerId:', customerId);
 
     try {
+      // Optimized query - only fetch necessary fields
       const customer = await this.prisma.customer.findUnique({
         where: { customer_id: parseInt(customerId) },
-        include: {
-          children: true,
-          staffPassenger: true,
+        select: {
+          customer_id: true,
+          name: true,
+          phone: true,
+          email: true,
+          address: true,
+          profileImageUrl: true,
+          emergencyContact: true,
+          status: true,
+          registrationStatus: true,
+          children: {
+            select: {
+              child_id: true,
+              childName: true,
+              relationship: true,
+              nearbyCity: true,
+              schoolLocation: true,
+              school: true,
+              childImageUrl: true,
+              pickUpAddress: true,
+            },
+          },
+          staffPassenger: {
+            select: {
+              id: true,
+              nearbyCity: true,
+              workLocation: true,
+              workAddress: true,
+              pickUpLocation: true,
+              pickupAddress: true,
+            },
+          },
         },
       });
 
@@ -188,9 +216,8 @@ export class CustomerService {
   }
   /**
    * Complete customer registration after OTP verification.
-   * @param customerId number (from JWT sub)
    * @param dto CustomerRegisterDto
-   * @returns { customerId, success, message }
+   * @returns { customerId, success, message, registrationStatus }
    */
   async completeCustomerRegistration(dto: CustomerRegisterDto) {
     try {
@@ -202,19 +229,31 @@ export class CustomerService {
           address: dto.address,
           profileImageUrl: dto.profileImageUrl,
           emergencyContact: dto.emergencyContact,
-          registrationStatus: 'OTP_VERIFIED',
+          registrationStatus: 'ACCOUNT_CREATED', // Changed from OTP_VERIFIED to ACCOUNT_CREATED
         },
       });
+
+      console.log(
+        '[SERVICE] completeCustomerRegistration - Status updated to ACCOUNT_CREATED for customer:',
+        dto.customerId,
+      );
+
       return {
         customerId: updatedCustomer.customer_id,
         success: true,
         message: 'Customer registration completed',
+        registrationStatus: updatedCustomer.registrationStatus,
       };
     } catch (error) {
+      console.error('[SERVICE] completeCustomerRegistration - Error:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to complete registration';
       return {
         customerId: dto.customerId,
         success: false,
-        message: error?.message || 'Failed to complete registration',
+        message: errorMessage,
       };
     }
   }

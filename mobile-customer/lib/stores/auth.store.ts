@@ -10,12 +10,14 @@ interface AuthState {
   isLoggedIn: boolean;
   isProfileComplete: boolean;
   isCustomerRegistered: boolean;
+  registrationStatus: string; // Add registration status tracking
   hasHydrated: boolean;
   isLoading: boolean;
   login: (accessToken: string, user: User) => Promise<void>;
   logout: () => Promise<void>;
   setProfileComplete: (complete: boolean) => void;
   setCustomerRegistered: (registered: boolean) => void;
+  setRegistrationStatus: (status: string) => void; // Add method to update status
   setHasHydrated: (value: boolean) => void;
   setLoading: (loading: boolean) => void;
   updateUser: (user: User) => void;
@@ -44,6 +46,7 @@ export const useAuthStore = create<AuthState>()(
       isLoggedIn: false,
       isProfileComplete: false,
       isCustomerRegistered: false,
+      registrationStatus: 'OTP_PENDING',
       hasHydrated: false,
       isLoading: false,
       
@@ -65,6 +68,7 @@ export const useAuthStore = create<AuthState>()(
           isLoggedIn: false, 
           isProfileComplete: false,
           isCustomerRegistered: false,
+          registrationStatus: 'OTP_PENDING',
           isLoading: false
         });
       },
@@ -80,6 +84,10 @@ export const useAuthStore = create<AuthState>()(
       
       setCustomerRegistered: (registered: boolean) => {
         set({ isCustomerRegistered: registered });
+      },
+
+      setRegistrationStatus: (status: string) => {
+        set({ registrationStatus: status });
       },
       
       setHasHydrated: (value: boolean) => {

@@ -131,9 +131,20 @@ export default function CustomerRegisterScreen() {
         payload.emergencyContact = convertToApiFormat(payload.emergencyContact);
       }
       console.log('RegisterScreen payload:', payload);
-      // **THE CHANGE**: Call our new, clean API function.
-      await completeCustomerProfileApi(accessToken, payload as CustomerProfileData);
-      // Navigate to the profile type selection without changing any state
+      
+      // Call API and get response with registration status
+      const response = await completeCustomerProfileApi(accessToken, payload as CustomerProfileData);
+      console.log('Customer registration response:', response);
+      
+      // Update registration status in auth store
+      if (response.registrationStatus) {
+        const { setRegistrationStatus, setCustomerRegistered } = useAuthStore.getState();
+        setRegistrationStatus(response.registrationStatus);
+        setCustomerRegistered(true);
+        console.log('Updated registration status to:', response.registrationStatus);
+      }
+      
+      // Navigate to the profile type selection
       console.log('Customer registration successful, navigating to registration-type');
       router.push('/(registration)/registration-type');
     } catch (error) {
