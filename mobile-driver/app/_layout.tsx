@@ -61,15 +61,17 @@ export default function RootLayout() {
           <Stack.Screen name="profile" options={{ headerShown: false }} />
         </Stack.Protected>
 
-        {/* Auth routes - accessible to both authenticated and unauthenticated users */}
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+
+        {/* Registration routes - accessible when authenticated but not account  created yet */}
+        <Stack.Protected guard={isLoggedIn}>
+          <Stack.Screen name="(registration)" options={{ headerShown: false }} />
+        </Stack.Protected>
 
         {/* Unauthenticated user routes */}
-
-
-        {/* Success screen - accessible to all users */}
-        <Stack.Screen name="success" options={{ headerShown: false }} />
+        <Stack.Protected guard={!isLoggedIn}>
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        </Stack.Protected>
 
         <Stack.Screen name="+not-found" />
       </Stack>

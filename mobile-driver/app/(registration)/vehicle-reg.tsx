@@ -99,7 +99,7 @@ export default function VehicleRegScreen() {
 
   const handleNext = () => {
     // Data is already saved in store, just navigate to next screen
-    router.push('/(auth)/vehicle-doc');
+    router.push('/(registration)/vehicle-doc');
   };
 
   return (

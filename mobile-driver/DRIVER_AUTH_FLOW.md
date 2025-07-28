@@ -16,7 +16,7 @@ The mobile-driver app has been **completely converted** to use a simplified Zust
 
 ### **3. Driver-Specific Registration Flow**
 - **Customer App**: OTP → Customer Profile → Child/Staff Profiles
-- **Driver App**: OTP → Driver Profile → Vehicle Registration
+- **Driver App**: OTP → Driver Registration → Vehicle Registration
 
 ### **4. Separated Vehicle APIs**
 - **Customer App**: All APIs in single files
@@ -36,6 +36,37 @@ OTP_PENDING → OTP_VERIFIED → ACCOUNT_CREATED
 | `ACCOUNT_CREATED` | Driver registration completed | Use main app | Main app (tabs) |
 
 ## **🏗️ Simplified File Structure**
+
+### **App Structure** (`app/`)
+```
+app/
+├── _layout.tsx                    # Root layout with protected routes
+├── onboarding.tsx                 # Initial onboarding screen
+├── (auth)/                        # Authentication screens
+│   ├── _layout.tsx
+│   ├── phone-auth.tsx             # Phone number input
+│   └── verify-otp.tsx             # OTP verification
+├── (registration)/                # 🆕 Registration screens (separate folder)
+│   ├── _layout.tsx
+│   ├── reg-personal.tsx           # Personal information
+│   ├── reg-verify.tsx             # ID verification
+│   ├── reg-id.tsx                 # ID photo capture
+│   ├── reg-uploadId.tsx           # ID document upload
+│   ├── ownership.tsx              # Vehicle ownership
+│   ├── vehicle-reg.tsx            # Vehicle information
+│   ├── vehicle-doc.tsx            # Vehicle documents
+│   └── success.tsx                # Registration success
+├── (tabs)/                        # Main app screens
+│   ├── _layout.tsx
+│   ├── index.tsx                  # Home screen
+│   ├── history.tsx                # Trip history
+│   ├── menu.tsx                   # Menu/settings
+│   └── notifications.tsx          # Notifications
+├── profile/                       # Profile management
+│   └── profile.tsx
+└── vehicle-list/                  # Vehicle management
+    └── page.tsx
+```
 
 ### **Types** (`types/driver.types.ts`)
 ```typescript
@@ -190,12 +221,15 @@ interface VehicleState {
   <Stack.Screen name="profile" options={{ headerShown: false }} />
 </Stack.Protected>
 
-// Auth routes - accessible to both authenticated and unauthenticated users
-<Stack.Screen name="(auth)" options={{ headerShown: false }} />
+// Registration routes - accessible when authenticated but not account created yet
+<Stack.Protected guard={isLoggedIn}>
+  <Stack.Screen name="(registration)" options={{ headerShown: false }} />
+</Stack.Protected>
 
-// Onboarding - accessible to unauthenticated users
+// Unauthenticated user routes
 <Stack.Protected guard={!isLoggedIn}>
   <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
 </Stack.Protected>
 ```
 
@@ -205,6 +239,7 @@ interface VehicleState {
 - **Only 3 stores** instead of 4-5
 - **Consolidated logic** for driver-specific needs
 - **Easier to understand** and maintain
+- **Clean folder structure** with separated registration screens
 
 ### **2. Performance**
 - **Optimized font loading**
@@ -216,6 +251,7 @@ interface VehicleState {
 - **Type safety** with TypeScript
 - **Easy debugging** with Zustand
 - **Separated vehicle APIs** for better organization
+- **Organized folder structure** for better code navigation
 
 ### **4. User Experience**
 - **Smooth navigation** with protected routes
@@ -242,8 +278,17 @@ App Launch → Check Auth → Load Profile → Main App (if complete) or Continu
 
 ### **Protected Routes**
 - **`(tabs)`**: Main app screens (only when `ACCOUNT_CREATED`)
-- **`(auth)`**: Registration screens (accessible to all users)
+- **`(registration)`**: Registration screens (when authenticated but not complete)
+- **`(auth)`**: Authentication screens (when not authenticated)
 - **`onboarding`**: Initial setup (when not authenticated)
+
+### **Registration Screen Navigation**
+```typescript
+// Navigation within registration screens
+router.push('/(registration)/reg-verify');
+router.push('/(registration)/reg-id');
+router.push({ pathname: '/(registration)/reg-uploadId', params: { side: 'front' } });
+```
 
 ## **🔧 Usage Examples**
 
@@ -294,6 +339,7 @@ updateVehicleForm({ vehicleType: 'Car' });
 - [x] Form data persistence across screens
 - [x] Vehicle API separation
 - [x] Simplified store structure
+- [x] Registration folder organization
 
 ## **🔄 Migration Summary**
 
@@ -307,10 +353,12 @@ updateVehicleForm({ vehicleType: 'Car' });
 - **All registration screens** updated
 - **Old context and services** removed
 - **Store consolidation** - simplified to 3 stores
+- **Registration folder organization** - clean separation of concerns
 
 ### **🏗️ NEW ARCHITECTURE**:
 - **3 Zustand stores**: `auth.store.ts`, `driver.store.ts`, `vehicle.store.ts`
 - **3 API files**: `auth.api.ts`, `profile.api.ts`, `vehicle.api.ts`
+- **Clean folder structure**: `(auth)`, `(registration)`, `(tabs)`
 - **Clean separation** of concerns
 - **Type-safe** implementation
 - **Consistent patterns** across both apps
@@ -324,4 +372,4 @@ updateVehicleForm({ vehicleType: 'Car' });
 4. **Add analytics** for registration completion tracking
 5. **Performance monitoring** for vehicle API calls
 
-This conversion provides a **robust, scalable, and maintainable** authentication system for the driver app with **simplified store structure** and **clean separation of vehicle APIs** while maintaining consistency with the customer app! 🚗✨ 
+This conversion provides a **robust, scalable, and maintainable** authentication system for the driver app with **simplified store structure**, **clean separation of vehicle APIs**, and **organized folder structure** while maintaining consistency with the customer app! 🚗✨ 

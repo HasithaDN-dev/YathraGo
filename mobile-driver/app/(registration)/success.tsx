@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '../lib/stores/auth.store';
+import { useAuthStore } from '../../lib/stores/auth.store';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,7 +29,7 @@ export default function SuccessScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Corner Triangles */}
-      <Image source={require('../assets/images/right.png')} style={styles.topRightTriangle} />
+      <Image source={require('../../assets/images/right.png')} style={styles.topRightTriangle} />
 
       {/* Circles + Checkmark */}
       <View style={styles.circleWrapper}>
@@ -37,12 +37,12 @@ export default function SuccessScreen() {
         <View style={styles.middleCircle} />
         <View style={styles.innerCircle} />
         <Image
-          source={require('../assets/images/tick.png')}
+          source={require('../../assets/images/tick.png')}
           style={styles.checkIcon}
         />
       </View>
 
-      <Image source={require('../assets/images/left.png')} style={styles.bottomLeftTriangle} />
+      <Image source={require('../../assets/images/left.png')} style={styles.bottomLeftTriangle} />
 
 
       {/* Success Title */}

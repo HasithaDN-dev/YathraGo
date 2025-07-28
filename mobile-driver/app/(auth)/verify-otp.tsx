@@ -65,7 +65,7 @@ export default function VerifyOTPScreen() {
     setIsLoading(true);
     try {
       const { accessToken, user } = await verifyOtpApi(phone!, otpCode);
-      
+
       // Only set global loading after successful OTP verification
       setLoading(true);
       
@@ -100,7 +100,7 @@ export default function VerifyOTPScreen() {
         // Update registration status in auth store
         const { setRegistrationStatus } = useAuthStore.getState();
         setRegistrationStatus(registrationStatus);
-        
+      
         // Determine navigation based on registration status
         if (registrationStatus === 'ACCOUNT_CREATED') {
           console.log('Account is completely created, navigating to home');
@@ -112,7 +112,7 @@ export default function VerifyOTPScreen() {
           console.log('Account not completely created, navigating to registration screens');
           setProfileComplete(false);
           // Navigation to registration screens will be handled by root layout
-        } else {
+      } else {
           console.log('Unknown registration status:', registrationStatus);
           setProfileComplete(false);
         }

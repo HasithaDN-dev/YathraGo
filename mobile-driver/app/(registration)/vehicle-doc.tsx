@@ -23,7 +23,7 @@ const FileUploadItem: React.FC<FileUploadItemProps> = ({ file, progress, onRemov
 
   return (
     <View className="flex-row items-center bg-gray-100 p-2 rounded-lg mt-2">
-      <Icon name="File" size={24} color="gray" />
+      <Icon name="Receipt" size={24} color="gray" />
       <View className="flex-1 ml-2">
         <Text className="text-sm">{asset.name}</Text>
         <View className="w-full bg-gray-300 rounded-full h-1.5 mt-1">
@@ -255,7 +255,7 @@ export default function VehicleDocScreen() {
       setProfileComplete(true);
 
       // Navigate to success screen
-      router.replace('/success');
+      router.replace('/(registration)/success');
 
     } catch (error) {
       console.error('Registration error:', error);

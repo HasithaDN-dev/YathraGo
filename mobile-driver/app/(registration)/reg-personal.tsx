@@ -68,7 +68,7 @@ export default function RegisterScreen() {
     }
 
     // Data is already saved in store, just navigate to next screen
-    router.push('/(auth)/reg-verify');
+    router.push('/(registration)/reg-verify');
   };
 
   return (
