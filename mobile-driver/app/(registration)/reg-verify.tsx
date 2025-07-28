@@ -9,8 +9,8 @@ export default function RegVerifyScreen() {
   const router = useRouter();
 
   const handleVerify = () => {
-    router.push('/(auth)/reg-id');
-  };
+    router.push('/(registration)/reg-id');
+  };  
 
   return (
     <SafeAreaView className="flex-1 bg-white">

@@ -3,10 +3,21 @@ import { Profile, CustomerProfileData, ChildProfileData, StaffProfileData } from
 import { tokenService } from '../services/token.service';
 import { useAuthStore } from '../stores/auth.store';
 
+// Simple in-memory cache for profiles
+let profileCache: { data: Profile[]; timestamp: number } | null = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 /**
  * Fetches all profiles associated with the logged-in user (children + staff).
+ * Uses simple caching to reduce API calls.
  */
 export const getProfilesApi = async (token: string): Promise<Profile[]> => {
+  // Check cache first
+  if (profileCache && (Date.now() - profileCache.timestamp) < CACHE_DURATION) {
+    console.log('Using cached profiles');
+    return profileCache.data;
+  }
+
   const authenticatedFetch = tokenService.createAuthenticatedFetch();
   const response = await authenticatedFetch(`${API_BASE_URL}/customer/profile`);
   
@@ -42,8 +53,22 @@ export const getProfilesApi = async (token: string): Promise<Profile[]> => {
     }
   }
   
+  // Cache the result
+  profileCache = {
+    data: profiles,
+    timestamp: Date.now()
+  };
+  
   console.log('Extracted profiles:', profiles);
   return profiles;
+};
+
+/**
+ * Clear profile cache when profiles are updated
+ */
+export const clearProfileCache = () => {
+  profileCache = null;
+  console.log('Profile cache cleared');
 };
 
 /**
@@ -52,7 +77,7 @@ export const getProfilesApi = async (token: string): Promise<Profile[]> => {
 export const completeCustomerProfileApi = async (
   token: string,
   data: CustomerProfileData
-): Promise<{ customerId: string; success: boolean; message: string }> => {
+): Promise<{ customerId: string; success: boolean; message: string; registrationStatus?: string }> => {
   const authenticatedFetch = tokenService.createAuthenticatedFetch();
   const response = await authenticatedFetch(`${API_BASE_URL}/customer/customer-register`, {
     method: 'POST',
@@ -74,6 +99,22 @@ export const completeCustomerProfileApi = async (
     throw new Error(errorMsg);
   }
   return response.json();
+};
+
+/**
+ * Get customer registration status
+ */
+export const getRegistrationStatusApi = async (token: string): Promise<string> => {
+  const authenticatedFetch = tokenService.createAuthenticatedFetch();
+  const response = await authenticatedFetch(`${API_BASE_URL}/customer/profile`);
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Failed to fetch registration status' }));
+    throw new Error(error.message || 'Failed to fetch registration status');
+  }
+  
+  const data = await response.json();
+  return data.profile?.registrationStatus || 'OTP_PENDING';
 };
 
 /**

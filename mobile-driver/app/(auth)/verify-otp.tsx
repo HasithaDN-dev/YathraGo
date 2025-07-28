@@ -1,49 +1,48 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, TextInput, Alert, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ApiService } from '../../services/api';
-import { PasswordIcon} from 'phosphor-react-native';
-import { Typography } from '@/components/Typography';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Typography } from '@/components/Typography';
 import CustomButton from '../../components/ui/CustomButton';
+import { PasswordIcon } from 'phosphor-react-native';
+import { verifyOtpApi, sendOtpApi } from '../../lib/api/auth.api';
+import { getDriverProfileApi, getDriverRegistrationStatusApi } from '../../lib/api/profile.api';
+import { useAuthStore } from '../../lib/stores/auth.store';
+import { useDriverStore } from '../../lib/stores/driver.store';
+import { Driver, DriverRegistrationStatus } from '../../types/driver.types';
 
 export default function VerifyOTPScreen() {
   const router = useRouter();
-  const { phoneNumber, isNewUser } = useLocalSearchParams<{
-    phoneNumber: string;
-    isNewUser: string;
-  }>();
+  const { phone } = useLocalSearchParams<{ phone: string }>();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
+  // Get the login action from our Zustand store
+  const { login, setProfileComplete, setLoading } = useAuthStore();
+  const { loadProfile } = useDriverStore();
+
   useEffect(() => {
-    // Start countdown timer
-    const timer = setInterval(() => {
+    const timerInterval = setInterval(() => {
       setResendTimer((prev) => {
         if (prev <= 1) {
           setCanResend(true);
-          clearInterval(timer);
+          clearInterval(timerInterval);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
+    return () => clearInterval(timerInterval);
+  }, [canResend]);
 
   const handleOtpChange = (value: string, index: number) => {
     if (isNaN(Number(value))) return;
-
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-
-    // Auto-focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -57,29 +56,75 @@ export default function VerifyOTPScreen() {
 
   const handleVerifyOTP = async () => {
     const otpCode = otp.join('');
-    
     if (otpCode.length !== 6) {
-      Alert.alert('Error', 'Please enter complete OTP');
+      Alert.alert('Error', 'Please enter the complete 6-digit OTP.');
       return;
     }
 
+    console.log('Starting OTP verification for:', phone);
     setIsLoading(true);
     try {
-      const result = await ApiService.verifyDriverOtp(phoneNumber!, otpCode);
+      const { accessToken, user } = await verifyOtpApi(phone!, otpCode);
 
-      // Store auth token and user data
-      await AsyncStorage.setItem('authToken', result.accessToken);
-      await AsyncStorage.setItem('userProfile', JSON.stringify(result.user));
+      // Only set global loading after successful OTP verification
+      setLoading(true);
       
-      // Navigate based on user status
-      if (result.user.isNewUser) {
-        // New user - go to driver profile setup
-        console.log("reached");
-        router.replace('/(auth)/reg-personal');
+        // Create a proper Driver object from auth response
+        const driverUser: Driver = {
+          id: user.id,
+          name: '', // Will be filled during registration
+          phone: user.phone,
+          email: '',
+          address: '',
+          profileImageUrl: '',
+          emergencyContact: '',
+          status: 'ACTIVE',
+          registrationStatus: user.registrationStatus as DriverRegistrationStatus || 'OTP_VERIFIED',
+          isProfileComplete: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        await login(accessToken, driverUser);
+      
+      // Check if user has already completed driver registration
+      try {
+        const [profile, registrationStatus] = await Promise.all([
+          getDriverProfileApi(accessToken),
+          getDriverRegistrationStatusApi(accessToken)
+        ]);
+        
+        console.log('User profile after login:', profile);
+        console.log('User registration status:', registrationStatus);
+        
+        // Update registration status in auth store
+        const { setRegistrationStatus } = useAuthStore.getState();
+        setRegistrationStatus(registrationStatus);
+      
+        // Determine navigation based on registration status
+        if (registrationStatus === 'ACCOUNT_CREATED') {
+          console.log('Account is completely created, navigating to home');
+          setProfileComplete(true);
+          // Load profile into profile store
+          await loadProfile(accessToken);
+          // Navigation to home will be handled by root layout
+        } else if (registrationStatus === 'OTP_VERIFIED') {
+          console.log('Account not completely created, navigating to registration screens');
+          setProfileComplete(false);
+          // Navigation to registration screens will be handled by root layout
       } else {
-        // Existing user - go to main app
-        router.replace('/(tabs)');
+          console.log('Unknown registration status:', registrationStatus);
+          setProfileComplete(false);
+        }
+      } catch (profileError) {
+        console.log('Error checking user profile/status:', profileError);
+        // If we can't check profile, assume user needs to complete registration
+        setProfileComplete(false);
+      } finally {
+        setLoading(false); // Clear global loading state only after profile check
       }
+      
+      // Navigation is handled by root layout based on isProfileComplete and registrationStatus
     } catch (error) {
       console.error('OTP verification error:', error);
       Alert.alert('Verification Failed', error instanceof Error ? error.message : 'Invalid OTP');
@@ -96,7 +141,7 @@ export default function VerifyOTPScreen() {
 
     setIsLoading(true);
     try {
-      await ApiService.sendDriverOtp(phoneNumber!);
+      await sendOtpApi(phone!);
       
       Alert.alert('Success', 'OTP sent successfully');
       setCanResend(false);
@@ -138,7 +183,7 @@ export default function VerifyOTPScreen() {
           Enter the 6-digit code we&apos;ve sent to
         </Typography>
         <Typography variant="body" weight="semibold" className="text-center text-brand-deepNavy">
-          {phoneNumber}
+          {phone}
         </Typography>
       </View>
 

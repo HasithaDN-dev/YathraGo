@@ -1,7 +1,7 @@
 // Manages the list of switchable profiles (staff-parent/children) and the active one.
 import { create } from 'zustand';
 import { Profile, ChildProfile, StaffProfile } from '../../types/customer.types';
-import { getProfilesApi } from '../api/profile.api';
+import { getProfilesApi, clearProfileCache } from '../api/profile.api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from './auth.store';
 
@@ -15,6 +15,8 @@ interface ProfileState {
   setDefaultProfile: (profileId: string) => Promise<void>;
   refreshProfiles: (token: string) => Promise<void>;
   clearError: () => void;
+  addProfile: (profile: Profile) => void;
+  removeProfile: (profileId: string) => void;
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
@@ -64,10 +66,34 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   },
   
   refreshProfiles: async (token) => {
+    // Clear cache before refreshing to get fresh data
+    clearProfileCache();
     await get().loadProfiles(token);
   },
   
   clearError: () => {
     set({ error: null });
+  },
+  
+  addProfile: (profile) => {
+    const { profiles } = get();
+    set({ profiles: [...profiles, profile] });
+    // Clear cache when profiles are modified
+    clearProfileCache();
+  },
+  
+  removeProfile: (profileId) => {
+    const { profiles, activeProfile } = get();
+    const updatedProfiles = profiles.filter(p => p.id !== profileId);
+    let newActiveProfile = activeProfile;
+    
+    // If we're removing the active profile, switch to first available
+    if (activeProfile?.id === profileId && updatedProfiles.length > 0) {
+      newActiveProfile = updatedProfiles[0];
+    }
+    
+    set({ profiles: updatedProfiles, activeProfile: newActiveProfile });
+    // Clear cache when profiles are modified
+    clearProfileCache();
   },
 }));

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { StatusBar } from 'expo-status-bar';
-import { useRegistration } from '@/contexts/RegistrationContext';
+import { useDriverStore } from '../../lib/stores/driver.store';
 
 const IdCardPlaceholder = ({ onPress, imageUri }: { onPress: () => void; imageUri?: string | null }) => (
   <View className="w-full h-48 bg-brand-lightGray rounded-lg border-2 border-dashed border-gray-300 overflow-hidden">
@@ -25,13 +25,13 @@ const IdCardPlaceholder = ({ onPress, imageUri }: { onPress: () => void; imageUr
 
 export default function RegIdScreen() {
   const router = useRouter();
-  const { registrationData } = useRegistration();
-  const { frontImage, backImage } = registrationData.idVerification;
+  const { idVerification } = useDriverStore();
+  const { frontImage, backImage } = idVerification;
 
   const handleVerify = () => {
     if (frontImage && backImage) {
-      // Data is already saved in context, just navigate to next screen
-      router.push('/(auth)/ownership');
+      // Data is already saved in store, just navigate to next screen
+      router.push('/(registration)/vehicle-doc');
     } else {
       Alert.alert('Error', 'Please upload both front and back images of your ID.');
     }
@@ -55,7 +55,7 @@ export default function RegIdScreen() {
           <Text className="text-lg font-semibold mb-2">Front</Text>
           <IdCardPlaceholder
             imageUri={frontImage?.uri}
-            onPress={() => router.push({ pathname: '/(auth)/reg-uploadId', params: { side: 'front' } })}
+            onPress={() => router.push({ pathname: '/(registration)/reg-uploadId', params: { side: 'front' } })}
           />
         </View>
 
@@ -63,7 +63,7 @@ export default function RegIdScreen() {
           <Text className="text-lg font-semibold mb-2">Back</Text>
           <IdCardPlaceholder
             imageUri={backImage?.uri}
-            onPress={() => router.push({ pathname: '/(auth)/reg-uploadId', params: { side: 'back' } })}
+            onPress={() => router.push({ pathname: '/(registration)/reg-uploadId', params: { side: 'back' } })}
           />
         </View>
       </View>

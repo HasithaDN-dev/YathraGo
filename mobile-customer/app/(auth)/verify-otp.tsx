@@ -6,7 +6,7 @@ import { Typography } from '@/components/Typography';
 import CustomButton from '../../components/ui/CustomButton';
 import { PasswordIcon } from 'phosphor-react-native';
 import { verifyOtpApi, sendOtpApi } from '../../lib/api/auth.api';
-import { getProfilesApi } from '../../lib/api/profile.api';
+import { getProfilesApi, getRegistrationStatusApi } from '../../lib/api/profile.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
 import { useProfileStore } from '../../lib/stores/profile.store';
 
@@ -70,10 +70,19 @@ export default function VerifyOTPScreen() {
       
       await login(accessToken, user);
       
-      // Check if user has already completed customer registration
+      // Check registration status and profiles
       try {
-        const profiles = await getProfilesApi(accessToken);
+        const [profiles, registrationStatus] = await Promise.all([
+          getProfilesApi(accessToken),
+          getRegistrationStatusApi(accessToken)
+        ]);
+        
         console.log('User profiles after login:', profiles);
+        console.log('User registration status:', registrationStatus);
+        
+        // Update registration status in auth store
+        const { setRegistrationStatus } = useAuthStore.getState();
+        setRegistrationStatus(registrationStatus);
         
         // If user has any profiles (children or staff), they've completed registration
         if (profiles.length > 0) {
@@ -82,17 +91,25 @@ export default function VerifyOTPScreen() {
           // Load profiles into profile store
           await refreshProfiles(accessToken);
         } else {
-          console.log('User has no profiles, needs to complete registration');
-          // Check if customer registration is already completed
-          if (user.isProfileComplete) {
-            console.log('Customer registration already completed, marking as complete');
-            setProfileComplete(true);
+          console.log('User has no profiles, checking registration status');
+          
+          // Check registration status to determine next step
+          if (registrationStatus === 'ACCOUNT_CREATED') {
+            console.log('Customer registration completed, user needs to create profiles');
+            setProfileComplete(false);
+          } else if (registrationStatus === 'OTP_VERIFIED') {
+            console.log('Only OTP verified, user needs to complete customer registration');
+            setProfileComplete(false);
+          } else {
+            console.log('Unknown registration status:', registrationStatus);
+            setProfileComplete(false);
           }
         }
       } catch (profileError) {
-        console.log('Error checking user profiles:', profileError);
+        console.log('Error checking user profiles/status:', profileError);
         // If we can't check profiles, assume user needs to complete registration
         // Don't fail the login process - user can still proceed to registration
+        setProfileComplete(false);
       } finally {
         setLoading(false); // Clear global loading state only after profile check
       }

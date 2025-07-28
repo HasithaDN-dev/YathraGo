@@ -1,26 +1,26 @@
-// Manages the core authentication state: token, user object, and status.
+// Manages the core authentication state for driver app: token, user object, and status.
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User } from '../../types/customer.types';
+import { Driver } from '../../types/driver.types';
 import * as SecureStore from 'expo-secure-store';
 
 interface AuthState {
-  user: User | null;
+  user: Driver | null;
   accessToken: string | null;
   isLoggedIn: boolean;
   isProfileComplete: boolean;
-  isCustomerRegistered: boolean;
-  registrationStatus: string; // Add registration status tracking
+  isDriverRegistered: boolean;
+  registrationStatus: string;
   hasHydrated: boolean;
   isLoading: boolean;
-  login: (accessToken: string, user: User) => Promise<void>;
+  login: (accessToken: string, user: Driver) => Promise<void>;
   logout: () => Promise<void>;
   setProfileComplete: (complete: boolean) => void;
-  setCustomerRegistered: (registered: boolean) => void;
-  setRegistrationStatus: (status: string) => void; // Add method to update status
+  setDriverRegistered: (registered: boolean) => void;
+  setRegistrationStatus: (status: string) => void;
   setHasHydrated: (value: boolean) => void;
   setLoading: (loading: boolean) => void;
-  updateUser: (user: User) => void;
+  updateUser: (user: Driver) => void;
   refreshToken: (newToken: string) => void;
 }
 
@@ -45,29 +45,29 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       isLoggedIn: false,
       isProfileComplete: false,
-      isCustomerRegistered: false,
+      isDriverRegistered: false,
       registrationStatus: 'OTP_PENDING',
       hasHydrated: false,
       isLoading: false,
       
-      login: async (accessToken: string, user: User) => {
-        await SecureStore.setItemAsync('user-auth-token', String(accessToken));
+      login: async (accessToken: string, user: Driver) => {
+        await SecureStore.setItemAsync('driver-auth-token', String(accessToken));
         set({ 
           accessToken: String(accessToken), 
           user, 
           isLoggedIn: true,
-          isProfileComplete: false // Will be set to true if profiles are found
+          isProfileComplete: false // Will be set to true if profile is complete
         });
       },
       
       logout: async () => {
-        await SecureStore.deleteItemAsync('user-auth-token');
+        await SecureStore.deleteItemAsync('driver-auth-token');
         set({ 
           accessToken: null, 
           user: null, 
           isLoggedIn: false, 
           isProfileComplete: false,
-          isCustomerRegistered: false,
+          isDriverRegistered: false,
           registrationStatus: 'OTP_PENDING',
           isLoading: false
         });
@@ -82,8 +82,8 @@ export const useAuthStore = create<AuthState>()(
         console.log('Auth store: Profile complete set successfully');
       },
       
-      setCustomerRegistered: (registered: boolean) => {
-        set({ isCustomerRegistered: registered });
+      setDriverRegistered: (registered: boolean) => {
+        set({ isDriverRegistered: registered });
       },
 
       setRegistrationStatus: (status: string) => {
@@ -98,7 +98,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: loading });
       },
       
-      updateUser: (user: User) => {
+      updateUser: (user: Driver) => {
         set((state: AuthState) => ({
           user: { ...user, isProfileComplete: state.isProfileComplete }
         }));
@@ -109,24 +109,11 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'auth-storage',
+      name: 'driver-auth-storage',
       storage: zustandSecureStore,
-      partialize: (state) => ({
-        user: state.user,
-        accessToken: state.accessToken,
-        isLoggedIn: state.isLoggedIn,
-        isProfileComplete: state.isProfileComplete,
-        isCustomerRegistered: state.isCustomerRegistered,
-        hasHydrated: state.hasHydrated,
-      }),
-      onRehydrateStorage: (state: any) => (persistedState: any, error?: unknown) => {
-        if (!error) {
-          console.log('[Zustand] Hydration complete', persistedState);
+      onRehydrateStorage: () => (state) => {
+        if (state) {
           state.setHasHydrated(true);
-        } else {
-          console.error('[Zustand] Hydration error:', error);
-          state.setHasHydrated(true);
-          state.logout && state.logout();
         }
       },
     }

@@ -210,6 +210,10 @@ model Customer {
   updatedAt          DateTime           @updatedAt
   children           Child[]
   staffPassenger     Staff_Passenger?
+
+  @@index([phone])
+  @@index([registrationStatus])
+  @@index([status])
 }
 
 model Complaints {
@@ -249,6 +253,10 @@ model Child {
   pickUpAddress  String
   customerId     Int?
   Customer       Customer? @relation(fields: [customerId], references: [customer_id])
+
+  @@index([customerId])
+  @@index([school])
+  @@index([nearbyCity])
 }
 
 model Child_Trip {
@@ -269,6 +277,10 @@ model Staff_Passenger {
   pickUpLocation String
   pickupAddress  String
   Customer       Customer @relation(fields: [customerId], references: [customer_id])
+
+  @@index([customerId])
+  @@index([workLocation])
+  @@index([nearbyCity])
 }
 
 model Staff_Trip {

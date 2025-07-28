@@ -1,302 +1,171 @@
 // This component acts as the header for the main app, allowing profile switching.
 
 import React, { useState } from 'react';
-import { View, Text, Pressable, Modal, FlatList, SafeAreaView, ActivityIndicator, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, ScrollView, Image } from 'react-native';
 import { useProfileStore } from '../lib/stores/profile.store';
 import { useAuthStore } from '../lib/stores/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 import { Typography } from './Typography';
 
-export default function ProfileSwitcher() {
+const ProfileSwitcher: React.FC = () => {
   const { profiles, activeProfile, setActiveProfile, setDefaultProfile, isLoading } = useProfileStore();
   const { logout } = useAuthStore();
-  const [modalVisible, setModalVisible] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const getProfileIcon = (type: 'child' | 'staff') => {
+    return type === 'child' ? 'school' : 'briefcase';
+  };
+
+  const getProfileColor = (type: 'child' | 'staff') => {
+    return type === 'child' ? '#4F46E5' : '#059669';
+  };
+
+  const handleProfileSelect = async (profile: any) => {
+    setActiveProfile(profile.id);
+    await setDefaultProfile(profile.id);
+    setIsModalVisible(false);
+  };
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.header}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator color="#143373" size="small" />
-          <Typography variant="body" className="ml-2 text-brand-neutralGray">
-            Loading profiles...
-          </Typography>
+      <View className="flex-row items-center justify-between p-4 bg-white border-b border-gray-200">
+        <View className="flex-row items-center space-x-3">
+          <View className="w-10 h-10 bg-gray-200 rounded-full animate-pulse" />
+          <View className="flex-1">
+            <View className="h-4 bg-gray-200 rounded animate-pulse mb-1" />
+            <View className="h-3 bg-gray-200 rounded animate-pulse w-20" />
+          </View>
         </View>
-      </SafeAreaView>
+        <View className="w-6 h-6 bg-gray-200 rounded animate-pulse" />
+      </View>
     );
   }
 
   if (!activeProfile) {
-    return (
-      <SafeAreaView style={styles.header}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator color="#143373" size="small" />
-          <Typography variant="body" className="ml-2 text-brand-neutralGray">
-            Loading profile...
-          </Typography>
-        </View>
-      </SafeAreaView>
-    );
+    return null;
   }
 
-  const handleProfileSelect = (profileId: string) => {
-    setActiveProfile(profileId);
-    setModalVisible(false);
-  };
-
-  const handleSetDefault = async (profileId: string) => {
-    await setDefaultProfile(profileId);
-    // Don't close modal, just show feedback
-  };
-
-  const getProfileIcon = (type: string) => {
-    switch (type) {
-      case 'child':
-        return 'school';
-      case 'staff':
-        return 'briefcase';
-      default:
-        return 'person';
-    }
-  };
-
-  const getProfileColor = (type: string) => {
-    switch (type) {
-      case 'child':
-        return '#fdc334';
-      case 'staff':
-        return '#22c55e';
-      default:
-        return '#143373';
-    }
-  };
-
   return (
-    <>
-      <SafeAreaView style={styles.header}>
-        <Pressable style={styles.pressable} onPress={() => setModalVisible(true)}>
-          <View style={styles.profileInfo}>
-            {activeProfile.profileImageUrl ? (
-              <Image 
-                source={{ uri: activeProfile.profileImageUrl }} 
-                style={styles.profileImage}
+    <View className="flex-row items-center justify-between p-4 bg-white border-b border-gray-200">
+      <TouchableOpacity
+        onPress={() => setIsModalVisible(true)}
+        className="flex-row items-center space-x-3 flex-1"
+      >
+        {/* Optimized image loading with fallback */}
+        <View className="relative">
+          {activeProfile.profileImageUrl ? (
+            <Image
+              source={{ uri: activeProfile.profileImageUrl }}
+              className="w-10 h-10 rounded-full"
+              defaultSource={require('../assets/images/default-avatar.png')}
+              loadingIndicatorSource={require('../assets/images/loading-avatar.png')}
+            />
+          ) : (
+            <View 
+              className="w-10 h-10 rounded-full items-center justify-center"
+              style={{ backgroundColor: getProfileColor(activeProfile.type) }}
+            >
+              <Ionicons 
+                name={getProfileIcon(activeProfile.type)} 
+                size={20} 
+                color="white" 
               />
-            ) : (
-              <View style={[styles.profileIcon, { backgroundColor: getProfileColor(activeProfile.type) }]}>
-                <Ionicons 
-                  name={getProfileIcon(activeProfile.type) as any} 
-                  size={20} 
-                  color="white" 
-                />
-              </View>
-            )}
-            <View style={styles.profileText}>
-              <Typography variant="title-3" weight="semibold" className="text-brand-deepNavy">
-                {activeProfile.name}
-              </Typography>
-              <Typography variant="caption-1" className="text-brand-neutralGray capitalize">
-                {activeProfile.type}
-              </Typography>
-            </View>
           </View>
-          <Ionicons name="chevron-down" size={20} color="#143373" />
-        </Pressable>
-      </SafeAreaView>
+          )}
+          
+          {/* Active indicator */}
+          <View className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
+        </View>
+
+        <View className="flex-1">
+          <Text className="text-lg font-semibold text-gray-900">
+            {activeProfile.name}
+          </Text>
+          <Text className="text-sm text-gray-500 capitalize">
+            {activeProfile.type} Profile
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => setIsModalVisible(true)}>
+        <Ionicons name="chevron-down" size={24} color="#6B7280" />
+      </TouchableOpacity>
 
       <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        visible={isModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsModalVisible(false)}
       >
-        <Pressable style={styles.modalBackdrop} onPress={() => setModalVisible(false)}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Typography variant="title-2" weight="bold" className="text-brand-deepNavy">
-                Switch Profile
-              </Typography>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#143373" />
-              </TouchableOpacity>
-            </View>
-            
-            <FlatList
-              data={profiles}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity 
-                  style={[
-                    styles.profileRow, 
-                    activeProfile.id === item.id && styles.activeProfileRow
-                  ]} 
-                  onPress={() => handleProfileSelect(item.id)}
-                >
-                  <View style={styles.profileRowContent}>
-                    {item.profileImageUrl ? (
-                      <Image 
-                        source={{ uri: item.profileImageUrl }} 
-                        style={styles.profileRowImage}
-                      />
-                    ) : (
-                      <View style={[styles.profileRowIcon, { backgroundColor: getProfileColor(item.type) }]}>
-                        <Ionicons 
-                          name={getProfileIcon(item.type) as any} 
-                          size={16} 
-                          color="white" 
-                        />
-                      </View>
-                    )}
-                    <View style={styles.profileRowText}>
-                      <Typography variant="body" weight="medium" className="text-brand-deepNavy">
-                        {item.name}
-                      </Typography>
-                      <Typography variant="caption-1" className="text-brand-neutralGray capitalize">
-                        {item.type}
-                      </Typography>
-                    </View>
-                  </View>
-                  <TouchableOpacity 
-                    onPress={() => handleSetDefault(item.id)}
-                    style={styles.defaultButton}
+        <TouchableOpacity
+          className="flex-1 bg-black bg-opacity-50"
+          activeOpacity={1}
+          onPress={() => setIsModalVisible(false)}
+        >
+          <View className="flex-1 justify-center items-center px-4">
+            <View className="bg-white rounded-lg w-full max-w-sm max-h-96">
+              <View className="p-4 border-b border-gray-200">
+                <Text className="text-lg font-semibold text-gray-900">
+                  Select Profile
+                </Text>
+              </View>
+              
+              <ScrollView className="max-h-64">
+                {profiles.map((profile) => (
+                  <TouchableOpacity
+                    key={profile.id}
+                    onPress={() => handleProfileSelect(profile)}
+                    className={`flex-row items-center p-4 border-b border-gray-100 ${
+                      activeProfile.id === profile.id ? 'bg-blue-50' : ''
+                    }`}
                   >
-                    <Ionicons 
-                      name="star" 
-                      size={20} 
-                      color={activeProfile.id === item.id ? "#fdc334" : "#d1d5db"} 
-                    />
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              )}
-              style={styles.profileList}
-            />
-            
-            <TouchableOpacity 
-              style={styles.logoutButton} 
-              onPress={() => { 
-                setModalVisible(false); 
-                logout(); 
-              }}
-            >
-              <Ionicons name="log-out-outline" size={20} color="white" />
-              <Typography variant="body" weight="medium" className="ml-2 text-white">
-                Logout
-              </Typography>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Modal>
-    </>
-  );
-}
+                    {/* Optimized image loading with fallback */}
+                    <View className="relative mr-3">
+                      {profile.profileImageUrl ? (
+                        <Image
+                          source={{ uri: profile.profileImageUrl }}
+                          className="w-12 h-12 rounded-full"
+                          defaultSource={require('../assets/images/default-avatar.png')}
+                          loadingIndicatorSource={require('../assets/images/loading-avatar.png')}
+                        />
+                      ) : (
+                        <View 
+                          className="w-12 h-12 rounded-full items-center justify-center"
+                          style={{ backgroundColor: getProfileColor(profile.type) }}
+                        >
+                          <Ionicons 
+                            name={getProfileIcon(profile.type)} 
+                            size={24} 
+                            color="white" 
+                          />
+                        </View>
+                      )}
+                      
+                      {/* Active indicator */}
+                      {activeProfile.id === profile.id && (
+                        <View className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white items-center justify-center">
+                          <Ionicons name="checkmark" size={12} color="white" />
+                        </View>
+                      )}
+                    </View>
 
-const styles = StyleSheet.create({
-  header: { 
-    backgroundColor: 'white', 
-    borderBottomWidth: 1, 
-    borderBottomColor: '#f3f4f6' 
-  },
-  pressable: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    padding: 16 
-  },
-  profileInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  profileImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-  },
-  profileIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileText: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-  },
-  modalBackdrop: { 
-    flex: 1, 
-    justifyContent: 'flex-end', 
-    backgroundColor: 'rgba(0,0,0,0.5)' 
-  },
-  modalContent: { 
-    backgroundColor: 'white', 
-    borderTopLeftRadius: 20, 
-    borderTopRightRadius: 20, 
-    padding: 20, 
-    paddingBottom: 40,
-    maxHeight: '80%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  profileList: {
-    maxHeight: 400,
-  },
-  profileRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    paddingVertical: 16, 
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  activeProfileRow: {
-    backgroundColor: '#f0f9ff',
-    borderWidth: 1,
-    borderColor: '#143373',
-  },
-  profileRowContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  profileRowImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 12,
-  },
-  profileRowIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileRowText: {
-    flex: 1,
-  },
-  defaultButton: {
-    padding: 8,
-  },
-  logoutButton: { 
-    backgroundColor: '#ef4444', 
-    padding: 16, 
-    borderRadius: 12, 
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20 
-  },
-});
+                    <View className="flex-1">
+                      <Text className="text-base font-medium text-gray-900">
+                        {profile.name}
+                      </Text>
+                      <Text className="text-sm text-gray-500 capitalize">
+                        {profile.type} Profile
+                      </Text>
+                  </View>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </View>
+  );
+};
+
+export default ProfileSwitcher;
