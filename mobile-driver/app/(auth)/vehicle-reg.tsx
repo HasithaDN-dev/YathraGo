@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Icon } from '@/components/ui/Icon';
 import * as ImagePicker from 'expo-image-picker';
-import { useRegistration } from '@/contexts/RegistrationContext';
+import { useDriverStore } from '../../lib/stores/driver.store';
 
 interface PhotoUploadBoxProps {
   label: string;
@@ -28,23 +28,23 @@ const PhotoUploadBox: React.FC<PhotoUploadBoxProps> = ({ label, image, onUpload 
 
 export default function VehicleRegScreen() {
   const router = useRouter();
-  const { registrationData, updateVehicleInfo } = useRegistration();
+  const { vehicleInfo, updateVehicleInfo } = useDriverStore();
 
-  const [vehicleType, setVehicleType] = useState(registrationData.vehicleInfo.vehicleType);
-  const [vehicleBrand, setVehicleBrand] = useState(registrationData.vehicleInfo.vehicleBrand);
-  const [vehicleModel, setVehicleModel] = useState(registrationData.vehicleInfo.vehicleModel);
-  const [yearOfManufacture, setYearOfManufacture] = useState(registrationData.vehicleInfo.yearOfManufacture);
-  const [vehicleColor, setVehicleColor] = useState(registrationData.vehicleInfo.vehicleColor);
-  const [licensePlate, setLicensePlate] = useState(registrationData.vehicleInfo.licensePlate);
-  const [seats, setSeats] = useState(registrationData.vehicleInfo.seats);
-  const [femaleAssistant, setFemaleAssistant] = useState(registrationData.vehicleInfo.femaleAssistant);
+  const [vehicleType, setVehicleType] = useState(vehicleInfo.vehicleType);
+  const [vehicleBrand, setVehicleBrand] = useState(vehicleInfo.vehicleBrand);
+  const [vehicleModel, setVehicleModel] = useState(vehicleInfo.vehicleModel);
+  const [yearOfManufacture, setYearOfManufacture] = useState(vehicleInfo.yearOfManufacture);
+  const [vehicleColor, setVehicleColor] = useState(vehicleInfo.vehicleColor);
+  const [licensePlate, setLicensePlate] = useState(vehicleInfo.licensePlate);
+  const [seats, setSeats] = useState(vehicleInfo.seats);
+  const [femaleAssistant, setFemaleAssistant] = useState(vehicleInfo.femaleAssistant);
 
-  const [frontView, setFrontView] = useState<ImagePicker.ImagePickerAsset | null>(registrationData.vehicleInfo.frontView);
-  const [sideView, setSideView] = useState<ImagePicker.ImagePickerAsset | null>(registrationData.vehicleInfo.sideView);
-  const [rearView, setRearView] = useState<ImagePicker.ImagePickerAsset | null>(registrationData.vehicleInfo.rearView);
-  const [interiorView, setInteriorView] = useState<ImagePicker.ImagePickerAsset | null>(registrationData.vehicleInfo.interiorView);
+  const [frontView, setFrontView] = useState<ImagePicker.ImagePickerAsset | null>(vehicleInfo.frontView);
+  const [sideView, setSideView] = useState<ImagePicker.ImagePickerAsset | null>(vehicleInfo.sideView);
+  const [rearView, setRearView] = useState<ImagePicker.ImagePickerAsset | null>(vehicleInfo.rearView);
+  const [interiorView, setInteriorView] = useState<ImagePicker.ImagePickerAsset | null>(vehicleInfo.interiorView);
 
-  // Update context when form fields change
+  // Update store when form fields change
   useEffect(() => {
     updateVehicleInfo({
       vehicleType,
@@ -60,23 +60,23 @@ export default function VehicleRegScreen() {
       rearView,
       interiorView,
     });
-  }, [vehicleType, vehicleBrand, vehicleModel, yearOfManufacture, vehicleColor, licensePlate, seats, femaleAssistant, frontView, sideView, rearView, interiorView]);
+  }, [vehicleType, vehicleBrand, vehicleModel, yearOfManufacture, vehicleColor, licensePlate, seats, femaleAssistant, frontView, sideView, rearView, interiorView, updateVehicleInfo]);
 
-  // Sync local state with context data
+  // Sync local state with store data
   useEffect(() => {
-    setVehicleType(registrationData.vehicleInfo.vehicleType);
-    setVehicleBrand(registrationData.vehicleInfo.vehicleBrand);
-    setVehicleModel(registrationData.vehicleInfo.vehicleModel);
-    setYearOfManufacture(registrationData.vehicleInfo.yearOfManufacture);
-    setVehicleColor(registrationData.vehicleInfo.vehicleColor);
-    setLicensePlate(registrationData.vehicleInfo.licensePlate);
-    setSeats(registrationData.vehicleInfo.seats);
-    setFemaleAssistant(registrationData.vehicleInfo.femaleAssistant);
-    setFrontView(registrationData.vehicleInfo.frontView);
-    setSideView(registrationData.vehicleInfo.sideView);
-    setRearView(registrationData.vehicleInfo.rearView);
-    setInteriorView(registrationData.vehicleInfo.interiorView);
-  }, [registrationData.vehicleInfo]);
+    setVehicleType(vehicleInfo.vehicleType);
+    setVehicleBrand(vehicleInfo.vehicleBrand);
+    setVehicleModel(vehicleInfo.vehicleModel);
+    setYearOfManufacture(vehicleInfo.yearOfManufacture);
+    setVehicleColor(vehicleInfo.vehicleColor);
+    setLicensePlate(vehicleInfo.licensePlate);
+    setSeats(vehicleInfo.seats);
+    setFemaleAssistant(vehicleInfo.femaleAssistant);
+    setFrontView(vehicleInfo.frontView);
+    setSideView(vehicleInfo.sideView);
+    setRearView(vehicleInfo.rearView);
+    setInteriorView(vehicleInfo.interiorView);
+  }, [vehicleInfo]);
 
   const handleImageUpload = async (setImage: React.Dispatch<React.SetStateAction<ImagePicker.ImagePickerAsset | null>>) => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -98,7 +98,7 @@ export default function VehicleRegScreen() {
   };
 
   const handleNext = () => {
-    // Data is already saved in context, just navigate to next screen
+    // Data is already saved in store, just navigate to next screen
     router.push('/(auth)/vehicle-doc');
   };
 

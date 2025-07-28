@@ -29,12 +29,12 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const profiles = await getProfilesApi(token);
-      const defaultProfileId = await AsyncStorage.getItem('default-profile-id');
+    const defaultProfileId = await AsyncStorage.getItem('default-profile-id');
 
-      let profileToActivate: Profile | null = null;
-      if (defaultProfileId) {
-        profileToActivate = profiles.find(p => p.id === defaultProfileId) || null;
-      }
+    let profileToActivate: Profile | null = null;
+    if (defaultProfileId) {
+      profileToActivate = profiles.find(p => p.id === defaultProfileId) || null;
+    }
       if (!profileToActivate && profiles.length > 0) {
         profileToActivate = profiles[0];
       }
@@ -45,7 +45,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       if (profiles.length > 0) {
         const { setProfileComplete } = useAuthStore.getState();
         setProfileComplete(true);
-      }
+    }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load profiles';
       set({ error: errorMessage, isLoading: false });

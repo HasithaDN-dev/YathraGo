@@ -2,24 +2,25 @@ import React, { useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '../lib/stores/auth.store';
 
 const { width, height } = Dimensions.get('window');
 
 export default function SuccessScreen() {
   const router = useRouter();
+  const { isLoggedIn, registrationStatus } = useAuthStore();
 
   const handleContinue = async () => {
     try {
-      // Verify that we have an auth token
-      const authToken = await AsyncStorage.getItem('authToken');
-      if (!authToken) {
-        console.error('No auth token found');
-        return;
+      // Check if user is logged in and has complete profile
+      if (isLoggedIn && registrationStatus === 'ACCOUNT_CREATED') {
+        // Use replace to navigate to tabs and clear the auth stack
+        router.replace('/(tabs)');
+      } else {
+        console.error('User not properly authenticated or profile not complete');
+        // Fallback to auth flow
+        router.replace('/(auth)/phone-auth');
       }
-
-      // Use replace to navigate to tabs and clear the auth stack
-      router.replace('/(tabs)');
     } catch (error) {
       console.error('Navigation error:', error);
     }

@@ -1,11 +1,9 @@
 import { Stack } from 'expo-router';
 import React from 'react';
-import { IdVerificationProvider } from '@/contexts/IdVerificationContext';
 
 export default function AuthLayout() {
   return (
-    <IdVerificationProvider>
-      <Stack>
+    <Stack>
       <Stack.Screen 
         name="phone-auth" 
         options={{ 
@@ -77,6 +75,5 @@ export default function AuthLayout() {
           }}
         />
       </Stack>
-    </IdVerificationProvider>
   );
 }

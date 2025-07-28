@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { StatusBar } from 'expo-status-bar';
-import { useRegistration } from '@/contexts/RegistrationContext';
+import { useDriverStore } from '../../lib/stores/driver.store';
 
 const IdCardPlaceholder = ({ onPress, imageUri }: { onPress: () => void; imageUri?: string | null }) => (
   <View className="w-full h-48 bg-brand-lightGray rounded-lg border-2 border-dashed border-gray-300 overflow-hidden">
@@ -25,12 +25,12 @@ const IdCardPlaceholder = ({ onPress, imageUri }: { onPress: () => void; imageUr
 
 export default function RegIdScreen() {
   const router = useRouter();
-  const { registrationData } = useRegistration();
-  const { frontImage, backImage } = registrationData.idVerification;
+  const { idVerification } = useDriverStore();
+  const { frontImage, backImage } = idVerification;
 
   const handleVerify = () => {
     if (frontImage && backImage) {
-      // Data is already saved in context, just navigate to next screen
+      // Data is already saved in store, just navigate to next screen
       router.push('/(auth)/ownership');
     } else {
       Alert.alert('Error', 'Please upload both front and back images of your ID.');

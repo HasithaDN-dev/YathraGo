@@ -3,22 +3,22 @@ import { View, TextInput, Image, TouchableOpacity, ScrollView, Text, Alert } fro
 import { Link, useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import * as ImagePicker from 'expo-image-picker';
-import { useRegistration } from '@/contexts/RegistrationContext';
+import { useDriverStore } from '../../lib/stores/driver.store';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { registrationData, updatePersonalInfo } = useRegistration();
+  const { personalInfo, updatePersonalInfo } = useDriverStore();
 
-  const [firstName, setFirstName] = useState(registrationData.personalInfo.firstName);
-  const [lastName, setLastName] = useState(registrationData.personalInfo.lastName);
-  const [dob, setDob] = useState(registrationData.personalInfo.dateOfBirth);
-  const [email, setEmail] = useState(registrationData.personalInfo.email);
-  const [secondaryPhone, setSecondaryPhone] = useState(registrationData.personalInfo.secondaryPhone);
-  const [city, setCity] = useState(registrationData.personalInfo.city);
-  const [profileImage, setProfileImage] = useState<ImagePicker.ImagePickerAsset | null>(registrationData.personalInfo.profileImage);
+  const [firstName, setFirstName] = useState(personalInfo.firstName);
+  const [lastName, setLastName] = useState(personalInfo.lastName);
+  const [dob, setDob] = useState(personalInfo.dateOfBirth);
+  const [email, setEmail] = useState(personalInfo.email);
+  const [secondaryPhone, setSecondaryPhone] = useState(personalInfo.secondaryPhone);
+  const [city, setCity] = useState(personalInfo.city);
+  const [profileImage, setProfileImage] = useState<ImagePicker.ImagePickerAsset | null>(personalInfo.profileImage);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Update context when form fields change
+  // Update store when form fields change
   useEffect(() => {
     updatePersonalInfo({
       firstName,
@@ -29,18 +29,18 @@ export default function RegisterScreen() {
       city,
       profileImage,
     });
-  }, [firstName, lastName, dob, email, secondaryPhone, city, profileImage]);
+  }, [firstName, lastName, dob, email, secondaryPhone, city, profileImage, updatePersonalInfo]);
 
-  // Sync local state with context data
+  // Sync local state with store data
   useEffect(() => {
-    setFirstName(registrationData.personalInfo.firstName);
-    setLastName(registrationData.personalInfo.lastName);
-    setDob(registrationData.personalInfo.dateOfBirth);
-    setEmail(registrationData.personalInfo.email);
-    setSecondaryPhone(registrationData.personalInfo.secondaryPhone);
-    setCity(registrationData.personalInfo.city);
-    setProfileImage(registrationData.personalInfo.profileImage);
-  }, [registrationData.personalInfo]);
+    setFirstName(personalInfo.firstName);
+    setLastName(personalInfo.lastName);
+    setDob(personalInfo.dateOfBirth);
+    setEmail(personalInfo.email);
+    setSecondaryPhone(personalInfo.secondaryPhone);
+    setCity(personalInfo.city);
+    setProfileImage(personalInfo.profileImage);
+  }, [personalInfo]);
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -67,7 +67,7 @@ export default function RegisterScreen() {
       return;
     }
 
-    // Data is already saved in context, just navigate to next screen
+    // Data is already saved in store, just navigate to next screen
     router.push('/(auth)/reg-verify');
   };
 

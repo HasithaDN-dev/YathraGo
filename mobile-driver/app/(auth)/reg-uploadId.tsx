@@ -5,12 +5,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Icon } from '@/components/ui/Icon';
 import { StatusBar } from 'expo-status-bar';
-import { useRegistration } from '@/contexts/RegistrationContext';
+import { useDriverStore } from '../../lib/stores/driver.store';
 
 export default function RegUploadIdScreen() {
   const router = useRouter();
   const { side } = useLocalSearchParams<{ side: 'front' | 'back' }>();
-  const { updateIdVerification } = useRegistration();
+  const { updateIdVerification } = useDriverStore();
   const [image, setImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
 
   const handleImageAction = async (action: 'camera' | 'library') => {

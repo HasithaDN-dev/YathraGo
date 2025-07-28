@@ -6,14 +6,10 @@ import { StatusBar } from 'expo-status-bar';
 import { Icon } from '@/components/ui/Icon';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
-import { ApiService } from '@/services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRegistration } from '@/contexts/RegistrationContext';
-
-interface FileUploadItemProps {
-  file: DocumentPicker.DocumentPickerSuccessResult | null;
-  progress: number;
-}
+import { useDriverStore } from '../../lib/stores/driver.store';
+import { useAuthStore } from '../../lib/stores/auth.store';
+import { registerVehicleApi, uploadVehicleDocumentsApi } from '../../lib/api/vehicle.api';
+import { completeDriverRegistrationApi, uploadIdDocumentsApi } from '../../lib/api/profile.api';
 
 interface FileUploadItemProps {
   file: DocumentPicker.DocumentPickerSuccessResult | null;
@@ -68,18 +64,19 @@ const LicenseUploadBox: React.FC<LicenseUploadBoxProps> = ({ image, onUpload, si
 
 export default function VehicleDocScreen() {
   const router = useRouter();
-  const { registrationData, updateVehicleDocuments, isRegistrationComplete } = useRegistration();
+  const { vehicleDocuments, updateVehicleDocuments, isRegistrationComplete, personalInfo, idVerification, vehicleInfo } = useDriverStore();
+  const { accessToken, setProfileComplete, setRegistrationStatus } = useAuthStore();
 
-  const [revenueLicense, setRevenueLicense] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(registrationData.vehicleDocuments.revenueLicense);
-  const [vehicleInsurance, setVehicleInsurance] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(registrationData.vehicleDocuments.vehicleInsurance);
-  const [registrationDoc, setRegistrationDoc] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(registrationData.vehicleDocuments.registrationDoc);
-  const [licenseFront, setLicenseFront] = useState<ImagePicker.ImagePickerAsset | null>(registrationData.vehicleDocuments.licenseFront);
-  const [licenseBack, setLicenseBack] = useState<ImagePicker.ImagePickerAsset | null>(registrationData.vehicleDocuments.licenseBack);
+  const [revenueLicense, setRevenueLicense] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(vehicleDocuments.revenueLicense);
+  const [vehicleInsurance, setVehicleInsurance] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(vehicleDocuments.vehicleInsurance);
+  const [registrationDoc, setRegistrationDoc] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(vehicleDocuments.registrationDoc);
+  const [licenseFront, setLicenseFront] = useState<ImagePicker.ImagePickerAsset | null>(vehicleDocuments.licenseFront);
+  const [licenseBack, setLicenseBack] = useState<ImagePicker.ImagePickerAsset | null>(vehicleDocuments.licenseBack);
 
   const [progress, setProgress] = useState<{ [key: string]: number }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Update context when documents change
+  // Update store when documents change
   useEffect(() => {
     updateVehicleDocuments({
       revenueLicense,
@@ -88,16 +85,16 @@ export default function VehicleDocScreen() {
       licenseFront,
       licenseBack,
     });
-  }, [revenueLicense, vehicleInsurance, registrationDoc, licenseFront, licenseBack]);
+  }, [revenueLicense, vehicleInsurance, registrationDoc, licenseFront, licenseBack, updateVehicleDocuments]);
 
-  // Sync local state with context data
+  // Sync local state with store data
   useEffect(() => {
-    setRevenueLicense(registrationData.vehicleDocuments.revenueLicense);
-    setVehicleInsurance(registrationData.vehicleDocuments.vehicleInsurance);
-    setRegistrationDoc(registrationData.vehicleDocuments.registrationDoc);
-    setLicenseFront(registrationData.vehicleDocuments.licenseFront);
-    setLicenseBack(registrationData.vehicleDocuments.licenseBack);
-  }, [registrationData.vehicleDocuments]);
+    setRevenueLicense(vehicleDocuments.revenueLicense);
+    setVehicleInsurance(vehicleDocuments.vehicleInsurance);
+    setRegistrationDoc(vehicleDocuments.registrationDoc);
+    setLicenseFront(vehicleDocuments.licenseFront);
+    setLicenseBack(vehicleDocuments.licenseBack);
+  }, [vehicleDocuments]);
 
   const startProgress = (key: string) => {
     setProgress(prev => ({ ...prev, [key]: 0 }));
@@ -138,135 +135,131 @@ export default function VehicleDocScreen() {
       return;
     }
 
+    if (!accessToken) {
+      Alert.alert('Error', 'Authentication token not found. Please login again.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('Authentication token not found.');
+      // Step 1: Complete driver registration
+      const driverData = {
+        driverId: 0, // Will be set by backend
+        name: `${personalInfo.firstName} ${personalInfo.lastName}`,
+        email: personalInfo.email,
+        address: personalInfo.city,
+        profileImageUrl: personalInfo.profileImage?.uri,
+        emergencyContact: personalInfo.secondaryPhone,
+        NIC: '', // Will be extracted from ID verification
+        dateOfBirth: personalInfo.dateOfBirth,
+        gender: '', // Not collected in current form
+        secondPhone: personalInfo.secondaryPhone,
+      };
+
+      const driverResult = await completeDriverRegistrationApi(accessToken, driverData);
+
+      // Step 2: Upload ID documents
+      if (idVerification.frontImage && idVerification.backImage) {
+        await uploadIdDocumentsApi(accessToken, {
+          frontImage: idVerification.frontImage,
+          backImage: idVerification.backImage,
+        });
       }
 
-      const formData = new FormData();
+      // Step 3: Register vehicle
+      const vehicleFormData = new FormData();
+      vehicleFormData.append('vehicleType', vehicleInfo.vehicleType);
+      vehicleFormData.append('vehicleBrand', vehicleInfo.vehicleBrand);
+      vehicleFormData.append('vehicleModel', vehicleInfo.vehicleModel);
+      vehicleFormData.append('yearOfManufacture', vehicleInfo.yearOfManufacture);
+      vehicleFormData.append('vehicleColor', vehicleInfo.vehicleColor);
+      vehicleFormData.append('licensePlate', vehicleInfo.licensePlate);
+      vehicleFormData.append('seats', vehicleInfo.seats.toString());
+      vehicleFormData.append('femaleAssistant', String(vehicleInfo.femaleAssistant));
 
-      // Personal Information
-      const { personalInfo } = registrationData;
-      formData.append('firstName', personalInfo.firstName);
-      formData.append('lastName', personalInfo.lastName);
-      formData.append('dateOfBirth', personalInfo.dateOfBirth);
-      formData.append('email', personalInfo.email);
-      formData.append('secondaryPhone', personalInfo.secondaryPhone);
-      formData.append('city', personalInfo.city);
-
-      if (personalInfo.profileImage) {
-        const uriParts = personalInfo.profileImage.uri.split('.');
-        const fileType = uriParts[uriParts.length - 1];
-        formData.append('profileImage', {
-          uri: personalInfo.profileImage.uri,
-          name: `profile.${fileType}`,
-          type: `image/${fileType}`,
-        } as any);
-      }
-
-      // ID Verification
-      const { idVerification } = registrationData;
-      if (idVerification.frontImage) {
-        formData.append('idFrontImage', {
-          uri: idVerification.frontImage.uri,
-          name: 'idFront.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      if (idVerification.backImage) {
-        formData.append('idBackImage', {
-          uri: idVerification.backImage.uri,
-          name: 'idBack.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-
-      // Vehicle Information
-      const { vehicleInfo } = registrationData;
-      formData.append('vehicleType', vehicleInfo.vehicleType);
-      formData.append('vehicleBrand', vehicleInfo.vehicleBrand);
-      formData.append('vehicleModel', vehicleInfo.vehicleModel);
-      formData.append('yearOfManufacture', vehicleInfo.yearOfManufacture);
-      formData.append('vehicleColor', vehicleInfo.vehicleColor);
-      formData.append('licensePlate', vehicleInfo.licensePlate);
-      formData.append('seats', vehicleInfo.seats.toString());
-      formData.append('femaleAssistant', String(vehicleInfo.femaleAssistant));
-
+      // Add vehicle images
       if (vehicleInfo.frontView) {
-        formData.append('vehicleFrontView', {
+        vehicleFormData.append('vehicleFrontView', {
           uri: vehicleInfo.frontView.uri,
           name: 'vehicleFront.jpg',
           type: 'image/jpeg',
         } as any);
       }
       if (vehicleInfo.sideView) {
-        formData.append('vehicleSideView', {
+        vehicleFormData.append('vehicleSideView', {
           uri: vehicleInfo.sideView.uri,
           name: 'vehicleSide.jpg',
           type: 'image/jpeg',
         } as any);
       }
       if (vehicleInfo.rearView) {
-        formData.append('vehicleRearView', {
+        vehicleFormData.append('vehicleRearView', {
           uri: vehicleInfo.rearView.uri,
           name: 'vehicleRear.jpg',
           type: 'image/jpeg',
         } as any);
       }
       if (vehicleInfo.interiorView) {
-        formData.append('vehicleInteriorView', {
+        vehicleFormData.append('vehicleInteriorView', {
           uri: vehicleInfo.interiorView.uri,
           name: 'vehicleInterior.jpg',
           type: 'image/jpeg',
         } as any);
       }
 
-      // Vehicle Documents
-      const { vehicleDocuments } = registrationData;
+      await registerVehicleApi(accessToken, vehicleFormData);
+
+      // Step 4: Upload vehicle documents
+      const documentsFormData = new FormData();
+      
       if (vehicleDocuments.revenueLicense) {
-        formData.append('revenueLicense', {
+        documentsFormData.append('revenueLicense', {
           uri: vehicleDocuments.revenueLicense.assets[0].uri,
           name: vehicleDocuments.revenueLicense.assets[0].name,
           type: vehicleDocuments.revenueLicense.assets[0].mimeType,
         } as any);
       }
       if (vehicleDocuments.vehicleInsurance) {
-        formData.append('vehicleInsurance', {
+        documentsFormData.append('vehicleInsurance', {
           uri: vehicleDocuments.vehicleInsurance.assets[0].uri,
           name: vehicleDocuments.vehicleInsurance.assets[0].name,
           type: vehicleDocuments.vehicleInsurance.assets[0].mimeType,
         } as any);
       }
       if (vehicleDocuments.registrationDoc) {
-        formData.append('registrationDoc', {
+        documentsFormData.append('registrationDoc', {
           uri: vehicleDocuments.registrationDoc.assets[0].uri,
           name: vehicleDocuments.registrationDoc.assets[0].name,
           type: vehicleDocuments.registrationDoc.assets[0].mimeType,
         } as any);
       }
       if (vehicleDocuments.licenseFront) {
-        formData.append('licenseFront', {
+        documentsFormData.append('licenseFront', {
           uri: vehicleDocuments.licenseFront.uri,
           name: 'licenseFront.jpg',
           type: 'image/jpeg',
         } as any);
       }
       if (vehicleDocuments.licenseBack) {
-        formData.append('licenseBack', {
+        documentsFormData.append('licenseBack', {
           uri: vehicleDocuments.licenseBack.uri,
           name: 'licenseBack.jpg',
           type: 'image/jpeg',
         } as any);
       }
 
-      await ApiService.completeDriverRegistration(token, formData);
-      Alert.alert('Success', 'Registration completed successfully!');
-      router.push('../success');
+      await uploadVehicleDocumentsApi(accessToken, documentsFormData);
+
+      // Step 5: Update registration status and complete profile
+      setRegistrationStatus('ACCOUNT_CREATED');
+      setProfileComplete(true);
+
+      // Navigate to success screen
+      router.replace('/success');
+
     } catch (error) {
       console.error('Registration error:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'An unknown error occurred.');
+      Alert.alert('Registration Failed', error instanceof Error ? error.message : 'Failed to complete registration. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

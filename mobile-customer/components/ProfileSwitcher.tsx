@@ -70,7 +70,7 @@ const ProfileSwitcher: React.FC = () => {
                 size={20} 
                 color="white" 
               />
-            </View>
+          </View>
           )}
           
           {/* Active indicator */}
@@ -156,7 +156,7 @@ const ProfileSwitcher: React.FC = () => {
                       <Text className="text-sm text-gray-500 capitalize">
                         {profile.type} Profile
                       </Text>
-                    </View>
+                  </View>
                   </TouchableOpacity>
                 ))}
               </ScrollView>

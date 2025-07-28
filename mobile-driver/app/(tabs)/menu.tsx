@@ -1,12 +1,14 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '../../lib/stores/auth.store';
+import { useDriverStore } from '../../lib/stores/driver.store';
 import ProfileMenuItem from '@/components/ui/ProfileMenuItem';
 import { Icon } from '@/components/ui/Icon';
 
 export default function MenuScreen() {
-  const { profile, logout } = useAuth();
+  const { logout } = useAuthStore();
+  const { profile } = useDriverStore();
 
   return (
     <SafeAreaView style={styles.container}>

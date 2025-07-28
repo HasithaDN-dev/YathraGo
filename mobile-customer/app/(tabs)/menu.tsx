@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../../hooks/useAuth';
+import { useRouter } from 'expo-router';
+import { useAuthStore } from '../../lib/stores/auth.store';
 import { 
   ArrowLeftIcon,
   CreditCardIcon,
@@ -15,8 +16,8 @@ import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
 
 export default function MenuScreen() {
-  const { logout } = useAuth();
-  const router = require('expo-router').useRouter();
+  const { logout } = useAuthStore();
+  const router = useRouter();
 
 
     const handleLogout = async () => {
