@@ -3,7 +3,22 @@ import React from 'react';
 
 export default function ProfileLayout() {
   return (
-    <Stack>
+    
+<Stack
+            screenOptions={{
+                headerShown: false,
+                animation: 'slide_from_right',
+                gestureEnabled: true,
+                gestureDirection: 'horizontal',
+            }}
+        >
+      <Stack.Screen
+        name="(personal)"
+        options={{
+          headerShown: false,
+          title: 'Menu'
+        }}
+      />
       <Stack.Screen
         name="profile"
         options={{

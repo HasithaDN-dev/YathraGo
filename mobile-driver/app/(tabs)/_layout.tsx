@@ -64,6 +64,12 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="current-students"
+        options={{
+          href: null, // This hides it from the tab bar
+        }}
+      />
     </Tabs>
   );
 }
