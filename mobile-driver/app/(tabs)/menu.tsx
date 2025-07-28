@@ -28,12 +28,12 @@ export default function MenuScreen() {
       </View>
 
       <View style={{ marginTop: 24 }}>
-        <ProfileMenuItem icon="User" text="Personal Details" onPress={() => {}} />
+        <ProfileMenuItem icon="User" text="Personal Details" onPress={() => router.push('../profile/(personal)/personal')} />
         <ProfileMenuItem icon="Receipt" text="Transactions" onPress={() => router.push('/profile/earnings')} />
         <ProfileMenuItem icon="ChartLineUp" text="Trip Statistics" onPress={() => router.push('/profile/rides')} />
         <ProfileMenuItem icon="Car" text="Manage Vehicles" onPress={() => router.push('/profile/vehicle-details')} />
-        <ProfileMenuItem icon="Headset" text="Help and Support" onPress={() => {}} />
-        <ProfileMenuItem icon="Info" text="About Us" onPress={() => {}} />
+        <ProfileMenuItem icon="Headset" text="Help and Support" onPress={() => { }} />
+        <ProfileMenuItem icon="Info" text="About Us" onPress={() => { }} />
         <ProfileMenuItem icon="SignOut" text="Logout" onPress={logout} />
       </View>
 

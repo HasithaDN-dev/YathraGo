@@ -58,6 +58,7 @@ export default function RootLayout() {
         <Stack.Protected guard={isLoggedIn && registrationStatus === 'ACCOUNT_CREATED'}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="vehicle-list" options={{ headerShown: false }} />
+          <Stack.Screen name="(homeLinks)" options={{ headerShown: false }} />
           <Stack.Screen name="profile" options={{ headerShown: false }} />
         </Stack.Protected>
 
