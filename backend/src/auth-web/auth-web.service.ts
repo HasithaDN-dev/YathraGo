@@ -32,8 +32,8 @@ export class AuthWebService {
       if (user.role === 'owner') {
         await this.prisma.vehicleOwner.create({
           data: {
-            id:user.id,
-            email:user.email
+            id: user.id,
+            email: user.email,
           },
         });
       }

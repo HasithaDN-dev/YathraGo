@@ -77,7 +77,9 @@ export class CustomerService {
         await tx.child.create({
           data: {
             customerId: dto.customerId,
-            childName: dto.childName,
+            childFirstName: dto.childFirstName,
+            childLastName: dto.childLastName,
+            gender: dto.gender,
             relationship: dto.relationship,
             nearbyCity: dto.nearbyCity,
             schoolLocation: dto.schoolLocation,
@@ -117,7 +119,9 @@ export class CustomerService {
         where: { customer_id: parseInt(customerId) },
         select: {
           customer_id: true,
-          name: true,
+          firstName: true,
+          lastName: true,
+          gender: true,
           phone: true,
           email: true,
           address: true,
@@ -128,7 +132,9 @@ export class CustomerService {
           children: {
             select: {
               child_id: true,
-              childName: true,
+              childFirstName: true,
+              childLastName: true,
+              gender: true,
               relationship: true,
               nearbyCity: true,
               schoolLocation: true,
@@ -191,7 +197,10 @@ export class CustomerService {
       const updatedCustomer = await this.prisma.customer.update({
         where: { customer_id: parseInt(customerId) },
         data: {
-          name: profileData?.name || '',
+          firstName: profileData?.firstName || '',
+          LastName: profileData?.LastName || '',
+          gender: profileData?.gender || '',
+          phone: profileData?.phone || '',
           email: profileData?.email || '',
           address: profileData?.address || '',
           profileImageUrl: profileData?.profileImageUrl || '',
@@ -224,12 +233,15 @@ export class CustomerService {
       const updatedCustomer = await this.prisma.customer.update({
         where: { customer_id: dto.customerId },
         data: {
-          name: dto.name,
+          firstName: dto.firstName,
+          LastName: dto.LastName,
+          gender: dto.gender,
+          phone: dto.phone,
           email: dto.email,
           address: dto.address,
           profileImageUrl: dto.profileImageUrl,
           emergencyContact: dto.emergencyContact,
-          registrationStatus: 'ACCOUNT_CREATED', // Changed from OTP_VERIFIED to ACCOUNT_CREATED
+          registrationStatus: 'ACCOUNT_CREATED',
         },
       });
 

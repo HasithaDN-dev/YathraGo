@@ -16,7 +16,9 @@ export class CustomerServiceExtension {
       const updatedCustomer = await this.prisma.customer.update({
         where: { customer_id: dto.customerId },
         data: {
-          name: dto.name,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          gender: dto.gender,
           email: dto.email,
           address: dto.address,
           profileImageUrl: dto.profileImageUrl,

@@ -19,7 +19,7 @@ export class OwnerService {
       },
     });
 
-    console.log("Reached");
+    console.log('Reached');
     if (!owner) return null;
     return {
       firstName: owner.first_name || '',
@@ -31,7 +31,10 @@ export class OwnerService {
     };
   }
 
-  async updateOwnerProfile(userId: number, updateData: any): Promise<OwnerDto | null> {
+  async updateOwnerProfile(
+    userId: number,
+    updateData: any,
+  ): Promise<OwnerDto | null> {
     const updated = await this.prisma.vehicleOwner.update({
       where: { id: userId },
       data: {

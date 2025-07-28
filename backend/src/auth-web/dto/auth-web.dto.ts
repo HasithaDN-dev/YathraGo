@@ -12,8 +12,6 @@ export class SignupDto {
 
   @IsNotEmpty()
   username: string;
-
-
 }
 
 export class LoginDto {

@@ -7,7 +7,13 @@ export class RegisterChildDto {
   customerId: number;
 
   @IsString()
-  childName: string;
+  childFirstName: string;
+
+  @IsString()
+  childLastName: string;
+
+  @IsString()
+  gender: string;
 
   @IsString()
   relationship: string;

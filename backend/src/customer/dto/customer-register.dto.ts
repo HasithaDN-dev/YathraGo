@@ -5,7 +5,16 @@ export class CustomerRegisterDto {
   customerId: number;
 
   @IsString()
-  name: string;
+  firstName: string;
+
+  @IsString()
+  LastName: string;
+
+  @IsString()
+  gender: string;
+
+  @IsString()
+  phone: string;
 
   @IsEmail()
   @IsOptional()
