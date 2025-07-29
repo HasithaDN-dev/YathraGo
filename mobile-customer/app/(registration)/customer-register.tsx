@@ -1,6 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 // ...existing code...
 import React, { useState } from 'react';
+import { Picker } from '@react-native-picker/picker';
 import { View, Alert, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,8 +38,8 @@ export default function CustomerRegisterScreen() {
     }
   };
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<CustomerProfileData>>({});
-  
+  const [formData, setFormData] = useState<Partial<CustomerProfileData>>({ gender: 'Unspecified' });
+
   // Get the accessToken from our global auth store
   const { accessToken, user } = useAuthStore();
   // // Debug: log accessToken to verify it's set
@@ -85,8 +86,12 @@ export default function CustomerRegisterScreen() {
 
   const validateForm = (): boolean => {
     // Basic validation checks
-    if (!formData.name?.trim()) {
-      Alert.alert('Error', 'Name is required');
+    if (!formData.firstName?.trim()) {
+      Alert.alert('Error', 'First name is required');
+      return false;
+    }
+    if (!formData.lastName?.trim()) {
+      Alert.alert('Error', 'Last name is required');
       return false;
     }
     if (!formData.email?.trim()) {
@@ -187,14 +192,36 @@ export default function CustomerRegisterScreen() {
           </View>
 
           {/* Form */}
+
           <View style={{ gap: 20, marginBottom: 32 }}>
             <CustomInput
-              label="Full Name"
-              placeholder="Enter your full name"
-              value={formData.name || ''}
-              onChangeText={(value: string) => handleInputChange('name', value)}
+              label="First Name"
+              placeholder="Enter your first name"
+              value={formData.firstName || ''}
+              onChangeText={(value: string) => handleInputChange('firstName', value)}
               required
             />
+            <CustomInput
+              label="Last Name"
+              placeholder="Enter your last name"
+              value={formData.lastName || ''}
+              onChangeText={(value: string) => handleInputChange('lastName', value)}
+              required
+            />
+            <View>
+              <Typography variant="body" className="mb-2 font-medium">Gender</Typography>
+              <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, marginBottom: 8 }}>
+                <Picker
+                  selectedValue={formData.gender}
+                  onValueChange={(value) => handleInputChange('gender', value)}
+                >
+                  <Picker.Item label="Select Gender" value="" />
+                  <Picker.Item label="Male" value="Male" />
+                  <Picker.Item label="Female" value="Female" />
+                  <Picker.Item label="Unspecified" value="Unspecified" />
+                </Picker>
+              </View>
+            </View>
 
             <CustomInput
               label="Email Address"

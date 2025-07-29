@@ -1,20 +1,23 @@
-import { IsString, IsOptional, IsEmail, IsInt } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsInt, IsEnum } from 'class-validator';
+
+export enum Gender {
+  Male = 'Male',
+  Female = 'Female',
+  Unspecified = 'Unspecified',
+}
 
 export class CustomerRegisterDto {
   @IsInt()
   customerId: number;
 
+  @IsEnum(Gender)
+  gender: Gender;
+
   @IsString()
   firstName: string;
 
   @IsString()
-  LastName: string;
-
-  @IsString()
-  gender: string;
-
-  @IsString()
-  phone: string;
+  lastName: string;
 
   @IsEmail()
   @IsOptional()

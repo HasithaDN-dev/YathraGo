@@ -199,8 +199,8 @@ model VehicleOwner {
 model Customer {
   customer_id        Int                @id @default(autoincrement())
   firstName          String
-  LastName           String
-  gender             Gender             @default(UNSPECIFIED)
+  lastName           String
+  gender             Gender             @default(Unspecified)
   phone              String             @unique
   email              String?
   address            String?
@@ -252,7 +252,7 @@ model Child {
   school         String
   childFirstName String
   childLastName  String
-  gender         Gender   @default(UNSPECIFIED)
+  gender         Gender   @default(Unspecified)
   childImageUrl  String?
   pickUpAddress  String
   customerId     Int?
@@ -320,7 +320,7 @@ enum UserType {
 }
 
 enum Gender {
-  MALE
-  FEMALE
-  UNSPECIFIED
+  Male
+  Female
+  Unspecified
 }

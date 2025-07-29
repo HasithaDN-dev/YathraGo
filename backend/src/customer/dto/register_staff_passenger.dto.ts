@@ -1,5 +1,10 @@
 import { IsNumber, IsString } from 'class-validator';
 
+export enum Gender {
+  Male = 'Male',
+  Female = 'Female',
+  Unspecified = 'Unspecified',
+}
 export class RegisterStaffPassengerDto {
   @IsNumber()
   customerId: number;

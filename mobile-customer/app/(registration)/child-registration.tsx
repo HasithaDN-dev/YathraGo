@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { GenderPicker, GenderType } from '../../components/ui/GenderPicker';
 import * as ImagePicker from 'expo-image-picker';
 import { View, Alert, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -14,7 +15,7 @@ import { Colors } from '@/constants/Colors'; // Ensure this import is correct
 
 export default function ChildRegistrationScreen() {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<ChildProfileData>>({});
+  const [formData, setFormData] = useState<Partial<ChildProfileData & { gender: GenderType }>>({ gender: 'Unspecified' });
   const [childImageUri, setChildImageUri] = useState<string | null>(null);
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isAddMode = mode === 'add';
@@ -32,7 +33,9 @@ export default function ChildRegistrationScreen() {
   const validateForm = (): boolean => {
 
     const requiredFields: (keyof ChildProfileData)[] = [
-      'childName',
+      'childFirstName',
+      'childLastName',
+      'gender',
       'relationship',
       'nearbyCity',
       'schoolLocation',
@@ -134,11 +137,23 @@ export default function ChildRegistrationScreen() {
           {/* Form */}
           <View style={{ gap: 20, marginBottom: 32 }}>
             <CustomInput
-              label="Child Name"
-              placeholder="Enter child's full name"
-              value={formData.childName || ''}
-              onChangeText={(value: string) => handleInputChange('childName', value)}
+              label="Child First Name"
+              placeholder="Enter child's first name"
+              value={formData.childFirstName || ''}
+              onChangeText={(value: string) => handleInputChange('childFirstName', value)}
               required
+            />
+            <CustomInput
+              label="Child Last Name"
+              placeholder="Enter child's last name"
+              value={formData.childLastName || ''}
+              onChangeText={(value: string) => handleInputChange('childLastName', value)}
+              required
+            />
+            <GenderPicker
+              value={formData.gender as GenderType}
+              onChange={(value) => handleInputChange('gender', value)}
+              style={{ marginBottom: 8 }}
             />
 
             <CustomInput
@@ -215,9 +230,6 @@ export default function ChildRegistrationScreen() {
               >
                 <Typography variant="body" className="font-medium">{childImageUri ? 'Change Image' : 'Pick Child Image'}</Typography>
               </TouchableOpacity>
-              {formData.childImageUrl ? (
-                <Typography variant="subhead" className="text-xs text-green-600">Image selected: {formData.childImageUrl}</Typography>
-              ) : null}
             </View>
           </View>
 

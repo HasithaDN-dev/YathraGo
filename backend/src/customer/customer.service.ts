@@ -79,7 +79,7 @@ export class CustomerService {
             customerId: dto.customerId,
             childFirstName: dto.childFirstName,
             childLastName: dto.childLastName,
-            gender: dto.gender,
+            gender: dto.gender, // Prisma expects enum, DTO validated
             relationship: dto.relationship,
             nearbyCity: dto.nearbyCity,
             schoolLocation: dto.schoolLocation,
@@ -197,14 +197,13 @@ export class CustomerService {
       const updatedCustomer = await this.prisma.customer.update({
         where: { customer_id: parseInt(customerId) },
         data: {
-          firstName: profileData?.firstName || '',
-          LastName: profileData?.LastName || '',
-          gender: profileData?.gender || '',
-          phone: profileData?.phone || '',
-          email: profileData?.email || '',
-          address: profileData?.address || '',
-          profileImageUrl: profileData?.profileImageUrl || '',
-          emergencyContact: profileData?.emergencyContact || '',
+          firstName: profileData?.firstName ?? undefined,
+          lastName: profileData?.lastName ?? undefined,
+          gender: profileData?.gender ?? undefined,
+          email: profileData?.email ?? undefined,
+          address: profileData?.address ?? undefined,
+          profileImageUrl: profileData?.profileImageUrl ?? undefined,
+          emergencyContact: profileData?.emergencyContact ?? undefined,
         },
       });
 
@@ -234,9 +233,8 @@ export class CustomerService {
         where: { customer_id: dto.customerId },
         data: {
           firstName: dto.firstName,
-          LastName: dto.LastName,
-          gender: dto.gender,
-          phone: dto.phone,
+          lastName: dto.lastName,
+          gender: dto.gender, // Prisma expects enum, DTO validated
           email: dto.email,
           address: dto.address,
           profileImageUrl: dto.profileImageUrl,

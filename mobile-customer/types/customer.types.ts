@@ -16,9 +16,13 @@ export interface AuthResponse {
 // --- Profile and Registration ---
 export type ProfileType = 'child' | 'staff';
 
+export type Gender = 'Male' | 'Female' | 'Unspecified';
+
 export interface Profile {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  gender: Gender;
   type: ProfileType;
   // Child-specific
   relationship?: string;
@@ -41,7 +45,9 @@ export interface Profile {
 
 export interface ChildProfile {
   id: string;
-  childName: string;
+  childFirstName: string;
+  childLastName: string;
+  gender: Gender;
   relationship: string;
   school: string;
   nearbyCity: string;
@@ -61,16 +67,21 @@ export interface StaffProfile {
   type: 'staff';
 }
 
+// For customer-register, only phone is guaranteed (from OTP step), rest are optional for profile completion
 export interface CustomerProfileData {
-  name: string;
-  email: string;
-  address: string;
-  emergencyContact: string;
+  firstName?: string;
+  lastName?: string;
+  gender?: Gender;
+  email?: string;
+  address?: string;
+  emergencyContact?: string;
   profileImageUrl?: string;
 }
 
 export interface ChildProfileData {
-  childName: string;
+  childFirstName: string;
+  childLastName: string;
+  gender: Gender;
   relationship: string;
   school: string;
   nearbyCity: string;
