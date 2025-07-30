@@ -5,9 +5,12 @@ import { RegisterChildDto } from './dto/register-child.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CustomerRegisterDto } from './dto/customer-register.dto';
 import { BadRequestException } from '@nestjs/common/exceptions/bad-request.exception';
+import { CustomerServiceExtension } from './customer.service.extension';
 @Injectable()
-export class CustomerService {
-  constructor(private prisma: PrismaService) {}
+export class CustomerService extends CustomerServiceExtension {
+  constructor(protected prisma: PrismaService) {
+    super(prisma);
+  }
 
   async registerStaffPassenger(dto: RegisterStaffPassengerDto) {
     console.log(

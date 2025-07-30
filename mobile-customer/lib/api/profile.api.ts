@@ -222,3 +222,82 @@ export const registerStaffApi = async (
   console.log('Staff registration API success:', result);
   return result;
 };
+
+/**
+ * Uploads a child profile image to the backend. Returns the unique filename.
+ * Reuses the same upload endpoint as customer, but stores in uploads/children if backend supports.
+ * If backend uses the same endpoint, this is still reusable.
+ */
+export const uploadChildProfileImageApi = async (
+  token: string,
+  imageUri: string
+): Promise<{ filename: string }> => {
+  const formData = new FormData();
+  const uriParts = imageUri.split('/');
+  const name = uriParts[uriParts.length - 1];
+  const type = name.endsWith('.png') ? 'image/png' : 'image/jpeg';
+  formData.append('file', {
+    uri: imageUri,
+    name,
+    type,
+  } as any);
+
+  const authenticatedFetch = tokenService.createAuthenticatedFetch();
+  // If you have a separate endpoint for child, change the URL here
+  const response = await authenticatedFetch(`${API_BASE_URL}/customer/upload-child-image`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data',
+    },
+    body: formData,
+  });
+  if (!response.ok) {
+    let errorMsg = 'Failed to upload child profile image';
+    try {
+      const err = await response.json();
+      if (err && err.message) errorMsg = err.message;
+      console.error('Child profile image upload error:', err);
+    } catch (e) {}
+    throw new Error(errorMsg);
+  }
+  return response.json();
+};
+/**
+ * Uploads a customer profile image to the backend. Returns the unique filename.
+ */
+export const uploadCustomerProfileImageApi = async (
+  token: string,
+  imageUri: string
+): Promise<{ filename: string }> => {
+  const formData = new FormData();
+  // Extract filename and type from uri
+  const uriParts = imageUri.split('/');
+  const name = uriParts[uriParts.length - 1];
+  const type = name.endsWith('.png') ? 'image/png' : 'image/jpeg';
+  formData.append('file', {
+    uri: imageUri,
+    name,
+    type,
+  } as any);
+
+  const authenticatedFetch = tokenService.createAuthenticatedFetch();
+  const response = await authenticatedFetch(`${API_BASE_URL}/customer/upload-profile-image`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data',
+    },
+    body: formData,
+  });
+  if (!response.ok) {
+    let errorMsg = 'Failed to upload profile image';
+    try {
+      const err = await response.json();
+      if (err && err.message) errorMsg = err.message;
+      console.error('Profile image upload error:', err);
+    } catch (e) {}
+    throw new Error(errorMsg);
+  }
+  return response.json();
+};

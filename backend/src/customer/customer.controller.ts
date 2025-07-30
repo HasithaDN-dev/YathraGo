@@ -7,18 +7,71 @@ import {
   Get,
   UseGuards,
   Request,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { RegisterStaffPassengerDto } from './dto/register_staff_passenger.dto';
 import { RegisterChildDto } from './dto/register-child.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CustomerRegisterDto } from './dto/customer-register.dto';
 import { CustomerService } from './customer.service';
+import { diskStorage } from 'multer';
+import * as path from 'path';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from '../common/interfaces/authenticated-request.interface';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('customer')
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
+
+  // Upload child profile image
+
+  @Post('upload-child-image')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          cb(null, path.join(__dirname, '../../uploads/child'));
+        },
+        filename: (req, file, cb) => {
+          const ext = path.extname(file.originalname);
+          const base = path.basename(file.originalname, ext);
+          const uniqueName = `${base}_${Date.now()}${ext}`;
+          cb(null, uniqueName);
+        },
+      }),
+    }),
+  )
+  uploadChildImage(@UploadedFile() file: Express.Multer.File) {
+    return this.customerService.handleImageUpload(file);
+  }
+
+  // Upload customer profile image
+
+  @Post('upload-profile-image')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          cb(null, path.join(__dirname, '../../uploads/customer'));
+        },
+        filename: (req, file, cb) => {
+          const ext = path.extname(file.originalname);
+          const base = path.basename(file.originalname, ext);
+          const uniqueName = `${base}_${Date.now()}${ext}`;
+          cb(null, uniqueName);
+        },
+      }),
+    }),
+  )
+  uploadProfileImage(@UploadedFile() file: Express.Multer.File) {
+    return this.customerService.handleImageUpload(file);
+  }
 
   // Complete customer registration after OTP verification
   @Post('customer-register')
