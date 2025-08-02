@@ -1,4 +1,9 @@
+// This file is a copy of complaint_Inquiries.tsx with all 'complaint' replaced by 'complain'.
+// Please update imports in other files to use this new file.
+
+// ...existing code...
 import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
@@ -6,10 +11,10 @@ import { Card } from '@/components/ui/Card';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { CaretDown, CaretUp, Plus } from 'phosphor-react-native';
 
-const mockComplaints = [
+const mockComplains = [
   {
     id: '1',
-    complaintId: '220012345678',
+    complainId: '220012345678',
     message: 'Payment system generates wrong messages for me.\nThis issue happens every time I try to pay.\nI have tried restarting the app but it does not help.\nCustomer support was not able to resolve it.\nPlease fix this as soon as possible.',
     date: '2022-07-24',
     time: '02:53 a.m.',
@@ -17,7 +22,7 @@ const mockComplaints = [
   },
   {
     id: '2',
-    complaintId: '220012345679',
+    complainId: '220012345679',
     message: 'App crashes when I try to add a new card.\nI have reinstalled the app multiple times.\nThe crash happens on the payment screen.\nNo error message is shown.\nPlease investigate this bug.',
     date: '2022-07-25',
     time: '10:15 a.m.',
@@ -25,7 +30,7 @@ const mockComplaints = [
   },
   {
     id: '3',
-    complaintId: '220012345680',
+    complainId: '220012345680',
     message: 'Unable to update my profile information.\nThe save button does not work.\nI have tried different devices.\nNo changes are saved.\nThis is affecting my account.',
     date: '2022-07-26',
     time: '04:20 p.m.',
@@ -33,7 +38,7 @@ const mockComplaints = [
   },
   {
     id: '4',
-    complaintId: '220012345681',
+    complainId: '220012345681',
     message: 'Notifications are not working properly.\nI do not receive alerts for new rides.\nPush notifications are enabled in settings.\nOther apps work fine.\nPlease check notification service.',
     date: '2022-07-27',
     time: '09:00 a.m.',
@@ -41,7 +46,7 @@ const mockComplaints = [
   },
   {
     id: '5',
-    complaintId: '220012345682',
+    complainId: '220012345682',
     message: 'Location services are inaccurate.\nThe app shows my location incorrectly.\nGPS is enabled and works in other apps.\nThis causes issues with ride matching.\nPlease improve location accuracy.',
     date: '2022-07-28',
     time: '11:45 a.m.',
@@ -49,7 +54,7 @@ const mockComplaints = [
   },
   {
     id: '6',
-    complaintId: '220012345683',
+    complainId: '220012345683',
     message: 'Unable to receive OTP for login.\nI have checked my phone number.\nNo SMS is received.\nI cannot access my account.\nPlease fix OTP delivery.',
     date: '2022-07-29',
     time: '08:30 a.m.',
@@ -57,7 +62,7 @@ const mockComplaints = [
   },
   {
     id: '7',
-    complaintId: '220012345684',
+    complainId: '220012345684',
     message: 'App freezes on splash screen.\nI have to force close the app.\nThis happens randomly.\nNo error is shown.\nPlease resolve this issue.',
     date: '2022-07-30',
     time: '07:45 p.m.',
@@ -65,7 +70,7 @@ const mockComplaints = [
   },
   {
     id: '8',
-    complaintId: '220012345685',
+    complainId: '220012345685',
     message: 'Cannot add new payment method.\nThe add button does not respond.\nI have tried different cards.\nNo feedback is given.\nPlease fix payment method addition.',
     date: '2022-07-31',
     time: '03:10 p.m.',
@@ -73,7 +78,7 @@ const mockComplaints = [
   },
   {
     id: '9',
-    complaintId: '220012345686',
+    complainId: '220012345686',
     message: 'Push notifications are delayed.\nI receive alerts several hours late.\nThis affects my ability to respond quickly.\nOther apps are timely.\nPlease improve notification speed.',
     date: '2022-08-01',
     time: '06:20 a.m.',
@@ -81,7 +86,7 @@ const mockComplaints = [
   },
   {
     id: '10',
-    complaintId: '220012345687',
+    complainId: '220012345687',
     message: 'Cannot update emergency contact.\nThe field is disabled.\nI need to change my contact info.\nNo option to edit is available.\nPlease enable emergency contact editing.',
     date: '2022-08-02',
     time: '12:00 p.m.',
@@ -89,7 +94,7 @@ const mockComplaints = [
   },
   {
     id: '11',
-    complaintId: '220012345688',
+    complainId: '220012345688',
     message: 'App logs out unexpectedly.\nI am forced to log in again.\nThis happens several times a day.\nNo warning is given.\nPlease fix session management.',
     date: '2022-08-03',
     time: '09:30 a.m.',
@@ -97,7 +102,7 @@ const mockComplaints = [
   },
   {
     id: '12',
-    complaintId: '220012345689',
+    complainId: '220012345689',
     message: 'Cannot access help and support.\nThe help section does not load.\nI need assistance with my account.\nNo contact information is shown.\nPlease fix help and support.',
     date: '2022-08-04',
     time: '05:15 p.m.',
@@ -206,15 +211,16 @@ const mockInquiries = [
 
 
 
-export default function ComplaintInquiriesScreen() {
-  const [complaints, setComplaints] = useState(mockComplaints);
+export default function ComplainInquiriesScreen() {
+  const router = useRouter();
+  const [complains, setComplains] = useState(mockComplains);
   const [inquiries, setInquiries] = useState(mockInquiries);
-  const [showAllComplaints, setShowAllComplaints] = useState(false);
+  const [showAllComplains, setShowAllComplains] = useState(false);
   const [showAllInquiries, setShowAllInquiries] = useState(false);
-  const [activeTab, setActiveTab] = useState<'Complaints' | 'Inquiries'>('Complaints');
+  const [activeTab, setActiveTab] = useState<'Complains' | 'Inquiries'>('Complains');
 
   const toggleExpand = (id: string) => {
-    setComplaints((prev) =>
+    setComplains((prev) =>
       prev.map((c) => (c.id === id ? { ...c, expanded: !c.expanded } : c))
     );
   };
@@ -225,26 +231,26 @@ export default function ComplaintInquiriesScreen() {
   };
 
   // Select which array to show
-  const itemsToShow = activeTab === 'Complaints' ? complaints : inquiries;
-  const isComplaintsTab = activeTab === 'Complaints';
-  const visibleItems = (isComplaintsTab
-    ? (showAllComplaints ? itemsToShow : itemsToShow.slice(0, 3))
+  const itemsToShow = activeTab === 'Complains' ? complains : inquiries;
+  const isComplainsTab = activeTab === 'Complains';
+  const visibleItems = (isComplainsTab
+    ? (showAllComplains ? itemsToShow : itemsToShow.slice(0, 3))
     : (showAllInquiries ? itemsToShow : itemsToShow.slice(0, 3)));
 
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <ScreenHeader title="Complaint and Inquiries" showBackButton />
+        <ScreenHeader title="Complain and Inquiries" showBackButton />
 
         {/* Tabs */}
         <View className="flex-row border-b border-gray-200 mb-4 mt-3">
           <TouchableOpacity
-            className={`flex-1 items-center pb-2 ${activeTab === 'Complaints' ? 'border-b-4 border-yellow-400' : ''}`}
-            onPress={() => setActiveTab('Complaints')}
+            className={`flex-1 items-center pb-2 ${activeTab === 'Complains' ? 'border-b-4 border-yellow-400' : ''}`}
+            onPress={() => setActiveTab('Complains')}
           >
             <Typography variant="subhead" className="text-black">
-              Complaints
+              Complains
             </Typography>
           </TouchableOpacity>
           <TouchableOpacity
@@ -263,14 +269,14 @@ export default function ComplaintInquiriesScreen() {
             {visibleItems.map((item, idx) => (
               <View key={item.id} style={{ marginBottom: idx === visibleItems.length - 1 ? 0 : 16 }}>
                 <Card className="px-4 py-3 shadow-md mt-2">
-                  {isComplaintsTab ? (
+                  {isComplainsTab ? (
                     <TouchableOpacity
                       className="flex-row items-center justify-between mb-2"
                       onPress={() => toggleExpand(item.id)}
                       activeOpacity={0.8}
                     >
                       <Typography variant="subhead" weight="bold" className="text-black">
-                        Complaint ID : {'complaintId' in item ? item.complaintId : ''}
+                        Complain ID : {'complainId' in item ? item.complainId : ''}
                       </Typography>
                       {item.expanded ? (
                         <CaretUp size={20} color="#222" weight="regular" />
@@ -316,17 +322,17 @@ export default function ComplaintInquiriesScreen() {
         </Card>
 
         {/* See more button for complaints/inquiries only, if more than 3 and not showing all */}
-        {isComplaintsTab && !showAllComplaints && complaints.length > 3 && (
+        {isComplainsTab && !showAllComplains && complains.length > 3 && (
           <TouchableOpacity
             className="mt-4 mb-1 self-center px-6 py-2 bg-brand-deepNavy rounded-full"
-            onPress={() => setShowAllComplaints(true)}
+            onPress={() => setShowAllComplains(true)}
           >
             <Typography variant="subhead" className="text-white">
               see more
             </Typography>
           </TouchableOpacity>
         )}
-        {!isComplaintsTab && !showAllInquiries && inquiries.length > 3 && (
+        {!isComplainsTab && !showAllInquiries && inquiries.length > 3 && (
           <TouchableOpacity
             className="mt-4 mb-1 self-center px-6 py-2 bg-brand-deepNavy rounded-full"
             onPress={() => setShowAllInquiries(true)}
@@ -337,15 +343,29 @@ export default function ComplaintInquiriesScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Add Complaint Card */}
-        <Card className="flex-row items-center justify-between px-4 py-5 mb-8">
-          <Typography variant="subhead" className="text-black">
-            Add Complaint
-          </Typography>
-          <TouchableOpacity className="bg-black rounded-full w-8 h-8 items-center justify-center">
-            <Plus size={20} color="#fff" weight="bold" />
-          </TouchableOpacity>
-        </Card>
+        {/* Add Complain/Inquiry Card */}
+        <TouchableOpacity
+          className="mb-8"
+          activeOpacity={0.85}
+          onPress={() => {
+            // Navigate to the correct tab in add_complaint_inquiries
+            router.push({
+              pathname: '/(menu)/add_complain_inquiries',
+              params: {
+                type: activeTab === 'Complains' ? 'Complains' : 'Inquiries',
+              },
+            });
+          }}
+        >
+          <Card className="flex-row items-center justify-between px-4 py-5">
+            <Typography variant="subhead" className="text-black">
+              {activeTab === 'Complains' ? 'Add Complain' : 'Add Inquiry'}
+            </Typography>
+            <View className="bg-black rounded-full w-8 h-8 items-center justify-center">
+              <Plus size={20} color="#fff" weight="bold" />
+            </View>
+          </Card>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

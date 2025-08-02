@@ -5,6 +5,7 @@ import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Plus, ArrowRight } from 'phosphor-react-native';
+import { router } from 'expo-router';
 
 const paymentMethods = [
   { id: 'cash', label: 'cash' },
@@ -58,6 +59,7 @@ export default function PaymentMethodScreen() {
               key={card.id}
               className="flex-row items-center justify-between bg-white rounded-full px-4 py-3 mb-4 shadow-sm"
               activeOpacity={0.8}
+              onPress={() => router.push({ pathname: '/(menu)/view-card', params: { id: card.id } })}
             >
               <View className="flex-row items-center">
                 {/* Card type icon */}
@@ -80,7 +82,11 @@ export default function PaymentMethodScreen() {
             </TouchableOpacity>
           ))}
           {/* Add Card */}
-          <TouchableOpacity className="flex-row items-center justify-between bg-white rounded-full px-4 py-3 shadow-sm" activeOpacity={0.8}>
+          <TouchableOpacity
+            className="flex-row items-center justify-between bg-white rounded-full px-4 py-3 shadow-sm"
+            activeOpacity={0.8}
+            onPress={() => router.push('/(menu)/add-card')}
+          >
             <Typography variant="subhead" className="text-black">
               Add card
             </Typography>

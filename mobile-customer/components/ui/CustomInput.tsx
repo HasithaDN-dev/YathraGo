@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { View, Text, TextInput, TextInputProps } from 'react-native';
 import { Typography } from '../Typography';
@@ -7,6 +6,7 @@ interface CustomInputProps extends TextInputProps {
   label: string;
   required?: boolean;
   error?: string;
+  variant?: any;
 }
 
 export function CustomInput({ 
@@ -14,11 +14,12 @@ export function CustomInput({
   required = false, 
   error, 
   className = '',
+  variant = 'footnote',
   ...props 
 }: CustomInputProps) {
   return (
     <View className="mb-4">
-      <Typography variant="footnote" className="mb-2 font-medium">
+      <Typography variant={variant} className="mb-2 font-medium">
         {label} {required && <Text style={{ color: '#ef4444' }}>*</Text>}
       </Typography>
       <TextInput

@@ -10,15 +10,32 @@ import { Card } from '@/components/ui/Card';
 import { PencilSimple, Trash } from 'phosphor-react-native';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 
+
+type ProfileField = 'fullName' | 'phone' | 'email' | 'address' | 'emergencyContact';
+interface ProfileFields {
+  fullName: string;
+  phone: string;
+  email: string;
+  address: string;
+  emergencyContact: string;
+}
+interface EditingState {
+  fullName: boolean;
+  phone: boolean;
+  email: boolean;
+  address: boolean;
+  emergencyContact: boolean;
+}
+
 export default function ProfileScreen() {
-  const [fields, setFields] = useState({
+  const [fields, setFields] = useState<ProfileFields>({
     fullName: 'Kasun Mendis',
     phone: '070 - 19784521',
     email: 'kasunmenda342@gmail.com',
     address: '123 Main St',
     emergencyContact: '0771234567',
   });
-  const [editing, setEditing] = useState({
+  const [editing, setEditing] = useState<EditingState>({
     fullName: false,
     phone: false,
     email: false,
@@ -26,10 +43,9 @@ export default function ProfileScreen() {
     emergencyContact: false,
   });
 
-  const handleEdit = (field) => setEditing((prev) => ({ ...prev, [field]: true }));
-  const handleSave = (field) => setEditing((prev) => ({ ...prev, [field]: false }));
-
-  const handleChange = (field, value) => setFields((prev) => ({ ...prev, [field]: value }));
+  const handleEdit = (field: ProfileField) => setEditing((prev) => ({ ...prev, [field]: true }));
+  const handleSave = (field: ProfileField) => setEditing((prev) => ({ ...prev, [field]: false }));
+  const handleChange = (field: ProfileField, value: string) => setFields((prev) => ({ ...prev, [field]: value }));
 
 const handleDeleteAccount = () => {
     // Implement delete logic here

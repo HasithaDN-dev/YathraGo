@@ -10,7 +10,7 @@ import { Typography } from '../../components/Typography';
 import { registerChildApi, uploadChildProfileImageApi } from '../../lib/api/profile.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
 import { ChildProfileData } from '../../types/customer.types';
-import { Colors } from '@/constants/Colors'; // Ensure this import is correct
+// import { Colors } from '@/constants/Colors'; // Ensure this import is correct
 
 
 export default function ChildRegistrationScreen() {
