@@ -6,8 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { CaretDown } from 'phosphor-react-native';
 
-const appIssueCategories = [
-  { id: '1', title: 'Performance Problems' },
+
 
 const appIssueCategories = [
   {
@@ -25,21 +24,14 @@ const appIssueCategories = [
     title: 'Connectivity Issues',
     solution: (
       <>
-        <Typography variant="body" className="mb-2 text-black">Check Internet Connection
-export default function AppIssuesScreen() {
-  const [expandedId, setExpandedId] = useState<string | null>('2');
-  const handleIssuePress = (issueId: string) => {
-    setExpandedId(expandedId === issueId ? null : issueId);
-  };
-
-  return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <ScreenHeader title="App Issues" showBackButton />
-
-        {/* App Issues Categories Card */}
-        <Card className="mx-4 mb-8 bg-gray-100 p-6 rounded-2xl shadow-md">
+        <Typography variant="body" className="mb-2 text-black">Check Internet Connection</Typography>
+        <Typography variant="body" className="mb-2 text-black">• Ensure the device has an active internet connection (Wi-Fi or mobile data).</Typography>
+        <Typography variant="body" className="mb-2 text-black">• Try accessing a website or another app to confirm.</Typography>
+        <Typography variant="body" className="mb-2 text-black">Restart the App and Device</Typography>
+        <Typography variant="body" className="mb-2 text-black">• Close and reopen the app.</Typography>
+        <Typography variant="body" className="mb-2 text-black">• Restart the device to clear temporary glitches.</Typography>
+        <Typography variant="body" className="mb-2 text-black">Check App Permissions</Typography>
+        <Typography variant="body" className="mb-2 text-black">• Ensure the app has permission to access the internet (especially on Android).</Typography>
         <Typography variant="footnote" className="text-gray-500">If you still have issues, contact support.</Typography>
       </>
     ),
@@ -90,6 +82,21 @@ export default function AppIssuesScreen() {
     ),
   },
 ];
+
+export default function AppIssuesScreen() {
+  const [expandedId, setExpandedId] = useState<string | null>('2');
+  const handleIssuePress = (issueId: string) => {
+    setExpandedId(expandedId === issueId ? null : issueId);
+  };
+
+  return (
+    <SafeAreaView className="flex-1 bg-white">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <ScreenHeader title="App Issues" showBackButton />
+
+        {/* App Issues Categories Card */}
+        <Card className="mx-4 mb-8 bg-gray-100 p-6 rounded-2xl shadow-md">
           {appIssueCategories.map((issue, index) => {
             const expanded = expandedId === issue.id;
             return (
@@ -117,4 +124,4 @@ export default function AppIssuesScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-} 
+}
