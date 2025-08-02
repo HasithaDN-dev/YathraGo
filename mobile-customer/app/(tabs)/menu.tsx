@@ -47,7 +47,7 @@ export default function MenuScreen() {
       id: '4',
       title: 'Help and Support',
       icon: HeadsetIcon,
-      action: () => console.log('Help and Support pressed'),
+      action: () => router.push('/(menu)/help_and_support'),
     },
     {
       id: '5',
