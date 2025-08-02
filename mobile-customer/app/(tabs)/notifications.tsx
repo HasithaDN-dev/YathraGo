@@ -169,7 +169,7 @@ export default function NotificationsScreen() {
                       setSuggestedSenders([]);
                     }}
                   >
-                    <Typography variant="body" className="text-black">{sender}</Typography>
+                    <Typography variant="subhead" className="text-black">{sender}</Typography>
                   </TouchableOpacity>
                 ))}
               </View>

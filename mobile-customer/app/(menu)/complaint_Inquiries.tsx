@@ -238,7 +238,7 @@ export default function ComplaintInquiriesScreen() {
         <ScreenHeader title="Complaint and Inquiries" showBackButton />
 
         {/* Tabs */}
-        <View className="flex-row border-b border-gray-200 mb-4">
+        <View className="flex-row border-b border-gray-200 mb-4 mt-3">
           <TouchableOpacity
             className={`flex-1 items-center pb-2 ${activeTab === 'Complaints' ? 'border-b-4 border-yellow-400' : ''}`}
             onPress={() => setActiveTab('Complaints')}
@@ -251,7 +251,7 @@ export default function ComplaintInquiriesScreen() {
             className={`flex-1 items-center pb-2 ${activeTab === 'Inquiries' ? 'border-b-4 border-yellow-400' : ''}`}
             onPress={() => setActiveTab('Inquiries')}
           >
-            <Typography variant="subhead" className="text-black">
+            <Typography variant="body" className="text-black">
               Inquiries
             </Typography>
           </TouchableOpacity>
@@ -259,19 +259,18 @@ export default function ComplaintInquiriesScreen() {
 
         {/* Large Scrollable Card for Complaints/Inquiries */}
         <Card className="mb-6 p-2">
-          <ScrollView className="max-h-[420px]" showsVerticalScrollIndicator={false}>
+          <ScrollView className="max-h-[520px]" showsVerticalScrollIndicator={false}>
             {visibleItems.map((item, idx) => (
               <View key={item.id} style={{ marginBottom: idx === visibleItems.length - 1 ? 0 : 16 }}>
                 <Card className="px-4 py-3 shadow-md mt-2">
                   {isComplaintsTab ? (
                     <TouchableOpacity
-                    
                       className="flex-row items-center justify-between mb-2"
                       onPress={() => toggleExpand(item.id)}
                       activeOpacity={0.8}
                     >
                       <Typography variant="subhead" weight="bold" className="text-black">
-                        Compliant ID : {item.complaintId}
+                        Complaint ID : {'complaintId' in item ? item.complaintId : ''}
                       </Typography>
                       {item.expanded ? (
                         <CaretUp size={20} color="#222" weight="regular" />
@@ -286,7 +285,7 @@ export default function ComplaintInquiriesScreen() {
                       activeOpacity={0.8}
                     >
                       <Typography variant="subhead" weight="bold" className="text-black">
-                        Inquiry ID : {item.inquiryId}
+                        Inquiry ID : {'inquiryId' in item ? item.inquiryId : ''}
                       </Typography>
                       {item.expanded ? (
                         <CaretUp size={20} color="#222" weight="regular" />
@@ -296,7 +295,7 @@ export default function ComplaintInquiriesScreen() {
                     </TouchableOpacity>
                   )}
                   <Typography
-                    variant="body"
+                    variant="subhead"
                     className="text-black mb-2"
                     numberOfLines={item.expanded ? undefined : 2}
                   >
@@ -341,7 +340,7 @@ export default function ComplaintInquiriesScreen() {
         {/* Add Complaint Card */}
         <Card className="flex-row items-center justify-between px-4 py-5 mb-8">
           <Typography variant="subhead" className="text-black">
-            Add Compliant
+            Add Complaint
           </Typography>
           <TouchableOpacity className="bg-black rounded-full w-8 h-8 items-center justify-center">
             <Plus size={20} color="#fff" weight="bold" />

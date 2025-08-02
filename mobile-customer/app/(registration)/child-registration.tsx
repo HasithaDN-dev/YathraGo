@@ -218,7 +218,7 @@ export default function ChildRegistrationScreen() {
 
             {/* Child Image Picker (Optional) */}
             <View>
-              <Typography variant="body" className="mb-2 font-medium">Child Image (Optional)</Typography>
+              <Typography variant="footnote" className="mb-2 font-medium">Child Image (Optional)</Typography>
               {childImageUri ? (
                 <Image source={{ uri: childImageUri }} style={{ width: 100, height: 100, borderRadius: 50, marginBottom: 8 }} />
               ) : null}
