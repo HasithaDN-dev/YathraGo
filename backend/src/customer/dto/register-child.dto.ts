@@ -1,13 +1,23 @@
-import { IsNumber, IsString, IsOptional } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsNumber, IsString, IsOptional, IsEnum } from 'class-validator';
+
+export enum Gender {
+  Male = 'Male',
+  Female = 'Female',
+  Unspecified = 'Unspecified',
+}
 
 export class RegisterChildDto {
-  @Type(() => Number)
   @IsNumber()
   customerId: number;
 
   @IsString()
-  childName: string;
+  childFirstName: string;
+
+  @IsString()
+  childLastName: string;
+
+  @IsEnum(Gender)
+  gender: Gender;
 
   @IsString()
   relationship: string;

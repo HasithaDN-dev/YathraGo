@@ -33,9 +33,9 @@ export default function MenuScreen() {
     },
     {
       id: '2',
-      title: 'Complaints and Inquiries',
+      title: 'Complains and Inquiries',
       icon: PhoneIcon,
-      action: () => router.push('/(menu)/complaint_Inquiries'),
+      action: () => router.push('/(menu)/complain_Inquiries'),
     },
     {
       id: '3',
@@ -47,7 +47,7 @@ export default function MenuScreen() {
       id: '4',
       title: 'Help and Support',
       icon: HeadsetIcon,
-      action: () => console.log('Help and Support pressed'),
+      action: () => router.push('/(menu)/help_and_support'),
     },
     {
       id: '5',

@@ -5,9 +5,12 @@ import { RegisterChildDto } from './dto/register-child.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CustomerRegisterDto } from './dto/customer-register.dto';
 import { BadRequestException } from '@nestjs/common/exceptions/bad-request.exception';
+import { CustomerServiceExtension } from './customer.service.extension';
 @Injectable()
-export class CustomerService {
-  constructor(private prisma: PrismaService) {}
+export class CustomerService extends CustomerServiceExtension {
+  constructor(protected prisma: PrismaService) {
+    super(prisma);
+  }
 
   async registerStaffPassenger(dto: RegisterStaffPassengerDto) {
     console.log(
@@ -77,7 +80,9 @@ export class CustomerService {
         await tx.child.create({
           data: {
             customerId: dto.customerId,
-            childName: dto.childName,
+            childFirstName: dto.childFirstName,
+            childLastName: dto.childLastName,
+            gender: dto.gender, // Prisma expects enum, DTO validated
             relationship: dto.relationship,
             nearbyCity: dto.nearbyCity,
             schoolLocation: dto.schoolLocation,
@@ -117,7 +122,9 @@ export class CustomerService {
         where: { customer_id: parseInt(customerId) },
         select: {
           customer_id: true,
-          name: true,
+          firstName: true,
+          lastName: true,
+          gender: true,
           phone: true,
           email: true,
           address: true,
@@ -128,7 +135,9 @@ export class CustomerService {
           children: {
             select: {
               child_id: true,
-              childName: true,
+              childFirstName: true,
+              childLastName: true,
+              gender: true,
               relationship: true,
               nearbyCity: true,
               schoolLocation: true,
@@ -191,11 +200,13 @@ export class CustomerService {
       const updatedCustomer = await this.prisma.customer.update({
         where: { customer_id: parseInt(customerId) },
         data: {
-          name: profileData?.name || '',
-          email: profileData?.email || '',
-          address: profileData?.address || '',
-          profileImageUrl: profileData?.profileImageUrl || '',
-          emergencyContact: profileData?.emergencyContact || '',
+          firstName: profileData?.firstName ?? undefined,
+          lastName: profileData?.lastName ?? undefined,
+          gender: profileData?.gender ?? undefined,
+          email: profileData?.email ?? undefined,
+          address: profileData?.address ?? undefined,
+          profileImageUrl: profileData?.profileImageUrl ?? undefined,
+          emergencyContact: profileData?.emergencyContact ?? undefined,
         },
       });
 
@@ -224,12 +235,14 @@ export class CustomerService {
       const updatedCustomer = await this.prisma.customer.update({
         where: { customer_id: dto.customerId },
         data: {
-          name: dto.name,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          gender: dto.gender, // Prisma expects enum, DTO validated
           email: dto.email,
           address: dto.address,
           profileImageUrl: dto.profileImageUrl,
           emergencyContact: dto.emergencyContact,
-          registrationStatus: 'ACCOUNT_CREATED', // Changed from OTP_VERIFIED to ACCOUNT_CREATED
+          registrationStatus: 'ACCOUNT_CREATED',
         },
       });
 

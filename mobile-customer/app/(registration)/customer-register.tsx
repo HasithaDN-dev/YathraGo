@@ -1,21 +1,22 @@
 import * as ImagePicker from 'expo-image-picker';
+import { uploadCustomerProfileImageApi, completeCustomerProfileApi } from '../../lib/api/profile.api';
 // ...existing code...
 import React, { useState } from 'react';
+import { Picker } from '@react-native-picker/picker';
 import { View, Alert, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ButtonComponent } from '../../components/ui/ButtonComponent';
 import { CustomInput } from '../../components/ui/CustomInput';
 import { Typography } from '../../components/Typography';
-import { completeCustomerProfileApi } from '../../lib/api/profile.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
 import { CustomerProfileData } from '../../types/customer.types';
 import { Colors } from '@/constants/Colors'; // Ensure this import is correct
 
 export default function CustomerRegisterScreen() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  // Removed uploading state, not needed
-  // Pick or take a profile image, and set its filename as profileImageUrl (no upload)
+  const [uploadingImage, setUploadingImage] = useState(false);
+  // Pick or take a profile image, only save URI, do not upload here
   const handlePickProfileImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (permission.status !== 'granted') {
@@ -31,14 +32,12 @@ export default function CustomerRegisterScreen() {
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const asset = result.assets[0];
       setProfileImage(asset.uri);
-      // Use the filename if available, otherwise generate one
-      const filename = asset.fileName || `profile_${Date.now()}.jpg`;
-      setFormData(prev => ({ ...prev, profileImageUrl: filename }));
+      // Do NOT upload here
     }
   };
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<CustomerProfileData>>({});
-  
+  const [formData, setFormData] = useState<Partial<CustomerProfileData>>({ gender: 'Unspecified' });
+
   // Get the accessToken from our global auth store
   const { accessToken, user } = useAuthStore();
   // // Debug: log accessToken to verify it's set
@@ -85,8 +84,12 @@ export default function CustomerRegisterScreen() {
 
   const validateForm = (): boolean => {
     // Basic validation checks
-    if (!formData.name?.trim()) {
-      Alert.alert('Error', 'Name is required');
+    if (!formData.firstName?.trim()) {
+      Alert.alert('Error', 'First name is required');
+      return false;
+    }
+    if (!formData.lastName?.trim()) {
+      Alert.alert('Error', 'Last name is required');
       return false;
     }
     if (!formData.email?.trim()) {
@@ -123,19 +126,37 @@ export default function CustomerRegisterScreen() {
     }
 
     setLoading(true);
+    let profileImageUrl = formData.profileImageUrl;
     try {
+      // If a new image is picked (local URI), upload it first
+      if (profileImage && !profileImage.startsWith('http')) {
+        setUploadingImage(true);
+        try {
+          const uploadRes = await uploadCustomerProfileImageApi(accessToken, profileImage);
+          profileImageUrl = uploadRes.filename;
+        } catch (err) {
+          let msg = 'Failed to upload image.';
+          if (err instanceof Error) msg = err.message;
+          Alert.alert('Error', msg);
+          setLoading(false);
+          setUploadingImage(false);
+          return;
+        }
+        setUploadingImage(false);
+      }
+
       // Add customerId from user to payload
-      const payload = { ...formData, customerId: user?.id };
+      const payload = { ...formData, customerId: user?.id, profileImageUrl };
       // Convert emergencyContact to API format
       if (payload.emergencyContact) {
         payload.emergencyContact = convertToApiFormat(payload.emergencyContact);
       }
       console.log('RegisterScreen payload:', payload);
-      
+
       // Call API and get response with registration status
       const response = await completeCustomerProfileApi(accessToken, payload as CustomerProfileData);
       console.log('Customer registration response:', response);
-      
+
       // Update registration status in auth store
       if (response.registrationStatus) {
         const { setRegistrationStatus, setCustomerRegistered } = useAuthStore.getState();
@@ -143,7 +164,7 @@ export default function CustomerRegisterScreen() {
         setCustomerRegistered(true);
         console.log('Updated registration status to:', response.registrationStatus);
       }
-      
+
       // Navigate to the profile type selection
       console.log('Customer registration successful, navigating to registration-type');
       router.push('/(registration)/registration-type');
@@ -187,14 +208,36 @@ export default function CustomerRegisterScreen() {
           </View>
 
           {/* Form */}
+
           <View style={{ gap: 20, marginBottom: 32 }}>
             <CustomInput
-              label="Full Name"
-              placeholder="Enter your full name"
-              value={formData.name || ''}
-              onChangeText={(value: string) => handleInputChange('name', value)}
+              label="First Name"
+              placeholder="Enter your first name"
+              value={formData.firstName || ''}
+              onChangeText={(value: string) => handleInputChange('firstName', value)}
               required
             />
+            <CustomInput
+              label="Last Name"
+              placeholder="Enter your last name"
+              value={formData.lastName || ''}
+              onChangeText={(value: string) => handleInputChange('lastName', value)}
+              required
+            />
+            <View>
+              <Typography variant="footnote" className="mb-2 font-medium">Gender</Typography>
+              <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, marginBottom: 8 }}>
+                <Picker
+                  selectedValue={formData.gender}
+                  onValueChange={(value) => handleInputChange('gender', value)}
+                >
+                  <Picker.Item label="Select Gender" value="" />
+                  <Picker.Item label="Male" value="Male" />
+                  <Picker.Item label="Female" value="Female" />
+                  <Picker.Item label="Unspecified" value="Unspecified" />
+                </Picker>
+              </View>
+            </View>
 
             <CustomInput
               label="Email Address"
@@ -227,12 +270,12 @@ export default function CustomerRegisterScreen() {
             />
 
             <View>
-              <Typography variant="body" className="mb-2 font-medium">Profile Image (Optional)</Typography>
+              <Typography variant="footnote" className="mb-2 font-medium">Profile Image (Optional)</Typography>
               {profileImage ? (
                 <Image source={{ uri: profileImage }} style={{ width: 100, height: 100, borderRadius: 50, marginBottom: 8 }} />
               ) : null}
-              <TouchableOpacity onPress={handlePickProfileImage} style={{ backgroundColor: '#e5e7eb', padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 8 }}>
-                <Typography variant="body" className="font-medium">{profileImage ? 'Change Image' : 'Pick Profile Image'}</Typography>
+              <TouchableOpacity onPress={handlePickProfileImage} style={{ backgroundColor: '#e5e7eb', padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 8 }} disabled={uploadingImage}>
+                <Typography variant="body" className="font-medium">{uploadingImage ? 'Uploading...' : (profileImage ? 'Change Image' : 'Pick Profile Image')}</Typography>
               </TouchableOpacity>
             </View>
           </View>

@@ -20,8 +20,6 @@ export class VehicleService {
       },
     });
 
-    
-
     if (vehicleList.length === 0) {
       throw new NotFoundException('No vehicle found');
     }

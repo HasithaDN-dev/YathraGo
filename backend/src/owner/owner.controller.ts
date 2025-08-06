@@ -13,7 +13,7 @@ export class OwnerController {
   @Roles('owner')
   @Get('profile')
   async getProfile(@User() user: any): Promise<OwnerDto | null> {
-   // console.log('webuser:', user);
+    // console.log('webuser:', user);
     return this.ownerService.getOwnerProfile(user.id);
     //console.log('vehicleOwner:', owner);
     //return owner;
@@ -22,7 +22,10 @@ export class OwnerController {
   @UseGuards(JwtGuard, RolesGuard)
   @Roles('owner')
   @Put('update-profile')
-  async updateProfile(@User() user: any, @Body() updateData: any): Promise<OwnerDto | null> {
+  async updateProfile(
+    @User() user: any,
+    @Body() updateData: any,
+  ): Promise<OwnerDto | null> {
     return this.ownerService.updateOwnerProfile(user.id, updateData);
   }
 }

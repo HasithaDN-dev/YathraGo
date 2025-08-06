@@ -1,9 +1,23 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsEnum } from 'class-validator';
+
+export enum Gender {
+  Male = 'Male',
+  Female = 'Female',
+  Unspecified = 'Unspecified',
+}
 
 export class UpdateProfileDto {
   @IsOptional()
   @IsString()
-  name?: string;
+  firstName?: string;
+
+  @IsOptional()
+  @IsString()
+  lastName?: string;
+
+  @IsOptional()
+  @IsEnum(Gender)
+  gender?: Gender;
 
   @IsOptional()
   @IsString()

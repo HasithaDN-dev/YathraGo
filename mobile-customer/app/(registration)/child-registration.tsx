@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { GenderPicker, GenderType } from '../../components/ui/GenderPicker';
 import * as ImagePicker from 'expo-image-picker';
 import { View, Alert, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -6,16 +7,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomInput } from '../../components/ui/CustomInput';
 import { ButtonComponent } from '../../components/ui/ButtonComponent';
 import { Typography } from '../../components/Typography';
-import { registerChildApi } from '../../lib/api/profile.api';
+import { registerChildApi, uploadChildProfileImageApi } from '../../lib/api/profile.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
 import { ChildProfileData } from '../../types/customer.types';
-import { Colors } from '@/constants/Colors'; // Ensure this import is correct
+// import { Colors } from '@/constants/Colors'; // Ensure this import is correct
 
 
 export default function ChildRegistrationScreen() {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<ChildProfileData>>({});
+  const [formData, setFormData] = useState<Partial<ChildProfileData & { gender: GenderType }>>({ gender: 'Unspecified' });
   const [childImageUri, setChildImageUri] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isAddMode = mode === 'add';
 
@@ -32,7 +34,9 @@ export default function ChildRegistrationScreen() {
   const validateForm = (): boolean => {
 
     const requiredFields: (keyof ChildProfileData)[] = [
-      'childName',
+      'childFirstName',
+      'childLastName',
+      'gender',
       'relationship',
       'nearbyCity',
       'schoolLocation',
@@ -59,10 +63,27 @@ export default function ChildRegistrationScreen() {
       return;
     }
     setLoading(true);
+    let childImageUrl = formData.childImageUrl;
     try {
-      console.log('Child registration: Starting API call...');
-      // 1. Call the final registration API function.
-      const result = await registerChildApi(accessToken, formData as ChildProfileData);
+      // If a new image is picked (local URI), upload it first
+      if (childImageUri && !childImageUri.startsWith('http')) {
+        setUploadingImage(true);
+        try {
+          const uploadRes = await uploadChildProfileImageApi(accessToken, childImageUri);
+          childImageUrl = uploadRes.filename;
+        } catch (err) {
+          let msg = 'Failed to upload image.';
+          if (err instanceof Error) msg = err.message;
+          Alert.alert('Error', msg);
+          setLoading(false);
+          setUploadingImage(false);
+          return;
+        }
+        setUploadingImage(false);
+      }
+
+      // 1. Call the final registration API function with image filename
+      const result = await registerChildApi(accessToken, { ...formData, childImageUrl } as ChildProfileData);
       console.log('Child registration: API call successful:', result);
 
       // 2. **CRITICAL STEP**: Update the global state to mark the profile as complete.
@@ -134,11 +155,23 @@ export default function ChildRegistrationScreen() {
           {/* Form */}
           <View style={{ gap: 20, marginBottom: 32 }}>
             <CustomInput
-              label="Child Name"
-              placeholder="Enter child's full name"
-              value={formData.childName || ''}
-              onChangeText={(value: string) => handleInputChange('childName', value)}
+              label="Child First Name"
+              placeholder="Enter child's first name"
+              value={formData.childFirstName || ''}
+              onChangeText={(value: string) => handleInputChange('childFirstName', value)}
               required
+            />
+            <CustomInput
+              label="Child Last Name"
+              placeholder="Enter child's last name"
+              value={formData.childLastName || ''}
+              onChangeText={(value: string) => handleInputChange('childLastName', value)}
+              required
+            />
+            <GenderPicker
+              value={formData.gender as GenderType}
+              onChange={(value) => handleInputChange('gender', value)}
+              style={{ marginBottom: 8 }}
             />
 
             <CustomInput
@@ -185,7 +218,7 @@ export default function ChildRegistrationScreen() {
 
             {/* Child Image Picker (Optional) */}
             <View>
-              <Typography variant="body" className="mb-2 font-medium">Child Image (Optional)</Typography>
+              <Typography variant="footnote" className="mb-2 font-medium">Child Image (Optional)</Typography>
               {childImageUri ? (
                 <Image source={{ uri: childImageUri }} style={{ width: 100, height: 100, borderRadius: 50, marginBottom: 8 }} />
               ) : null}
@@ -204,20 +237,15 @@ export default function ChildRegistrationScreen() {
                   });
                   if (!result.canceled && result.assets && result.assets.length > 0) {
                     const asset = result.assets[0];
-                    // Show preview
+                    // Show preview only, do NOT upload here
                     setChildImageUri(asset.uri);
-                    // Use the filename if available, otherwise generate one
-                    const filename = asset.fileName || `child_${Date.now()}.jpg`;
-                    setFormData(prev => ({ ...prev, childImageUrl: filename }));
                   }
                 }}
                 style={{ backgroundColor: '#e5e7eb', padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 8 }}
+                disabled={uploadingImage}
               >
-                <Typography variant="body" className="font-medium">{childImageUri ? 'Change Image' : 'Pick Child Image'}</Typography>
+                <Typography variant="body" className="font-medium">{uploadingImage ? 'Uploading...' : (childImageUri ? 'Change Image' : 'Pick Child Image')}</Typography>
               </TouchableOpacity>
-              {formData.childImageUrl ? (
-                <Typography variant="subhead" className="text-xs text-green-600">Image selected: {formData.childImageUrl}</Typography>
-              ) : null}
             </View>
           </View>
 

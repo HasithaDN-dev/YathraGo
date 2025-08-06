@@ -198,7 +198,9 @@ model VehicleOwner {
 
 model Customer {
   customer_id        Int                @id @default(autoincrement())
-  name               String
+  firstName          String
+  lastName           String
+  gender             Gender             @default(Unspecified)
   phone              String             @unique
   email              String?
   address            String?
@@ -248,7 +250,9 @@ model Child {
   nearbyCity     String
   schoolLocation String
   school         String
-  childName      String
+  childFirstName String
+  childLastName  String
+  gender         Gender   @default(Unspecified)
   childImageUrl  String?
   pickUpAddress  String
   customerId     Int?
@@ -313,4 +317,10 @@ enum OtpPurpose {
 enum UserType {
   CUSTOMER
   DRIVER
+}
+
+enum Gender {
+  Male
+  Female
+  Unspecified
 }
