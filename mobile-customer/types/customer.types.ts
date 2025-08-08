@@ -97,5 +97,8 @@ export interface StaffProfileData {
   workAddress: string;
   pickUpLocation: string;
   pickupAddress: string;
+  // Enhanced location details
+  workLocationDetails?: import('./location.types').LocationDetails;
+  pickupLocationDetails?: import('./location.types').LocationDetails;
   customerId?: string; // Optional since we add it in the API
 }
