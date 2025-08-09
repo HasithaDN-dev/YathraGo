@@ -53,7 +53,7 @@ export default function MenuScreen() {
       id: '5',
       title: 'About us',
       icon: InfoIcon,
-      action: () => console.log('About us pressed'),
+      action: () => router.push('/(menu)/about_us'),
     },
     {
       id: '6',
