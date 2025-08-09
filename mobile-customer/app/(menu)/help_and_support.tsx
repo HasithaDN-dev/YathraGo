@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
@@ -16,11 +16,21 @@ const supportOptions = [
 
 export default function HelpAndSupportScreen() {
   const handleOptionPress = (optionId: string) => {
-    if (optionId === '1') {
-      router.push('/(menu)/app_issues');
-    } else {
-      // Handle navigation to other support options if needed
-      console.log('Navigating to:', optionId);
+    switch (optionId) {
+      case '1':
+        router.push('/(menu)/(helpSupport)/app_issues');
+        break;
+      case '2':
+        router.push('/(menu)/(helpSupport)/payment_issues');
+        break;
+      case '3':
+        router.push('/(menu)/(helpSupport)/other_issues');
+        break;
+      case '4':
+        router.push('/(menu)/(helpSupport)/support');
+        break;
+      default:
+        console.warn('Unknown option:', optionId);
     }
   };
 
@@ -51,4 +61,4 @@ export default function HelpAndSupportScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-} 
+}

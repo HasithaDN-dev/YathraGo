@@ -117,3 +117,5 @@ Join our community of developers creating universal apps.
 # for the css used
 Tailwind: All layout, colors, typography, spacing
 StyleSheet: Animations, complex transforms, dynamic styles
+
+# start the emulator "emulator -avd emulator"
