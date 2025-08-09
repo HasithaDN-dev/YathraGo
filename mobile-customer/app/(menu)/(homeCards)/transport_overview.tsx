@@ -5,7 +5,7 @@ import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
 import { Car, Star, ChatsCircle } from 'phosphor-react-native';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 
 /**
  * Transport Overview (Home Cards) – (menu)/(homeCards)/transport_overview
@@ -84,7 +84,19 @@ export default function TransportOverviewScreen() {
         <Row label="Contact" value="011 23 456898" />
         <Row label="Distance" value="20 km" />
         <Row label="Rating" customValue={<Rating value={4.9} />} />
-        <Row label="Reviews" customValue={<View className="flex-row items-center"><ChatsCircle size={16} color="#143373" /><Typography variant="subhead" className="ml-2 text-black">6</Typography></View>} />
+        <Row
+          label="Reviews"
+          customValue={
+            <TouchableOpacity
+              className="flex-row items-center"
+              activeOpacity={0.8}
+              onPress={() => router.push({ pathname: '/(menu)/(homeCards)/reviews', params: { tab: 'Driver' } })}
+            >
+              <ChatsCircle size={16} color="#2563eb" />
+              <Typography variant="subhead" className="ml-2 text-black">6</Typography>
+            </TouchableOpacity>
+          }
+        />
         <Row label="Completed Rides" value="150" />
       </View>
     </Card>
@@ -117,7 +129,19 @@ export default function TransportOverviewScreen() {
           <Row label="RegNo" value="ABE 3500" />
           <Row label="Estimated arrival time" value="10 min" />
           <Row label="Rating" customValue={<Rating value={4.2} />} />
-          <Row label="Reviews" customValue={<View className="flex-row items-center"><ChatsCircle size={16} color="#143373" /><Typography variant="subhead" className="ml-2 text-black">10</Typography></View>} />
+          <Row
+            label="Reviews"
+            customValue={
+              <TouchableOpacity
+                className="flex-row items-center"
+                activeOpacity={0.8}
+                onPress={() => router.push('/(menu)/(homeCards)/reviews')}
+              >
+                <ChatsCircle size={16} color="#2563eb" />
+                <Typography variant="subhead" className="ml-2 text-black">10</Typography>
+              </TouchableOpacity>
+            }
+          />
           <View className="mt-2">
             <Typography variant="subhead" className="text-black">More Details :</Typography>
             <Typography variant="subhead" className="text-brand-neutralGray mt-1">
