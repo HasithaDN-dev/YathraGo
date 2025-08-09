@@ -50,4 +50,4 @@ export const DriverVehicleCard: React.FC<DriverVehicleCardProps> = ({
       )}
     </View>
   );
-}; 
+};

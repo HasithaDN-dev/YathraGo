@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ArrowRight } from 'phosphor-react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 export default function AboutUsScreen() {
   const handleDial = (number: string) => Linking.openURL(`tel:${number}`);
@@ -71,7 +72,18 @@ export default function AboutUsScreen() {
         {/* Legal and Privacy cards */}
         <Card className="mx-4 mb-5 p-5 bg-gray-100">
           {[{ id: 'legal', title: 'Legal' }, { id: 'privacy', title: 'Privacy Policy' }].map((item, idx) => (
-            <TouchableOpacity key={item.id} className={`bg-white rounded-full px-4 py-4 flex-row items-center justify-between shadow ${idx === 0 ? 'mb-4' : ''}`}>
+            <TouchableOpacity
+              key={item.id}
+              className={`bg-white rounded-full px-4 py-4 flex-row items-center justify-between shadow ${idx === 0 ? 'mb-4' : ''}`}
+              activeOpacity={0.8}
+              onPress={() => {
+                if (item.id === 'legal') {
+                  router.push('/(menu)/(aboutUs)/legal');
+                } else if (item.id === 'privacy') {
+                  router.push('/(menu)/(aboutUs)/privacy');
+                 }
+               }}
+            >
               <Typography variant="subhead" className="text-black">{item.title}</Typography>
               <ArrowRight size={18} color="#222" />
             </TouchableOpacity>
