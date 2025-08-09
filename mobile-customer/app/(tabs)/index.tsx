@@ -105,7 +105,7 @@ export default function StaffHomeScreen() {
               size="medium"
               IconLeft={ChatCircle}
               className="w-[160px]"
-              onPress={() => console.log('Message pressed')}
+              onPress={() => router.push('/(menu)/(homeCards)/chat_list')}
             />
           </View>
         </Card>
