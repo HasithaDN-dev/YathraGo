@@ -44,15 +44,6 @@ export default function TabLayout() {
     console.log('Refresh pressed');
   };
 
-  // Show different tabs based on profile type
-  // const getTabTitle = (baseTitle: string) => {
-  //   if (!activeProfile) return baseTitle;
-  //   return activeProfile.type === 'child' 
-  //     ? `${activeProfile.name}'s ${baseTitle}`
-  //     : baseTitle;
-  // };
-
-
   return (
     <View style={{ flex: 1 }}>
       {/* Header Component - Shared across all tabs, now below the device header */}

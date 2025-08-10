@@ -1,7 +1,6 @@
 // This file is a copy of complaint_Inquiries.tsx with all 'complaint' replaced by 'complain'.
 // Please update imports in other files to use this new file.
 
-// ...existing code...
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
@@ -350,7 +349,7 @@ export default function ComplainInquiriesScreen() {
           onPress={() => {
             // Navigate to the correct tab in add_complaint_inquiries
             router.push({
-              pathname: '/(menu)/add_complain_inquiries',
+              pathname: '/(menu)/(complainInquiries)/add_complain_inquiries',
               params: {
                 type: activeTab === 'Complains' ? 'Complains' : 'Inquiries',
               },

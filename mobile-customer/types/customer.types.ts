@@ -20,6 +20,11 @@ export type Gender = 'Male' | 'Female' | 'Unspecified';
 
 export interface Profile {
   id: string;
+  /**
+   * Display name for the profile (e.g., child name or staff label).
+   * Optional because not all backend shapes provide a single name field.
+   */
+  name?: string;
   firstName: string;
   lastName: string;
   gender: Gender;

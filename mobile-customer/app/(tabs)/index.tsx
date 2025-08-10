@@ -13,8 +13,13 @@ import { RideStatus } from '@/components/ui/RideStatus';
 import { DriverVehicleCard } from '@/components/ui/DriverVehicleCard';
 import { PaymentSection } from '@/components/ui/PaymentSection';
 import CustomButton from '@/components/ui/CustomButton';
+import { router } from 'expo-router';
 
 export default function StaffHomeScreen() {
+
+  const openOverview = (tab: 'Driver' | 'Vehicle') => {
+    router.push({ pathname: '/(menu)/(homeCards)/transport_overview', params: { tab } });
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 mb-0 mt-0">
@@ -65,17 +70,21 @@ export default function StaffHomeScreen() {
           
           {/* Driver and Vehicle Cards */}
           <View className="flex-row gap-x-6 mb-4">
-            <DriverVehicleCard
-              type="driver"
-              name="Hemal Perera"
-              subtitle="Driver"
-              rating={4.9}
-            />
-            <DriverVehicleCard
-              type="vehicle"
-              name="WP-5562"
-              subtitle="Toyota HIACE"
-            />
+            <TouchableOpacity className="flex-1" activeOpacity={0.85} onPress={() => openOverview('Driver')}>
+              <DriverVehicleCard
+                type="driver"
+                name="Hemal Perera"
+                subtitle="Driver"
+                rating={4.9}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity className="flex-1" activeOpacity={0.85} onPress={() => openOverview('Vehicle')}>
+              <DriverVehicleCard
+                type="vehicle"
+                name="WP-5562"
+                subtitle="Toyota HIACE"
+              />
+            </TouchableOpacity>
           </View>
           
           {/* Action Buttons */}
@@ -96,7 +105,7 @@ export default function StaffHomeScreen() {
               size="medium"
               IconLeft={ChatCircle}
               className="w-[160px]"
-              onPress={() => console.log('Message pressed')}
+              onPress={() => router.push('/(menu)/(homeCards)/chat_list')}
             />
           </View>
         </Card>

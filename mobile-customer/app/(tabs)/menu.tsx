@@ -53,7 +53,7 @@ export default function MenuScreen() {
       id: '5',
       title: 'About us',
       icon: InfoIcon,
-      action: () => console.log('About us pressed'),
+      action: () => router.push('/(menu)/about_us'),
     },
     {
       id: '6',
@@ -68,39 +68,37 @@ export default function MenuScreen() {
     <SafeAreaView className="flex-1 bg-gray-100">
       <ScrollView className="flex-1 px-4 space-y-6">
         {/* User Profile Card */}
-        <Card className="mb-3 py-6">
-          <View className="flex-row items-center min-h-[96px]">
-            {/* Profile Image */}
-            <View className="mr-4">
-              <Image
-                source={require('../../assets/images/profile_Picture.png')}
-                style={{ width: 64, height: 64, borderRadius: 32, resizeMode: 'cover' }}
-              />
-            </View>
-            
-            {/* Profile InfoIcon */}
-            <View className="flex-1">
-              <Typography variant="subhead" weight="semibold" className="text-black mb-2">
-                078 - 456 7891
-              </Typography>
-              <Typography variant="footnote" className="text-brand-neutralGray">
-                Kasun Fernando
-              </Typography>
-            </View>
-            
-            {/* Profile Link */}
-            <TouchableOpacity 
-              className="flex-row items-center"
-              onPress={() => router.push('/(menu)/profile')}
-              activeOpacity={0.8}
-            >
+        <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/(menu)/profile')}>
+          <Card className="mb-3 py-6">
+            <View className="flex-row items-center min-h-[96px]">
+             {/* Profile Image */}
+             <View className="mr-4">
+               <Image
+                 source={require('../../assets/images/profile_Picture.png')}
+                 style={{ width: 64, height: 64, borderRadius: 32, resizeMode: 'cover' }}
+               />
+             </View>
+             
+             {/* Profile InfoIcon */}
+             <View className="flex-1">
+               <Typography variant="subhead" weight="semibold" className="text-black mb-2">
+                 078 - 456 7891
+               </Typography>
+               <Typography variant="footnote" className="text-brand-neutralGray">
+                 Kasun Fernando
+               </Typography>
+             </View>
+             
+            {/* Profile Link (visual only) */}
+            <View className="flex-row items-center">
               <Typography variant="subhead" weight="medium" className="text-black mr-1">
                 profile
               </Typography>
               <ArrowLeftIcon size={16} color="#000000" weight="regular" style={{ transform: [{ rotate: '180deg' }] }} />
-            </TouchableOpacity>
-          </View>
-        </Card>
+            </View>
+            </View>
+          </Card>
+        </TouchableOpacity>
         
         {/* Menu Items */}
         <Card className="p-6">

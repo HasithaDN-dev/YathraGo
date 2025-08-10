@@ -59,7 +59,7 @@ export default function PaymentMethodScreen() {
               key={card.id}
               className="flex-row items-center justify-between bg-white rounded-full px-4 py-3 mb-4 shadow-sm"
               activeOpacity={0.8}
-              onPress={() => router.push({ pathname: '/(menu)/view-card', params: { id: card.id } })}
+              onPress={() => router.push({ pathname: '/(menu)/(paymentMethod)/view-card', params: { id: card.id } })}
             >
               <View className="flex-row items-center">
                 {/* Card type icon */}
@@ -85,7 +85,7 @@ export default function PaymentMethodScreen() {
           <TouchableOpacity
             className="flex-row items-center justify-between bg-white rounded-full px-4 py-3 shadow-sm"
             activeOpacity={0.8}
-            onPress={() => router.push('/(menu)/add-card')}
+            onPress={() => router.push('/(menu)/(paymentMethod)/add-card')}
           >
             <Typography variant="subhead" className="text-black">
               Add card

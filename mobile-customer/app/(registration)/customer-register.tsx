@@ -225,7 +225,7 @@ export default function CustomerRegisterScreen() {
               required
             />
             <View>
-              <Typography variant="footnote" className="mb-2 font-medium">Gender</Typography>
+              <Typography variant="body" className="mb-2 font-medium">Gender</Typography>
               <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, marginBottom: 8 }}>
                 <Picker
                   selectedValue={formData.gender}
@@ -270,7 +270,7 @@ export default function CustomerRegisterScreen() {
             />
 
             <View>
-              <Typography variant="footnote" className="mb-2 font-medium">Profile Image (Optional)</Typography>
+              <Typography variant="body" className="mb-2 font-medium">Profile Image (Optional)</Typography>
               {profileImage ? (
                 <Image source={{ uri: profileImage }} style={{ width: 100, height: 100, borderRadius: 50, marginBottom: 8 }} />
               ) : null}
