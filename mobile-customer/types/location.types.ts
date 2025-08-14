@@ -8,6 +8,9 @@ export interface LocationDetails {
   address: string;
   coordinates: LocationCoordinates;
   placeId?: string;
+  // Separate the map-selected location from user-typed address
+  mapSelectedAddress?: string; // Address from reverse geocoding
+  userTypedAddress?: string;   // Address manually entered by user
 }
 
 export interface MapRegion {
@@ -27,6 +30,8 @@ export interface GooglePlace {
       lng: number;
     };
   };
+  types?: string[];
+  vicinity?: string;
 }
 
 export interface LocationPickerProps {
