@@ -139,11 +139,12 @@ export default function NotificationsScreen() {
   }, [searchInput, notifications]);
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
-      <ScrollView className="flex-1 px-4 space-y-6">
-        {/* Search/Filter Section */}
-        <Card className="p-0 mb-2">
-          <View className="bg-white rounded-xl p-3">
+  <SafeAreaView edges={['left','right','bottom']} className="flex-1 bg-gray-100">
+      {/* Search/Filter Header (fixed) */}
+      <View className="px-4 space-y-6 mt-3">
+        {/* Search Section */}
+        <Card className="p-0 mb-3">
+          <View className="bg-white rounded-xl p-1">
             <View className="flex-row items-center">
               <MagnifyingGlass size={20} color="#000000" weight="regular" />
               <TextInput
@@ -196,75 +197,69 @@ export default function NotificationsScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            
-            {/* <TouchableOpacity>
-              <Typography variant="subhead" className="text-brand-brightOrange">
-                Mark all read
-              </Typography>
-            </TouchableOpacity> */}
           </View>
         </Card>
+      </View>
 
-        {/* Notifications List */}
-        <View className="space-y-5">
-          {notifications
-            .filter((notification) => {
-              if (selectedFilter === 'All') return true;
-              if (selectedFilter === 'Alerts') return notification.type === 'alert';
-              if (selectedFilter === 'System') return notification.type === 'system';
-              if (selectedFilter === 'Others') return notification.type === 'other';
-              return true;
-            })
-            .filter((notification) => {
-              if (searchInput.length === 0) return true;
-              if (selectedSender) return notification.sender === selectedSender;
-              return notification.sender.toLowerCase().includes(searchInput.toLowerCase());
-            })
-            .map((notification, idx) => (
-              <Card
-                key={notification.id}
-                className="p-4 mt-2"
-              >
-                <View className="flex-row items-start">
-                  {/* Notification Icon */}
-                  <View className={`w-10 h-10 rounded-full ${getNotificationBackground(notification.type)} items-center justify-center mr-3`}>
-                    {getNotificationIcon(notification.type, notification.sender)}
-                  </View>
-
-                  {/* Notification Content */}
-                  <View className="flex-1">
-                    <View className="flex-row items-start justify-between mb-2">
-                      <Typography variant="subhead" weight="bold" className="text-black">
-                        {notification.sender}
-                      </Typography>
-                      <Typography variant="footnote" className="text-gray-500">
-                        {notification.time}
-                      </Typography>
-                    </View>
-                    <Typography
-                      variant="subhead"
-                      className="text-black mb-3"
-                      numberOfLines={notification.isExpanded ? undefined : 1}
-                    >
-                      {notification.message}
-                    </Typography>
-                    {/* Expand/Collapse Button */}
-                    <TouchableOpacity
-                      className="self-end"
-                      onPress={() => toggleNotification(notification.id)}
-                    >
-                      {notification.isExpanded ? (
-                        <CaretUp size={16} color="#000000" weight="regular" />
-                      ) : (
-                        <CaretDown size={16} color="#000000" weight="regular" />
-                      )}
-                    </TouchableOpacity>
-                  </View>
+      {/* Notifications List (scrollable) */}
+      <ScrollView className="flex-1 px-4" contentContainerClassName="space-y-5 pb-6">
+        {notifications
+          .filter((notification) => {
+            if (selectedFilter === 'All') return true;
+            if (selectedFilter === 'Alerts') return notification.type === 'alert';
+            if (selectedFilter === 'System') return notification.type === 'system';
+            if (selectedFilter === 'Others') return notification.type === 'other';
+            return true;
+          })
+          .filter((notification) => {
+            if (searchInput.length === 0) return true;
+            if (selectedSender) return notification.sender === selectedSender;
+            return notification.sender.toLowerCase().includes(searchInput.toLowerCase());
+          })
+          .map((notification) => (
+            <Card
+              key={notification.id}
+              className="p-4 mt-3"
+            >
+              <View className="flex-row items-start">
+                {/* Notification Icon */}
+                <View className={`w-10 h-10 rounded-full ${getNotificationBackground(notification.type)} items-center justify-center mr-3`}>
+                  {getNotificationIcon(notification.type, notification.sender)}
                 </View>
-              </Card>
-            ))}
-        </View>
+
+                {/* Notification Content */}
+                <View className="flex-1">
+                  <View className="flex-row items-start justify-between mb-2">
+                    <Typography variant="subhead" weight="bold" className="text-black">
+                      {notification.sender}
+                    </Typography>
+                    <Typography variant="footnote" className="text-gray-500">
+                      {notification.time}
+                    </Typography>
+                  </View>
+                  <Typography
+                    variant="subhead"
+                    className="text-black mb-3"
+                    numberOfLines={notification.isExpanded ? undefined : 1}
+                  >
+                    {notification.message}
+                  </Typography>
+                  {/* Expand/Collapse Button */}
+                  <TouchableOpacity
+                    className="self-end"
+                    onPress={() => toggleNotification(notification.id)}
+                  >
+                    {notification.isExpanded ? (
+                      <CaretUp size={16} color="#000000" weight="regular" />
+                    ) : (
+                      <CaretDown size={16} color="#000000" weight="regular" />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Card>
+          ))}
       </ScrollView>
-    </SafeAreaView>
+  </SafeAreaView>
   );
 }

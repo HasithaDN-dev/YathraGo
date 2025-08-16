@@ -4,8 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Star, CaretDown, CaretUp } from 'phosphor-react-native';
-import { useLocalSearchParams } from 'expo-router';
+// removed duplicate import by consolidating above
 
 interface ReviewItem {
   id: string;
@@ -55,6 +56,7 @@ const driverInitialReviews: ReviewItem[] = [
 export default function ReviewsScreen() {
   type Tab = 'Vehicle' | 'Driver';
   const params = useLocalSearchParams<{ tab?: string | string[] }>();
+  const router = useRouter();
   const toTab = (raw?: string | string[]) => {
     const v = Array.isArray(raw) ? raw[0] : raw;
     switch ((v || '').toString().toLowerCase()) {
@@ -98,7 +100,7 @@ export default function ReviewsScreen() {
 
   const RatingRow = ({ value }: { value: number }) => (
     <View className="flex-row items-center">
-      <Typography variant="caption-1" className="text-black mr-1">{value}</Typography>
+      <Typography variant="footnote" className="text-black mr-1">{value}</Typography>
       <Star size={14} color="#f5b301" weight="fill" />
     </View>
   );
@@ -112,7 +114,7 @@ export default function ReviewsScreen() {
       <View className="flex-1">
         <Typography variant="subhead" className="text-black">{name}</Typography>
         {time ? (
-          <Typography variant="caption-2" className="text-brand-neutralGray">{time}</Typography>
+          <Typography variant="footnote" className="text-brand-neutralGray">{time}</Typography>
         ) : null}
       </View>
       <RatingRow value={rating} />
@@ -122,7 +124,7 @@ export default function ReviewsScreen() {
   const ExpandedCard = ({ item }: { item: ReviewItem }) => (
     <Card className="mb-3 p-4">
       <HeaderRow name={item.name} rating={item.rating} time={item.time} />
-      <Typography variant="footnote" className="text-brand-neutralGray mt-2">
+      <Typography variant="subhead" className="text-brand-neutralGray mt-2">
         {item.text}
       </Typography>
       <View className="items-end mt-2">
@@ -140,8 +142,8 @@ export default function ReviewsScreen() {
         style={{ width: 28, height: 28, borderRadius: 14, marginRight: 10 }}
       />
       <View className="flex-1 mr-2">
-        <Typography variant="footnote" className="text-black" numberOfLines={1}>{item.name}</Typography>
-        <Typography variant="caption-1" className="text-brand-neutralGray" numberOfLines={1}>
+        <Typography variant="subhead" className="text-black" numberOfLines={1}>{item.name}</Typography>
+        <Typography variant="footnote" className="text-brand-neutralGray" numberOfLines={1}>
           {item.text}
         </Typography>
       </View>
@@ -152,10 +154,15 @@ export default function ReviewsScreen() {
     </View>
   );
 
+  const handleBack = () => {
+    // Ensure we return to Transport Overview with the same tab context
+    router.replace({ pathname: '/(menu)/(homeCards)/transport_overview', params: { tab: activeTab } });
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <ScreenHeader title="Reviews" showBackButton />
+        <ScreenHeader title="Reviews" showBackButton onBackPress={handleBack} />
 
         {/* Tabs */}
         <View className="flex-row px-4 mt-3">
@@ -181,7 +188,7 @@ export default function ReviewsScreen() {
                 className="bg-gray-100 rounded-full px-5 py-2 shadow"
         onPress={() => setVisibleCount((c) => Math.min(c + 10, currentReviews.length))}
               >
-                <Typography variant="caption-1" className="text-black">see more ▾</Typography>
+                <Typography variant="footnote" className="text-black">see more ▾</Typography>
               </TouchableOpacity>
             </View>
           ) : null}
