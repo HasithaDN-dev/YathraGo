@@ -146,12 +146,12 @@ export default function ChatListScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <View className="flex-1">
         <ScreenHeader title="Chat" showBackButton />
 
-        {/* Search */}
-        <Card className="mx-4 mb-4 p-0 bg-transparent shadow-none">
-          <View className="flex-row items-center bg-white rounded-full px-4 py-3 shadow-sm">
+        {/* Search (fixed) */}
+        <Card className="mx-4 mb-1 p-0 bg-transparent shadow-none">
+          <View className="flex-row items-center bg-brand-lightGray rounded-full px-4 py-1 shadow-sm">
             <MagnifyingGlass size={18} color="#6b7280" />
             <TextInput
               value={query}
@@ -164,33 +164,35 @@ export default function ChatListScreen() {
           </View>
         </Card>
 
-        {/* Conversation cards */}
-        <View className="px-4 pb-6">
-          {filtered.map((c) => (
-            <TouchableOpacity
-              key={c.id}
-              activeOpacity={0.8}
-              onPress={() => router.push({ pathname: '/(menu)/(homeCards)/chat_room', params: { id: c.id, name: c.name, phone: c.phone } })}
-            >
-              <View className="bg-white rounded-2xl px-3 py-3 mb-3 shadow-sm flex-row items-center">
-                <Image
-                  source={require('../../../assets/images/profile_Picture.png')}
-                  style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10 }}
-                />
-                <View className="flex-1">
-                  <Typography variant="subhead" className="text-black">{c.name}</Typography>
-                  <Typography variant="caption-1" className="text-brand-neutralGray" numberOfLines={1}>
-                    {c.lastMessage}
-                  </Typography>
+        {/* Conversation cards (scrollable) */}
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+          <View className="px-4 pb-6">
+            {filtered.map((c) => (
+              <TouchableOpacity
+                key={c.id}
+                activeOpacity={0.8}
+                onPress={() => router.push({ pathname: '/(menu)/(homeCards)/chat_room', params: { id: c.id, name: c.name, phone: c.phone } })}
+              >
+                <View className="bg-white rounded-2xl px-3 py-3 mb-3 shadow-sm flex-row items-center">
+                  <Image
+                    source={require('../../../assets/images/profile_Picture.png')}
+                    style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10 }}
+                  />
+                  <View className="flex-1">
+                    <Typography variant="subhead" className="text-black">{c.name}</Typography>
+                    <Typography variant="caption-1" className="text-brand-neutralGray" numberOfLines={1}>
+                      {c.lastMessage}
+                    </Typography>
+                  </View>
+                  <View className="items-end ml-2">
+                    <Typography variant="caption-1" className="text-brand-neutralGray">{c.time}</Typography>
+                  </View>
                 </View>
-                <View className="items-end ml-2">
-                  <Typography variant="caption-1" className="text-brand-neutralGray">{c.time}</Typography>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }

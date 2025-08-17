@@ -3,7 +3,7 @@ import { View, ScrollView, Image, TouchableOpacity, Dimensions, NativeScrollEven
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
-import { Car, Star, ChatsCircle } from 'phosphor-react-native';
+import { Car, Star, ChatsCircle, ArrowLeftIcon } from 'phosphor-react-native';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useLocalSearchParams, router } from 'expo-router';
 
@@ -84,18 +84,21 @@ export default function TransportOverviewScreen() {
         <Row label="Contact" value="011 23 456898" />
         <Row label="Distance" value="20 km" />
         <Row label="Rating" customValue={<Rating value={4.9} />} />
-        <Row
+  <Row
           label="Reviews"
           customValue={
-            <TouchableOpacity
-              className="flex-row items-center"
-              activeOpacity={0.8}
-              onPress={() => router.push({ pathname: '/(menu)/(homeCards)/reviews', params: { tab: 'Driver' } })}
-            >
-              <ChatsCircle size={16} color="#2563eb" />
-              <Typography variant="subhead" className="ml-2 text-black">6</Typography>
-            </TouchableOpacity>
+            <View className="relative w-full">
+              <View className="flex-row items-center">
+                <ChatsCircle size={16} color="#2563eb" />
+                <Typography variant="subhead" className="ml-2 text-brand-deepNavy">6</Typography>
+              </View>
+              <View className="absolute inset-0 items-center justify-center">
+                <ArrowLeftIcon size={16} color="#000000" weight="regular" style={{ transform: [{ rotate: '180deg' }] }} />
+              </View>
+            </View>
           }
+          labelClassName="text-brand-deepNavy"
+          onPress={() => router.push({ pathname: '/(menu)/(homeCards)/reviews', params: { tab: 'Driver' } })}
         />
         <Row label="Completed Rides" value="150" />
       </View>
@@ -129,18 +132,19 @@ export default function TransportOverviewScreen() {
           <Row label="RegNo" value="ABE 3500" />
           <Row label="Estimated arrival time" value="10 min" />
           <Row label="Rating" customValue={<Rating value={4.2} />} />
-          <Row
+    <Row
             label="Reviews"
             customValue={
-              <TouchableOpacity
-                className="flex-row items-center"
-                activeOpacity={0.8}
-                onPress={() => router.push('/(menu)/(homeCards)/reviews')}
-              >
-                <ChatsCircle size={16} color="#2563eb" />
-                <Typography variant="subhead" className="ml-2 text-black">10</Typography>
-              </TouchableOpacity>
+              <View className="w-full flex-row items-center justify-between">
+                <View className="flex-row items-center">
+                  <ChatsCircle size={16} color="#2563eb" />
+                <Typography variant="subhead" className="ml-2 text-brand-deepNavy">10</Typography>
+                </View>
+                <ArrowLeftIcon size={16} color="#000000" weight="regular" style={{ transform: [{ rotate: '180deg' }] }} />
+              </View>
             }
+          labelClassName="text-brand-deepNavy"
+            onPress={() => router.push({ pathname: '/(menu)/(homeCards)/reviews', params: { tab: 'Vehicle' } })}
           />
           <View className="mt-2">
             <Typography variant="subhead" className="text-black">More Details :</Typography>
@@ -252,18 +256,23 @@ export default function TransportOverviewScreen() {
   );
 }
 
-function Row({ label, value, customValue, className = '' }: { label: string; value?: string; customValue?: React.ReactNode; className?: string }) {
+function Row({ label, value, customValue, className = '', onPress, labelClassName = '' }: { label: string; value?: string; customValue?: React.ReactNode; className?: string; onPress?: () => void; labelClassName?: string }) {
   return (
-    <View className={`py-1 mb-3 ${className}`}>
-      <Typography variant="subhead" className="text-black">
+    <TouchableOpacity
+      activeOpacity={0.8}
+      disabled={!onPress}
+      onPress={onPress}
+      className={`py-1 mb-3 ${className}`}
+    >
+  <Typography variant="subhead" className={labelClassName || 'text-black'}>
         {label} :
       </Typography>
       {customValue ? (
-        <View className="mt-1">{customValue}</View>
+        <View className="mt-1 w-full">{customValue}</View>
       ) : (
         <Typography variant="subhead" className="text-brand-neutralGray mt-1">{value}</Typography>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 

@@ -7,8 +7,8 @@ import { Card } from '@/components/ui/Card';
 export default function NavigateScreen() {
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
-      <ScrollView className="flex-1 px-4 space-y-6">
+    <SafeAreaView edges={['left','right','bottom']} className="flex-1 bg-gray-100">
+      <ScrollView className="flex-1 px-4 space-y-6 mt-3">
         {/* Empty Card */}
         <Card className="p-6">
           <View className="items-center justify-center min-h-[600px]">

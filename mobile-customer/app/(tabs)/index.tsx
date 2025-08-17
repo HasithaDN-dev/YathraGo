@@ -5,7 +5,8 @@ import {
   Broadcast, 
   ChatCircle, 
   ArrowRight,
-  Info 
+  Info,
+  MagnifyingGlass
 } from 'phosphor-react-native';
 import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
@@ -22,8 +23,26 @@ export default function StaffHomeScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100 mb-0 mt-0">
-      <ScrollView className="px-4 space-y-6 min-h-screen">
+    <SafeAreaView edges={['left','right','bottom']} className="flex-1 bg-gray-100">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="px-4 space-y-6 pb-6 mt-3"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Find New Vehicle Card (custom view to avoid changing shared Card) */}
+        <View className="mb-3 rounded-2xl p-2 shadow-sm bg-brand-deepNavy">
+          <TouchableOpacity
+            className="flex-row items-center justify-center py-3"
+            onPress={() => router.push('/(menu)/(homeCards)/find_vehicle')}
+            activeOpacity={0.8}
+          >
+            <MagnifyingGlass size={24} color="#ffffff" weight="bold" />
+            <Typography variant="title-3" weight="semibold" className="text-white ml-3">
+              Find New Vehicle ...
+            </Typography>
+          </TouchableOpacity>
+        </View>
+
         {/* Current Ride Section */}
         <Card className="mb-3">
           <View className="flex-row items-center justify-between mb-4">
@@ -96,7 +115,7 @@ export default function StaffHomeScreen() {
               size="medium"
               IconLeft={Broadcast}
               className="mx-2 w-[160px]"
-              onPress={() => console.log('Inform pressed')}
+              onPress={() => router.push('/(menu)/(homeCards)/inform_driver')}
             />
             <CustomButton
               title="Message"
@@ -116,9 +135,9 @@ export default function StaffHomeScreen() {
             daysInMonth={25}
             totalPayable="Rs. 12000.45"
             dueDate="25 Oct 2025"
-            onSummaryPress={() => console.log('Summary pressed')}
+            onSummaryPress={() => router.push('/(menu)/(homeCards)/payment_summary')}
             onPayNowPress={() => console.log('Pay now pressed')}
-            onHistoryPress={() => console.log('Payment history pressed')}
+            onHistoryPress={() => router.push('/(menu)/(homeCards)/payment_history')}
           />
         </Card>
       </ScrollView>

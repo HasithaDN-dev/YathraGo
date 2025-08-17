@@ -119,10 +119,10 @@ export default function HistoryScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
-      <ScrollView className="flex-1 px-4 pb-6">
-        <View className="space-y-6">
-          {/* Filter Options */}
+    <SafeAreaView edges={['left','right','bottom']} className="flex-1 bg-gray-100">
+      <View className="flex-1 mt-3">
+        {/* Filter Options (fixed) */}
+  <View className="px-4 pt-0 pb-0 mb-3">
           <Card className="p-4">
             <View className="flex-row">
               {['All Trips', 'Completed', 'Cancelled'].map((filter) => (
@@ -141,9 +141,11 @@ export default function HistoryScreen() {
               ))}
             </View>
           </Card>
+        </View>
 
-          {/* History Items */}
-          <View className="space-y-4">
+        {/* History Items (scrollable only) */}
+        <ScrollView className="flex-1" contentContainerClassName="px-4 pt-3 pb-6" showsVerticalScrollIndicator={false}>
+          <View>
             {mockHistoryItems
               .filter((item) => {
                 if (selectedFilter === 'All Trips') return true;
@@ -152,7 +154,7 @@ export default function HistoryScreen() {
                 return true;
               })
               .map((item) => (
-                <Card key={item.id + item.date + item.from + item.to} className="p-4 mt-3">
+                <Card key={item.id + item.date + item.from + item.to} className="p-4 mb-3">
                   <View className="space-y-3">
                     <View className="flex-row justify-between items-start">
                       <View className="flex-1">
@@ -204,8 +206,8 @@ export default function HistoryScreen() {
                 </Card>
               ))}
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }

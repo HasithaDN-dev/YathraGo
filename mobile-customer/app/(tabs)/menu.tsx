@@ -65,8 +65,8 @@ export default function MenuScreen() {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
-      <ScrollView className="flex-1 px-4 space-y-6">
+    <SafeAreaView edges={['left','right','bottom']} className="flex-1 bg-gray-100">
+      <ScrollView className="flex-1 px-4 space-y-6 mt-3">
         {/* User Profile Card */}
         <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/(menu)/profile')}>
           <Card className="mb-3 py-6">
