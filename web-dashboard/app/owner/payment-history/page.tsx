@@ -228,6 +228,57 @@ export default function PaymentHistoryPage() {
         </p>
       </div>
 
+      {/* Monthly Summary */}
+      <Card className="shadow-sm border border-gray-200">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">
+            Monthly Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Total Revenue */}
+            <div className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg">
+              <div className="p-2 bg-green-100 rounded-full">
+                <TrendingUp className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Total Revenue</p>
+                <p className="text-xl font-bold text-blue-900">
+                  Rs {totalRevenue.toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            {/* Pending Dues */}
+            <div className="flex items-center space-x-3 p-4 bg-yellow-50 rounded-lg">
+              <div className="p-2 bg-yellow-100 rounded-full">
+                <AlertTriangle className="w-6 h-6 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Pending Dues</p>
+                <p className="text-xl font-bold text-red-600">
+                  Rs {pendingDues.toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            {/* Failed Payments */}
+            <div className="flex items-center space-x-3 p-4 bg-red-50 rounded-lg">
+              <div className="p-2 bg-red-100 rounded-full">
+                <DollarSign className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Failed Payments</p>
+                <p className="text-xl font-bold text-red-600">
+                  Rs {failedPayments.toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Filters */}
       <Card className="shadow-sm border border-[var(--neutral-gray)]">
         <CardHeader>
@@ -448,57 +499,6 @@ export default function PaymentHistoryPage() {
           </div>
         )}
       </div>
-
-      {/* Monthly Summary Footer */}
-      <Card className="shadow-sm border border-gray-200">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-900">
-            Monthly Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Total Revenue */}
-            <div className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg">
-              <div className="p-2 bg-green-100 rounded-full">
-                <TrendingUp className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Total Revenue</p>
-                <p className="text-xl font-bold text-blue-900">
-                  Rs {totalRevenue.toLocaleString()}
-                </p>
-              </div>
-            </div>
-
-            {/* Pending Dues */}
-            <div className="flex items-center space-x-3 p-4 bg-yellow-50 rounded-lg">
-              <div className="p-2 bg-yellow-100 rounded-full">
-                <AlertTriangle className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Pending Dues</p>
-                <p className="text-xl font-bold text-red-600">
-                  Rs {pendingDues.toLocaleString()}
-                </p>
-              </div>
-            </div>
-
-            {/* Failed Payments */}
-            <div className="flex items-center space-x-3 p-4 bg-red-50 rounded-lg">
-              <div className="p-2 bg-red-100 rounded-full">
-                <DollarSign className="w-6 h-6 text-red-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Failed Payments</p>
-                <p className="text-xl font-bold text-red-600">
-                  Rs {failedPayments.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

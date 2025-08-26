@@ -36,8 +36,8 @@ export default function ConditionalNavigation() {
     };
   }, [isClicked, timeoutId]);
 
-  // Don't show navigation on admin and owner pages
-  if (pathname.startsWith('/admin') || pathname.startsWith('/owner')) {
+  // Only show navigation on root path
+  if (pathname !== '/') {
     return null;
   }
 

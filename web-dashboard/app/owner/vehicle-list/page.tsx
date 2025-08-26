@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface Vehicle {
   id: string;
@@ -67,6 +68,7 @@ const mockVehicles: Vehicle[] = [
 ];
 
 export default function VehicleListPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRoute, setSelectedRoute] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -203,7 +205,7 @@ export default function VehicleListPage() {
         {/* Additional Action Buttons */}
         <div className="flex gap-2">
           <Button
-            onClick={clearFilters}
+            onClick={() => router.push('/owner/add-vehicle')}
             className="bg-[var(--bright-orange)] hover:bg-[var(--warm-yellow)] text-[var(--black)]"
           >
             <Plus className="w-4 h-4 mr-2" />

@@ -10,7 +10,6 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  FileText,
   Phone,
   User,
   CreditCard,
@@ -24,7 +23,10 @@ interface FormData {
   phoneNumber: string;
   licenseNo: string;
   assignedVehicle: string;
-  uploadedFiles: File[];
+  id_front?: File | null;
+  id_back?: File | null;
+  license_front?: File | null;
+  license_back?: File | null;
   backgroundVerificationStatus: "verified" | "pending" | "failed" | "not-started";
 }
 
@@ -33,7 +35,10 @@ interface FormErrors {
   phoneNumber?: string;
   licenseNo?: string;
   assignedVehicle?: string;
-  uploadedFiles?: string;
+  id_front?: string;
+  id_back?: string;
+  license_front?: string;
+  license_back?: string;
 }
 
 export default function AddDriverPage() {
@@ -42,14 +47,18 @@ export default function AddDriverPage() {
     phoneNumber: "",
     licenseNo: "",
     assignedVehicle: "",
-    uploadedFiles: [],
+    id_front: null,
+    id_back: null,
+    license_front: null,
+    license_back: null,
     backgroundVerificationStatus: "not-started",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [dragOverField, setDragOverField] = useState<string | null>(null);
 
   // Mock available vehicles
   const availableVehicles = [
@@ -92,10 +101,17 @@ export default function AddDriverPage() {
     }
 
     // File upload validation
-    if (formData.uploadedFiles.length === 0) {
-      newErrors.uploadedFiles = "License and ID proof documents are required";
-    } else if (formData.uploadedFiles.length < 2) {
-      newErrors.uploadedFiles = "Please upload both license and ID proof";
+    if (!formData.id_front) {
+      newErrors.id_front = "ID front picture is required";
+    }
+    if (!formData.id_back) {
+      newErrors.id_back = "ID back picture is required";
+    }
+    if (!formData.license_front) {
+      newErrors.license_front = "License front picture is required";
+    }
+    if (!formData.license_back) {
+      newErrors.license_back = "License back picture is required";
     }
 
     setErrors(newErrors);
@@ -110,52 +126,68 @@ export default function AddDriverPage() {
     }
   };
 
-  const handleFileUpload = (files: FileList | null) => {
-    if (!files) return;
+  const handleFileUpload = (field: keyof FormData, files: FileList | null) => {
+    if (!files || files.length === 0) return;
 
-    const newFiles = Array.from(files).filter((file) => {
-      // Only accept PDF, images
-      const allowedTypes = [
-        "application/pdf",
-        "image/jpeg",
-        "image/png",
-        "image/jpg",
-      ];
-      return allowedTypes.includes(file.type) && file.size <= 5 * 1024 * 1024; // 5MB limit
-    });
+    const file = files[0];
+    
+    // File type validation - only accept images for driver documents
+    const allowedTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      setErrors((prev) => ({ 
+        ...prev, 
+        [field]: 'Please upload a valid image or PDF file'
+      }));
+      return;
+    }
+    
+    // File size validation (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({ 
+        ...prev, 
+        [field]: 'File size must be less than 5MB'
+      }));
+      return;
+    }
 
     setFormData((prev) => ({
       ...prev,
-      uploadedFiles: [...prev.uploadedFiles, ...newFiles],
+      [field]: file,
     }));
 
     // Clear file upload error
-    if (errors.uploadedFiles) {
-      setErrors((prev) => ({ ...prev, uploadedFiles: undefined }));
+    if (errors[field as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
-  const removeFile = (index: number) => {
+  const removeFile = (field: keyof FormData) => {
     setFormData((prev) => ({
       ...prev,
-      uploadedFiles: prev.uploadedFiles.filter((_, i) => i !== index),
+      [field]: null,
     }));
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, field: string) => {
     e.preventDefault();
-    setIsDragOver(true);
+    setDragOverField(field);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(false);
+    setDragOverField(null);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent, field: keyof FormData) => {
     e.preventDefault();
-    setIsDragOver(false);
-    handleFileUpload(e.dataTransfer.files);
+    setDragOverField(null);
+    handleFileUpload(field, e.dataTransfer.files);
   };
 
   const startBackgroundVerification = () => {
@@ -171,6 +203,7 @@ export default function AddDriverPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     
     if (!validateForm()) {
       return;
@@ -179,8 +212,41 @@ export default function AddDriverPage() {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const formDataToSend = new FormData();
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("phoneNumber", formData.phoneNumber);
+      formDataToSend.append("licenseNo", formData.licenseNo);
+      formDataToSend.append("assignedVehicle", formData.assignedVehicle);
+      formDataToSend.append("backgroundVerificationStatus", formData.backgroundVerificationStatus);
+      
+      if (formData.id_front) formDataToSend.append("id_front", formData.id_front);
+      if (formData.id_back) formDataToSend.append("id_back", formData.id_back);
+      if (formData.license_front) formDataToSend.append("license_front", formData.license_front);
+      if (formData.license_back) formDataToSend.append("license_back", formData.license_back);
+
+      // API call
+      const token = typeof document !== 'undefined' ? document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1] : undefined;
+      const response = await fetch("http://localhost:3000/owner/add-driver", {
+        method: "POST",
+        body: formDataToSend,
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      
+      if (!response.ok) {
+        let msg = "Failed to add driver";
+        try {
+          const data = await response.json();
+          msg = data.message || JSON.stringify(data);
+        } catch {
+          // fallback to text
+          try {
+            msg = await response.text();
+          } catch {}
+        }
+        setErrorMessage(msg);
+        throw new Error(msg);
+      }
       
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 5000);
@@ -191,7 +257,10 @@ export default function AddDriverPage() {
         phoneNumber: "",
         licenseNo: "",
         assignedVehicle: "",
-        uploadedFiles: [],
+        id_front: null,
+        id_back: null,
+        license_front: null,
+        license_back: null,
         backgroundVerificationStatus: "not-started",
       });
     } catch (error) {
@@ -207,7 +276,10 @@ export default function AddDriverPage() {
       phoneNumber: "",
       licenseNo: "",
       assignedVehicle: "",
-      uploadedFiles: [],
+      id_front: null,
+      id_back: null,
+      license_front: null,
+      license_back: null,
       backgroundVerificationStatus: "not-started",
     });
     setErrors({});
@@ -255,6 +327,14 @@ export default function AddDriverPage() {
               <X className="w-4 h-4" />
             </button>
           </div>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="mb-4 flex items-center bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <AlertCircle className="w-5 h-5 mr-2" />
+          <span className="block sm:inline font-medium">{errorMessage}</span>
+          <button onClick={() => setErrorMessage(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3 text-red-700 hover:text-red-900 focus:outline-none">&times;</button>
         </div>
       )}
 
@@ -436,80 +516,110 @@ export default function AddDriverPage() {
               Upload License & ID Proof
             </CardTitle>
             <p className="text-sm text-gray-600">
-              Upload clear photos or scans of driving license and government ID
+              Upload clear photos or scans of driving license and government ID. You can click to select files or drag and drop them directly onto the upload areas.
             </p>
           </CardHeader>
           <CardContent>
-            {/* Drag & Drop Area */}
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-8 text-center bg-gray-50 transition-colors ${
-                isDragOver ? "border-blue-500 bg-blue-50" : "border-gray-300"
-              } ${errors.uploadedFiles ? "border-red-500 bg-red-50" : ""}`}
-            >
-              <Upload className="mx-auto w-12 h-12 text-gray-400 mb-4" />
-              <div className="space-y-2">
-                <p className="text-lg font-medium text-gray-700">
-                  Drag and drop documents here
-                </p>
-                <p className="text-sm text-gray-500">
-                  or{" "}
-                  <label className="text-blue-600 hover:text-blue-800 cursor-pointer underline">
-                    browse files
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => handleFileUpload(e.target.files)}
-                      className="hidden"
-                    />
-                  </label>
-                </p>
-                <p className="text-xs text-gray-600 flex items-center justify-center gap-1">
-                  <Info className="w-3 h-3" />
-                  Upload both driving license and ID proof (PDF, JPG, PNG - Max 5MB each)
-                </p>
+            {/* ID Front Picture */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">ID Front *</label>
+              <div 
+                className={`flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 transition-colors ${
+                  dragOverField === 'id_front' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+                }`}
+                onDragOver={(e) => handleDragOver(e, 'id_front')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'id_front')}
+              >
+                <label className="cursor-pointer flex items-center gap-2 text-[var(--bright-orange)] font-medium hover:underline">
+                  <Upload className="w-5 h-5" />
+                  {formData.id_front ? 'Change File' : 'Select File or Drag & Drop'}
+                  <input type="file" accept="image/*,application/pdf" onChange={e => handleFileUpload('id_front', e.target.files)} className="hidden" />
+                </label>
+                {formData.id_front && (
+                  <span className="text-sm text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 flex items-center gap-1">
+                    {formData.id_front.name}
+                    <button type="button" onClick={() => removeFile('id_front')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+                  </span>
+                )}
               </div>
+              {errors.id_front && <div className="mt-1 text-red-600 text-sm">{errors.id_front}</div>}
             </div>
-
-            {errors.uploadedFiles && (
-              <div className="mt-2 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
-                <AlertCircle className="w-4 h-4" />
-                <span>{errors.uploadedFiles}</span>
+            {/* ID Back Picture */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">ID Back *</label>
+              <div 
+                className={`flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 transition-colors ${
+                  dragOverField === 'id_back' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+                }`}
+                onDragOver={(e) => handleDragOver(e, 'id_back')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'id_back')}
+              >
+                <label className="cursor-pointer flex items-center gap-2 text-[var(--bright-orange)] font-medium hover:underline">
+                  <Upload className="w-5 h-5" />
+                  {formData.id_back ? 'Change File' : 'Select File or Drag & Drop'}
+                  <input type="file" accept="image/*,application/pdf" onChange={e => handleFileUpload('id_back', e.target.files)} className="hidden" />
+                </label>
+                {formData.id_back && (
+                  <span className="text-sm text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 flex items-center gap-1">
+                    {formData.id_back.name}
+                    <button type="button" onClick={() => removeFile('id_back')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+                  </span>
+                )}
               </div>
-            )}
-
-            {/* Uploaded Files List */}
-            {formData.uploadedFiles.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <h4 className="text-sm font-medium text-gray-700">Uploaded Documents:</h4>
-                {formData.uploadedFiles.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <FileText className="w-5 h-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">{file.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {(file.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+              {errors.id_back && <div className="mt-1 text-red-600 text-sm">{errors.id_back}</div>}
+            </div>
+            {/* License Front Picture */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">License Front *</label>
+              <div 
+                className={`flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 transition-colors ${
+                  dragOverField === 'license_front' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+                }`}
+                onDragOver={(e) => handleDragOver(e, 'license_front')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'license_front')}
+              >
+                <label className="cursor-pointer flex items-center gap-2 text-[var(--bright-orange)] font-medium hover:underline">
+                  <Upload className="w-5 h-5" />
+                  {formData.license_front ? 'Change File' : 'Select File or Drag & Drop'}
+                  <input type="file" accept="image/*,application/pdf" onChange={e => handleFileUpload('license_front', e.target.files)} className="hidden" />
+                </label>
+                {formData.license_front && (
+                  <span className="text-sm text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 flex items-center gap-1">
+                    {formData.license_front.name}
+                    <button type="button" onClick={() => removeFile('license_front')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+                  </span>
+                )}
               </div>
-            )}
+              {errors.license_front && <div className="mt-1 text-red-600 text-sm">{errors.license_front}</div>}
+            </div>
+            {/* License Back Picture */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">License Back *</label>
+              <div 
+                className={`flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 transition-colors ${
+                  dragOverField === 'license_back' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+                }`}
+                onDragOver={(e) => handleDragOver(e, 'license_back')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'license_back')}
+              >
+                <label className="cursor-pointer flex items-center gap-2 text-[var(--bright-orange)] font-medium hover:underline">
+                  <Upload className="w-5 h-5" />
+                  {formData.license_back ? 'Change File' : 'Select File or Drag & Drop'}
+                  <input type="file" accept="image/*,application/pdf" onChange={e => handleFileUpload('license_back', e.target.files)} className="hidden" />
+                </label>
+                {formData.license_back && (
+                  <span className="text-sm text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 flex items-center gap-1">
+                    {formData.license_back.name}
+                    <button type="button" onClick={() => removeFile('license_back')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+                  </span>
+                )}
+              </div>
+              {errors.license_back && <div className="mt-1 text-red-600 text-sm">{errors.license_back}</div>}
+            </div>
           </CardContent>
         </Card>
 
@@ -528,7 +638,7 @@ export default function AddDriverPage() {
             disabled={isSubmitting}
             className="bg-orange-500 hover:bg-orange-600 text-black font-medium"
           >
-            {isSubmitting ? "Adding Driver..." : "Submit"}
+            {isSubmitting ? "Adding Driver..." : "Add Driver"}
           </Button>
         </div>
       </form>
