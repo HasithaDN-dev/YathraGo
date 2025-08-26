@@ -10,8 +10,8 @@ interface FormData {
   type: string;
   brand: string;
   model: string;
-  registrationNumber: string;
-  route: string[];
+  startingCity: string;
+  endingCity: string;
   no_of_seats: string;
   seatingCapacity: string;
   insuranceExpiry: string;
@@ -33,8 +33,8 @@ interface FormErrors {
   type?: string;
   brand?: string;
   model?: string;
-  registrationNumber?: string;
-  route?: string;
+  startingCity?: string;
+  endingCity?: string;
   no_of_seats?: string;
   seatingCapacity?: string;
   insuranceExpiry?: string;
@@ -57,8 +57,8 @@ export default function AddVehiclePage() {
     type: "",
     brand: "",
     model: "",
-    registrationNumber: "",
-    route: [],
+    startingCity: "",
+    endingCity: "",
     no_of_seats: "",
     seatingCapacity: "",
     insuranceExpiry: "",
@@ -114,9 +114,14 @@ export default function AddVehiclePage() {
       newErrors.model = "Model is required";
     }
 
-    // Registration Number validation
-    if (!formData.registrationNumber.trim()) {
-      newErrors.registrationNumber = "Registration number is required";
+    // Starting City validation
+    if (!formData.startingCity.trim()) {
+      newErrors.startingCity = "Starting city is required";
+    }
+
+    // Ending City validation
+    if (!formData.endingCity.trim()) {
+      newErrors.endingCity = "Ending city is required";
     }
 
     // Insurance Expiry validation
@@ -161,9 +166,7 @@ export default function AddVehiclePage() {
   };
 
   const handleInputChange = (field: keyof FormData, value: string | boolean | string[]) => {
-    if (field === 'route') {
-      setFormData((prev) => ({ ...prev, route: Array.isArray(value) ? value : [value as string] }));
-    } else if (field === 'air_conditioned' || field === 'assistant') {
+    if (field === 'air_conditioned' || field === 'assistant') {
       setFormData((prev) => ({ ...prev, [field]: value === 'true' || value === true }));
     } else {
       setFormData((prev) => ({ ...prev, [field]: value }));
@@ -247,8 +250,8 @@ export default function AddVehiclePage() {
       formDataToSend.append("type", formData.type);
       formDataToSend.append("brand", formData.brand);
       formDataToSend.append("model", formData.model);
-      formDataToSend.append("registrationNumber", formData.registrationNumber);
-      formDataToSend.append("route", JSON.stringify(formData.route));
+      formDataToSend.append("startingCity", formData.startingCity);
+      formDataToSend.append("endingCity", formData.endingCity);
       formDataToSend.append("no_of_seats", formData.no_of_seats);
       formDataToSend.append("air_conditioned", String(formData.air_conditioned));
       formDataToSend.append("assistant", String(formData.assistant));
@@ -292,8 +295,8 @@ export default function AddVehiclePage() {
         type: "",
         brand: "",
         model: "",
-        registrationNumber: "",
-        route: [],
+        startingCity: "",
+        endingCity: "",
         no_of_seats: "",
         seatingCapacity: "",
         insuranceExpiry: "",
@@ -322,8 +325,8 @@ export default function AddVehiclePage() {
       type: "",
       brand: "",
       model: "",
-      registrationNumber: "",
-      route: [],
+      startingCity: "",
+      endingCity: "",
       no_of_seats: "",
       seatingCapacity: "",
       insuranceExpiry: "",
@@ -469,52 +472,59 @@ export default function AddVehiclePage() {
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Registration Number */}
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
-                  Registration Number *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., ABC-123"
-                  value={formData.registrationNumber}
-                  onChange={(e) => handleInputChange("registrationNumber", e.target.value.toUpperCase())}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.registrationNumber ? "border-red-500 bg-red-50" : "border-gray-400"
-                  }`}
-                />
-                {errors.registrationNumber && (
-                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>{errors.registrationNumber}</span>
-                  </div>
-                )}
+            {/* Route Section */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold text-[var(--color-deep-navy)] mb-4">Route Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Starting City */}
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
+                    Starting City *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Colombo"
+                    value={formData.startingCity}
+                    onChange={(e) => handleInputChange("startingCity", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.startingCity ? "border-red-500 bg-red-50" : "border-gray-400"
+                    }`}
+                  />
+                  {errors.startingCity && (
+                    <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>{errors.startingCity}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Ending City */}
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
+                    Ending City *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Kandy"
+                    value={formData.endingCity}
+                    onChange={(e) => handleInputChange("endingCity", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.endingCity ? "border-red-500 bg-red-50" : "border-gray-400"
+                    }`}
+                  />
+                  {errors.endingCity && (
+                    <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>{errors.endingCity}</span>
+                    </div>
+                  )}
+                </div>
               </div>
+            </div>
 
-              {/* Route */}
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
-                  Route *
-                </label>
-                <select
-                  value={formData.route[0] || ""}
-                  onChange={(e) => handleInputChange("route", [e.target.value])}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Select a route</option>
-                  <option value="Route A">Route A</option>
-                  <option value="Route B">Route B</option>
-                  <option value="Route C">Route C</option>
-                </select>
-                {errors.route && (
-                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>{errors.route}</span>
-                  </div>
-                )}
-              </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Seating Capacity */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

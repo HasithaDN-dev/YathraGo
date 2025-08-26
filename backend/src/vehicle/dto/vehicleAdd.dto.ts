@@ -25,16 +25,15 @@ export class CreateVehicleDto {
 
   @IsString()
   @IsNotEmpty()
-  registrationNumber: string;
+  color: string;
 
   @IsString()
   @IsNotEmpty()
-  color: string;
+  startingCity: string;
 
-  @IsArray()
-  @IsString({ each: true })
+  @IsString()
   @IsNotEmpty()
-  route: string[];
+  endingCity: string;
 
   @IsInt()
   @IsNotEmpty()
