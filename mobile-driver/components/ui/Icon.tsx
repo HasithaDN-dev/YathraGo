@@ -1,28 +1,57 @@
-import React from "react";
-import * as PhosphorIcons from "phosphor-react-native";
-import { IconProps as PhosphorIconProps } from "phosphor-react-native";
+import React from 'react';
+import {
+  ArrowLeft,
+  Camera,
+  User,
+  Receipt,
+  ChartLineUp,
+  Car,
+  Headset,
+  Info,
+  SignOut,
+  ArrowRight,
+  X,
+  Users,
+  UsersFour,
+  Wind,
+  CarProfile,
+} from 'phosphor-react-native';
 
-export type IconName = keyof typeof PhosphorIcons;
+const iconMap = {
+  ArrowLeft,
+  Camera,
+  User,
+  Receipt,
+  ChartLineUp,
+  Car,
+  Headset,
+  Info,
+  SignOut,
+  ArrowRight,
+  X,
+  Users,
+  UsersFour,
+  Wind,
+  CarProfile,
+};
 
-export interface IconProps extends PhosphorIconProps {
+export type IconName = keyof typeof iconMap;
+
+interface IconProps {
   name: IconName;
+  size?: number;
+  color?: string;
+  weight?: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
 }
 
-export const Icon = ({ name, ...props }: IconProps) => {
-  const PhosphorIcon = PhosphorIcons[name];
+export function Icon({ name, size = 24, color = 'black', weight = 'regular' }: IconProps) {
+  // @ts-ignore
+  const IconComponent = iconMap[name];
 
-  // Runtime check to ensure we have a renderable component.
-  // React components (both functional and class-based) are functions,
-  // but other exports like `IconContext` are objects.
-  if (typeof PhosphorIcon !== 'function') {
-    // Don't warn for IconContext, as it's a valid export we just don't render it here.
-    if (name !== 'IconContext') {
-      console.warn(`Icon with name "${name}" does not exist or is not a valid component.`);
-    }
+  if (!IconComponent) {
     return null;
   }
 
-  // Use React.createElement for dynamically creating an element from a component.
-  // This is safer with TypeScript for dynamic component types.
-  return React.createElement(PhosphorIcon as React.ComponentType<PhosphorIconProps>, props);
-};
+  // @ts-ignore
+  return <IconComponent size={size} color={color} weight={weight} />;
+}

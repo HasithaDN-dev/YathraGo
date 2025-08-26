@@ -12,6 +12,7 @@ import {
   LogOut,
   List,
 } from "lucide-react";
+import { useRouter } from 'next/navigation';
 
 interface MenuItem {
   icon: React.ElementType;
@@ -22,6 +23,14 @@ interface MenuItem {
 
 export default function OwnerSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    // Remove access_token cookie
+    document.cookie = 'access_token=; Max-Age=0; path=/;';
+    // Optionally clear other cookies or localStorage if used
+    router.push('/login');
+  };
 
   const menuItems: MenuItem[] = [
     {
@@ -91,10 +100,7 @@ export default function OwnerSidebar() {
       <div className="p-4 border-t border-[var(--light-navy)]">
         <button
           className="flex items-center w-full px-2 py-3 text-sm font-medium text-white hover:bg-[var(--light-navy)] rounded-lg transition-colors duration-200"
-          onClick={() => {
-            // Handle logout
-            console.log("Logout clicked");
-          }}
+          onClick={handleLogout}
         >
           <LogOut className="w-5 h-5 mr-3" />
           Logout

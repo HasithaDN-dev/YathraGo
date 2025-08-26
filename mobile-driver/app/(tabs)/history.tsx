@@ -1,122 +1,144 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { router } from 'expo-router';
+import {
+  ArrowLeft,
+  MapPin,
+  User,
+  Car,
+  CheckCircle,
+  XCircle,
+} from 'phosphor-react-native';
 
-// Sample history data - replace with actual data from your API
 const historyData = [
   {
     id: 1,
-    date: '2025-01-12',
-    time: '10:30 AM',
-    pickup: 'Colombo Fort Railway Station',
-    dropoff: 'Bandaranaike International Airport',
-    distance: '32.5 km',
-    duration: '45 min',
-    fare: 'Rs. 2,500',
-    status: 'completed',
+    startTime: '7:10 AM',
+    endTime: '8:20 AM',
+    duration: '1 hr 10 m',
+    startLocation: 'Piliyandala Arpico',
+    endLocation: 'Town Hall',
+    passengers: '14/15',
+    licensePlate: 'YGT-25600',
+    vehicleType: 'WP 6783',
+    status: 'Completed',
   },
   {
     id: 2,
-    date: '2025-01-11',
-    time: '3:15 PM',
-    pickup: 'Galle Face Green',
-    dropoff: 'Independence Square',
-    distance: '8.2 km',
-    duration: '25 min',
-    fare: 'Rs. 850',
-    status: 'completed',
+    startTime: '7:10 AM',
+    endTime: '8:20 AM',
+    duration: '1 hr 10 m',
+    startLocation: 'Piliyandala Arpico',
+    endLocation: 'Town Hall',
+    passengers: '14/15',
+    licensePlate: 'YGT-25600',
+    vehicleType: 'WP 6783',
+    status: 'Completed',
   },
   {
     id: 3,
-    date: '2025-01-11',
-    time: '9:45 AM',
-    pickup: 'Kandy City Center',
-    dropoff: 'Temple of Tooth',
-    distance: '3.1 km',
-    duration: '12 min',
-    fare: 'Rs. 450',
-    status: 'completed',
+    startTime: '7:10 AM',
+    endTime: '8:20 AM',
+    duration: '1 hr 10 m',
+    startLocation: 'Piliyandala Arpico',
+    endLocation: 'Town Hall',
+    passengers: '14/15',
+    licensePlate: 'YGT-25600',
+    vehicleType: 'WP 6783',
+    status: 'Cancelled',
   },
 ];
 
+const StatusBadge = ({ status }: { status: string }) => {
+  const isCompleted = status === 'Completed';
+  return (
+    <View
+      className={`px-3 py-1 rounded-full ${
+        isCompleted ? 'bg-green-100' : 'bg-red-100'
+      }`}
+    >
+      <Text
+        className={`text-xs font-medium ${
+          isCompleted ? 'text-green-700' : 'text-red-700'
+        }`}
+      >
+        {status}
+      </Text>
+    </View>
+  );
+};
+
 export default function HistoryScreen() {
   const renderHistoryItem = (item: typeof historyData[0]) => (
-    <TouchableOpacity
-      key={item.id}
-      className="bg-white rounded-lg p-4 mb-3 border border-gray-200"
-    >
-      <View className="flex-row justify-between items-start mb-2">
-        <View className="flex-1">
-          <Text className="text-lg font-semibold text-gray-800">
-            Trip #{item.id}
+    <View key={item.id} className="bg-white rounded-2xl p-4 mb-4 shadow-sm">
+      <View className="flex-row justify-between items-center mb-4">
+        <Text className="text-gray-500">Today</Text>
+        <StatusBadge status={item.status} />
+      </View>
+
+      <View className="flex-row items-center justify-between mb-4">
+        <Text className="text-xl font-bold text-gray-800">{item.startTime}</Text>
+        <View className="flex-row items-center">
+          <View className="h-px flex-1 bg-gray-300" />
+          <Text className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full mx-2">
+            {item.duration}
           </Text>
-          <Text className="text-sm text-gray-500">
-            {item.date} • {item.time}
-          </Text>
+          <View className="h-px flex-1 bg-gray-300" />
         </View>
-        <View className="bg-brand-successBg px-3 py-1 rounded-full">
-          <Text className="text-green-700 text-xs font-medium capitalize">
-            {item.status}
-          </Text>
+        <Text className="text-xl font-bold text-gray-800">{item.endTime}</Text>
+      </View>
+
+      <View className="flex-row justify-between mb-4">
+        <View className="flex-row items-center">
+          <MapPin size={16} color="#4B5563" />
+          <Text className="ml-2 text-sm text-gray-600">{item.startLocation}</Text>
+        </View>
+        <View className="flex-row items-center">
+          <MapPin size={16} color="#4B5563" />
+          <Text className="ml-2 text-sm text-gray-600">{item.endLocation}</Text>
         </View>
       </View>
 
-      <View className="space-y-2">
-        <View className="flex-row">
-          <View className="w-3 h-3 bg-brand-deepNavy rounded-full mt-1 mr-3" />
-          <View className="flex-1">
-            <Text className="text-sm text-gray-600">Pickup</Text>
-            <Text className="text-base text-gray-800">{item.pickup}</Text>
+      <View className="flex-row justify-between items-center border-t border-gray-100 pt-4">
+        <View className="flex-row items-center space-x-4">
+          <View className="flex-row items-center">
+            <User size={16} color="#4B5563" />
+            <Text className="ml-2 text-sm text-gray-800">{item.passengers}</Text>
+          </View>
+          <View className="flex-row items-center">
+            <Text className="text-sm text-gray-500">{item.licensePlate}</Text>
           </View>
         </View>
-
-        <View className="flex-row">
-          <View className="w-3 h-3 bg-red-500 rounded-full mt-1 mr-3" />
-          <View className="flex-1">
-            <Text className="text-sm text-gray-600">Drop-off</Text>
-            <Text className="text-base text-gray-800">{item.dropoff}</Text>
+        <View className="flex-row items-center bg-gray-100 px-2 py-1 rounded-md">
+          <Car size={16} color="#4B5563" />
+          <Text className="ml-2 text-sm text-gray-800 font-semibold">{item.vehicleType}</Text>
+          <View className="bg-yellow-200 ml-2 px-2 rounded-sm">
+            <Text className="text-yellow-800 text-xs font-bold">Owned</Text>
           </View>
         </View>
       </View>
-
-      <View className="flex-row justify-between items-center mt-3 pt-3 border-t border-gray-100">
-        <View className="flex-row space-x-4">
-          <Text className="text-sm text-gray-600">
-            {item.distance} • {item.duration}
-          </Text>
-        </View>
-        <Text className="text-lg font-bold text-green-600">
-          {item.fare}
-        </Text>
-      </View>
-    </TouchableOpacity>
+    </View>
   );
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <StatusBar style="dark" />
-      
-      {/* Header */}
-      <View className="bg-white px-6 pt-12 pb-4 border-b border-gray-200">
-        <Text className="text-2xl font-bold text-gray-800">Trip History</Text>
-        <Text className="text-sm text-gray-600 mt-1">
-          Your completed rides
-        </Text>
+    <View className="flex-1 bg-[#F0F2F5]">
+      <StatusBar style="light" />
+      <View className="bg-[#1E3A8A] pt-12 pb-6 px-4 rounded-b-3xl">
+        <View className="flex-row items-center">
+          <TouchableOpacity onPress={() => router.back()} className="p-2">
+            <ArrowLeft size={24} color="white" />
+          </TouchableOpacity>
+          <View className="flex-1 items-center">
+            <Text className="text-white text-xl font-bold">Trip History</Text>
+            <Text className="text-gray-300 text-sm">Jun 26, 2025</Text>
+          </View>
+          <View className="w-10" />
+        </View>
       </View>
 
-      {/* History List */}
-      <ScrollView className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1 px-4 py-4" showsVerticalScrollIndicator={false}>
         {historyData.map((item) => renderHistoryItem(item))}
-        
-        {/* Empty state - uncomment if no history */}
-        {/* 
-        <View className="flex-1 items-center justify-center py-20">
-          <Text className="text-gray-500 text-lg mb-2">No trips yet</Text>
-          <Text className="text-gray-400 text-center">
-            Your completed rides will appear here
-          </Text>
-        </View>
-        */}
       </ScrollView>
     </View>
   );

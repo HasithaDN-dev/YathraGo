@@ -10,6 +10,8 @@ export default function RegistrationTypeScreen() {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState<'staff' | 'child' | null>(null);
 
+  console.log('RegistrationTypeScreen: Component rendered');
+
   const handleContinue = () => {
     if (!selectedType) {
       Alert.alert('Selection Required', 'Please select a registration type to continue.');
@@ -24,8 +26,8 @@ export default function RegistrationTypeScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: '#F9FAFB' }}>
-      <View className="flex-1 px-6 py-8">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: 'white' }}>
+      <View className="flex-1 px-6 py-8 bg-white">
         <FormHeader
           title="Registration"
           subtitle="Choose your registration type to get started"
@@ -93,7 +95,7 @@ export default function RegistrationTypeScreen() {
           {/* Child Registration Option */}
           <TouchableOpacity
             onPress={() => setSelectedType('child')}
-            className={`p-6 rounded-xl border-2 bg-white ${
+            className={`p-6 rounded-xl border-2 bg-white mt-10 ${
               selectedType === 'child'
                 ? 'border-blue-600'
                 : 'border-gray-200'

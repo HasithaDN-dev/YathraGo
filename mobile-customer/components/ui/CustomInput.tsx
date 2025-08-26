@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, TextInput, TextInputProps } from 'react-native';
+import { Typography } from '../Typography';
 
 interface CustomInputProps extends TextInputProps {
   label: string;
   required?: boolean;
   error?: string;
+  variant?: any;
 }
 
 export function CustomInput({ 
@@ -12,16 +14,14 @@ export function CustomInput({
   required = false, 
   error, 
   className = '',
+  variant = 'footnote',
   ...props 
 }: CustomInputProps) {
   return (
     <View className="mb-4">
-      <Text 
-        className="text-sm font-medium text-gray-700 mb-2"
-        style={{ fontFamily: 'Figtree-Medium' }}
-      >
-        {label} {required && <Text className="text-red-500">*</Text>}
-      </Text>
+      <Typography variant={variant} className="mb-2 font-medium">
+        {label} {required && <Text style={{ color: '#ef4444' }}>*</Text>}
+      </Typography>
       <TextInput
         className={`border border-gray-300 rounded-lg px-4 py-3 text-base bg-white ${
           error ? 'border-red-500' : 'border-gray-300'
@@ -35,7 +35,7 @@ export function CustomInput({
         {...props}
       />
       {error && (
-        <Text 
+        <Text
           className="text-red-500 text-sm mt-1"
           style={{ fontFamily: 'Figtree-Regular' }}
         >

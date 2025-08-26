@@ -31,9 +31,10 @@ export class VehicleController {
 
   //fetching vehicles by owner id
   @UseGuards(JwtGuard, RolesGuard)
-  @Get('owner/vehicles')
   @Roles('owner')
+  @Get('vehicles')
   async getVehicles(@User() user: Webuser): Promise<VehicleResponseDto[]> {
+    //console.log(user);
     return this.vehicleService.getVehicles(user.id);
   }
 
@@ -71,6 +72,20 @@ export class VehicleController {
     @User() user: Webuser,
     @Body() vehicleDto: any,
   ): Promise<any> {
+    // Debug logging
+    console.log('--- Add Vehicle Debug ---');
+    console.log('User:', user);
+    console.log('Body:', vehicleDto);
+    console.log(
+      'Files:',
+      Object.keys(files).reduce(
+        (acc, key) => ({
+          ...acc,
+          [key]: files[key]?.map((f) => f.originalname),
+        }),
+        {},
+      ),
+    );
     // Parse and convert types
     const parsedVehicleDto = {
       ...vehicleDto,

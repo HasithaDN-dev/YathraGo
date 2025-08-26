@@ -1,47 +1,26 @@
+
 import React, { useState } from 'react';
-import { View, ScrollView, Alert } from 'react-native';
-import { router } from 'expo-router';
+import { View, Alert, ScrollView } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedView } from '../../components/ThemedView';
-import { ThemedText } from '../../components/ThemedText';
 import { CustomInput } from '../../components/ui/CustomInput';
 import { ButtonComponent } from '../../components/ui/ButtonComponent';
-import { ApiService } from '../../services/api';
-import { useAuth } from '../../hooks/useAuth';
-import { StaffPassengerRegistration } from '../../types/registration.types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Typography } from '../../components/Typography';
+import { registerStaffApi } from '../../lib/api/profile.api';
+import { useAuthStore } from '../../lib/stores/auth.store';
+import { StaffProfileData } from '../../types/customer.types';
+import { Colors } from '@/constants/Colors'; // Ensure this import is correct
 
 export default function StaffPassengerScreen() {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<StaffPassengerRegistration>>({
-    customerId: 0,
-    nearbyCity: '',
-    workLocation: '',
-    workAddress: '',
-    pickUpLocation: '',
-    pickupAddress: '',
-  });
-  const { refreshProfile } = useAuth();
+  const [formData, setFormData] = useState<Partial<StaffProfileData>>({});
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const isAddMode = mode === 'add';
+  
+  // Get the accessToken and the action to complete the profile from the global store.
+  const { accessToken, setProfileComplete } = useAuthStore();
 
-  // Load customer ID from stored user data on component mount
-  React.useEffect(() => {
-    const loadCustomerId = async () => {
-      try {
-        const storedUser = await ApiService.getStoredCustomer();
-        if (storedUser?.id) {
-          setFormData(prev => ({
-            ...prev,
-            customerId: storedUser.id
-          }));
-        }
-      } catch (error) {
-        console.error('Error loading customer ID:', error);
-      }
-    };
-    loadCustomerId();
-  }, []);
-
-  const handleInputChange = (field: keyof StaffPassengerRegistration, value: string) => {
+  const handleInputChange = (field: keyof StaffProfileData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -49,12 +28,8 @@ export default function StaffPassengerScreen() {
   };
 
   const validateForm = (): boolean => {
-    if (!formData.customerId || formData.customerId === 0) {
-      Alert.alert('Error', 'Customer ID not found. Please log in again.');
-      return false;
-    }
 
-    const requiredFields: (keyof StaffPassengerRegistration)[] = [
+    const requiredFields: (keyof StaffProfileData)[] = [
       'nearbyCity',
       'workLocation',
       'workAddress',
@@ -74,85 +49,82 @@ export default function StaffPassengerScreen() {
   };
 
   const handleRegister = async () => {
-    if (!validateForm()) return;
-
-    const token = await ApiService.getStoredToken();
-    if (!token) {
-      Alert.alert('Error', 'Authentication token not found');
+    if (!validateForm() || !accessToken) {
+      Alert.alert('Error', 'Form is invalid or you are not logged in.');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await ApiService.registerStaffPassenger(token, formData as StaffPassengerRegistration);
+      console.log('Staff registration: Starting API call...');
+      // 1. Call the final registration API function.
+      const result = await registerStaffApi(accessToken, formData as StaffProfileData);
+      console.log('Staff registration: API call successful:', result);
+      
+      // 2. **CRITICAL STEP**: Update the global state to mark the profile as complete.
+      if (!isAddMode) {
+        setProfileComplete(true);
+        console.log('Staff registration: Profile marked as complete');
+      }
 
-      if (response.success) {
-        Alert.alert(
-          'Success',
-          'Staff passenger registration completed successfully!',
-          [
-            {
-              text: 'Go to Dashboard',
-              onPress: async () => {
-                // Refresh authentication/profile state before navigating
-                try {
-                  await AsyncStorage.setItem('isRegistered', 'true');
-                  await refreshProfile();
-                } catch (e) {
-                  // If refreshProfile fails, continue navigation
-                }
-                setTimeout(() => {
-                  router.replace('/(tabs)');
-                }, 100);
-              }
-            }
-          ]
-        );
-} else {
-  Alert.alert('Error', response.message || 'Registration failed');
-}
-    } catch (error: any) {
-  console.error('Staff registration error:', error);
-  Alert.alert('Error', error.message || 'Registration failed');
-} finally {
-  setLoading(false);
-}
+      // 3. Navigate based on mode
+      if (isAddMode) {
+        Alert.alert('Success', 'Staff profile added successfully!');
+        router.back(); // Go back to add profile screen
+      } else {
+        Alert.alert('Success', 'Staff passenger registration completed successfully!');
+        // The `app/(app)/_layout.tsx` guard will automatically navigate to main app
+      }
+
+    } catch (error) {
+      console.error('Staff registration error:', error);
+      let message = 'Registration failed.';
+      
+      if (error instanceof Error) {
+        message = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        // Handle error objects
+        if ('message' in error && typeof error.message === 'string') {
+          message = error.message;
+        } else {
+          message = JSON.stringify(error);
+        }
+      } else if (typeof error === 'string') {
+        message = error;
+      }
+      
+      Alert.alert('Error', message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-const handleBack = () => {
-  router.back();
-};
+  const handleBack = () => {
+    router.back();
+  };
 
 return (
-  <SafeAreaView style={{ flex: 1 }}>
-    <ThemedView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+  <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+    <View className="flex-1 bg-white">
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, padding: 24 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
         <View style={{ marginBottom: 32 }}>
-          <ThemedText
-            style={{
-              fontSize: 28,
-              fontWeight: 'bold',
-              color: '#1e293b',
-              textAlign: 'center',
-              marginBottom: 8
-            }}
+          <Typography
+            variant="large-title"
+            weight="bold"
+            className="text-brand-deepNavy text-center mb-2"
           >
-            Staff Passenger Registration
-          </ThemedText>
-          <ThemedText
-            style={{
-              fontSize: 16,
-              color: '#64748b',
-              textAlign: 'center',
-              lineHeight: 24
-            }}
+            {isAddMode ? 'Add Staff Profile' : 'Staff Passenger Registration'}
+          </Typography>
+          <Typography
+            variant="body"
+            className="text-brand-neutralGray text-center"
           >
             Please provide your work and pickup details
-          </ThemedText>
+          </Typography>
         </View>
 
         {/* Form */}
@@ -205,7 +177,7 @@ return (
         {/* Action Buttons */}
         <View style={{ gap: 12 }}>
           <ButtonComponent
-            title="Complete Registration"
+            title={isAddMode ? "Add Staff Profile" : "Complete Registration"}
             onPress={handleRegister}
             loading={loading}
             variant="primary"
@@ -229,16 +201,16 @@ return (
           borderLeftColor: '#3b82f6',
           marginTop: 20
         }}>
-          <ThemedText style={{
-            fontSize: 14,
-            color: '#475569',
-            lineHeight: 20
-          }}>
+          <Typography
+            variant="footnote"
+            className="text-slate-600"
+          >
             After completing this registration, you will be able to access staff passenger features and book rides to your work location.
-          </ThemedText>
+          </Typography>
         </View>
       </ScrollView>
-    </ThemedView>
+    </View>
   </SafeAreaView>
 );
 }
+

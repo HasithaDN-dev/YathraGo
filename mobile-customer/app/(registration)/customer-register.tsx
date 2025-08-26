@@ -1,75 +1,79 @@
+import * as ImagePicker from 'expo-image-picker';
+import { uploadCustomerProfileImageApi, completeCustomerProfileApi } from '../../lib/api/profile.api';
+// ...existing code...
 import React, { useState } from 'react';
-import { View, Alert, ScrollView } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import { View, Alert, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedView } from '../../components/ThemedView';
-import { ThemedText } from '../../components/ThemedText';
 import { ButtonComponent } from '../../components/ui/ButtonComponent';
 import { CustomInput } from '../../components/ui/CustomInput';
-import { ApiService } from '../../services/api';
-import { CustomerRegistration } from '../../types/registration.types';
+import { Typography } from '../../components/Typography';
+import { useAuthStore } from '../../lib/stores/auth.store';
+import { CustomerProfileData } from '../../types/customer.types';
+import { Colors } from '@/constants/Colors'; // Ensure this import is correct
 
 export default function CustomerRegisterScreen() {
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  // Pick or take a profile image, only save URI, do not upload here
+  const handlePickProfileImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== 'granted') {
+      Alert.alert('Permission Denied', 'We need media library permissions to select a profile image.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const asset = result.assets[0];
+      setProfileImage(asset.uri);
+      // Do NOT upload here
+    }
+  };
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<CustomerRegistration>>({
-    customerId: 0,
-    name: '',
-    email: '',
-    address: '',
-    profileImageUrl: '',
-    emergencyContact: '',
-  });
+  const [formData, setFormData] = useState<Partial<CustomerProfileData>>({ gender: 'Unspecified' });
 
-  // Format phone number function
-  const formatPhoneNumber = (text: string) => {
-    // Remove all non-digit characters
-    const cleaned = text.replace(/\D/g, '');
+  // Get the accessToken from our global auth store
+  const { accessToken, user } = useAuthStore();
+  // // Debug: log accessToken to verify it's set
+  // console.log('RegisterScreen accessToken:', accessToken);
 
-    // If starts with '0', replace with '94'
-    if (cleaned.startsWith('0')) {
-      const mobileNumber = cleaned.slice(1); // Remove leading '0'
-      return '+94' + mobileNumber;
+  // Accept/display as 0xxxxxxxxx, validate as 9/10 digits, convert to +94xxxxxxxxx for API
+  const handleEmergencyContactChange = (value: string) => {
+    // Remove all non-digits and limit to 10 digits
+    const cleaned = value.replace(/\D/g, '').substring(0, 10);
+    setFormData(prev => ({
+      ...prev,
+      emergencyContact: cleaned
+    }));
+  };
+
+  const validatePhoneNumber = (phone: string) => {
+    // Accept 9 digits (without leading 0) or 10 digits (with leading 0)
+    const phone9Digits = /^[1-9][0-9]{8}$/;
+    const phone10Digits = /^0[1-9][0-9]{8}$/;
+    return phone9Digits.test(phone) || phone10Digits.test(phone);
+  };
+
+  const convertToApiFormat = (phone: string) => {
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 10 && cleaned.startsWith('0')) {
+      return '+94' + cleaned.substring(1);
     }
-
-    // If starts with '94', assume it's already in international format
-    if (cleaned.startsWith('94')) {
-      return '+' + cleaned.slice(0, 11); // Keep only first 11 digits
-    }
-
-    // Fallback: If digits are present but no prefix, assume it's local
     if (cleaned.length === 9) {
       return '+94' + cleaned;
     }
-
-    return text; // Return original if unprocessable
+    return '+94' + cleaned;
   };
 
-  // Load customer ID from stored user data on component mount
-  React.useEffect(() => {
-    const loadCustomerId = async () => {
-      try {
-        const storedUser = await ApiService.getStoredCustomer();
-        if (storedUser?.id) {
-          setFormData(prev => ({
-            ...prev,
-            customerId: storedUser.id
-          }));
-        }
-      } catch (error) {
-        console.error('Error loading customer ID:', error);
-      }
-    };
-    loadCustomerId();
-  }, []);
-
-  const handleInputChange = (field: keyof CustomerRegistration, value: string) => {
+  const handleInputChange = (field: keyof CustomerProfileData, value: string) => {
     if (field === 'emergencyContact') {
-      // Format phone number for emergency contact
-      const formattedValue = formatPhoneNumber(value);
-      setFormData(prev => ({
-        ...prev,
-        [field]: formattedValue
-      }));
+      handleEmergencyContactChange(value);
     } else {
       setFormData(prev => ({
         ...prev,
@@ -79,12 +83,13 @@ export default function CustomerRegisterScreen() {
   };
 
   const validateForm = (): boolean => {
-    if (!formData.customerId || formData.customerId === 0) {
-      Alert.alert('Error', 'Customer ID not found. Please log in again.');
+    // Basic validation checks
+    if (!formData.firstName?.trim()) {
+      Alert.alert('Error', 'First name is required');
       return false;
     }
-    if (!formData.name?.trim()) {
-      Alert.alert('Error', 'Name is required');
+    if (!formData.lastName?.trim()) {
+      Alert.alert('Error', 'Last name is required');
       return false;
     }
     if (!formData.email?.trim()) {
@@ -99,11 +104,8 @@ export default function CustomerRegisterScreen() {
       Alert.alert('Error', 'Emergency contact is required');
       return false;
     }
-
-    // Validate emergency contact phone number format
-    const phoneRegex = /^\+94[0-9]{9}$/;
-    if (!phoneRegex.test(formData.emergencyContact)) {
-      Alert.alert('Error', 'Please enter a valid Sri Lankan phone number (e.g., +94712345678)');
+    if (!validatePhoneNumber(formData.emergencyContact)) {
+      Alert.alert('Error', 'Please enter a valid Sri Lankan phone number (9 or 10 digits, e.g., 0712345678)');
       return false;
     }
 
@@ -118,81 +120,124 @@ export default function CustomerRegisterScreen() {
   };
 
   const handleRegisterAndContinue = async () => {
-    if (!validateForm()) return;
-    
-    const token = await ApiService.getStoredToken();
-    if (!token) {
-      Alert.alert('Error', 'Authentication token not found');
+    if (!validateForm() || !accessToken) {
+      Alert.alert('Error', 'Form is invalid or you are not logged in.');
       return;
     }
 
     setLoading(true);
+    let profileImageUrl = formData.profileImageUrl;
     try {
-      const response = await ApiService.registerCustomer(token, formData as CustomerRegistration);
-      
-      if (response.success) {
-        Alert.alert(
-          'Success', 
-          'Customer registration completed successfully!',
-          [
-            {
-              text: 'Continue',
-              onPress: () => router.push('./registration-type')
-            }
-          ]
-        );
-      } else {
-        Alert.alert('Error', response.message || 'Registration failed');
+      // If a new image is picked (local URI), upload it first
+      if (profileImage && !profileImage.startsWith('http')) {
+        setUploadingImage(true);
+        try {
+          const uploadRes = await uploadCustomerProfileImageApi(accessToken, profileImage);
+          profileImageUrl = uploadRes.filename;
+        } catch (err) {
+          let msg = 'Failed to upload image.';
+          if (err instanceof Error) msg = err.message;
+          Alert.alert('Error', msg);
+          setLoading(false);
+          setUploadingImage(false);
+          return;
+        }
+        setUploadingImage(false);
       }
-    } catch (error: any) {
-      console.error('Customer registration error:', error);
-      Alert.alert('Error', error.message || 'Registration failed');
+
+      // Add customerId from user to payload
+      const payload = { ...formData, customerId: user?.id, profileImageUrl };
+      // Convert emergencyContact to API format
+      if (payload.emergencyContact) {
+        payload.emergencyContact = convertToApiFormat(payload.emergencyContact);
+      }
+      console.log('RegisterScreen payload:', payload);
+
+      // Call API and get response with registration status
+      const response = await completeCustomerProfileApi(accessToken, payload as CustomerProfileData);
+      console.log('Customer registration response:', response);
+
+      // Update registration status in auth store
+      if (response.registrationStatus) {
+        const { setRegistrationStatus, setCustomerRegistered } = useAuthStore.getState();
+        setRegistrationStatus(response.registrationStatus);
+        setCustomerRegistered(true);
+        console.log('Updated registration status to:', response.registrationStatus);
+      }
+
+      // Navigate to the profile type selection
+      console.log('Customer registration successful, navigating to registration-type');
+      router.push('/(registration)/registration-type');
+    } catch (error) {
+      let message = 'Registration failed.';
+      if (error instanceof Error) {
+        if (typeof error.message === 'object') {
+          message = JSON.stringify(error.message);
+        } else {
+          message = error.message;
+        }
+      }
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ThemedView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <View style={{ flex: 1 }}>
         <ScrollView 
           contentContainerStyle={{ flexGrow: 1, padding: 24 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
           <View style={{ marginBottom: 32 }}>
-            <ThemedText 
-              style={{ 
-                fontSize: 28, 
-                fontWeight: 'bold', 
-                color: '#1e293b',
-                textAlign: 'center',
-                marginBottom: 8
-              }}
+            <Typography
+              variant="large-title"
+              weight="bold"
+              className="text-brand-deepNavy text-center mb-2"
             >
               Complete Your Profile
-            </ThemedText>
-            <ThemedText 
-              style={{ 
-                fontSize: 16, 
-                color: '#64748b',
-                textAlign: 'center',
-                lineHeight: 24
-              }}
+            </Typography>
+            <Typography
+              variant="body"
+              className="text-brand-neutralGray text-center"
             >
               Please provide your details to continue with registration
-            </ThemedText>
+            </Typography>
           </View>
 
           {/* Form */}
+
           <View style={{ gap: 20, marginBottom: 32 }}>
             <CustomInput
-              label="Full Name"
-              placeholder="Enter your full name"
-              value={formData.name || ''}
-              onChangeText={(value: string) => handleInputChange('name', value)}
+              label="First Name"
+              placeholder="Enter your first name"
+              value={formData.firstName || ''}
+              onChangeText={(value: string) => handleInputChange('firstName', value)}
               required
             />
+            <CustomInput
+              label="Last Name"
+              placeholder="Enter your last name"
+              value={formData.lastName || ''}
+              onChangeText={(value: string) => handleInputChange('lastName', value)}
+              required
+            />
+            <View>
+              <Typography variant="body" className="mb-2 font-medium">Gender</Typography>
+              <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, marginBottom: 8 }}>
+                <Picker
+                  selectedValue={formData.gender}
+                  onValueChange={(value) => handleInputChange('gender', value)}
+                >
+                  <Picker.Item label="Select Gender" value="" />
+                  <Picker.Item label="Male" value="Male" />
+                  <Picker.Item label="Female" value="Female" />
+                  <Picker.Item label="Unspecified" value="Unspecified" />
+                </Picker>
+              </View>
+            </View>
 
             <CustomInput
               label="Email Address"
@@ -216,20 +261,23 @@ export default function CustomerRegisterScreen() {
 
             <CustomInput
               label="Emergency Contact"
-              placeholder="Enter emergency contact number"
+              placeholder="07XXXXXXXX"
               value={formData.emergencyContact || ''}
               onChangeText={(value: string) => handleInputChange('emergencyContact', value)}
               keyboardType="phone-pad"
+              maxLength={10}
               required
             />
 
-            <CustomInput
-              label="Profile Image URL (Optional)"
-              placeholder="Enter profile image URL"
-              value={formData.profileImageUrl || ''}
-              onChangeText={(value: string) => handleInputChange('profileImageUrl', value)}
-              autoCapitalize="none"
-            />
+            <View>
+              <Typography variant="body" className="mb-2 font-medium">Profile Image (Optional)</Typography>
+              {profileImage ? (
+                <Image source={{ uri: profileImage }} style={{ width: 100, height: 100, borderRadius: 50, marginBottom: 8 }} />
+              ) : null}
+              <TouchableOpacity onPress={handlePickProfileImage} style={{ backgroundColor: '#e5e7eb', padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 8 }} disabled={uploadingImage}>
+                <Typography variant="body" className="font-medium">{uploadingImage ? 'Uploading...' : (profileImage ? 'Change Image' : 'Pick Profile Image')}</Typography>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Register Button */}
@@ -250,16 +298,15 @@ export default function CustomerRegisterScreen() {
             borderLeftWidth: 4,
             borderLeftColor: '#3b82f6'
           }}>
-            <ThemedText style={{ 
-              fontSize: 14, 
-              color: '#475569',
-              lineHeight: 20
-            }}>
+            <Typography
+              variant="footnote"
+              className="text-slate-600"
+            >
               After completing your profile, you will be able to choose your registration type and continue with the specific registration process.
-            </ThemedText>
+            </Typography>
           </View>
         </ScrollView>
-      </ThemedView>
+      </View>
     </SafeAreaView>
   );
 }

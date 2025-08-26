@@ -12,9 +12,6 @@ export class SignupDto {
 
   @IsNotEmpty()
   username: string;
-
-  @IsNotEmpty()
-  role: string;
 }
 
 export class LoginDto {

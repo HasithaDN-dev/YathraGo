@@ -5,13 +5,12 @@ import { Typography } from '@/components/Typography';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { PhoneIcon } from 'phosphor-react-native';
-import { useAuth } from '../../hooks/useAuth';
+import { sendOtpApi } from '../../lib/api/auth.api';
 import CustomButton from '../../components/ui/CustomButton';
 import InputField from '../../components/ui/InputField';
 
 export default function PhoneAuthScreen() {
   const router = useRouter();
-  const { sendOtp } = useAuth();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -74,15 +73,14 @@ export default function PhoneAuthScreen() {
 
     setIsLoading(true);
     try {
-      // Send OTP using the auth service
-      const result = await sendOtp(apiPhoneNumber);
+      // Send OTP using the new auth API
+      const result = await sendOtpApi(apiPhoneNumber);
 
       // Navigate to OTP verification screen with the API format phone number
       router.push({
         pathname: '/(auth)/verify-otp',
         params: {
-          phoneNumber: apiPhoneNumber,
-          isNewUser: result.isNewUser || false
+          phone: apiPhoneNumber
         }
       });
     } catch (error) {

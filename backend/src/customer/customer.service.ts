@@ -5,9 +5,12 @@ import { RegisterChildDto } from './dto/register-child.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CustomerRegisterDto } from './dto/customer-register.dto';
 import { BadRequestException } from '@nestjs/common/exceptions/bad-request.exception';
+import { CustomerServiceExtension } from './customer.service.extension';
 @Injectable()
-export class CustomerService {
-  constructor(private prisma: PrismaService) {}
+export class CustomerService extends CustomerServiceExtension {
+  constructor(protected prisma: PrismaService) {
+    super(prisma);
+  }
 
   async registerStaffPassenger(dto: RegisterStaffPassengerDto) {
     console.log(
@@ -27,9 +30,9 @@ export class CustomerService {
       }
 
       // Use transaction to ensure data consistency and proper connection management
-      const result = await this.prisma.$transaction(async (tx) => {
+      await this.prisma.$transaction(async (tx) => {
         // Create Staff_Passenger
-        const staffPassenger = await tx.staff_Passenger.create({
+        await tx.staff_Passenger.create({
           data: {
             customerId: dto.customerId,
             nearbyCity: dto.nearbyCity,
@@ -41,14 +44,12 @@ export class CustomerService {
         });
 
         // Update Customer profile
-        const updatedCustomer = await tx.customer.update({
+        await tx.customer.update({
           where: { customer_id: dto.customerId },
           data: {
-            registrationStatus: 'STAFF_REGISTERED',
+            registrationStatus: 'HAVING_A_PROFILE',
           },
         });
-
-        return { staffPassenger, updatedCustomer };
       });
 
       const response = {
@@ -79,7 +80,9 @@ export class CustomerService {
         await tx.child.create({
           data: {
             customerId: dto.customerId,
-            childName: dto.childName,
+            childFirstName: dto.childFirstName,
+            childLastName: dto.childLastName,
+            gender: dto.gender, // Prisma expects enum, DTO validated
             relationship: dto.relationship,
             nearbyCity: dto.nearbyCity,
             schoolLocation: dto.schoolLocation,
@@ -93,7 +96,7 @@ export class CustomerService {
         await tx.customer.update({
           where: { customer_id: dto.customerId },
           data: {
-            registrationStatus: 'CHILD_REGISTERED',
+            registrationStatus: 'HAVING_A_PROFILE',
           },
         });
       });
@@ -114,11 +117,45 @@ export class CustomerService {
     console.log('[SERVICE] getCustomerProfile - Input customerId:', customerId);
 
     try {
+      // Optimized query - only fetch necessary fields
       const customer = await this.prisma.customer.findUnique({
         where: { customer_id: parseInt(customerId) },
-        include: {
-          children: true,
-          staffPassenger: true,
+        select: {
+          customer_id: true,
+          firstName: true,
+          lastName: true,
+          gender: true,
+          phone: true,
+          email: true,
+          address: true,
+          profileImageUrl: true,
+          emergencyContact: true,
+          status: true,
+          registrationStatus: true,
+          children: {
+            select: {
+              child_id: true,
+              childFirstName: true,
+              childLastName: true,
+              gender: true,
+              relationship: true,
+              nearbyCity: true,
+              schoolLocation: true,
+              school: true,
+              childImageUrl: true,
+              pickUpAddress: true,
+            },
+          },
+          staffPassenger: {
+            select: {
+              id: true,
+              nearbyCity: true,
+              workLocation: true,
+              workAddress: true,
+              pickUpLocation: true,
+              pickupAddress: true,
+            },
+          },
         },
       });
 
@@ -163,11 +200,13 @@ export class CustomerService {
       const updatedCustomer = await this.prisma.customer.update({
         where: { customer_id: parseInt(customerId) },
         data: {
-          name: profileData?.name || '',
-          email: profileData?.email || '',
-          address: profileData?.address || '',
-          profileImageUrl: profileData?.profileImageUrl || '',
-          emergencyContact: profileData?.emergencyContact || '',
+          firstName: profileData?.firstName ?? undefined,
+          lastName: profileData?.lastName ?? undefined,
+          gender: profileData?.gender ?? undefined,
+          email: profileData?.email ?? undefined,
+          address: profileData?.address ?? undefined,
+          profileImageUrl: profileData?.profileImageUrl ?? undefined,
+          emergencyContact: profileData?.emergencyContact ?? undefined,
         },
       });
 
@@ -188,33 +227,46 @@ export class CustomerService {
   }
   /**
    * Complete customer registration after OTP verification.
-   * @param customerId number (from JWT sub)
    * @param dto CustomerRegisterDto
-   * @returns { customerId, success, message }
+   * @returns { customerId, success, message, registrationStatus }
    */
   async completeCustomerRegistration(dto: CustomerRegisterDto) {
     try {
       const updatedCustomer = await this.prisma.customer.update({
         where: { customer_id: dto.customerId },
         data: {
-          name: dto.name,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          gender: dto.gender, // Prisma expects enum, DTO validated
           email: dto.email,
           address: dto.address,
           profileImageUrl: dto.profileImageUrl,
           emergencyContact: dto.emergencyContact,
-          registrationStatus: 'OTP_VERIFIED',
+          registrationStatus: 'ACCOUNT_CREATED',
         },
       });
+
+      console.log(
+        '[SERVICE] completeCustomerRegistration - Status updated to ACCOUNT_CREATED for customer:',
+        dto.customerId,
+      );
+
       return {
         customerId: updatedCustomer.customer_id,
         success: true,
         message: 'Customer registration completed',
+        registrationStatus: updatedCustomer.registrationStatus,
       };
     } catch (error) {
+      console.error('[SERVICE] completeCustomerRegistration - Error:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to complete registration';
       return {
         customerId: dto.customerId,
         success: false,
-        message: error?.message || 'Failed to complete registration',
+        message: errorMessage,
       };
     }
   }

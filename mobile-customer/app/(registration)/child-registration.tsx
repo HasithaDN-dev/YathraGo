@@ -1,46 +1,30 @@
 import React, { useState } from 'react';
-import { View, ScrollView, Alert } from 'react-native';
-import { router } from 'expo-router';
+import { GenderPicker, GenderType } from '../../components/ui/GenderPicker';
+import * as ImagePicker from 'expo-image-picker';
+import { View, Alert, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedView } from '../../components/ThemedView';
-import { ThemedText } from '../../components/ThemedText';
 import { CustomInput } from '../../components/ui/CustomInput';
 import { ButtonComponent } from '../../components/ui/ButtonComponent';
-import { ApiService } from '../../services/api';
-import { ChildRegistration } from '../../types/registration.types';
+import { Typography } from '../../components/Typography';
+import { registerChildApi, uploadChildProfileImageApi } from '../../lib/api/profile.api';
+import { useAuthStore } from '../../lib/stores/auth.store';
+import { ChildProfileData } from '../../types/customer.types';
+// import { Colors } from '@/constants/Colors'; // Ensure this import is correct
+
 
 export default function ChildRegistrationScreen() {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<ChildRegistration>>({
-    customerId: 0,
-    childName: '',
-    relationship: '',
-    nearbyCity: '',
-    schoolLocation: '',
-    school: '',
-    pickUpAddress: '',
-    childImageUrl: '',
-  });
+  const [formData, setFormData] = useState<Partial<ChildProfileData & { gender: GenderType }>>({ gender: 'Unspecified' });
+  const [childImageUri, setChildImageUri] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const isAddMode = mode === 'add';
 
-  // Load customer ID from stored user data on component mount
-  React.useEffect(() => {
-    const loadCustomerId = async () => {
-      try {
-        const storedUser = await ApiService.getStoredCustomer();
-        if (storedUser?.id) {
-          setFormData(prev => ({
-            ...prev,
-            customerId: storedUser.id
-          }));
-        }
-      } catch (error) {
-        console.error('Error loading customer ID:', error);
-      }
-    };
-    loadCustomerId();
-  }, []);
+  // Get the accessToken and the action to complete the profile from the store.
+  const { accessToken, setProfileComplete } = useAuthStore();
 
-  const handleInputChange = (field: keyof ChildRegistration, value: string) => {
+  const handleInputChange = (field: keyof ChildProfileData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -48,20 +32,18 @@ export default function ChildRegistrationScreen() {
   };
 
   const validateForm = (): boolean => {
-    if (!formData.customerId || formData.customerId === 0) {
-      Alert.alert('Error', 'Customer ID not found. Please log in again.');
-      return false;
-    }
-    
-    const requiredFields: (keyof ChildRegistration)[] = [
-      'childName', 
-      'relationship', 
-      'nearbyCity', 
-      'schoolLocation', 
-      'school', 
+
+    const requiredFields: (keyof ChildProfileData)[] = [
+      'childFirstName',
+      'childLastName',
+      'gender',
+      'relationship',
+      'nearbyCity',
+      'schoolLocation',
+      'school',
       'pickUpAddress'
     ];
-    
+
     for (const field of requiredFields) {
       const value = formData[field];
       if (!value || (typeof value === 'string' && !value.trim())) {
@@ -75,39 +57,68 @@ export default function ChildRegistrationScreen() {
 
   const handleRegister = async () => {
     if (!validateForm()) return;
-    
-    const token = await ApiService.getStoredToken();
-    if (!token) {
+
+    if (!accessToken) {
       Alert.alert('Error', 'Authentication token not found');
       return;
     }
-
     setLoading(true);
+    let childImageUrl = formData.childImageUrl;
     try {
-      const response = await ApiService.registerChild(token, formData as ChildRegistration);
-      
-      if (response.success) {
-        Alert.alert(
-          'Success', 
-          'Child registration completed successfully!',
-          [
-            {
-              text: 'Go to Dashboard',
-              onPress: () => {
-                // Small delay to ensure alert closes properly
-                setTimeout(() => {
-                  router.replace('/(tabs)' as any);
-                }, 100);
-              }
-            }
-          ]
-        );
-      } else {
-        Alert.alert('Error', response.message || 'Registration failed');
+      // If a new image is picked (local URI), upload it first
+      if (childImageUri && !childImageUri.startsWith('http')) {
+        setUploadingImage(true);
+        try {
+          const uploadRes = await uploadChildProfileImageApi(accessToken, childImageUri);
+          childImageUrl = uploadRes.filename;
+        } catch (err) {
+          let msg = 'Failed to upload image.';
+          if (err instanceof Error) msg = err.message;
+          Alert.alert('Error', msg);
+          setLoading(false);
+          setUploadingImage(false);
+          return;
+        }
+        setUploadingImage(false);
       }
-    } catch (error: any) {
+
+      // 1. Call the final registration API function with image filename
+      const result = await registerChildApi(accessToken, { ...formData, childImageUrl } as ChildProfileData);
+      console.log('Child registration: API call successful:', result);
+
+      // 2. **CRITICAL STEP**: Update the global state to mark the profile as complete.
+      if (!isAddMode) {
+        setProfileComplete(true);
+        console.log('Child registration: Profile marked as complete');
+      }
+
+      // 3. Navigate based on mode
+      if (isAddMode) {
+        Alert.alert('Success', 'Child profile added successfully!');
+        router.back(); // Go back to add profile screen
+      } else {
+        Alert.alert('Success', 'Child registration completed successfully!');
+        // The `app/(app)/_layout.tsx` guard will automatically navigate to main app
+      }
+
+    } catch (error) {
       console.error('Child registration error:', error);
-      Alert.alert('Error', error.message || 'Registration failed');
+      let message = 'Registration failed.';
+      
+      if (error instanceof Error) {
+        message = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        // Handle error objects
+        if ('message' in error && typeof error.message === 'string') {
+          message = error.message;
+        } else {
+          message = JSON.stringify(error);
+        }
+      } else if (typeof error === 'string') {
+        message = error;
+      }
+      
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
@@ -118,45 +129,49 @@ export default function ChildRegistrationScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ThemedView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
-        <ScrollView 
+    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
+      <View style={{ flex: 1, backgroundColor: "white" }}>
+        <ScrollView
           contentContainerStyle={{ flexGrow: 1, padding: 24 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
           <View style={{ marginBottom: 32 }}>
-            <ThemedText 
-              style={{ 
-                fontSize: 28, 
-                fontWeight: 'bold', 
-                color: '#1e293b',
-                textAlign: 'center',
-                marginBottom: 8
-              }}
+            <Typography
+              variant="large-title"
+              weight="bold"
+              className="text-brand-deepNavy text-center mb-2"
             >
-              Child Registration
-            </ThemedText>
-            <ThemedText 
-              style={{ 
-                fontSize: 16, 
-                color: '#64748b',
-                textAlign: 'center',
-                lineHeight: 24
-              }}
+              {isAddMode ? 'Add Child Profile' : 'Child Registration'}
+            </Typography>
+            <Typography
+              variant="body"
+              className="text-brand-neutralGray text-center"
             >
               Please provide your child&apos;s school and transport details
-            </ThemedText>
+            </Typography>
           </View>
 
           {/* Form */}
           <View style={{ gap: 20, marginBottom: 32 }}>
             <CustomInput
-              label="Child Name"
-              placeholder="Enter child's full name"
-              value={formData.childName || ''}
-              onChangeText={(value: string) => handleInputChange('childName', value)}
+              label="Child First Name"
+              placeholder="Enter child's first name"
+              value={formData.childFirstName || ''}
+              onChangeText={(value: string) => handleInputChange('childFirstName', value)}
               required
+            />
+            <CustomInput
+              label="Child Last Name"
+              placeholder="Enter child's last name"
+              value={formData.childLastName || ''}
+              onChangeText={(value: string) => handleInputChange('childLastName', value)}
+              required
+            />
+            <GenderPicker
+              value={formData.gender as GenderType}
+              onChange={(value) => handleInputChange('gender', value)}
+              style={{ marginBottom: 8 }}
             />
 
             <CustomInput
@@ -201,19 +216,43 @@ export default function ChildRegistrationScreen() {
               required
             />
 
-            <CustomInput
-              label="Child Image URL (Optional)"
-              placeholder="Enter child's image URL"
-              value={formData.childImageUrl || ''}
-              onChangeText={(value: string) => handleInputChange('childImageUrl', value)}
-              autoCapitalize="none"
-            />
+            {/* Child Image Picker (Optional) */}
+            <View>
+              <Typography variant="footnote" className="mb-2 font-medium">Child Image (Optional)</Typography>
+              {childImageUri ? (
+                <Image source={{ uri: childImageUri }} style={{ width: 100, height: 100, borderRadius: 50, marginBottom: 8 }} />
+              ) : null}
+              <TouchableOpacity
+                onPress={async () => {
+                  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                  if (permission.status !== 'granted') {
+                    Alert.alert('Permission Denied', 'We need media library permissions to select a child image.');
+                    return;
+                  }
+                  const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    allowsEditing: true,
+                    aspect: [1, 1],
+                    quality: 0.7,
+                  });
+                  if (!result.canceled && result.assets && result.assets.length > 0) {
+                    const asset = result.assets[0];
+                    // Show preview only, do NOT upload here
+                    setChildImageUri(asset.uri);
+                  }
+                }}
+                style={{ backgroundColor: '#e5e7eb', padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 8 }}
+                disabled={uploadingImage}
+              >
+                <Typography variant="body" className="font-medium">{uploadingImage ? 'Uploading...' : (childImageUri ? 'Change Image' : 'Pick Child Image')}</Typography>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Action Buttons */}
           <View style={{ gap: 12 }}>
             <ButtonComponent
-              title="Complete Registration"
+              title={isAddMode ? "Add Child Profile" : "Complete Registration"}
               onPress={handleRegister}
               loading={loading}
               variant="primary"
@@ -229,24 +268,24 @@ export default function ChildRegistrationScreen() {
           </View>
 
           {/* Info Text */}
-          <View style={{ 
-            backgroundColor: '#f1f5f9', 
-            padding: 16, 
+          <View style={{
+            backgroundColor: '#f1f5f9',
+            padding: 16,
             borderRadius: 12,
             borderLeftWidth: 4,
             borderLeftColor: '#3b82f6',
             marginTop: 20
           }}>
-            <ThemedText style={{ 
-              fontSize: 14, 
-              color: '#475569',
-              lineHeight: 20
-            }}>
+            <Typography
+              variant="footnote"
+              className="text-slate-600"
+            >
               After completing this registration, you will be able to track your child&apos;s school transport and receive notifications about pickup times.
-            </ThemedText>
+            </Typography>
           </View>
         </ScrollView>
-      </ThemedView>
+      </View>
     </SafeAreaView>
+
   );
 }
