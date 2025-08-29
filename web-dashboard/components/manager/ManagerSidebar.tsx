@@ -5,12 +5,13 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  Plus,
-  UserPlus,
-  CreditCard,
-  Settings,
+  UserCheck,
+  Car,
+  MessageSquare,
+  FileText,
+  DollarSign,
   LogOut,
-  List,
+  Bell,
 } from "lucide-react";
 import { useRouter } from 'next/navigation';
 
@@ -21,7 +22,7 @@ interface MenuItem {
   isActive?: boolean;
 }
 
-export default function OwnerSidebar() {
+export default function ManagerSidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -36,32 +37,37 @@ export default function OwnerSidebar() {
     {
       icon: LayoutDashboard,
       label: "Dashboard",
-      href: "/owner",
+      href: "/manager",
     },
     {
-      icon: List,
-      label: "Vehicle List",
-      href: "/owner/vehicle-list",
+      icon: UserCheck,
+      label: "Verify Drivers",
+      href: "/manager/verify-drivers",
     },
     {
-      icon: Plus,
-      label: "Add Vehicle",
-      href: "/owner/add-vehicle",
+      icon: Car,
+      label: "Approve Vehicles",
+      href: "/manager/approve-vehicles",
     },
     {
-      icon: UserPlus,
-      label: "Add Driver",
-      href: "/owner/add-driver",
+      icon: MessageSquare,
+      label: "Handle Complaints",
+      href: "/manager/handle-complaints",
     },
     {
-      icon: CreditCard,
-      label: "Payment History",
-      href: "/owner/payment-history",
+      icon: Bell,
+      label: "Publish Notices",
+      href: "/manager/publish-notices",
     },
     {
-      icon: Settings,
-      label: "Settings",
-      href: "/owner/settings",
+      icon: DollarSign,
+      label: "Revenue Management",
+      href: "/manager/revenue-management",
+    },
+    {
+      icon: FileText,
+      label: "Generate Reports",
+      href: "/manager/generate-reports",
     },
   ];
 
@@ -69,8 +75,8 @@ export default function OwnerSidebar() {
     <div className="w-64 bg-[var(--color-deep-navy)] text-white flex flex-col h-full">
       {/* Logo/Brand */}
       <div className="p-6 border-b border-[var(--light-navy)]">
-        <h2 className="text-xl font-bold">YathraGo Owner</h2>
-        <p className="text-[var(--light-gray)] text-sm mt-1">Fleet Management</p>
+        <h2 className="text-xl font-bold">YathraGo Manager</h2>
+        <p className="text-green-100 text-sm mt-1">Operations Control</p>
       </div>
 
       {/* Navigation Menu */}
@@ -84,7 +90,7 @@ export default function OwnerSidebar() {
                   href={item.href}
                   className={cn(
                     "flex items-center px-6 py-3 text-sm font-medium transition-colors duration-200 hover:bg-[var(--light-navy)]",
-                    isActive && "bg-[var(--bright-orange)] text-[var(--black)]"
+                    isActive && "bg-[var(--bright-orange)] text-white"
                   )}
                 >
                   <item.icon className="w-5 h-5 mr-3" />
@@ -97,9 +103,9 @@ export default function OwnerSidebar() {
       </nav>
 
       {/* Logout */}
-      <div className="p-4 border-t border-[var(--light-navy)]">
+      <div className="p-4 border-t border-green-700">
         <button
-          className="flex items-center w-full px-2 py-3 text-sm font-medium text-white hover:bg-[var(--light-navy)] rounded-lg transition-colors duration-200"
+          className="flex items-center w-full px-2 py-3 text-sm font-medium text-white hover:bg-green-700 rounded-lg transition-colors duration-200"
           onClick={handleLogout}
         >
           <LogOut className="w-5 h-5 mr-3" />
@@ -108,8 +114,8 @@ export default function OwnerSidebar() {
       </div>
 
       {/* Footer */}
-      <div className="p-4 text-xs text-[var(--light-gray)] border-t border-[var(--light-navy)]">
-        <div>Fleet Dashboard v1.0</div>
+      <div className="p-4 text-xs text-green-100 border-t border-green-700">
+        <div>Manager Dashboard v1.0</div>
         <div>Last Login: {new Date().toLocaleDateString()}</div>
       </div>
     </div>

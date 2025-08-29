@@ -70,11 +70,11 @@ export default function ComplianceManagementPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Compliant":
-        return <Badge className="text-white" style={{ backgroundColor: '#10b981' }}>● Compliant</Badge>;
+        return <Badge className="bg-green-100 text-green-800">● Compliant</Badge>;
       case "Expired":
-        return <Badge className="text-white" style={{ backgroundColor: '#ef4444' }}>● Expired</Badge>;
+        return <Badge className="bg-red-100 text-red-800">● Expired</Badge>;
       case "Expiring Soon":
-        return <Badge className="text-white" style={{ backgroundColor: '#f59e0b' }}>● Expiring Soon</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800">● Expiring Soon</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -83,11 +83,11 @@ export default function ComplianceManagementPage() {
   const getCategoryBadge = (category: string) => {
     switch (category) {
       case "Data Protection":
-        return <Badge className="text-white" style={{ backgroundColor: '#2d4a8a' }}>{category}</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800">{category}</Badge>;
       case "Vehicle Safety":
-        return <Badge className="text-white" style={{ backgroundColor: '#f59e0b' }}>{category}</Badge>;
+        return <Badge className="bg-orange-100 text-orange-800">{category}</Badge>;
       case "Quality Standards":
-        return <Badge className="text-white" style={{ backgroundColor: '#ffb425' }}>{category}</Badge>;
+        return <Badge className="bg-purple-100 text-purple-800">{category}</Badge>;
       default:
         return <Badge variant="secondary">{category}</Badge>;
     }
@@ -104,7 +104,7 @@ export default function ComplianceManagementPage() {
         );
       case "Update":
         return (
-          <Button variant="outline" size="sm" className="text-white border-2" style={{ color: '#2d4a8a', borderColor: '#2d4a8a' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#c0def5'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+          <Button variant="outline" size="sm" className="text-blue-600 border-blue-600 hover:bg-blue-50">
             <Edit className="w-4 h-4 mr-1" />
             Update
           </Button>
@@ -118,15 +118,15 @@ export default function ComplianceManagementPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold" style={{ color: '#143373' }}>Compliance Management</h1>
-        <p style={{ color: '#6b7280' }}>Manage regulatory compliance and policy documents</p>
+        <h1 className="text-2xl font-bold text-gray-900">Compliance Management</h1>
+        <p className="text-gray-600">Manage regulatory compliance and policy documents</p>
       </div>
 
       {/* Alert Banner */}
-      <Alert className="border-2" style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b' }}>
-        <AlertTriangle className="h-4 w-4" style={{ color: '#f59e0b' }} />
-        <AlertDescription style={{ color: '#92400e' }}>
-          <strong>⚠️ Alert:</strong> &ldquo;ISO Transport Certification expires in 5 days!&rdquo;
+      <Alert className="bg-yellow-50 border-yellow-200">
+        <AlertTriangle className="h-4 w-4 text-yellow-600" />
+        <AlertDescription className="text-yellow-800">
+          <strong>⚠️ Alert:</strong> &quot;ISO Transport Certification expires in 5 days!&quot;
           <br />
           Please review and update your certification documents.
         </AlertDescription>
@@ -135,7 +135,7 @@ export default function ComplianceManagementPage() {
       {/* Search and Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: '#6b7280' }} />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="Search by regulation name or tag..."
             value={searchTerm}
@@ -144,7 +144,7 @@ export default function ComplianceManagementPage() {
           />
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm" style={{ color: '#6b7280' }}>Regulation Type</span>
+          <span className="text-sm text-gray-600">Regulation Type</span>
           <Select value={regulationType} onValueChange={setRegulationType}>
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -156,7 +156,7 @@ export default function ComplianceManagementPage() {
               <SelectItem value="Quality Standards">Quality Standards</SelectItem>
             </SelectContent>
           </Select>
-          <Button className="text-white" style={{ backgroundColor: '#143373' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2d4a8a'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#143373'}>
+          <Button className="bg-blue-600 hover:bg-blue-700">
             <Filter className="w-4 h-4 mr-2" />
             Filter
           </Button>
@@ -219,19 +219,19 @@ export default function ComplianceManagementPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <p className="text-sm" style={{ color: '#6b7280' }}>Supported formats: PDF, DOCX</p>
+                <p className="text-sm text-gray-600">Supported formats: PDF, DOCX</p>
                 
                 {/* Drag & Drop Area */}
-                <div className="border-2 border-dashed rounded-lg p-8 text-center transition-colors" style={{ borderColor: '#d1d5db' }} onMouseEnter={(e) => e.currentTarget.style.borderColor = '#2d4a8a'} onMouseLeave={(e) => e.currentTarget.style.borderColor = '#d1d5db'}>
-                  <CloudUpload className="w-12 h-12 mx-auto mb-4" style={{ color: '#6b7280' }} />
-                  <p className="text-sm mb-2" style={{ color: '#6b7280' }}>Drag & drop files here</p>
-                  <p className="text-xs mb-4" style={{ color: '#9ca3af' }}>or</p>
-                  <Button variant="outline" className="border-2" style={{ color: '#2d4a8a', borderColor: '#2d4a8a' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#c0def5'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors">
+                  <CloudUpload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-sm text-gray-600 mb-2">Drag & drop files here</p>
+                  <p className="text-xs text-gray-500 mb-4">or</p>
+                  <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50">
                     Browse Files
                   </Button>
                 </div>
 
-                <Button className="w-full text-white" style={{ backgroundColor: '#ffb425' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#faaa21'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffb425'}>
+                <Button className="w-full bg-yellow-500 hover:bg-yellow-600">
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Document
                 </Button>
@@ -247,20 +247,20 @@ export default function ComplianceManagementPage() {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: '#6b7280' }}>Total Regulations</span>
+                  <span className="text-sm text-gray-600">Total Regulations</span>
                   <span className="font-semibold">{complianceStats.totalRegulations}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: '#6b7280' }}>Compliant</span>
-                  <span className="font-semibold" style={{ color: '#10b981' }}>{complianceStats.compliant}</span>
+                  <span className="text-sm text-gray-600">Compliant</span>
+                  <span className="font-semibold text-green-600">{complianceStats.compliant}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: '#6b7280' }}>Expiring Soon</span>
-                  <span className="font-semibold" style={{ color: '#f59e0b' }}>{complianceStats.expiringSoon}</span>
+                  <span className="text-sm text-gray-600">Expiring Soon</span>
+                  <span className="font-semibold text-yellow-600">{complianceStats.expiringSoon}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: '#6b7280' }}>Expired</span>
-                  <span className="font-semibold" style={{ color: '#ef4444' }}>{complianceStats.expired}</span>
+                  <span className="text-sm text-gray-600">Expired</span>
+                  <span className="font-semibold text-red-600">{complianceStats.expired}</span>
                 </div>
               </div>
             </CardContent>

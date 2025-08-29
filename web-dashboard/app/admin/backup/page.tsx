@@ -63,9 +63,9 @@ export default function BackupRecoveryPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Success":
-        return <Badge className="text-white" style={{ backgroundColor: '#10b981' }}>Success</Badge>;
+        return <Badge className="bg-green-100 text-green-800">Success</Badge>;
       case "Failed":
-        return <Badge className="text-white" style={{ backgroundColor: '#ef4444' }}>Failed</Badge>;
+        return <Badge className="bg-red-100 text-red-800">Failed</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -74,9 +74,9 @@ export default function BackupRecoveryPage() {
   const getTypeBadge = (type: string) => {
     switch (type) {
       case "Full":
-        return <Badge className="text-white" style={{ backgroundColor: '#2d4a8a' }}>Full</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800">Full</Badge>;
       case "Incremental":
-        return <Badge className="text-white" style={{ backgroundColor: '#ffb425' }}>Incremental</Badge>;
+        return <Badge className="bg-purple-100 text-purple-800">Incremental</Badge>;
       default:
         return <Badge variant="secondary">{type}</Badge>;
     }
@@ -100,7 +100,7 @@ export default function BackupRecoveryPage() {
         );
       case "Retry":
         return (
-          <Button variant="outline" size="sm" className="text-white mr-2" style={{ color: '#f59e0b', borderColor: '#f59e0b' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fef3c7'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+          <Button variant="outline" size="sm" className="text-orange-600 border-orange-600 hover:bg-orange-50">
             <RotateCcw className="w-4 h-4 mr-1" />
             Retry
           </Button>
@@ -131,10 +131,7 @@ export default function BackupRecoveryPage() {
     });
   };
 
-  type BackupFormField = keyof typeof backupForm;
-  type BackupFormValue = string | boolean;
-
-  const handleFormChange = (field: BackupFormField, value: BackupFormValue) => {
+  const handleFormChange = (field: string, value: string | boolean) => {
     setBackupForm(prev => ({ ...prev, [field]: value }));
   };
 
@@ -163,12 +160,9 @@ export default function BackupRecoveryPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold" style={{ color: '#143373' }}>Backup & Recovery</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Backup & Recovery</h1>
         <Button 
-          className="text-white"
-          style={{ backgroundColor: '#ffb425' }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#faaa21'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffb425'}
+          className="bg-yellow-500 hover:bg-yellow-600 text-white"
           onClick={handleCreateBackup}
         >
           + Create New Backup
@@ -188,33 +182,33 @@ export default function BackupRecoveryPage() {
             {/* Auto Backup Toggle */}
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#2d4a8a' }}></span>
+                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                 <span className="font-medium">Auto Backup</span>
               </div>
               <Switch
                 checked={autoBackup}
                 onCheckedChange={setAutoBackup}
-                className="data-[state=checked]:bg-[#143373]"
+                className="data-[state=checked]:bg-blue-500"
               />
             </div>
 
             {/* Cloud Sync Toggle */}
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
-                <Cloud className="w-4 h-4" style={{ color: '#2d4a8a' }} />
+                <Cloud className="w-4 h-4 text-blue-500" />
                 <span className="font-medium">Cloud Sync</span>
               </div>
               <Switch
                 checked={cloudSync}
                 onCheckedChange={setCloudSync}
-                className="data-[state=checked]:bg-[#143373]"
+                className="data-[state=checked]:bg-blue-500"
               />
             </div>
 
             {/* Backup Frequency */}
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4" style={{ color: '#2d4a8a' }} />
+                <Calendar className="w-4 h-4 text-blue-500" />
                 <span className="font-medium">Backup Frequency</span>
               </div>
               <Select value={backupFrequency} onValueChange={setBackupFrequency}>
@@ -282,8 +276,8 @@ export default function BackupRecoveryPage() {
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: '#143373' }}>Create New Backup</h2>
-                <p style={{ color: '#6b7280' }}>Configure backup settings and options</p>
+                <h2 className="text-xl font-bold text-gray-900">Create New Backup</h2>
+                <p className="text-gray-600">Configure backup settings and options</p>
               </div>
               <Button variant="outline" size="sm" onClick={handleCloseModal}>
                 <X className="w-4 h-4" />
@@ -294,11 +288,11 @@ export default function BackupRecoveryPage() {
             <div className="p-6 space-y-6">
               {/* Basic Settings */}
               <div>
-                <h3 className="text-lg font-medium mb-4" style={{ color: '#143373' }}>Basic Settings</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Settings</h3>
                 <div className="space-y-4">
                   {/* Backup Name */}
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#6b7280' }}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Backup Name
                     </label>
                     <input
@@ -306,16 +300,13 @@ export default function BackupRecoveryPage() {
                       value={backupForm.name}
                       onChange={(e) => handleFormChange('name', e.target.value)}
                       placeholder="Enter backup name (e.g., Weekly System Backup)"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-[#143373]"
-                      style={{ 
-                        '--tw-ring-color': '#143373'
-                      } as React.CSSProperties}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
 
                   {/* Backup Type */}
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: '#6b7280' }}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Backup Type
                     </label>
                     <Select value={backupForm.type} onValueChange={(value) => handleFormChange('type', value)}>
@@ -497,15 +488,15 @@ export default function BackupRecoveryPage() {
               </div>
 
               {/* Storage Estimate */}
-              <div className="p-4 rounded-lg" style={{ backgroundColor: '#c0def5' }}>
+              <div className="bg-blue-50 p-4 rounded-lg">
                 <div className="flex items-center space-x-2 mb-2">
-                  <HardDrive className="w-5 h-5" style={{ color: '#2d4a8a' }} />
-                  <span className="font-medium" style={{ color: '#143373' }}>Estimated Storage</span>
+                  <HardDrive className="w-5 h-5 text-blue-600" />
+                  <span className="font-medium text-blue-900">Estimated Storage</span>
                 </div>
-                <div className="text-2xl font-bold" style={{ color: '#143373' }}>
+                <div className="text-2xl font-bold text-blue-700">
                   ~{getStorageEstimate()} MB
                 </div>
-                <p className="text-sm mt-1" style={{ color: '#2d4a8a' }}>
+                <p className="text-sm text-blue-600 mt-1">
                   Actual size may vary based on data compression and content
                 </p>
               </div>
@@ -518,10 +509,7 @@ export default function BackupRecoveryPage() {
               </Button>
               <Button 
                 onClick={handleSubmitBackup}
-                className="text-white"
-                style={{ backgroundColor: '#ffb425' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#faaa21'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffb425'}
+                className="bg-yellow-500 hover:bg-yellow-600"
                 disabled={!backupForm.name.trim()}
               >
                 {backupForm.schedule === 'immediate' ? 'Start Backup' : 'Schedule Backup'}

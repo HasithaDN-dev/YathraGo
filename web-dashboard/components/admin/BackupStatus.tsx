@@ -1,4 +1,4 @@
-import { CheckCircle, Calendar, Clock } from "lucide-react";
+import { CheckCircle, Calendar } from "lucide-react";
 import Link from "next/link";
 
 export default function BackupStatus() {

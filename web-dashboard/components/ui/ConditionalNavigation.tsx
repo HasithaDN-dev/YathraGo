@@ -36,8 +36,8 @@ export default function ConditionalNavigation() {
     };
   }, [isClicked, timeoutId]);
 
-  // Don't show navigation on admin and owner pages
-  if (pathname.startsWith('/admin') || pathname.startsWith('/owner')) {
+  // Only show navigation on root path
+  if (pathname !== '/') {
     return null;
   }
 
@@ -76,7 +76,7 @@ export default function ConditionalNavigation() {
       <div className="flex justify-between items-center w-full px-4">
         {/* Left corner: Logo */}
           <Link href="/" className="block">
-            <Image src="/logo.svg" alt="Yathra-Go" width={100} height={40} />
+            <Image src="/public/Logo.svg" alt="Yathra-Go" width={100} height={40} />
           </Link>
       
 

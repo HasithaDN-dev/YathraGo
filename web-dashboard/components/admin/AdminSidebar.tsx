@@ -23,7 +23,6 @@ interface MenuItem {
 
 export default function AdminSidebar() {
   const pathname = usePathname();
-  // Removed unused activeItem state
 
   const menuItems: MenuItem[] = [
     {
@@ -65,7 +64,7 @@ export default function AdminSidebar() {
   ];
 
   return (
-    <div className="w-64 bg-[#143373] text-white flex flex-col h-full">
+    <div className="w-64 bg-blue-900 text-white flex flex-col h-full">
       {/* Navigation Menu */}
       <nav className="flex-1 py-4">
         <ul className="space-y-1">
@@ -79,7 +78,6 @@ export default function AdminSidebar() {
                     "flex items-center px-6 py-3 text-sm font-medium transition-colors duration-200 hover:bg-blue-800",
                     isActive && "bg-blue-700 text-white"
                   )}
-                  // Removed unused setActiveItem
                 >
                   <item.icon className="w-5 h-5 mr-3" />
                   {item.label}

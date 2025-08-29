@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
+import {
   Server,
   Database,
   Zap,
@@ -14,9 +14,7 @@ import {
   Circle,
   Settings,
   Bell
-} from "lucide-react";
-
-export default function SystemMonitoringPage() {
+} from "lucide-react";export default function SystemMonitoringPage() {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [memoryWarning, setMemoryWarning] = useState("80");
   const [apiLatencyMax, setApiLatencyMax] = useState("200");

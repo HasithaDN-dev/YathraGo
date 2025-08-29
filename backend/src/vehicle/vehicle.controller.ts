@@ -8,9 +8,6 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Put,
-  Req,
-  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -99,11 +96,7 @@ export class VehicleController {
         vehicleDto.air_conditioned === true,
       assistant:
         vehicleDto.assistant === 'true' || vehicleDto.assistant === true,
-      route: Array.isArray(vehicleDto.route)
-        ? vehicleDto.route
-        : typeof vehicleDto.route === 'string'
-          ? JSON.parse(vehicleDto.route)
-          : [],
+      route: [vehicleDto.startingCity, vehicleDto.endingCity].filter(Boolean),
     };
 
     // Validate after parsing

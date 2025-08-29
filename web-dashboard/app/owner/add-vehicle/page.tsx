@@ -1,26 +1,20 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Upload,
-  X,
-  CheckCircle,
-  AlertCircle,
-  Calendar,
-  FileText,
-} from "lucide-react";
+import { Upload, X, CheckCircle, AlertCircle, Calendar } from "lucide-react";
 
 interface FormData {
+  vehicleNo: string;
   type: string;
   brand: string;
   model: string;
-  manufactureYear: string;
-  registrationNumber: string;
-  color: string;
-  route: string[];
+  startingCity: string;
+  endingCity: string;
   no_of_seats: string;
+  seatingCapacity: string;
+  insuranceExpiry: string;
   air_conditioned: boolean;
   assistant: boolean;
   rear_picture?: File | null;
@@ -31,18 +25,19 @@ interface FormData {
   insurance_front?: File | null;
   insurance_back?: File | null;
   vehicle_reg?: File | null;
-  // additional_files?: File[]; // Removed as per edit hint
+  uploadedFiles: File[];
 }
 
 interface FormErrors {
+  vehicleNo?: string;
   type?: string;
   brand?: string;
   model?: string;
-  manufactureYear?: string;
-  registrationNumber?: string;
-  color?: string;
-  route?: string;
+  startingCity?: string;
+  endingCity?: string;
   no_of_seats?: string;
+  seatingCapacity?: string;
+  insuranceExpiry?: string;
   air_conditioned?: string;
   assistant?: string;
   rear_picture?: string;
@@ -53,19 +48,20 @@ interface FormErrors {
   insurance_front?: string;
   insurance_back?: string;
   vehicle_reg?: string;
-  // additional_files?: string; // Removed as per edit hint
+  uploadedFiles?: string;
 }
 
 export default function AddVehiclePage() {
   const [formData, setFormData] = useState<FormData>({
+    vehicleNo: "",
     type: "",
     brand: "",
     model: "",
-    manufactureYear: "",
-    registrationNumber: "",
-    color: "",
-    route: [],
+    startingCity: "",
+    endingCity: "",
     no_of_seats: "",
+    seatingCapacity: "",
+    insuranceExpiry: "",
     air_conditioned: false,
     assistant: false,
     rear_picture: null,
@@ -76,24 +72,32 @@ export default function AddVehiclePage() {
     insurance_front: null,
     insurance_back: null,
     vehicle_reg: null,
-    // additional_files: [], // Removed as per edit hint
+    uploadedFiles: [],
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [dragOverField, setDragOverField] = useState<string | null>(null);
 
-  // In the vehicleTypes array, only include Bus and Van
   const vehicleTypes = [
-    { value: '', label: 'Select Vehicle Type' },
-    { value: 'bus', label: 'Bus' },
-    { value: 'van', label: 'Van' },
+    { value: "", label: "Select Vehicle Type" },
+    { value: "bus", label: "Bus" },
+    { value: "mini-bus", label: "Mini Bus" },
+    { value: "van", label: "Van" },
+    { value: "suv", label: "SUV" },
+    { value: "sedan", label: "Sedan" },
   ];
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
+
+    // Vehicle No validation
+    if (!formData.vehicleNo.trim()) {
+      newErrors.vehicleNo = "Vehicle number is required";
+    } else if (!/^[A-Z]{2,3}-\d{3,4}$/.test(formData.vehicleNo)) {
+      newErrors.vehicleNo = "Vehicle number format should be ABC-123 or AB-1234";
+    }
 
     // Type validation
     if (!formData.type) {
@@ -110,35 +114,25 @@ export default function AddVehiclePage() {
       newErrors.model = "Model is required";
     }
 
-    // Manufacture Year validation
-    if (!formData.manufactureYear.trim()) {
-      newErrors.manufactureYear = "Manufacture year is required";
-    } else if (isNaN(Number(formData.manufactureYear)) || Number(formData.manufactureYear) < 1900 || Number(formData.manufactureYear) > new Date().getFullYear()) {
-      newErrors.manufactureYear = "Please enter a valid year";
+    // Starting City validation
+    if (!formData.startingCity.trim()) {
+      newErrors.startingCity = "Starting city is required";
     }
 
-    // Registration Number validation
-    if (!formData.registrationNumber.trim()) {
-      newErrors.registrationNumber = "Registration number is required";
+    // Ending City validation
+    if (!formData.endingCity.trim()) {
+      newErrors.endingCity = "Ending city is required";
     }
 
-    // Color validation
-    if (!formData.color.trim()) {
-      newErrors.color = "Color is required";
-    }
-
-    // Route validation
-    if (formData.route.length === 0) {
-      newErrors.route = "At least one route is required";
-    }
-
-    // Seating Capacity validation
-    if (!formData.no_of_seats.trim()) {
-      newErrors.no_of_seats = "Seating capacity is required";
-    } else if (isNaN(Number(formData.no_of_seats)) || Number(formData.no_of_seats) <= 0) {
-      newErrors.no_of_seats = "Please enter a valid number";
-    } else if (Number(formData.no_of_seats) > 100) {
-      newErrors.no_of_seats = "Seating capacity cannot exceed 100";
+    // Insurance Expiry validation
+    if (!formData.insuranceExpiry) {
+      newErrors.insuranceExpiry = "Insurance expiry date is required";
+    } else {
+      const expiryDate = new Date(formData.insuranceExpiry);
+      const today = new Date();
+      if (expiryDate <= today) {
+        newErrors.insuranceExpiry = "Insurance expiry date must be in the future";
+      }
     }
 
     // File upload validation
@@ -166,18 +160,13 @@ export default function AddVehiclePage() {
     if (!formData.vehicle_reg) {
       newErrors.vehicle_reg = "Vehicle registration is required";
     }
-    // if (!formData.additional_files || formData.additional_files.length === 0) { // Removed as per edit hint
-    //   newErrors.additional_files = "At least one additional file is required";
-    // }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof FormData, value: any) => {
-    if (field === 'route') {
-      setFormData((prev) => ({ ...prev, route: Array.isArray(value) ? value : [value] }));
-    } else if (field === 'air_conditioned' || field === 'assistant') {
+  const handleInputChange = (field: keyof FormData, value: string | boolean | string[]) => {
+    if (field === 'air_conditioned' || field === 'assistant') {
       setFormData((prev) => ({ ...prev, [field]: value === 'true' || value === true }));
     } else {
       setFormData((prev) => ({ ...prev, [field]: value }));
@@ -188,62 +177,67 @@ export default function AddVehiclePage() {
   };
 
   const handleFileUpload = (field: keyof FormData, files: FileList | null) => {
-    if (!files) return;
-    // if (field === 'additional_files') { // Removed as per edit hint
-    //   const newFiles = Array.from(files);
-    //   setFormData((prev) => ({
-    //     ...prev,
-    //     additional_files: [...(prev.additional_files || []), ...newFiles],
-    //   }));
-    //   if (errors.additional_files) {
-    //     setErrors((prev) => ({ ...prev, additional_files: undefined }));
-    //   }
-    // } else {
-      const newFile = Array.from(files)[0];
-      setFormData((prev) => ({
-        ...prev,
-        [field]: newFile,
+    if (!files || files.length === 0) return;
+    
+    const file = files[0];
+    
+    // File type validation
+    const allowedTypes = field === 'revenue_license' || field === 'insurance_front' || field === 'insurance_back' || field === 'vehicle_reg'
+      ? ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']
+      : ['image/jpeg', 'image/png', 'image/jpg'];
+    
+    if (!allowedTypes.includes(file.type)) {
+      setErrors((prev) => ({ 
+        ...prev, 
+        [field]: `Please upload a valid ${field.includes('picture') ? 'image' : 'image or PDF'} file`
       }));
-      if (errors[field as keyof FormErrors]) {
-        setErrors((prev) => ({ ...prev, [field]: undefined }));
-      }
-    // }
+      return;
+    }
+    
+    // File size validation (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({ 
+        ...prev, 
+        [field]: 'File size must be less than 5MB'
+      }));
+      return;
+    }
+    
+    setFormData((prev) => ({
+      ...prev,
+      [field]: file,
+    }));
+    
+    if (errors[field as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
   };
 
-  const removeFile = (field: keyof FormData) => {
+  const removeIndividualFile = (field: keyof FormData) => {
     setFormData((prev) => ({
       ...prev,
       [field]: null,
     }));
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, field: string) => {
     e.preventDefault();
-    setIsDragOver(true);
+    setDragOverField(field);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(false);
+    setDragOverField(null);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent, field: keyof FormData) => {
     e.preventDefault();
-    setIsDragOver(false);
-    // This part needs to be updated to handle multiple files if allowed
-    handleFileUpload("rear_picture", e.dataTransfer.files);
-    handleFileUpload("front_picture", e.dataTransfer.files);
-    handleFileUpload("side_picture", e.dataTransfer.files);
-    handleFileUpload("inside_picture", e.dataTransfer.files);
-    handleFileUpload("revenue_license", e.dataTransfer.files);
-    handleFileUpload("insurance_front", e.dataTransfer.files);
-    handleFileUpload("insurance_back", e.dataTransfer.files);
-    handleFileUpload("vehicle_reg", e.dataTransfer.files);
+    setDragOverField(null);
+    handleFileUpload(field, e.dataTransfer.files);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
     
     if (!validateForm()) {
       return;
@@ -256,10 +250,8 @@ export default function AddVehiclePage() {
       formDataToSend.append("type", formData.type);
       formDataToSend.append("brand", formData.brand);
       formDataToSend.append("model", formData.model);
-      formDataToSend.append("manufactureYear", formData.manufactureYear);
-      formDataToSend.append("registrationNumber", formData.registrationNumber);
-      formDataToSend.append("color", formData.color);
-      formDataToSend.append("route", JSON.stringify(formData.route));
+      formDataToSend.append("startingCity", formData.startingCity);
+      formDataToSend.append("endingCity", formData.endingCity);
       formDataToSend.append("no_of_seats", formData.no_of_seats);
       formDataToSend.append("air_conditioned", String(formData.air_conditioned));
       formDataToSend.append("assistant", String(formData.assistant));
@@ -271,11 +263,8 @@ export default function AddVehiclePage() {
       if (formData.insurance_front) formDataToSend.append("insurance_front", formData.insurance_front);
       if (formData.insurance_back) formDataToSend.append("insurance_back", formData.insurance_back);
       if (formData.vehicle_reg) formDataToSend.append("vehicle_reg", formData.vehicle_reg);
-      // if (formData.additional_files) { // Removed as per edit hint
-      //   formDataToSend.append("additional_files", JSON.stringify(formData.additional_files.map(f => f.name)));
-      // }
 
-      // Simulate API call
+      // API call
       const token = typeof document !== 'undefined' ? document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1] : undefined;
       const response = await fetch("http://localhost:3000/owner/add-vehicle", {
         method: "POST",
@@ -288,13 +277,12 @@ export default function AddVehiclePage() {
         try {
           const data = await response.json();
           msg = data.message || JSON.stringify(data);
-        } catch (e) {
+        } catch {
           // fallback to text
           try {
             msg = await response.text();
           } catch {}
         }
-        setErrorMessage(msg);
         throw new Error(msg);
       }
       
@@ -303,14 +291,15 @@ export default function AddVehiclePage() {
       
       // Reset form
       setFormData({
+        vehicleNo: "",
         type: "",
         brand: "",
         model: "",
-        manufactureYear: "",
-        registrationNumber: "",
-        color: "",
-        route: [],
+        startingCity: "",
+        endingCity: "",
         no_of_seats: "",
+        seatingCapacity: "",
+        insuranceExpiry: "",
         air_conditioned: false,
         assistant: false,
         rear_picture: null,
@@ -321,7 +310,7 @@ export default function AddVehiclePage() {
         insurance_front: null,
         insurance_back: null,
         vehicle_reg: null,
-        // additional_files: [], // Removed as per edit hint
+        uploadedFiles: [],
       });
     } catch (error) {
       console.error("Error adding vehicle:", error);
@@ -332,14 +321,15 @@ export default function AddVehiclePage() {
 
   const handleCancel = () => {
     setFormData({
+      vehicleNo: "",
       type: "",
       brand: "",
       model: "",
-      manufactureYear: "",
-      registrationNumber: "",
-      color: "",
-      route: [],
+      startingCity: "",
+      endingCity: "",
       no_of_seats: "",
+      seatingCapacity: "",
+      insuranceExpiry: "",
       air_conditioned: false,
       assistant: false,
       rear_picture: null,
@@ -350,7 +340,7 @@ export default function AddVehiclePage() {
       insurance_front: null,
       insurance_back: null,
       vehicle_reg: null,
-      // additional_files: [], // Removed as per edit hint
+      uploadedFiles: [],
     });
     setErrors({});
   };
@@ -381,14 +371,6 @@ export default function AddVehiclePage() {
         </div>
       )}
 
-      {errorMessage && (
-        <div className="mb-4 flex items-center bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-          <AlertCircle className="w-5 h-5 mr-2" />
-          <span className="block sm:inline font-medium">{errorMessage}</span>
-          <button onClick={() => setErrorMessage(null)} className="absolute top-0 bottom-0 right-0 px-4 py-3 text-red-700 hover:text-red-900 focus:outline-none">&times;</button>
-        </div>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Vehicle Form */}
         <Card className="shadow-sm border border-[var(--neutral-gray)]">
@@ -399,9 +381,31 @@ export default function AddVehiclePage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Vehicle Type */}
+              {/* Vehicle No */}
               <div>
                 <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
+                  Vehicle No. *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., ABC-123"
+                  value={formData.vehicleNo}
+                  onChange={(e) => handleInputChange("vehicleNo", e.target.value.toUpperCase())}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--bright-orange)] focus:border-transparent ${
+                    errors.vehicleNo ? "border-[var(--error-red)] bg-[var(--error-bg)]" : "border-[var(--neutral-gray)]"
+                  }`}
+                />
+                {errors.vehicleNo && (
+                  <div className="mt-1 flex items-center space-x-1 text-[var(--error-red)] bg-[var(--error-bg)] px-2 py-1 rounded text-sm">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{errors.vehicleNo}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Vehicle Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Type *
                 </label>
                 <select
@@ -468,101 +472,62 @@ export default function AddVehiclePage() {
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Manufacture Year */}
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
-                  Manufacture Year *
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g., 2020"
-                  min="1900"
-                  max={new Date().getFullYear()}
-                  value={formData.manufactureYear}
-                  onChange={(e) => handleInputChange("manufactureYear", e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.manufactureYear ? "border-red-500 bg-red-50" : "border-gray-400"
-                  }`}
-                />
-                {errors.manufactureYear && (
-                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>{errors.manufactureYear}</span>
-                  </div>
-                )}
+            {/* Route Section */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold text-[var(--color-deep-navy)] mb-4">Route Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Starting City */}
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
+                    Starting City *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Colombo"
+                    value={formData.startingCity}
+                    onChange={(e) => handleInputChange("startingCity", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.startingCity ? "border-red-500 bg-red-50" : "border-gray-400"
+                    }`}
+                  />
+                  {errors.startingCity && (
+                    <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>{errors.startingCity}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Ending City */}
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
+                    Ending City *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Kandy"
+                    value={formData.endingCity}
+                    onChange={(e) => handleInputChange("endingCity", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.endingCity ? "border-red-500 bg-red-50" : "border-gray-400"
+                    }`}
+                  />
+                  {errors.endingCity && (
+                    <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>{errors.endingCity}</span>
+                    </div>
+                  )}
+                </div>
               </div>
+            </div>
 
-              {/* Registration Number */}
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
-                  Registration Number *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., ABC-123"
-                  value={formData.registrationNumber}
-                  onChange={(e) => handleInputChange("registrationNumber", e.target.value.toUpperCase())}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.registrationNumber ? "border-red-500 bg-red-50" : "border-gray-400"
-                  }`}
-                />
-                {errors.registrationNumber && (
-                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>{errors.registrationNumber}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Color */}
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
-                  Color *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., Red"
-                  value={formData.color}
-                  onChange={(e) => handleInputChange("color", e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.color ? "border-red-500 bg-red-50" : "border-gray-400"
-                  }`}
-                />
-                {errors.color && (
-                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>{errors.color}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Route */}
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
-                  Route *
-                </label>
-                <select
-                  value={formData.route[0] || ""}
-                  onChange={(e) => handleInputChange("route", [e.target.value])}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Select a route</option>
-                  <option value="Route A">Route A</option>
-                  <option value="Route B">Route B</option>
-                  <option value="Route C">Route C</option>
-                </select>
-                {errors.route && (
-                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>{errors.route}</span>
-                  </div>
-                )}
-              </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Seating Capacity */}
               <div>
-                <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Seating Capacity *
                 </label>
                 <input
@@ -570,54 +535,40 @@ export default function AddVehiclePage() {
                   placeholder="e.g., 40"
                   min="1"
                   max="100"
-                  value={formData.no_of_seats}
-                  onChange={(e) => handleInputChange("no_of_seats", e.target.value)}
+                  value={formData.seatingCapacity}
+                  onChange={(e) => handleInputChange("seatingCapacity", e.target.value)}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.no_of_seats ? "border-red-500 bg-red-50" : "border-gray-400"
+                    errors.seatingCapacity ? "border-red-500 bg-red-50" : "border-gray-400"
                   }`}
                 />
-                {errors.no_of_seats && (
+                {errors.seatingCapacity && (
                   <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
                     <AlertCircle className="w-4 h-4" />
-                    <span>{errors.no_of_seats}</span>
+                    <span>{errors.seatingCapacity}</span>
                   </div>
                 )}
               </div>
 
-              {/* Air Conditioned */}
+              {/* Insurance Expiry */}
               <div>
-                <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
-                  Air Conditioned
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Insurance Expiry *
                 </label>
-                <input
-                  type="checkbox"
-                  checked={formData.air_conditioned}
-                  onChange={(e) => handleInputChange("air_conditioned", String(e.target.checked))}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                {errors.air_conditioned && (
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={formData.insuranceExpiry}
+                    onChange={(e) => handleInputChange("insuranceExpiry", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.insuranceExpiry ? "border-red-500 bg-red-50" : "border-gray-400"
+                    }`}
+                  />
+                  <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                </div>
+                {errors.insuranceExpiry && (
                   <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
                     <AlertCircle className="w-4 h-4" />
-                    <span>{errors.air_conditioned}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Assistant */}
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
-                  Assistant
-                </label>
-                <input
-                  type="checkbox"
-                  checked={formData.assistant}
-                  onChange={(e) => handleInputChange("assistant", String(e.target.checked))}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                {errors.assistant && (
-                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>{errors.assistant}</span>
+                    <span>{errors.insuranceExpiry}</span>
                   </div>
                 )}
               </div>
@@ -629,44 +580,57 @@ export default function AddVehiclePage() {
         <Card className="shadow-sm border border-gray-200">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-gray-900">
-              Upload Required Documents
+              Upload Documents
             </CardTitle>
             <p className="text-sm text-gray-600">
-              Please upload all required vehicle documents
+              Please upload all required vehicle documents. You can click to select files or drag and drop them directly onto the upload areas.
             </p>
           </CardHeader>
           <CardContent>
             {/* Rear Picture */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">Rear Picture *</label>
-              <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+              <div 
+                className={`flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 transition-colors ${
+                  dragOverField === 'rear_picture' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+                }`}
+                onDragOver={(e) => handleDragOver(e, 'rear_picture')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'rear_picture')}
+              >
                 <label className="cursor-pointer flex items-center gap-2 text-[var(--bright-orange)] font-medium hover:underline">
                   <Upload className="w-5 h-5" />
-                  {formData.rear_picture ? 'Change File' : 'Select File'}
+                  {formData.rear_picture ? 'Change File' : 'Select File or Drag & Drop'}
                   <input type="file" accept="image/*" onChange={e => handleFileUpload('rear_picture', e.target.files)} className="hidden" />
                 </label>
                 {formData.rear_picture && (
                   <span className="text-sm text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 flex items-center gap-1">
                     {formData.rear_picture.name}
-                    <button type="button" onClick={() => removeFile('rear_picture')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+                    <button type="button" onClick={() => removeIndividualFile('rear_picture')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
                   </span>
                 )}
               </div>
-              {errors.rear_picture && <div className="mt-1 text-red-600 text-sm">{errors.rear_picture}</div>}
             </div>
             {/* Front Picture */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">Front Picture *</label>
-              <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+              <div 
+                className={`flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 transition-colors ${
+                  dragOverField === 'front_picture' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+                }`}
+                onDragOver={(e) => handleDragOver(e, 'front_picture')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'front_picture')}
+              >
                 <label className="cursor-pointer flex items-center gap-2 text-[var(--bright-orange)] font-medium hover:underline">
                   <Upload className="w-5 h-5" />
-                  {formData.front_picture ? 'Change File' : 'Select File'}
+                  {formData.front_picture ? 'Change File' : 'Select File or Drag & Drop'}
                   <input type="file" accept="image/*" onChange={e => handleFileUpload('front_picture', e.target.files)} className="hidden" />
                 </label>
                 {formData.front_picture && (
                   <span className="text-sm text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 flex items-center gap-1">
                     {formData.front_picture.name}
-                    <button type="button" onClick={() => removeFile('front_picture')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+                    <button type="button" onClick={() => removeIndividualFile('front_picture')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
                   </span>
                 )}
               </div>
@@ -675,16 +639,23 @@ export default function AddVehiclePage() {
             {/* Side Picture */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">Side Picture *</label>
-              <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+              <div 
+                className={`flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 transition-colors ${
+                  dragOverField === 'side_picture' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+                }`}
+                onDragOver={(e) => handleDragOver(e, 'side_picture')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'side_picture')}
+              >
                 <label className="cursor-pointer flex items-center gap-2 text-[var(--bright-orange)] font-medium hover:underline">
                   <Upload className="w-5 h-5" />
-                  {formData.side_picture ? 'Change File' : 'Select File'}
+                  {formData.side_picture ? 'Change File' : 'Select File or Drag & Drop'}
                   <input type="file" accept="image/*" onChange={e => handleFileUpload('side_picture', e.target.files)} className="hidden" />
                 </label>
                 {formData.side_picture && (
                   <span className="text-sm text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 flex items-center gap-1">
                     {formData.side_picture.name}
-                    <button type="button" onClick={() => removeFile('side_picture')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+                    <button type="button" onClick={() => removeIndividualFile('side_picture')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
                   </span>
                 )}
               </div>
@@ -693,16 +664,23 @@ export default function AddVehiclePage() {
             {/* Inside Picture */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">Inside Picture *</label>
-              <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+              <div 
+                className={`flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 transition-colors ${
+                  dragOverField === 'inside_picture' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+                }`}
+                onDragOver={(e) => handleDragOver(e, 'inside_picture')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'inside_picture')}
+              >
                 <label className="cursor-pointer flex items-center gap-2 text-[var(--bright-orange)] font-medium hover:underline">
                   <Upload className="w-5 h-5" />
-                  {formData.inside_picture ? 'Change File' : 'Select File'}
+                  {formData.inside_picture ? 'Change File' : 'Select File or Drag & Drop'}
                   <input type="file" accept="image/*" onChange={e => handleFileUpload('inside_picture', e.target.files)} className="hidden" />
                 </label>
                 {formData.inside_picture && (
                   <span className="text-sm text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 flex items-center gap-1">
                     {formData.inside_picture.name}
-                    <button type="button" onClick={() => removeFile('inside_picture')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+                    <button type="button" onClick={() => removeIndividualFile('inside_picture')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
                   </span>
                 )}
               </div>
@@ -711,16 +689,23 @@ export default function AddVehiclePage() {
             {/* Revenue License */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">Revenue License *</label>
-              <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+              <div 
+                className={`flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 transition-colors ${
+                  dragOverField === 'revenue_license' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+                }`}
+                onDragOver={(e) => handleDragOver(e, 'revenue_license')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'revenue_license')}
+              >
                 <label className="cursor-pointer flex items-center gap-2 text-[var(--bright-orange)] font-medium hover:underline">
                   <Upload className="w-5 h-5" />
-                  {formData.revenue_license ? 'Change File' : 'Select File'}
+                  {formData.revenue_license ? 'Change File' : 'Select File or Drag & Drop'}
                   <input type="file" accept="image/*,application/pdf" onChange={e => handleFileUpload('revenue_license', e.target.files)} className="hidden" />
                 </label>
                 {formData.revenue_license && (
                   <span className="text-sm text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 flex items-center gap-1">
                     {formData.revenue_license.name}
-                    <button type="button" onClick={() => removeFile('revenue_license')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+                    <button type="button" onClick={() => removeIndividualFile('revenue_license')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
                   </span>
                 )}
               </div>
@@ -729,16 +714,23 @@ export default function AddVehiclePage() {
             {/* Insurance Front */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">Insurance Front *</label>
-              <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+              <div 
+                className={`flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 transition-colors ${
+                  dragOverField === 'insurance_front' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+                }`}
+                onDragOver={(e) => handleDragOver(e, 'insurance_front')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'insurance_front')}
+              >
                 <label className="cursor-pointer flex items-center gap-2 text-[var(--bright-orange)] font-medium hover:underline">
                   <Upload className="w-5 h-5" />
-                  {formData.insurance_front ? 'Change File' : 'Select File'}
+                  {formData.insurance_front ? 'Change File' : 'Select File or Drag & Drop'}
                   <input type="file" accept="image/*,application/pdf" onChange={e => handleFileUpload('insurance_front', e.target.files)} className="hidden" />
                 </label>
                 {formData.insurance_front && (
                   <span className="text-sm text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 flex items-center gap-1">
                     {formData.insurance_front.name}
-                    <button type="button" onClick={() => removeFile('insurance_front')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+                    <button type="button" onClick={() => removeIndividualFile('insurance_front')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
                   </span>
                 )}
               </div>
@@ -747,16 +739,23 @@ export default function AddVehiclePage() {
             {/* Insurance Back */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">Insurance Back *</label>
-              <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+              <div 
+                className={`flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 transition-colors ${
+                  dragOverField === 'insurance_back' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+                }`}
+                onDragOver={(e) => handleDragOver(e, 'insurance_back')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'insurance_back')}
+              >
                 <label className="cursor-pointer flex items-center gap-2 text-[var(--bright-orange)] font-medium hover:underline">
                   <Upload className="w-5 h-5" />
-                  {formData.insurance_back ? 'Change File' : 'Select File'}
+                  {formData.insurance_back ? 'Change File' : 'Select File or Drag & Drop'}
                   <input type="file" accept="image/*,application/pdf" onChange={e => handleFileUpload('insurance_back', e.target.files)} className="hidden" />
                 </label>
                 {formData.insurance_back && (
                   <span className="text-sm text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 flex items-center gap-1">
                     {formData.insurance_back.name}
-                    <button type="button" onClick={() => removeFile('insurance_back')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+                    <button type="button" onClick={() => removeIndividualFile('insurance_back')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
                   </span>
                 )}
               </div>
@@ -765,16 +764,23 @@ export default function AddVehiclePage() {
             {/* Vehicle Registration */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">Vehicle Registration *</label>
-              <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+              <div 
+                className={`flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 transition-colors ${
+                  dragOverField === 'vehicle_reg' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+                }`}
+                onDragOver={(e) => handleDragOver(e, 'vehicle_reg')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'vehicle_reg')}
+              >
                 <label className="cursor-pointer flex items-center gap-2 text-[var(--bright-orange)] font-medium hover:underline">
                   <Upload className="w-5 h-5" />
-                  {formData.vehicle_reg ? 'Change File' : 'Select File'}
+                  {formData.vehicle_reg ? 'Change File' : 'Select File or Drag & Drop'}
                   <input type="file" accept="image/*,application/pdf" onChange={e => handleFileUpload('vehicle_reg', e.target.files)} className="hidden" />
                 </label>
                 {formData.vehicle_reg && (
                   <span className="text-sm text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 flex items-center gap-1">
                     {formData.vehicle_reg.name}
-                    <button type="button" onClick={() => removeFile('vehicle_reg')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+                    <button type="button" onClick={() => removeIndividualFile('vehicle_reg')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
                   </span>
                 )}
               </div>

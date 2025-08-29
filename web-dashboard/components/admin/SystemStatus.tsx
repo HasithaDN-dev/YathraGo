@@ -1,4 +1,4 @@
-import { Server, Database, Zap, Monitor } from "lucide-react";
+import { Monitor } from "lucide-react";
 import Link from "next/link";
 
 export default function SystemStatus() {

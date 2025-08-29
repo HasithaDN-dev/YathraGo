@@ -66,7 +66,7 @@ export default function AdminSettingsPage() {
   const [adminDepartment, setAdminDepartment] = useState("IT Department");
   const [adminJoinDate, setAdminJoinDate] = useState("2023-01-15");
   const [adminRole, setAdminRole] = useState("Super Admin");
-  const [profileImage, setProfileImage] = useState("");
+  const profileImage = "/api/placeholder/100/100"; // Default profile image
 
   const settingsTabs = [
     { id: "general", label: "General", icon: Settings },
@@ -152,7 +152,7 @@ export default function AdminSettingsPage() {
         <Switch
           checked={twoFactorAuth}
           onCheckedChange={setTwoFactorAuth}
-          className="data-[state=checked]:bg-[#10b981]"
+          className="data-[state=checked]:bg-green-500"
         />
       </div>
 
@@ -237,7 +237,7 @@ export default function AdminSettingsPage() {
           <Switch
             checked={emailNotifications}
             onCheckedChange={setEmailNotifications}
-            className="data-[state=checked]:bg-[#143373]"
+            className="data-[state=checked]:bg-blue-500"
           />
         </div>
 
@@ -252,7 +252,7 @@ export default function AdminSettingsPage() {
           <Switch
             checked={smsNotifications}
             onCheckedChange={setSmsNotifications}
-            className="data-[state=checked]:bg-[#143373]"
+            className="data-[state=checked]:bg-blue-500"
           />
         </div>
 
@@ -267,7 +267,7 @@ export default function AdminSettingsPage() {
           <Switch
             checked={systemAlerts}
             onCheckedChange={setSystemAlerts}
-            className="data-[state=checked]:bg-[#143373]"
+            className="data-[state=checked]:bg-blue-500"
           />
         </div>
 
@@ -282,7 +282,7 @@ export default function AdminSettingsPage() {
           <Switch
             checked={backupNotifications}
             onCheckedChange={setBackupNotifications}
-            className="data-[state=checked]:bg-[#143373]"
+            className="data-[state=checked]:bg-blue-500"
           />
         </div>
       </div>
@@ -302,7 +302,7 @@ export default function AdminSettingsPage() {
         <Switch
           checked={autoBackup}
           onCheckedChange={setAutoBackup}
-          className="data-[state=checked]:bg-[#10b981]"
+          className="data-[state=checked]:bg-green-500"
         />
       </div>
 
@@ -347,7 +347,7 @@ export default function AdminSettingsPage() {
         <Switch
           checked={cloudBackup}
           onCheckedChange={setCloudBackup}
-          className="data-[state=checked]:bg-[#10b981]"
+          className="data-[state=checked]:bg-green-500"
         />
       </div>
     </div>
@@ -359,9 +359,9 @@ export default function AdminSettingsPage() {
       <div className="flex items-center space-x-6">
         <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
           {profileImage ? (
-            <Image
-              src={profileImage}
-              alt="Profile"
+            <Image 
+              src={profileImage} 
+              alt="Profile" 
               width={80}
               height={80}
               className="w-20 h-20 rounded-full object-cover"
@@ -371,26 +371,9 @@ export default function AdminSettingsPage() {
           )}
         </div>
         <div>
-          <label>
-            <Button variant="outline" size="sm" asChild>
-              <span>Change Photo</span>
-            </Button>
-            <input
-              type="file"
-              accept="image/png, image/jpeg, image/gif"
-              style={{ display: "none" }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  const reader = new FileReader();
-                  reader.onload = (ev) => {
-                    setProfileImage(ev.target?.result as string);
-                  };
-                  reader.readAsDataURL(file);
-                }
-              }}
-            />
-          </label>
+          <Button variant="outline" size="sm">
+            Change Photo
+          </Button>
           <p className="text-sm text-gray-600 mt-1">
             JPG, PNG or GIF. Max size of 800KB
           </p>
@@ -561,7 +544,7 @@ export default function AdminSettingsPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold" style={{ color: '#143373' }}>Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
         <p className="text-gray-600">Manage your system settings and preferences</p>
       </div>
 
@@ -614,7 +597,7 @@ export default function AdminSettingsPage() {
                 <Button variant="outline">
                   Cancel
                 </Button>
-                <Button className="text-white" style={{ backgroundColor: '#143373' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2d4a8a'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#143373'}>
+                <Button className="bg-blue-600 hover:bg-blue-700">
                   <Save className="w-4 h-4 mr-2" />
                   Save Changes
                 </Button>
