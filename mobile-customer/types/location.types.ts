@@ -7,10 +7,6 @@ export interface LocationDetails {
   name: string;
   address: string;
   coordinates: LocationCoordinates;
-  placeId?: string;
-  // Separate the map-selected location from user-typed address
-  mapSelectedAddress?: string; // Address from reverse geocoding
-  userTypedAddress?: string;   // Address manually entered by user
 }
 
 export interface MapRegion {
@@ -30,7 +26,7 @@ export interface GooglePlace {
       lng: number;
     };
   };
-  types?: string[];
+  types: string[];
   vicinity?: string;
 }
 

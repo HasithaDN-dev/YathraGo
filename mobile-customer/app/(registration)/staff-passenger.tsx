@@ -251,7 +251,7 @@ return (
         onLocationSelect={handleLocationSelect}
         title={locationPickerType === 'work' ? 'Select Work Location' : 'Select Pickup Location'}
         placeholder={locationPickerType === 'work' ? 'Search for your workplace' : 'Search for pickup location'}
-        initialLocation={locationPickerType === 'work' ? workLocationDetails : pickupLocationDetails}
+        initialLocation={locationPickerType === 'work' ? workLocationDetails || undefined : pickupLocationDetails || undefined}
       />
     </View>
   </SafeAreaView>

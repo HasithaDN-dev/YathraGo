@@ -40,8 +40,7 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
   const [searchResults, setSearchResults] = useState<GooglePlace[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [userTypedAddress, setUserTypedAddress] = useState('');
-  const [mapSelectedAddress, setMapSelectedAddress] = useState('');
+  const [userAddress, setUserAddress] = useState('');
   const mapRef = useRef<MapView>(null);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -88,15 +87,13 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
         };
         setRegion(newRegion);
         setSelectedLocation(initialLocation);
-        setUserTypedAddress(initialLocation.userTypedAddress || initialLocation.address);
-        setMapSelectedAddress(initialLocation.mapSelectedAddress || initialLocation.address);
+        setUserAddress(initialLocation.address);
       } else {
         // Reset to search step when modal opens for new location
         setCurrentStep('search');
         setSearchQuery('');
         setSearchResults([]);
-        setUserTypedAddress('');
-        setMapSelectedAddress('');
+        setUserAddress('');
         requestLocationPermission();
       }
     }
@@ -232,7 +229,6 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
     };
     
     setRegion(newRegion);
-    setMapSelectedAddress(place.formatted_address);
     setCurrentStep('map');
     
     // Set initial location data
@@ -243,8 +239,6 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
         latitude: place.geometry.location.lat,
         longitude: place.geometry.location.lng,
       },
-      placeId: place.place_id,
-      mapSelectedAddress: place.formatted_address,
     };
     setSelectedLocation(location);
   };
@@ -266,7 +260,6 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
         if (addresses.length > 0) {
           const address = addresses[0];
           const fullAddress = `${address.name ? address.name + ', ' : ''}${address.street ? address.street + ', ' : ''}${address.city || ''}, ${address.country || ''}`;
-          setMapSelectedAddress(fullAddress);
           
           // Update selected location
           setSelectedLocation({
@@ -276,14 +269,11 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
               latitude: newRegion.latitude,
               longitude: newRegion.longitude,
             },
-            mapSelectedAddress: fullAddress,
-            userTypedAddress: userTypedAddress,
           });
         }
       } catch (error) {
         console.log('Reverse geocoding error:', error);
         const fallbackAddress = `${newRegion.latitude.toFixed(6)}, ${newRegion.longitude.toFixed(6)}`;
-        setMapSelectedAddress(fallbackAddress);
         
         setSelectedLocation({
           name: 'Selected Location',
@@ -292,8 +282,6 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
             latitude: newRegion.latitude,
             longitude: newRegion.longitude,
           },
-          mapSelectedAddress: fallbackAddress,
-          userTypedAddress: userTypedAddress,
         });
       }
     }, 1000);
@@ -327,9 +315,9 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
   const handleConfirmLocation = () => {
     if (selectedLocation) {
       setCurrentStep('address');
-      // Pre-fill the address field with map-selected address
-      if (!userTypedAddress) {
-        setUserTypedAddress(mapSelectedAddress);
+      // Pre-fill the address field with selected address
+      if (!userAddress) {
+        setUserAddress(selectedLocation.address);
       }
     } else {
       Alert.alert('Error', 'Please select a location on the map');
@@ -337,12 +325,10 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
   };
 
   const handleFinalConfirm = () => {
-    if (selectedLocation && userTypedAddress.trim()) {
+    if (selectedLocation && userAddress.trim()) {
       const finalLocation: LocationDetails = {
         ...selectedLocation,
-        address: userTypedAddress, // Use typed address as primary address
-        userTypedAddress: userTypedAddress,
-        mapSelectedAddress: mapSelectedAddress,
+        address: userAddress, // Use typed address as primary address
       };
       onLocationSelect(finalLocation);
       onClose();
@@ -503,7 +489,7 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
                   {selectedLocation?.name || 'Selected Location'}
                 </Typography>
                 <Typography variant="caption-1" style={styles.locationAddress} numberOfLines={2}>
-                  {mapSelectedAddress || 'Getting address...'}
+                  {selectedLocation?.address || 'Getting address...'}
                 </Typography>
               </View>
             </View>
@@ -547,7 +533,7 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
               {selectedLocation?.name || 'Selected Location'}
             </Typography>
             <Typography variant="caption-1" style={styles.selectedLocationCoords}>
-              {mapSelectedAddress}
+              {selectedLocation?.address}
             </Typography>
           </View>
         </View>
@@ -558,8 +544,8 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
             Address
           </Typography>
           <TextInput
-            value={userTypedAddress}
-            onChangeText={setUserTypedAddress}
+            value={userAddress}
+            onChangeText={setUserAddress}
             placeholder="House No, Street, City"
             style={styles.addressInput}
             multiline
@@ -573,9 +559,9 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
           onPress={handleFinalConfirm}
           style={[
             styles.finalConfirmButton,
-            { backgroundColor: userTypedAddress.trim() ? '#4285f4' : '#ccc' }
+            { backgroundColor: userAddress.trim() ? '#4285f4' : '#ccc' }
           ]}
-          disabled={!userTypedAddress.trim()}
+          disabled={!userAddress.trim()}
         >
           <Typography variant="subhead" weight="semibold" style={styles.finalConfirmButtonText}>
             CONFIRM ADDRESS
