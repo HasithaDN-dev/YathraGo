@@ -128,9 +128,30 @@ export const registerChildApi = async (
   
   // Get the user from auth store to include customerId
   const { user } = useAuthStore.getState();
+  
+  // Extract coordinates from location details
+  const schoolLatitude = data.schoolLocationDetails?.coordinates?.latitude || data.schoolLatitude;
+  const schoolLongitude = data.schoolLocationDetails?.coordinates?.longitude || data.schoolLongitude;
+  const pickupLatitude = data.pickupLocationDetails?.coordinates?.latitude || data.pickupLatitude;
+  const pickupLongitude = data.pickupLocationDetails?.coordinates?.longitude || data.pickupLongitude;
+  
+  // Create payload with only DTO-expected fields
   const payload = {
-    ...data,
-    customerId: user?.id
+    customerId: user?.id,
+    childFirstName: data.childFirstName,
+    childLastName: data.childLastName,
+    gender: data.gender,
+    relationship: data.relationship,
+    nearbyCity: data.nearbyCity,
+    schoolLocation: data.schoolLocation,
+    school: data.school,
+    pickUpAddress: data.pickUpAddress,
+    childImageUrl: data.childImageUrl,
+    // Add coordinates if available
+    ...(schoolLatitude && { schoolLatitude }),
+    ...(schoolLongitude && { schoolLongitude }),
+    ...(pickupLatitude && { pickupLatitude }),
+    ...(pickupLongitude && { pickupLongitude }),
   };
   
   console.log('Child registration payload:', payload);

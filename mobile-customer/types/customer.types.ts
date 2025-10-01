@@ -94,6 +94,14 @@ export interface ChildProfileData {
   pickUpAddress: string;
   childImageUrl?: string;
   customerId?: string; // Optional since we add it in the API
+  // Location coordinates
+  schoolLatitude?: number;
+  schoolLongitude?: number;
+  pickupLatitude?: number;
+  pickupLongitude?: number;
+  // Enhanced location details
+  schoolLocationDetails?: import('./location.types').LocationDetails;
+  pickupLocationDetails?: import('./location.types').LocationDetails;
 }
 
 export interface StaffProfileData {

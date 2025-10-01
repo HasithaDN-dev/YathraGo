@@ -235,7 +235,7 @@ const searchWithStrategy = async (query: string, strategy: string): Promise<Goog
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
-        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.types,places.shortFormattedAddress'
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location'
       },
       body: JSON.stringify(requestBody)
     });
@@ -585,7 +585,7 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
 
     searchTimeout.current = setTimeout(() => {
       performSearch(query);
-    }, 800); // Increased from 300ms to 800ms to reduce API calls
+    }, 3000); // Increased from 300ms to 3000ms to reduce API calls
   };
 
   const performSearch = async (query: string) => {

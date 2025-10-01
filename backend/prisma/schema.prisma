@@ -255,6 +255,11 @@ model Child {
   gender         Gender   @default(Unspecified)
   childImageUrl  String?
   pickUpAddress  String
+  // Location coordinates
+  schoolLatitude  Float?
+  schoolLongitude Float?
+  pickupLatitude  Float?
+  pickupLongitude Float?
   customerId     Int?
   Customer       Customer? @relation(fields: [customerId], references: [customer_id])
 

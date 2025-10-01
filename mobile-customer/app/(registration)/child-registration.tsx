@@ -5,11 +5,14 @@ import { View, Alert, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomInput } from '../../components/ui/CustomInput';
+import { LocationInputField } from '../../components/ui/LocationInputField';
 import { ButtonComponent } from '../../components/ui/ButtonComponent';
 import { Typography } from '../../components/Typography';
 import { registerChildApi, uploadChildProfileImageApi } from '../../lib/api/profile.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
 import { ChildProfileData } from '../../types/customer.types';
+import { GoogleMapPicker } from '../../components/GoogleMapPicker';
+import { LocationDetails } from '../../types/location.types';
 // import { Colors } from '@/constants/Colors'; // Ensure this import is correct
 
 
@@ -21,6 +24,10 @@ export default function ChildRegistrationScreen() {
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isAddMode = mode === 'add';
 
+  // Map picker states
+  const [isSchoolMapVisible, setIsSchoolMapVisible] = useState(false);
+  const [isPickupMapVisible, setIsPickupMapVisible] = useState(false);
+
   // Get the accessToken and the action to complete the profile from the store.
   const { accessToken, setProfileComplete } = useAuthStore();
 
@@ -31,20 +38,36 @@ export default function ChildRegistrationScreen() {
     }));
   };
 
-  const validateForm = (): boolean => {
+  const handleSchoolLocationSelect = (location: LocationDetails) => {
+    setFormData(prev => ({
+      ...prev,
+      schoolLocationDetails: location,
+      schoolLocation: location.name,
+      school: location.name,
+    }));
+    setIsSchoolMapVisible(false);
+  };
 
-    const requiredFields: (keyof ChildProfileData)[] = [
+  const handlePickupLocationSelect = (location: LocationDetails) => {
+    setFormData(prev => ({
+      ...prev,
+      pickupLocationDetails: location,
+      pickUpAddress: location.address,
+    }));
+    setIsPickupMapVisible(false);
+  };
+
+  const validateForm = (): boolean => {
+    // Check basic text fields
+    const requiredTextFields: (keyof ChildProfileData)[] = [
       'childFirstName',
       'childLastName',
       'gender',
       'relationship',
-      'nearbyCity',
-      'schoolLocation',
-      'school',
-      'pickUpAddress'
+      'nearbyCity'
     ];
 
-    for (const field of requiredFields) {
+    for (const field of requiredTextFields) {
       const value = formData[field];
       if (!value || (typeof value === 'string' && !value.trim())) {
         const fieldName = field.replace(/([A-Z])/g, ' $1').toLowerCase();
@@ -52,6 +75,18 @@ export default function ChildRegistrationScreen() {
         return false;
       }
     }
+
+    // Check location selections
+    if (!formData.schoolLocationDetails) {
+      Alert.alert('Error', 'Please select a school location using the map');
+      return false;
+    }
+
+    if (!formData.pickupLocationDetails) {
+      Alert.alert('Error', 'Please select a pickup location using the map');
+      return false;
+    }
+
     return true;
   };
 
@@ -130,7 +165,7 @@ export default function ChildRegistrationScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
-      <View style={{ flex: 1, backgroundColor: "white" }}>
+      <View className="flex-1 bg-white">
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, padding: 24 }}
           showsVerticalScrollIndicator={false}
@@ -190,29 +225,31 @@ export default function ChildRegistrationScreen() {
               required
             />
 
-            <CustomInput
+            {/* School Location Picker */}
+            <LocationInputField
               label="School Location"
-              placeholder="Enter school location/area"
-              value={formData.schoolLocation || ''}
-              onChangeText={(value: string) => handleInputChange('schoolLocation', value)}
+              placeholder="Tap to select school location on map"
+              value={formData.schoolLocationDetails}
+              onPress={() => setIsSchoolMapVisible(true)}
               required
             />
 
-            <CustomInput
-              label="School Name"
-              placeholder="Enter school name"
-              value={formData.school || ''}
-              onChangeText={(value: string) => handleInputChange('school', value)}
-              required
-            />
+            {/* Manual School Name Input (optional) */}
+            {formData.schoolLocationDetails && (
+              <CustomInput
+                label="School Name (optional)"
+                placeholder="Enter specific school name if different"
+                value={formData.school || ''}
+                onChangeText={(value: string) => handleInputChange('school', value)}
+              />
+            )}
 
-            <CustomInput
-              label="Pickup Address"
-              placeholder="Enter pickup address"
-              value={formData.pickUpAddress || ''}
-              onChangeText={(value: string) => handleInputChange('pickUpAddress', value)}
-              multiline
-              numberOfLines={3}
+            {/* Pickup Location Picker */}
+            <LocationInputField
+              label="Pickup Location"
+              placeholder="Tap to select pickup location on map"
+              value={formData.pickupLocationDetails}
+              onPress={() => setIsPickupMapVisible(true)}
               required
             />
 
@@ -284,6 +321,25 @@ export default function ChildRegistrationScreen() {
             </Typography>
           </View>
         </ScrollView>
+
+        {/* Google Map Pickers */}
+        <GoogleMapPicker
+          title="Select School Location"
+          placeholder="Search for your child's school..."
+          isVisible={isSchoolMapVisible}
+          onClose={() => setIsSchoolMapVisible(false)}
+          onLocationSelect={handleSchoolLocationSelect}
+          initialLocation={formData.schoolLocationDetails}
+        />
+
+        <GoogleMapPicker
+          title="Select Pickup Location"
+          placeholder="Search for pickup location..."
+          isVisible={isPickupMapVisible}
+          onClose={() => setIsPickupMapVisible(false)}
+          onLocationSelect={handlePickupLocationSelect}
+          initialLocation={formData.pickupLocationDetails}
+        />
       </View>
     </SafeAreaView>
 

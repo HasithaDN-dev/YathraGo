@@ -93,6 +93,11 @@ export class CustomerService extends CustomerServiceExtension {
             school: dto.school,
             pickUpAddress: dto.pickUpAddress,
             childImageUrl: dto.childImageUrl ?? null,
+            // Store location coordinates
+            schoolLatitude: dto.schoolLatitude ?? null,
+            schoolLongitude: dto.schoolLongitude ?? null,
+            pickupLatitude: dto.pickupLatitude ?? null,
+            pickupLongitude: dto.pickupLongitude ?? null,
           },
         });
 
