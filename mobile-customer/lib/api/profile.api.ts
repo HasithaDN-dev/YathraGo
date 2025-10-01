@@ -181,12 +181,23 @@ export const registerStaffApi = async (
   
   // Get the user from auth store to include customerId
   const { user } = useAuthStore.getState();
+  
+  // Extract only the fields needed by the backend DTO
   const payload = {
-    ...data,
-    customerId: user?.id
+    customerId: user?.id,
+    nearbyCity: data.nearbyCity,
+    workLocation: data.workLocation,
+    workAddress: data.workAddress,
+    pickUpLocation: data.pickUpLocation,
+    pickupAddress: data.pickupAddress,
+    // Extract coordinates from location details
+    workLatitude: data.workLocationDetails?.coordinates.latitude,
+    workLongitude: data.workLocationDetails?.coordinates.longitude,
+    pickupLatitude: data.pickupLocationDetails?.coordinates.latitude,
+    pickupLongitude: data.pickupLocationDetails?.coordinates.longitude,
   };
   
-  console.log('Staff registration payload:', payload);
+  console.log('Staff registration payload with coordinates:', payload);
   
   const response = await authenticatedFetch(`${API_BASE_URL}/customer/register-staff-passenger`, {
     method: 'POST',

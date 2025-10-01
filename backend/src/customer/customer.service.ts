@@ -31,15 +31,19 @@ export class CustomerService extends CustomerServiceExtension {
 
       // Use transaction to ensure data consistency and proper connection management
       await this.prisma.$transaction(async (tx) => {
-        // Create Staff_Passenger
+        // Create Staff_Passenger with location coordinates
         await tx.staff_Passenger.create({
           data: {
             customerId: dto.customerId,
             nearbyCity: dto.nearbyCity,
             workLocation: dto.workLocation,
             workAddress: dto.workAddress,
+            workLatitude: dto.workLatitude || null,
+            workLongitude: dto.workLongitude || null,
             pickUpLocation: dto.pickUpLocation,
             pickupAddress: dto.pickupAddress,
+            pickupLatitude: dto.pickupLatitude || null,
+            pickupLongitude: dto.pickupLongitude || null,
           },
         });
 
@@ -152,8 +156,12 @@ export class CustomerService extends CustomerServiceExtension {
               nearbyCity: true,
               workLocation: true,
               workAddress: true,
+              workLatitude: true,
+              workLongitude: true,
               pickUpLocation: true,
               pickupAddress: true,
+              pickupLatitude: true,
+              pickupLongitude: true,
             },
           },
         },
