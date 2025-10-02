@@ -260,6 +260,11 @@ model Child {
   gender         Gender   @default(Unspecified)
   childImageUrl  String?
   pickUpAddress  String
+  // Location coordinates
+  schoolLatitude  Float?
+  schoolLongitude Float?
+  pickupLatitude  Float?
+  pickupLongitude Float?
   customerId     Int?
   Customer       Customer? @relation(fields: [customerId], references: [customer_id])
 
@@ -278,14 +283,18 @@ model Child_Trip {
 }
 
 model Staff_Passenger {
-  id             Int      @id @default(autoincrement())
-  customerId     Int      @unique
-  nearbyCity     String
-  workLocation   String
-  workAddress    String
-  pickUpLocation String
-  pickupAddress  String
-  Customer       Customer @relation(fields: [customerId], references: [customer_id])
+  id                 Int      @id @default(autoincrement())
+  customerId         Int      @unique
+  nearbyCity         String
+  workLocation       String
+  workAddress        String
+  workLatitude       Float?
+  workLongitude      Float?
+  pickUpLocation     String
+  pickupAddress      String
+  pickupLatitude     Float?
+  pickupLongitude    Float?
+  Customer           Customer @relation(fields: [customerId], references: [customer_id])
 
   @@index([customerId])
   @@index([workLocation])
