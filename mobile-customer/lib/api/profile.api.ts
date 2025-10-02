@@ -128,9 +128,30 @@ export const registerChildApi = async (
   
   // Get the user from auth store to include customerId
   const { user } = useAuthStore.getState();
+  
+  // Extract coordinates from location details
+  const schoolLatitude = data.schoolLocationDetails?.coordinates?.latitude || data.schoolLatitude;
+  const schoolLongitude = data.schoolLocationDetails?.coordinates?.longitude || data.schoolLongitude;
+  const pickupLatitude = data.pickupLocationDetails?.coordinates?.latitude || data.pickupLatitude;
+  const pickupLongitude = data.pickupLocationDetails?.coordinates?.longitude || data.pickupLongitude;
+  
+  // Create payload with only DTO-expected fields
   const payload = {
-    ...data,
-    customerId: user?.id
+    customerId: user?.id,
+    childFirstName: data.childFirstName,
+    childLastName: data.childLastName,
+    gender: data.gender,
+    relationship: data.relationship,
+    nearbyCity: data.nearbyCity,
+    schoolLocation: data.schoolLocation,
+    school: data.school,
+    pickUpAddress: data.pickUpAddress,
+    childImageUrl: data.childImageUrl,
+    // Add coordinates if available
+    ...(schoolLatitude && { schoolLatitude }),
+    ...(schoolLongitude && { schoolLongitude }),
+    ...(pickupLatitude && { pickupLatitude }),
+    ...(pickupLongitude && { pickupLongitude }),
   };
   
   console.log('Child registration payload:', payload);
@@ -181,12 +202,23 @@ export const registerStaffApi = async (
   
   // Get the user from auth store to include customerId
   const { user } = useAuthStore.getState();
+  
+  // Extract only the fields needed by the backend DTO
   const payload = {
-    ...data,
-    customerId: user?.id
+    customerId: user?.id,
+    nearbyCity: data.nearbyCity,
+    workLocation: data.workLocation,
+    workAddress: data.workAddress,
+    pickUpLocation: data.pickUpLocation,
+    pickupAddress: data.pickupAddress,
+    // Extract coordinates from location details
+    workLatitude: data.workLocationDetails?.coordinates.latitude,
+    workLongitude: data.workLocationDetails?.coordinates.longitude,
+    pickupLatitude: data.pickupLocationDetails?.coordinates.latitude,
+    pickupLongitude: data.pickupLocationDetails?.coordinates.longitude,
   };
   
-  console.log('Staff registration payload:', payload);
+  console.log('Staff registration payload with coordinates:', payload);
   
   const response = await authenticatedFetch(`${API_BASE_URL}/customer/register-staff-passenger`, {
     method: 'POST',

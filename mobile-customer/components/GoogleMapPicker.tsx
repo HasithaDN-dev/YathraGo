@@ -17,12 +17,479 @@ import { Typography } from './Typography';
 import { LocationDetails, LocationPickerProps, MapRegion, GooglePlace } from '../types/location.types';
 import * as Location from 'expo-location';
 
+// Get Google Maps API key from environment
+const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
+
 // Default location (Colombo, Sri Lanka)
 const DEFAULT_REGION: MapRegion = {
   latitude: 6.9271,
   longitude: 79.8612,
   latitudeDelta: 0.0922,
   longitudeDelta: 0.0421,
+};
+
+// Cache for storing recent search results (in-memory cache)
+interface SearchCache {
+  [key: string]: {
+    results: GooglePlace[];
+    timestamp: number;
+  };
+}
+
+const searchCache: SearchCache = {};
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes cache
+
+// Rate limiting to prevent excessive API calls
+let lastApiCallTime = 0;
+const MIN_API_CALL_INTERVAL = 1000; // Minimum 1 second between API calls
+
+// Helper function to enhance query with Sri Lankan context
+const enhanceQueryForSriLanka = (query: string): string => {
+  const queryLower = query.toLowerCase().trim();
+  
+  // Common abbreviations and local terms
+  const localEnhancements: { [key: string]: string } = {
+    'uni': 'university',
+    'univ': 'university',
+    'temple': 'temple sri lanka',
+    'hospital': 'hospital sri lanka',
+    'station': 'railway station sri lanka',
+    'airport': 'airport sri lanka',
+    'beach': 'beach sri lanka',
+    'park': 'park sri lanka'
+  };
+  
+  for (const [abbrev, full] of Object.entries(localEnhancements)) {
+    if (queryLower.includes(abbrev)) {
+      return queryLower.replace(abbrev, full);
+    }
+  }
+  
+  return query;
+};
+
+// Helper function to check and manage cache
+const getCachedResults = (query: string): GooglePlace[] | null => {
+  const cacheKey = query.toLowerCase().trim();
+  const cached = searchCache[cacheKey];
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    console.log(`Cache hit for: "${query}"`);
+    return cached.results;
+  }
+  
+  return null;
+};
+
+const setCachedResults = (query: string, results: GooglePlace[]): void => {
+  const cacheKey = query.toLowerCase().trim();
+  searchCache[cacheKey] = {
+    results,
+    timestamp: Date.now(),
+  };
+  
+  // Clean old cache entries (keep cache size manageable)
+  const now = Date.now();
+  Object.keys(searchCache).forEach(key => {
+    if (now - searchCache[key].timestamp > CACHE_DURATION) {
+      delete searchCache[key];
+    }
+  });
+};
+
+// Google Places API search function with multiple fallback strategies
+const searchGooglePlaces = async (query: string): Promise<GooglePlace[]> => {
+  if (!GOOGLE_MAPS_API_KEY) {
+    console.warn('Google Maps API key not found. Please check your .env configuration.');
+    return [];
+  }
+
+  // Check cache first
+  const cachedResults = getCachedResults(query);
+  if (cachedResults) {
+    return cachedResults;
+  }
+
+  try {
+    // Strategy 1: Try exact query first (country restricted)
+    let results = await searchWithStrategy(query, 'exact');
+    if (results.length > 0) {
+      setCachedResults(query, results);
+      return results;
+    }
+
+    // Strategy 2: Try with major city context for better local results
+    const queryLower = query.toLowerCase();
+    const hasCityContext = queryLower.includes('colombo') || queryLower.includes('kandy') || 
+                          queryLower.includes('galle') || queryLower.includes('jaffna') || 
+                          queryLower.includes('negombo') || queryLower.includes('matara');
+    
+    if (!hasCityContext) {
+      results = await searchWithStrategy(`${query} Colombo`, 'with_city');
+      if (results.length > 0) {
+        setCachedResults(query, results);
+        return results;
+      }
+    }
+
+    // Strategy 3: Try broader search within Sri Lanka
+    results = await searchWithStrategy(query, 'broad');
+    if (results.length > 0) {
+      setCachedResults(query, results);
+      return results;
+    }
+
+    // Strategy 5: Fallback to popular Sri Lankan locations
+    results = getPopularSriLankanLocations(query);
+    if (results.length > 0) {
+      console.log(`Fallback search found ${results.length} popular locations`);
+      // Cache fallback results too
+      setCachedResults(query, results);
+      return results;
+    }
+
+    console.log('No results found for any search strategy:', query);
+    // Cache empty results to avoid repeated API calls for same failed query
+    setCachedResults(query, []);
+    return [];
+  } catch (error) {
+    console.error('Places API request failed:', error);
+    throw error;
+  }
+};
+
+// Individual search strategy implementation using New Places API
+const searchWithStrategy = async (query: string, strategy: string): Promise<GooglePlace[]> => {
+  // Rate limiting: ensure minimum interval between API calls
+  const now = Date.now();
+  if (now - lastApiCallTime < MIN_API_CALL_INTERVAL) {
+    await new Promise(resolve => setTimeout(resolve, MIN_API_CALL_INTERVAL - (now - lastApiCallTime)));
+  }
+  lastApiCallTime = Date.now();
+  
+  try {
+    // Enhance query with Sri Lankan context for better results
+    const enhancedQuery = enhanceQueryForSriLanka(query);
+    
+    // Use New Places API Text Search with locationRestriction
+    const requestBody: any = {
+      textQuery: enhancedQuery,
+      maxResultCount: 15,
+      regionCode: 'LK', // Sri Lanka region code
+      languageCode: 'en'
+    };
+
+    // Add location restriction with strategy-based boundaries within Sri Lanka
+    if (strategy === 'exact') {
+      // Focus on Colombo metropolitan area for exact matches
+      requestBody.locationRestriction = {
+        rectangle: {
+          low: {
+            latitude: 6.7500,   // South of Colombo metro
+            longitude: 79.7000  // West of Colombo metro
+          },
+          high: {
+            latitude: 7.1500,   // North of Colombo metro
+            longitude: 80.1000  // East of Colombo metro
+          }
+        }
+      };
+    } else if (strategy === 'with_city') {
+      // Focus on Western Province for city context searches
+      requestBody.locationRestriction = {
+        rectangle: {
+          low: {
+            latitude: 6.4000,   // Southern Western Province
+            longitude: 79.6000  // Western boundary
+          },
+          high: {
+            latitude: 7.4000,   // Northern Western Province  
+            longitude: 80.2000  // Eastern boundary
+          }
+        }
+      };
+    } else if (strategy === 'broad') {
+      // Cover entire Sri Lanka for broad searches
+      requestBody.locationRestriction = {
+        rectangle: {
+          low: {
+            latitude: 5.9167,   // Southern boundary of Sri Lanka
+            longitude: 79.6523  // Western boundary of Sri Lanka
+          },
+          high: {
+            latitude: 9.8312,   // Northern boundary of Sri Lanka  
+            longitude: 81.8812  // Eastern boundary of Sri Lanka
+          }
+        }
+      };
+    }
+
+    console.log(`Trying ${strategy} search for: "${enhancedQuery}" (original: "${query}") - New API with Sri Lanka restriction`);
+    
+    if (!GOOGLE_MAPS_API_KEY) {
+      throw new Error('Google Maps API key not found');
+    }
+    
+    const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_MAPS_API_KEY,
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    const data = await response.json();
+
+    if (data.places && data.places.length > 0) {
+      console.log(`${strategy} search found ${data.places.length} results - New API`);
+      return data.places.map((place: any): GooglePlace => ({
+        place_id: place.id,
+        formatted_address: place.formattedAddress || place.shortFormattedAddress || 'Address not available',
+        name: place.displayName?.text || 'Unknown place',
+        geometry: {
+          location: {
+            lat: place.location?.latitude || 0,
+            lng: place.location?.longitude || 0,
+          },
+        },
+        types: place.types || [],
+        vicinity: extractVicinity(place.formattedAddress || place.shortFormattedAddress || ''),
+      }));
+    } else {
+      console.log(`${strategy} search - No results from New API:`, data.error || 'No places found');
+      return [];
+    }
+  } catch (error) {
+    console.log(`${strategy} search failed (New API):`, error);
+    return [];
+  }
+};
+
+// Helper function to extract vicinity from formatted address
+const extractVicinity = (formattedAddress: string): string => {
+  const parts = formattedAddress.split(',');
+  return parts.length > 1 ? parts[1].trim() : parts[0].trim();
+};
+
+// Expanded popular locations to reduce API dependency
+const getPopularSriLankanLocations = (query: string): GooglePlace[] => {
+  const popularPlaces: GooglePlace[] = [
+    // Universities & Education
+    {
+      place_id: 'popular_1',
+      formatted_address: 'University of Colombo, College House, Colombo 00300, Sri Lanka',
+      name: 'University of Colombo',
+      geometry: { location: { lat: 6.9022, lng: 79.8607 } },
+      types: ['university', 'establishment'],
+      vicinity: 'Cinnamon Gardens'
+    },
+    {
+      place_id: 'popular_9',
+      formatted_address: 'University of Peradeniya, Peradeniya 20400, Sri Lanka',
+      name: 'University of Peradeniya',
+      geometry: { location: { lat: 7.2572, lng: 80.5970 } },
+      types: ['university', 'establishment'],
+      vicinity: 'Peradeniya'
+    },
+    {
+      place_id: 'popular_10',
+      formatted_address: 'University of Moratuwa, Bandaranayake Mawatha, Moratuwa 10400, Sri Lanka',
+      name: 'University of Moratuwa',
+      geometry: { location: { lat: 6.7956, lng: 79.9006 } },
+      types: ['university', 'establishment'],
+      vicinity: 'Moratuwa'
+    },
+    // Major Cities & Areas
+    {
+      place_id: 'popular_4',
+      formatted_address: 'Kandy City Centre, Kandy 20000, Sri Lanka',
+      name: 'Kandy City Centre',
+      geometry: { location: { lat: 7.2906, lng: 80.6337 } },
+      types: ['locality', 'political'],
+      vicinity: 'Kandy'
+    },
+    {
+      place_id: 'popular_11',
+      formatted_address: 'Negombo, Sri Lanka',
+      name: 'Negombo',
+      geometry: { location: { lat: 7.2084, lng: 79.8358 } },
+      types: ['locality', 'political'],
+      vicinity: 'Negombo'
+    },
+    {
+      place_id: 'popular_12',
+      formatted_address: 'Anuradhapura, Sri Lanka',
+      name: 'Anuradhapura',
+      geometry: { location: { lat: 8.3114, lng: 80.4037 } },
+      types: ['locality', 'political'],
+      vicinity: 'Anuradhapura'
+    },
+    {
+      place_id: 'popular_13',
+      formatted_address: 'Trincomalee, Sri Lanka',
+      name: 'Trincomalee',
+      geometry: { location: { lat: 8.5874, lng: 81.2152 } },
+      types: ['locality', 'political'],
+      vicinity: 'Trincomalee'
+    },
+    // Tourist Attractions
+    {
+      place_id: 'popular_2',
+      formatted_address: 'Galle Face Green, Colombo 00300, Sri Lanka',
+      name: 'Galle Face Green',
+      geometry: { location: { lat: 6.9218, lng: 79.8438 } },
+      types: ['park', 'tourist_attraction'],
+      vicinity: 'Colombo 03'
+    },
+    {
+      place_id: 'popular_3',
+      formatted_address: 'Independence Memorial Hall, Independence Avenue, Colombo 00700, Sri Lanka',
+      name: 'Independence Memorial Hall',
+      geometry: { location: { lat: 6.9034, lng: 79.8684 } },
+      types: ['tourist_attraction', 'establishment'],
+      vicinity: 'Cinnamon Gardens'
+    },
+    {
+      place_id: 'popular_5',
+      formatted_address: 'Temple of the Sacred Tooth Relic, Sri Dalada Veediya, Kandy 20000, Sri Lanka',
+      name: 'Temple of the Sacred Tooth Relic',
+      geometry: { location: { lat: 7.2940, lng: 80.6414 } },
+      types: ['hindu_temple', 'tourist_attraction'],
+      vicinity: 'Kandy'
+    },
+    {
+      place_id: 'popular_6',
+      formatted_address: 'Galle Fort, Galle 80000, Sri Lanka',
+      name: 'Galle Fort',
+      geometry: { location: { lat: 6.0367, lng: 80.2179 } },
+      types: ['tourist_attraction', 'establishment'],
+      vicinity: 'Galle'
+    },
+    // Transportation Hubs
+    {
+      place_id: 'popular_7',
+      formatted_address: 'Colombo Fort Railway Station, Olcott Mawatha, Colombo 01000, Sri Lanka',
+      name: 'Colombo Fort Railway Station',
+      geometry: { location: { lat: 6.9344, lng: 79.8428 } },
+      types: ['transit_station', 'establishment'],
+      vicinity: 'Fort'
+    },
+    {
+      place_id: 'popular_8',
+      formatted_address: 'Bandaranaike International Airport, Katunayake 11400, Sri Lanka',
+      name: 'Bandaranaike International Airport',
+      geometry: { location: { lat: 7.1808, lng: 79.8841 } },
+      types: ['airport', 'establishment'],
+      vicinity: 'Katunayake'
+    },
+    {
+      place_id: 'popular_14',
+      formatted_address: 'Kandy Railway Station, Station Road, Kandy 20000, Sri Lanka',
+      name: 'Kandy Railway Station',
+      geometry: { location: { lat: 7.2935, lng: 80.6350 } },
+      types: ['transit_station', 'establishment'],
+      vicinity: 'Kandy'
+    },
+    // Popular Colombo Areas
+    {
+      place_id: 'popular_15',
+      formatted_address: 'Rajagiriya, Sri Lanka',
+      name: 'Rajagiriya',
+      geometry: { location: { lat: 6.9068, lng: 79.8912 } },
+      types: ['sublocality', 'political'],
+      vicinity: 'Rajagiriya'
+    },
+    {
+      place_id: 'popular_16',
+      formatted_address: 'Maharagama, Sri Lanka',
+      name: 'Maharagama',
+      geometry: { location: { lat: 6.8482, lng: 79.9267 } },
+      types: ['sublocality', 'political'],
+      vicinity: 'Maharagama'
+    },
+    {
+      place_id: 'popular_17',
+      formatted_address: 'Nugegoda, Sri Lanka',
+      name: 'Nugegoda',
+      geometry: { location: { lat: 6.8649, lng: 79.8997 } },
+      types: ['sublocality', 'political'],
+      vicinity: 'Nugegoda'
+    },
+    // Additional major Sri Lankan cities and locations
+    {
+      place_id: 'popular_18',
+      formatted_address: 'Matara, Sri Lanka',
+      name: 'Matara',
+      geometry: { location: { lat: 5.9549, lng: 80.5550 } },
+      types: ['locality', 'political'],
+      vicinity: 'Matara'
+    },
+    {
+      place_id: 'popular_19',
+      formatted_address: 'Jaffna, Sri Lanka',
+      name: 'Jaffna',
+      geometry: { location: { lat: 9.6615, lng: 80.0255 } },
+      types: ['locality', 'political'],
+      vicinity: 'Jaffna'
+    },
+    {
+      place_id: 'popular_20',
+      formatted_address: 'Batticaloa, Sri Lanka',
+      name: 'Batticaloa',
+      geometry: { location: { lat: 7.7172, lng: 81.6747 } },
+      types: ['locality', 'political'],
+      vicinity: 'Batticaloa'
+    },
+    {
+      place_id: 'popular_21',
+      formatted_address: 'Kurunegala, Sri Lanka',
+      name: 'Kurunegala',
+      geometry: { location: { lat: 7.4818, lng: 80.3609 } },
+      types: ['locality', 'political'],
+      vicinity: 'Kurunegala'
+    },
+    {
+      place_id: 'popular_22',
+      formatted_address: 'Ratnapura, Sri Lanka',
+      name: 'Ratnapura',
+      geometry: { location: { lat: 6.6828, lng: 80.4126 } },
+      types: ['locality', 'political'],
+      vicinity: 'Ratnapura'
+    },
+    {
+      place_id: 'popular_23',
+      formatted_address: 'Badulla, Sri Lanka',
+      name: 'Badulla',
+      geometry: { location: { lat: 6.9934, lng: 81.0550 } },
+      types: ['locality', 'political'],
+      vicinity: 'Badulla'
+    },
+    {
+      place_id: 'popular_24',
+      formatted_address: 'Kegalle, Sri Lanka',
+      name: 'Kegalle',
+      geometry: { location: { lat: 7.2513, lng: 80.3464 } },
+      types: ['locality', 'political'],
+      vicinity: 'Kegalle'
+    },
+    {
+      place_id: 'popular_25',
+      formatted_address: 'Matale, Sri Lanka',
+      name: 'Matale',
+      geometry: { location: { lat: 7.4675, lng: 80.6234 } },
+      types: ['locality', 'political'],
+      vicinity: 'Matale'
+    }
+  ];
+
+  const queryLower = query.toLowerCase();
+  return popularPlaces.filter(place => 
+    place.name.toLowerCase().includes(queryLower) ||
+    place.vicinity?.toLowerCase().includes(queryLower) ||
+    place.formatted_address.toLowerCase().includes(queryLower)
+  );
 };
 
 export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
@@ -111,114 +578,52 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
       return;
     }
 
+    // Only search if query is at least 2 characters to reduce API calls
+    if (query.trim().length < 2) {
+      return;
+    }
+
     searchTimeout.current = setTimeout(() => {
       performSearch(query);
-    }, 300);
+    }, 3000); // Increased from 300ms to 3000ms to reduce API calls
   };
 
   const performSearch = async (query: string) => {
     try {
       setIsSearching(true);
-      const mockResults = mockSearchResults(query);
-      setSearchResults(mockResults);
+      
+      if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
+        // Show fallback message when API key is not configured
+        Alert.alert(
+          'API Key Required', 
+          'Please configure your Google Maps API key in the .env file to enable location search.'
+        );
+        setSearchResults([]);
+        return;
+      }
+
+      const results = await searchGooglePlaces(query);
+      setSearchResults(results);
+      
+      // Only show alert for very short queries or obvious typos
+      if (results.length === 0 && query.length >= 3) {
+        console.log(`No results found for: "${query}"`);
+        // Don't show alert, just clear results - user can try different terms
+      }
     } catch (error) {
       console.log('Search error:', error);
-      Alert.alert('Error', 'Failed to search locations');
+      // Only show error alert for network issues, not for no results
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (!errorMessage.includes('ZERO_RESULTS') && !errorMessage.includes('No results')) {
+        Alert.alert('Search Error', 'Please check your internet connection and try again.');
+      }
+      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
   };
 
-  const mockSearchResults = (query: string): GooglePlace[] => {
-    const mockPlaces: GooglePlace[] = [
-      {
-        place_id: '1',
-        formatted_address: 'Galle Road, Colombo 03, Sri Lanka',
-        name: 'Galle Road',
-        geometry: { location: { lat: 6.9147, lng: 79.8437 } },
-        types: ['route'],
-        vicinity: 'Colombo 03'
-      },
-      {
-        place_id: '2',
-        formatted_address: 'Independence Square, Colombo 07, Sri Lanka',
-        name: 'Independence Square',
-        geometry: { location: { lat: 6.9034, lng: 79.8684 } },
-        types: ['tourist_attraction'],
-        vicinity: 'Colombo 07'
-      },
-      {
-        place_id: '3',
-        formatted_address: 'Maradana Station, Colombo 10, Sri Lanka',
-        name: 'Maradana Railway Station',
-        geometry: { location: { lat: 6.9298, lng: 79.8737 } },
-        types: ['transit_station'],
-        vicinity: 'Colombo 10'
-      },
-      {
-        place_id: '4',
-        formatted_address: 'Rajagiriya, Sri Lanka',
-        name: 'Rajagiriya Junction',
-        geometry: { location: { lat: 6.9068, lng: 79.8912 } },
-        types: ['sublocality'],
-        vicinity: 'Rajagiriya'
-      },
-      {
-        place_id: '5',
-        formatted_address: 'Maharagama, Sri Lanka',
-        name: 'Maharagama Junction',
-        geometry: { location: { lat: 6.8482, lng: 79.9267 } },
-        types: ['sublocality'],
-        vicinity: 'Maharagama'
-      },
-      {
-        place_id: '6',
-        formatted_address: 'Piliyandala, Sri Lanka',
-        name: 'Piliyandala',
-        geometry: { location: { lat: 6.8013, lng: 79.9219 } },
-        types: ['locality'],
-        vicinity: 'Piliyandala'
-      },
-      {
-        place_id: '7',
-        formatted_address: 'Nugegoda, Sri Lanka',
-        name: 'Nugegoda',
-        geometry: { location: { lat: 6.8649, lng: 79.8997 } },
-        types: ['locality'],
-        vicinity: 'Nugegoda'
-      },
-      {
-        place_id: '8',
-        formatted_address: 'Kottawa, Sri Lanka',
-        name: 'Kottawa',
-        geometry: { location: { lat: 6.8147, lng: 79.9733 } },
-        types: ['locality'],
-        vicinity: 'Kottawa'
-      },
-      {
-        place_id: '9',
-        formatted_address: 'Bambalapitiya, Colombo 04, Sri Lanka',
-        name: 'Bambalapitiya',
-        geometry: { location: { lat: 6.8851, lng: 79.8577 } },
-        types: ['sublocality'],
-        vicinity: 'Colombo 04'
-      },
-      {
-        place_id: '10',
-        formatted_address: 'Wellawatta, Colombo 06, Sri Lanka',
-        name: 'Wellawatta',
-        geometry: { location: { lat: 6.8776, lng: 79.8615 } },
-        types: ['sublocality'],
-        vicinity: 'Colombo 06'
-      }
-    ];
 
-    return mockPlaces.filter(place => 
-      place.name.toLowerCase().includes(query.toLowerCase()) ||
-      place.formatted_address.toLowerCase().includes(query.toLowerCase()) ||
-      (place.vicinity && place.vicinity.toLowerCase().includes(query.toLowerCase()))
-    );
-  };
 
   const handleSearchResultSelect = (place: GooglePlace) => {
     const newRegion: MapRegion = {
@@ -284,7 +689,7 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
           },
         });
       }
-    }, 1000);
+    }, 2000); // Increased from 1000ms to 2000ms to reduce reverse geocoding calls
   };
 
   const handleSetLocationOnMap = () => {
@@ -358,7 +763,17 @@ export const GoogleMapPicker: React.FC<LocationPickerProps> = ({
           </Typography>
         )}
       </View>
-      <Text style={styles.searchResultDistance}>100 m</Text>
+      <View style={styles.searchResultMeta}>
+        {item.types.includes('locality') && (
+          <Text style={styles.searchResultType}>City</Text>
+        )}
+        {item.types.includes('establishment') && (
+          <Text style={styles.searchResultType}>Place</Text>
+        )}
+        {item.types.includes('route') && (
+          <Text style={styles.searchResultType}>Road</Text>
+        )}
+      </View>
     </TouchableOpacity>
   );
 
@@ -666,9 +1081,18 @@ const styles = StyleSheet.create({
   searchResultVicinity: {
     color: '#9ca3af',
   },
-  searchResultDistance: {
-    color: '#6b7280',
-    fontSize: 12,
+  searchResultMeta: {
+    alignItems: 'flex-end',
+  },
+  searchResultType: {
+    color: '#4285f4',
+    fontSize: 10,
+    fontWeight: '500',
+    backgroundColor: '#f0f9ff',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    overflow: 'hidden',
   },
   mapContainer: {
     flex: 1,
