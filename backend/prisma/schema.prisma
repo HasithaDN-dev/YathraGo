@@ -96,10 +96,15 @@ model Vehicle {
 }
 
 model Chat {
-  id        Int      @id @default(autoincrement())
-  message   String
-  timestamp DateTime @default(now())
-  seen      Boolean  @default(false)
+  id          Int       @id @default(autoincrement())
+  message     String?   // nullable, for text messages
+  imageUrl    String?   // nullable, for image messages
+  timestamp   DateTime  @default(now())
+  seen        Boolean   @default(false)
+
+  // sender info
+  senderId    Int
+  senderType  UserType
 }
 
 model BackupDriver {
@@ -323,4 +328,12 @@ enum Gender {
   Male
   Female
   Unspecified
+}
+
+enum UserType {
+  CUSTOMER
+  WEBUSER
+  BACKUPDRIVER
+  DRIVER
+  VEHICLEOWNER
 }
