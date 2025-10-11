@@ -1,3 +1,9 @@
+
+import { API_BASE_URL } from '../../../config/api';
+import { useAuth } from '../../../hooks/useAuth';
+
+// Commented out dummy data. Now using API data.
+// interface ChatMessage { ... }
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView, Image, TextInput, TouchableOpacity, Platform, Keyboard, TouchableWithoutFeedback, Text, Linking } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -6,30 +12,27 @@ import { Typography } from '@/components/Typography';
 import { ArrowLeft, PaperPlaneRight, Camera, Paperclip, Phone } from 'phosphor-react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 
-interface ChatMessage {
-  id: string;
-  text?: string;
-  time: string;
-  mine?: boolean;
-  imageUri?: string;
-}
-
-export default function ChatRoomScreen() {
-  const { name, phone } = useLocalSearchParams<{ id: string; name: string; phone?: string }>();
+  const { id: conversationId, name, phone } = useLocalSearchParams<{ id: string; name: string; phone?: string }>();
   const insets = useSafeAreaInsets();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: '1', text: 'Hi!', time: '05:15 am' },
-    { id: '2', text: 'Hi Sunil', time: '05:15 am', mine: true },
-    { id: '3', text: 'ada vehicle eka enna poddak parakku wei', time: '05:16 am' },
-    { id: '4', text: 'Ah emhama hari hari', time: '05:17 am', mine: true },
-    { id: '5', text: 'Thanks remind Kalota.', time: '05:18 am' },
-  ]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<ScrollView>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [toolbarHeight, setToolbarHeight] = useState(56);
-  
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+
+  // Fetch messages for this conversation
+  useEffect(() => {
+    if (!conversationId) return;
+    setLoading(true);
+    fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/messages`)
+      .then((res) => res.json())
+      .then((data) => setMessages(data))
+      .catch(() => setMessages([]))
+      .finally(() => setLoading(false));
+  }, [conversationId]);
 
   // Ensure input bar stays above keyboard: hide emoji panel when keyboard opens
   useEffect(() => {
@@ -77,12 +80,29 @@ export default function ChatRoomScreen() {
     </View>
   ), [name, phone]);
 
-  const send = (overrideText?: string) => {
+  // Send a message to backend
+  const send = async (overrideText?: string) => {
     const textToSend = (overrideText ?? draft).trim();
-    if (!textToSend) return;
-    const msg: ChatMessage = { id: String(Date.now()), text: textToSend, time: 'now', mine: true };
-    setMessages((prev) => [...prev, msg]);
-    if (!overrideText) setDraft('');
+    if (!textToSend || !user) return;
+    setDraft('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/chat/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: Number(conversationId),
+          senderId: Number(user.id),
+          senderType: 'CUSTOMER',
+          text: textToSend,
+        }),
+      });
+      if (res.ok) {
+        // Re-fetch messages after sending
+        fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/messages`)
+          .then((res) => res.json())
+          .then((data) => setMessages(data));
+      }
+    } catch {}
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   };
 
@@ -190,8 +210,18 @@ export default function ChatRoomScreen() {
             keyboardShouldPersistTaps="handled"
             onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
           >
-            {messages.map((m) => (
-              <Bubble key={m.id} m={m} />
+            {loading ? (
+              <Typography variant="body" className="text-center mt-8">Loading...</Typography>
+            ) : messages.length === 0 ? (
+              <Typography variant="body" className="text-center mt-8">No messages.</Typography>
+            ) : messages.map((m) => (
+              <Bubble key={m.id} m={{
+                ...m,
+                mine: m.senderId === Number(user?.id) && m.senderType === 'CUSTOMER',
+                text: m.text,
+                imageUri: m.imageUrl,
+                time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString() : '',
+              }} />
             ))}
           </ScrollView>
 
