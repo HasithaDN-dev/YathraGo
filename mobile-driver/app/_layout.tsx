@@ -55,7 +55,8 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         {/* Protected routes - only accessible when authenticated and has complete profile */}
-        <Stack.Protected guard={isLoggedIn && registrationStatus === 'ACCOUNT_CREATED'}>
+        {/* <Stack.Protected guard={isLoggedIn && registrationStatus === 'ACCOUNT_CREATED'}> */}
+        <Stack.Protected guard={true}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="vehicle-list" options={{ headerShown: false }} />
           <Stack.Screen name="(homeLinks)" options={{ headerShown: false }} />
