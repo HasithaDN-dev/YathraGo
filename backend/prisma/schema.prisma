@@ -343,6 +343,13 @@ enum Gender {
   Unspecified
 }
 
+enum ChildAssignRequestStatus {
+  Pending
+  Assigned
+  Rejected
+}
+
+
 // --- City Table ---
 model City {
   id        Int      @id @default(autoincrement())
@@ -374,9 +381,10 @@ model ChildRideRequest {
   childId   Int
   driver    Driver   @relation(fields: [driverId], references: [driver_id])
   driverId  Int
-  status    String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  status    ChildAssignRequestStatus  @default(Pending) // PENDING, ACCEPTED, REJECTED
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
 }
 
 // --- Driver Route (Optimized Route) ---
