@@ -178,6 +178,10 @@ model Driver {
   createdAt                DateTime           @default(now())
   updatedAt                DateTime           @updatedAt
   vehicles                 Vehicle[]
+  cities                   DriverCities[]
+  rideRequests             ChildRideRequest[]
+  driverRoutes             DriverRoute[]
+  routeWaypoints           RouteWaypoint[]
 }
 
 model FoundedBackupDrivers {
@@ -185,7 +189,7 @@ model FoundedBackupDrivers {
 }
 
 model VehicleOwner {
-  id         Int      @id
+  id         Int       @id
   first_name String?
   last_name  String?
   phone      String?
@@ -193,7 +197,7 @@ model VehicleOwner {
   company    String?
   Address    String?
   vehicles   Vehicle[]
-  webuser    Webuser  @relation(fields: [id], references: [id])
+  webuser    Webuser   @relation(fields: [id], references: [id])
 }
 
 model Customer {
@@ -245,23 +249,28 @@ model Ratings_and_Reviews {
 }
 
 model Child {
-  child_id       Int       @id @default(autoincrement())
-  relationship   String
-  nearbyCity     String
-  schoolLocation String
-  school         String
-  childFirstName String
-  childLastName  String
-  gender         Gender   @default(Unspecified)
-  childImageUrl  String?
-  pickUpAddress  String
+  child_id        Int       @id @default(autoincrement())
+  relationship    String
+  nearbyCity      String
+  schoolLocation  String
+  school          String
+  childFirstName  String
+  childLastName   String
+  gender          Gender    @default(Unspecified)
+  childImageUrl   String?
+  pickUpAddress   String
   // Location coordinates
   schoolLatitude  Float?
   schoolLongitude Float?
   pickupLatitude  Float?
   pickupLongitude Float?
-  customerId     Int?
-  Customer       Customer? @relation(fields: [customerId], references: [customer_id])
+  customerId      Int?
+  Customer        Customer? @relation(fields: [customerId], references: [customer_id])
+
+  city           City?              @relation(fields: [cityId], references: [id])
+  cityId         Int?
+  rideRequests   ChildRideRequest[]
+  routeWaypoints RouteWaypoint[]
 
   @@index([customerId])
   @@index([school])
@@ -278,18 +287,18 @@ model Child_Trip {
 }
 
 model Staff_Passenger {
-  id                 Int      @id @default(autoincrement())
-  customerId         Int      @unique
-  nearbyCity         String
-  workLocation       String
-  workAddress        String
-  workLatitude       Float?
-  workLongitude      Float?
-  pickUpLocation     String
-  pickupAddress      String
-  pickupLatitude     Float?
-  pickupLongitude    Float?
-  Customer           Customer @relation(fields: [customerId], references: [customer_id])
+  id              Int      @id @default(autoincrement())
+  customerId      Int      @unique
+  nearbyCity      String
+  workLocation    String
+  workAddress     String
+  workLatitude    Float?
+  workLongitude   Float?
+  pickUpLocation  String
+  pickupAddress   String
+  pickupLatitude  Float?
+  pickupLongitude Float?
+  Customer        Customer @relation(fields: [customerId], references: [customer_id])
 
   @@index([customerId])
   @@index([workLocation])
@@ -332,4 +341,64 @@ enum Gender {
   Male
   Female
   Unspecified
+}
+
+// --- City Table ---
+model City {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  latitude  Float
+  longitude Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  drivers  DriverCities[]
+  children Child[]
+}
+
+// --- Driver's Available Cities (Many-to-Many) ---
+model DriverCities {
+  id       Int    @id @default(autoincrement())
+  driver   Driver @relation(fields: [driverId], references: [driver_id])
+  driverId Int
+  city     City   @relation(fields: [cityId], references: [id])
+  cityId   Int
+
+  @@unique([driverId, cityId])
+}
+
+// --- Child Ride Requests ---
+model ChildRideRequest {
+  id        Int      @id @default(autoincrement())
+  child     Child    @relation(fields: [childId], references: [child_id])
+  childId   Int
+  driver    Driver   @relation(fields: [driverId], references: [driver_id])
+  driverId  Int
+  status    String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --- Driver Route (Optimized Route) ---
+model DriverRoute {
+  id           Int      @id @default(autoincrement())
+  driver       Driver   @relation(fields: [driverId], references: [driver_id])
+  driverId     Int
+  date         DateTime
+  routeDetails Json // Store Google Directions API JSON
+  createdAt    DateTime @default(now())
+
+  waypoints RouteWaypoint[]
+}
+
+// --- Waypoints Table ---
+model RouteWaypoint {
+  id            Int         @id @default(autoincrement())
+  driverRoute   DriverRoute @relation(fields: [driverRouteId], references: [id])
+  driverRouteId Int
+  child         Child       @relation(fields: [childId], references: [child_id])
+  childId       Int
+  driver        Driver      @relation(fields: [driverId], references: [driver_id])
+  driverId      Int
+  order         Int // Order of pickup
 }

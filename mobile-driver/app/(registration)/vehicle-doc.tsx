@@ -160,7 +160,7 @@ export default function VehicleDocScreen() {
         name: `${personalInfo.firstName} ${personalInfo.lastName}`,
         email: personalInfo.email,
         address: personalInfo.city,
-        profileImage: personalInfo.profileImage?.uri,
+        profileImage: personalInfo.profileImage?.uri || "",
         emergencyContact: personalInfo.secondaryPhone,
         NIC: nic,
         dateOfBirth: personalInfo.dateOfBirth,

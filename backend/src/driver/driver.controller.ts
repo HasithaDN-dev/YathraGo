@@ -79,59 +79,58 @@ export class DriverController {
   ) {
     const phone = req.user.phone; // Securely get phone from JWT
 
-    // Map file fields to URLs
-    const profileImageUrl = files.profileImage?.[0]?.filename
-      ? `uploads/vehicle/${files.profileImage[0].filename}`
+    // Use image URI from registrationData (frontend string)
+    const safeFiles = files || {};
+    const profileImageUrl = registrationData.profileImage || null;
+    const idFrontImageUrl = safeFiles.idFrontImage?.[0]?.filename
+      ? `uploads/vehicle/${safeFiles.idFrontImage[0].filename}`
       : null;
-    const idFrontImageUrl = files.idFrontImage?.[0]?.filename
-      ? `uploads/vehicle/${files.idFrontImage[0].filename}`
+    const idBackImageUrl = safeFiles.idBackImage?.[0]?.filename
+      ? `uploads/vehicle/${safeFiles.idBackImage[0].filename}`
       : null;
-    const idBackImageUrl = files.idBackImage?.[0]?.filename
-      ? `uploads/vehicle/${files.idBackImage[0].filename}`
+    const vehicleFrontViewUrl = safeFiles.vehicleFrontView?.[0]?.filename
+      ? `uploads/vehicle/${safeFiles.vehicleFrontView[0].filename}`
       : null;
-    const vehicleFrontViewUrl = files.vehicleFrontView?.[0]?.filename
-      ? `uploads/vehicle/${files.vehicleFrontView[0].filename}`
+    const vehicleSideViewUrl = safeFiles.vehicleSideView?.[0]?.filename
+      ? `uploads/vehicle/${safeFiles.vehicleSideView[0].filename}`
       : null;
-    const vehicleSideViewUrl = files.vehicleSideView?.[0]?.filename
-      ? `uploads/vehicle/${files.vehicleSideView[0].filename}`
+    const vehicleRearViewUrl = safeFiles.vehicleRearView?.[0]?.filename
+      ? `uploads/vehicle/${safeFiles.vehicleRearView[0].filename}`
       : null;
-    const vehicleRearViewUrl = files.vehicleRearView?.[0]?.filename
-      ? `uploads/vehicle/${files.vehicleRearView[0].filename}`
+    const vehicleInteriorViewUrl = safeFiles.vehicleInteriorView?.[0]?.filename
+      ? `uploads/vehicle/${safeFiles.vehicleInteriorView[0].filename}`
       : null;
-    const vehicleInteriorViewUrl = files.vehicleInteriorView?.[0]?.filename
-      ? `uploads/vehicle/${files.vehicleInteriorView[0].filename}`
+    const revenueLicenseUrl = safeFiles.revenueLicense?.[0]?.filename
+      ? `uploads/vehicle/${safeFiles.revenueLicense[0].filename}`
       : null;
-    const revenueLicenseUrl = files.revenueLicense?.[0]?.filename
-      ? `uploads/vehicle/${files.revenueLicense[0].filename}`
+    const vehicleInsuranceUrl = safeFiles.vehicleInsurance?.[0]?.filename
+      ? `uploads/vehicle/${safeFiles.vehicleInsurance[0].filename}`
       : null;
-    const vehicleInsuranceUrl = files.vehicleInsurance?.[0]?.filename
-      ? `uploads/vehicle/${files.vehicleInsurance[0].filename}`
+    const registrationDocUrl = safeFiles.registrationDoc?.[0]?.filename
+      ? `uploads/vehicle/${safeFiles.registrationDoc[0].filename}`
       : null;
-    const registrationDocUrl = files.registrationDoc?.[0]?.filename
-      ? `uploads/vehicle/${files.registrationDoc[0].filename}`
+    const licenseFrontUrl = safeFiles.licenseFront?.[0]?.filename
+      ? `uploads/vehicle/${safeFiles.licenseFront[0].filename}`
       : null;
-    const licenseFrontUrl = files.licenseFront?.[0]?.filename
-      ? `uploads/vehicle/${files.licenseFront[0].filename}`
-      : null;
-    const licenseBackUrl = files.licenseBack?.[0]?.filename
-      ? `uploads/vehicle/${files.licenseBack[0].filename}`
+    const licenseBackUrl = safeFiles.licenseBack?.[0]?.filename
+      ? `uploads/vehicle/${safeFiles.licenseBack[0].filename}`
       : null;
 
     // Prepare the registration data with file URLs
     const completeRegistrationData: CompleteDriverRegistrationDto = {
-      name: `${registrationData.firstName} ${registrationData.lastName}`,
-      NIC: registrationData.NIC || 'N/A', // You might need to add NIC field to mobile form
-      address: registrationData.city,
-      date_of_birth: registrationData.dateOfBirth,
-      gender: 'Not specified', // You might want to add this to mobile form
+      name: `${registrationData.firstName || ''} ${registrationData.lastName || ''}`,
+      NIC: registrationData.NIC || '',
+      address: registrationData.city || '',
+      date_of_birth: registrationData.dateOfBirth || '',
+      gender: registrationData.gender || 'Not specified',
       profile_picture_url: profileImageUrl || '',
-      email: registrationData.email || undefined,
+      email: registrationData.email || '',
       driver_license_front_url: licenseFrontUrl || '',
       driver_license_back_url: licenseBackUrl || '',
       nic_front_pic_url: idFrontImageUrl || '',
       nice_back_pic_url: idBackImageUrl || '',
-      second_phone: registrationData.secondaryPhone || undefined,
-      vehicle_Reg_No: registrationData.licensePlate || undefined,
+      second_phone: registrationData.secondaryPhone || '',
+      vehicle_Reg_No: registrationData.licensePlate || '',
     };
 
     return this.driverService.completeDriverRegistration(
