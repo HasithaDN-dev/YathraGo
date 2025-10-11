@@ -104,7 +104,7 @@ model Chat {
 
   // sender info
   senderId    Int
-  senderType  UserType
+  senderType  UserTypes
 }
 
 model BackupDriver {
@@ -339,7 +339,7 @@ enum Gender {
   Unspecified
 }
 
-enum UserType {
+enum UserTypes {
   CUSTOMER
   WEBUSER
   BACKUPDRIVER
