@@ -34,20 +34,24 @@ export const getProfilesApi = async (token: string): Promise<Profile[]> => {
   const profiles: Profile[] = [];
   
   if (data.profile) {
-    // Add children profiles
+    // Add children profiles with prefixed IDs to avoid conflicts
     if (data.profile.children && Array.isArray(data.profile.children)) {
-      profiles.push(...data.profile.children.map((child: any) => ({
+      profiles.push(...data.profile.children.map((child: any, index: number) => ({
         ...child,
-        name: child.childName,
+        id: `child-${child.child_id || index}`,
+        firstName: child.childFirstName,
+        lastName: child.childLastName,
         type: 'child' as const,
       })));
     }
     
-    // Add staff profile if exists
+    // Add staff profile if exists (using customer's own name) with prefixed ID
     if (data.profile.staffPassenger) {
       profiles.push({
         ...data.profile.staffPassenger,
-        name: 'Staff Passenger',
+        id: `staff-${data.profile.staffPassenger.id}`,
+        firstName: data.profile.firstName || '',
+        lastName: data.profile.lastName || '',
         type: 'staff' as const,
       });
     }
@@ -59,7 +63,8 @@ export const getProfilesApi = async (token: string): Promise<Profile[]> => {
     timestamp: Date.now()
   };
   
-  console.log('Extracted profiles:', profiles);
+  console.log('Extracted profiles with unique IDs:', profiles);
+  console.log('Profile IDs:', profiles.map(p => `${p.type}: ${p.id}`));
   return profiles;
 };
 
