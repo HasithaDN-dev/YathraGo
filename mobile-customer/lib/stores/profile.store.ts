@@ -29,14 +29,22 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const profiles = await getProfilesApi(token);
+      console.log('Loaded profiles:', profiles.map(p => `${p.type}-${p.id}: ${p.firstName} ${p.lastName}`));
+      
     const defaultProfileId = await AsyncStorage.getItem('default-profile-id');
+    console.log('Stored default profile ID:', defaultProfileId);
 
     let profileToActivate: Profile | null = null;
     if (defaultProfileId) {
       profileToActivate = profiles.find(p => p.id === defaultProfileId) || null;
+      if (!profileToActivate) {
+        console.log('Stored profile ID not found, clearing stored ID');
+        await AsyncStorage.removeItem('default-profile-id');
+      }
     }
       if (!profileToActivate && profiles.length > 0) {
         profileToActivate = profiles[0];
+        console.log('Using first profile as default:', profileToActivate);
       }
 
       set({ profiles, activeProfile: profileToActivate, isLoading: false });
@@ -54,13 +62,19 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   },
   
   setActiveProfile: (profileId) => {
+    console.log('Setting active profile with ID:', profileId);
     const profile = get().profiles.find(p => p.id === profileId);
+    console.log('Found profile:', profile);
     if (profile) {
       set({ activeProfile: profile });
+      console.log('Active profile set to:', profile.type, profile.firstName, profile.lastName);
+    } else {
+      console.log('Profile not found for ID:', profileId);
     }
   },
   
   setDefaultProfile: async (profileId) => {
+    console.log('Setting default profile ID:', profileId);
     await AsyncStorage.setItem('default-profile-id', profileId);
     get().setActiveProfile(profileId); // Update active profile immediately for good UX
   },
