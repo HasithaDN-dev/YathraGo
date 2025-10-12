@@ -11,7 +11,8 @@ import {
   MapPinIcon,
   HeadsetIcon,
   InfoIcon,
-  SignOutIcon
+  SignOutIcon,
+  GearIcon
 } from 'phosphor-react-native';
 import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
@@ -47,18 +48,24 @@ export default function MenuScreen() {
     },
     {
       id: '4',
+      title: 'Default Profile Settings',
+      icon: GearIcon,
+      action: () => router.push('/(menu)/default-profile-settings'),
+    },
+    {
+      id: '5',
       title: 'Help and Support',
       icon: HeadsetIcon,
       action: () => router.push('/(menu)/help_and_support'),
     },
     {
-      id: '5',
+      id: '6',
       title: 'About us',
       icon: InfoIcon,
       action: () => router.push('/(menu)/about_us'),
     },
     {
-      id: '6',
+      id: '7',
       title: 'Logout',
       icon: SignOutIcon,
       action: () => {handleLogout()},
