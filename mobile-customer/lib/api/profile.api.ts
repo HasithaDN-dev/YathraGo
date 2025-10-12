@@ -36,18 +36,22 @@ export const getProfilesApi = async (token: string): Promise<Profile[]> => {
   if (data.profile) {
     // Add children profiles
     if (data.profile.children && Array.isArray(data.profile.children)) {
-      profiles.push(...data.profile.children.map((child: any) => ({
+      profiles.push(...data.profile.children.map((child: any, index: number) => ({
         ...child,
-        name: child.childName,
+        id: child.child_id?.toString() || `child-${index}`,
+        firstName: child.childFirstName,
+        lastName: child.childLastName,
         type: 'child' as const,
       })));
     }
     
-    // Add staff profile if exists
+    // Add staff profile if exists (using customer's own name)
     if (data.profile.staffPassenger) {
       profiles.push({
         ...data.profile.staffPassenger,
-        name: 'Staff Passenger',
+        id: data.profile.staffPassenger.id?.toString() || `staff-${data.profile.customer_id || 'passenger'}`,
+        firstName: data.profile.firstName || '',
+        lastName: data.profile.lastName || '',
         type: 'staff' as const,
       });
     }

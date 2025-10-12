@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -15,11 +15,39 @@ import { DriverVehicleCard } from '@/components/ui/DriverVehicleCard';
 import { PaymentSection } from '@/components/ui/PaymentSection';
 import CustomButton from '@/components/ui/CustomButton';
 import { router } from 'expo-router';
+import { useProfileStore } from '@/lib/stores/profile.store';
+import { useAuthStore } from '@/lib/stores/auth.store';
 
-export default function StaffHomeScreen() {
+export default function HomeScreen() {
+  const { activeProfile, loadProfiles } = useProfileStore();
+  const { accessToken } = useAuthStore();
+
+  useEffect(() => {
+    if (accessToken && !activeProfile) {
+      loadProfiles(accessToken);
+    }
+  }, [accessToken, activeProfile, loadProfiles]);
 
   const openOverview = (tab: 'Driver' | 'Vehicle') => {
     router.push({ pathname: '/(menu)/(homeCards)/transport_overview', params: { tab } });
+  };
+
+
+
+  const getDestinationName = () => {
+    if (!activeProfile) return 'Destination';
+    if (activeProfile.type === 'child') {
+      return activeProfile.school || 'School';
+    }
+    return activeProfile.workLocation || 'Work Location';
+  };
+
+  const getPickupLocation = () => {
+    if (!activeProfile) return 'Pick Up Location';
+    if (activeProfile.type === 'child') {
+      return activeProfile.pickUpAddress || 'Home';
+    }
+    return activeProfile.pickupAddress || 'Pick Up Location';
   };
 
   return (
@@ -29,19 +57,23 @@ export default function StaffHomeScreen() {
         contentContainerClassName="px-4 space-y-6 pb-6 mt-3"
         showsVerticalScrollIndicator={false}
       >
-        {/* Find New Vehicle Card (custom view to avoid changing shared Card) */}
-        <View className="mb-3 rounded-2xl p-2 shadow-sm bg-brand-deepNavy">
-          <TouchableOpacity
-            className="flex-row items-center justify-center py-3"
-            onPress={() => router.push('/(menu)/(homeCards)/find_vehicle')}
-            activeOpacity={0.8}
-          >
-            <MagnifyingGlass size={24} color="#ffffff" weight="bold" />
-            <Typography variant="title-3" weight="semibold" className="text-white ml-3">
-              Find New Vehicle ...
-            </Typography>
-          </TouchableOpacity>
-        </View>
+        {/* Find New Vehicle Card - Only show for staff profiles or when no active profile */}
+        {(!activeProfile || activeProfile.type === 'staff') && (
+          <View className="mb-3 rounded-2xl p-2 shadow-sm bg-brand-deepNavy">
+            <TouchableOpacity
+              className="flex-row items-center justify-center py-3"
+              onPress={() => router.push('/(menu)/(homeCards)/find_vehicle')}
+              activeOpacity={0.8}
+            >
+              <MagnifyingGlass size={24} color="#ffffff" weight="bold" />
+              <Typography variant="title-3" weight="semibold" className="text-white ml-3">
+                Find New Vehicle ...
+              </Typography>
+            </TouchableOpacity>
+          </View>
+        )}
+
+
 
         {/* Current Ride Section */}
         <Card className="mb-3">
@@ -63,8 +95,8 @@ export default function StaffHomeScreen() {
           
           <RideStatus
             status="Picked Up"
-            pickupLocation="Maharagama Junction"
-            destination="Royal College"
+            pickupLocation={getPickupLocation()}
+            destination={getDestinationName()}
             eta="ETA 08:20"
           />
         </Card>
@@ -129,11 +161,11 @@ export default function StaffHomeScreen() {
           </View>
         </Card>
         
-        {/* Payment Section */}
+        {/* Payment Section - Show different payment info based on profile */}
         <Card>
           <PaymentSection
             daysInMonth={25}
-            totalPayable="Rs. 12000.45"
+            totalPayable={activeProfile?.type === 'child' ? "Rs. 8000.00" : "Rs. 12000.45"}
             dueDate="25 Oct 2025"
             onSummaryPress={() => router.push('/(menu)/(homeCards)/payment_summary')}
             onPayNowPress={() => console.log('Pay now pressed')}
