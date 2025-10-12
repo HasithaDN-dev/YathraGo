@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, ScrollView, Image, TextInput, TouchableOpacity, Platform, Keyboard, TouchableWithoutFeedback, Text, Linking } from 'react-native';
+import { View, ScrollView, Image, TextInput, TouchableOpacity, Platform, Keyboard, TouchableWithoutFeedback, Text, Linking, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
@@ -7,6 +7,8 @@ import { ArrowLeft, PaperPlaneRight, Camera, Paperclip, Phone } from 'phosphor-r
 import { useLocalSearchParams, router } from 'expo-router';
 import { API_BASE_URL } from '../../../config/api';
 import { useAuth } from '../../../hooks/useAuth';
+import * as FileSystem from 'expo-file-system';
+import { imageCache } from '../../../utils/imageCache';
 
 // Minimal chat message shape for UI bubbles
 interface ChatMessage {
@@ -29,6 +31,52 @@ export default function ChatRoomScreen() {
   const [toolbarHeight, setToolbarHeight] = useState(56);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
+
+  // Cached image component
+  const CachedImage = ({ imageUri, style }: { imageUri: string; style: any }) => {
+    const [cachedUri, setCachedUri] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+      const loadImage = async () => {
+        try {
+          setIsLoading(true);
+          
+          // If it's already a local URI, use it directly
+          if (imageUri.startsWith('file://') || imageUri.startsWith('content://')) {
+            setCachedUri(imageUri);
+            setIsLoading(false);
+            return;
+          }
+
+          // Try to get from cache first
+          let cachedImage = await imageCache.getCachedImage(imageUri);
+          
+          if (!cachedImage) {
+            // If not in cache, download and cache it
+            cachedImage = await imageCache.cacheImage(imageUri);
+          }
+          
+          setCachedUri(cachedImage || imageUri);
+        } catch (error) {
+          console.error('Error loading cached image:', error);
+          setCachedUri(imageUri);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      loadImage();
+    }, [imageUri]);
+
+    return (
+      <Image
+        source={{ uri: cachedUri || imageUri }}
+        style={style}
+        resizeMode="cover"
+      />
+    );
+  };
 
   // Fetch messages for this conversation
   useEffect(() => {
@@ -112,26 +160,145 @@ export default function ChatRoomScreen() {
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   };
 
+  const uploadImageToServer = async (imageUri: string): Promise<string | null> => {
+    try {
+      // Test connectivity first
+      console.log('Testing connectivity to:', `${API_BASE_URL}/chat/conversations`);
+      try {
+        const testResponse = await fetch(`${API_BASE_URL}/chat/conversations?userId=1&userType=CUSTOMER`);
+        console.log('Connectivity test status:', testResponse.status);
+      } catch (connectError) {
+        console.error('Connectivity test failed:', connectError);
+        Alert.alert('Network Error', 'Cannot connect to server. Please check your internet connection and make sure the backend server is running.');
+        return null;
+      }
+
+      // Create FormData properly for React Native
+      const formData = new FormData();
+      
+      // Get file info to determine the correct type
+      const filename = imageUri.split('/').pop() || 'image.jpg';
+      const fileType = filename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+      
+      formData.append('file', {
+        uri: imageUri,
+        type: fileType,
+        name: filename,
+      } as any);
+
+      console.log('Uploading image:', { imageUri, filename, fileType });
+      console.log('API_BASE_URL:', API_BASE_URL);
+      console.log('Full upload URL:', `${API_BASE_URL}/chat/upload-image`);
+
+      const response = await fetch(`${API_BASE_URL}/chat/upload-image`, {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header - let fetch set it automatically for FormData
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      console.log('Upload response status:', response.status);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Upload result:', result);
+        return result.success ? result.imageUrl : null;
+      } else {
+        const errorText = await response.text();
+        console.error('Upload failed:', response.status, errorText);
+        return null;
+      }
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      return null;
+    }
+  };
+
+  const sendImageMessage = async (imageUri: string) => {
+    if (!user || !conversationId) return;
+
+    let tempMsgId: string | null = null;
+
+    try {
+      // Show optimistic UI update
+      tempMsgId = String(Date.now());
+      const tempMsg: ChatMessage = { 
+        id: tempMsgId, 
+        imageUri: imageUri, 
+        time: 'now', 
+        mine: true 
+      };
+      setMessages((prev) => [...prev, tempMsg]);
+      requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+
+      // Upload image to server
+      const imageUrl = await uploadImageToServer(imageUri);
+      
+      if (imageUrl) {
+        // Send message with uploaded image URL
+        const res = await fetch(`${API_BASE_URL}/chat/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            conversationId,
+            senderId: Number(user.id),
+            senderType: 'CUSTOMER',
+            message: null,
+            imageUrl: imageUrl,
+          }),
+        });
+
+        if (res.ok) {
+          // Re-fetch messages after sending
+          fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/messages`)
+            .then((r) => r.json())
+            .then((data) => setMessages(data));
+        } else {
+          // Remove the optimistic update if failed
+          if (tempMsgId) {
+            setMessages((prev) => prev.filter(msg => msg.id !== tempMsgId));
+          }
+          Alert.alert('Error', 'Failed to send image');
+        }
+      } else {
+        // Remove the optimistic update if upload failed
+        if (tempMsgId) {
+          setMessages((prev) => prev.filter(msg => msg.id !== tempMsgId));
+        }
+        Alert.alert('Error', 'Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Send image error:', error);
+      // Remove the optimistic update if failed
+      if (tempMsgId) {
+        setMessages((prev) => prev.filter(msg => msg.id !== tempMsgId));
+      }
+      Alert.alert('Error', 'Failed to send image');
+    }
+  };
+
   const captureAndSendImage = async () => {
     try {
       Keyboard.dismiss();
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (perm.status !== 'granted') {
+        Alert.alert('Permission Required', 'Camera permission is needed to take photos');
         return;
       }
       const res = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaType.Images,
         allowsEditing: true,
         quality: 0.7,
       });
       if (!res.canceled && res.assets && res.assets.length > 0) {
         const uri = res.assets[0].uri;
-        const imgMsg: ChatMessage = { id: String(Date.now()), imageUri: uri, time: 'now', mine: true };
-        setMessages((prev) => [...prev, imgMsg]);
-        requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+        await sendImageMessage(uri);
       }
-    } catch {
-      // no-op
+    } catch (error) {
+      console.error('Camera error:', error);
+      Alert.alert('Error', 'Failed to capture image');
     }
   };
 
@@ -140,22 +307,22 @@ export default function ChatRoomScreen() {
       Keyboard.dismiss();
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (perm.status !== 'granted') {
+        Alert.alert('Permission Required', 'Photo library permission is needed to select images');
         return;
       }
       const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaType.Images,
         allowsEditing: false,
         quality: 0.8,
         selectionLimit: 1,
-      } as any);
+      });
       if (!res.canceled && res.assets && res.assets.length > 0) {
         const uri = res.assets[0].uri;
-        const imgMsg: ChatMessage = { id: String(Date.now()), imageUri: uri, time: 'now', mine: true };
-        setMessages((prev) => [...prev, imgMsg]);
-        requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+        await sendImageMessage(uri);
       }
-    } catch {
-      // no-op
+    } catch (error) {
+      console.error('Gallery error:', error);
+      Alert.alert('Error', 'Failed to select image');
     }
   };
 
@@ -163,10 +330,9 @@ export default function ChatRoomScreen() {
   if (m.imageUri) {
       return (
         <View className={`${m.mine ? 'self-end' : 'self-start'} mb-3`}>
-          <Image
-            source={{ uri: m.imageUri }}
-      style={{ width: 220, height: 160, borderRadius: 0, backgroundColor: '#e5e7eb' }}
-            resizeMode="cover"
+          <CachedImage
+            imageUri={m.imageUri}
+            style={{ width: 220, height: 160, borderRadius: 12, backgroundColor: '#e5e7eb' }}
           />
           <Typography variant="caption-2" className="text-brand-neutralGray mt-1 self-end">{m.time}</Typography>
         </View>
@@ -225,8 +391,8 @@ export default function ChatRoomScreen() {
                 id: m.id,
                 mine: m.senderId === Number(user?.id) && m.senderType === 'CUSTOMER',
                 text: m.message,
-                imageUri: m.imageUrl,
-                time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString() : '',
+                imageUri: m.imageUrl ? `${API_BASE_URL}/${m.imageUrl}` : undefined,
+                time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString() : '',
               };
               return <Bubble key={m.id} m={bubble} />;
             })}

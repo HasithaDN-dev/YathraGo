@@ -149,4 +149,26 @@ export class ChatService {
     });
     return updated;
   }
+
+  handleImageUpload(file: Express.Multer.File) {
+    if (!file) {
+      return { success: false, message: 'No file uploaded' };
+    }
+    // Validate mimetype
+    if (!file.mimetype.startsWith('image/')) {
+      return { success: false, message: 'Only image files are allowed!' };
+    }
+    // Multer diskStorage already saves the file with a unique name in the correct folder
+    if (!file.filename) {
+      return {
+        success: false,
+        message: 'File upload failed: filename missing.',
+      };
+    }
+    return {
+      success: true,
+      filename: file.filename,
+      imageUrl: `uploads/chat/${file.filename}`,
+    };
+  }
 }

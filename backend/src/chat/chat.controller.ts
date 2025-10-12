@@ -6,9 +6,16 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { UserTypes } from '@prisma/client';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import * as path from 'path';
 
 @Controller('chat')
 export class ChatController {
@@ -97,5 +104,27 @@ export class ChatController {
   @Post('messages/:id/seen')
   markSeen(@Param('id', ParseIntPipe) id: number) {
     return this.chat.markSeen(id);
+  }
+
+  // Upload chat image
+  @Post('upload-image')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          cb(null, path.join(__dirname, '../../uploads/chat'));
+        },
+        filename: (req, file, cb) => {
+          const ext = path.extname(file.originalname);
+          const base = path.basename(file.originalname, ext);
+          const uniqueName = `${base}_${Date.now()}${ext}`;
+          cb(null, uniqueName);
+        },
+      }),
+    }),
+  )
+  uploadChatImage(@UploadedFile() file: Express.Multer.File) {
+    return this.chat.handleImageUpload(file);
   }
 }
