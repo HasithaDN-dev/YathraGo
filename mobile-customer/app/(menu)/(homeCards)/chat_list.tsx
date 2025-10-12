@@ -29,7 +29,20 @@ export default function ChatListScreen() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  const filtered = conversations.filter((c) =>
+  // Normalize backend conversation shape to UI-friendly fields
+  const normalized = conversations.map((c) => {
+    const other = c.otherParticipant || {};
+    const last = c.lastMessage || c.messages?.[0] || null;
+    return {
+      id: c.id,
+      name: other.name || 'Chat',
+      phone: other.phone || '',
+      lastMessage: last?.message || '',
+      time: last?.timestamp ? new Date(last.timestamp).toLocaleTimeString() : '',
+    };
+  });
+
+  const filtered = normalized.filter((c) =>
     (c.name || '').toLowerCase().includes(query.toLowerCase())
   );
 
@@ -74,11 +87,11 @@ export default function ChatListScreen() {
                   <View className="flex-1">
                     <Typography variant="subhead" className="text-black">{c.name}</Typography>
                     <Typography variant="caption-1" className="text-brand-neutralGray" numberOfLines={1}>
-                      {c.messages?.[0]?.text || ''}
+                      {c.lastMessage}
                     </Typography>
                   </View>
                   <View className="items-end ml-2">
-                    <Typography variant="caption-1" className="text-brand-neutralGray">{c.messages?.[0]?.createdAt ? new Date(c.messages[0].createdAt).toLocaleTimeString() : ''}</Typography>
+                    <Typography variant="caption-1" className="text-brand-neutralGray">{c.time}</Typography>
                   </View>
                 </View>
               </TouchableOpacity>

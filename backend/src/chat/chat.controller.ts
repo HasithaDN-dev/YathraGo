@@ -20,6 +20,7 @@ export class ChatController {
     @Body()
     body: {
       participantAId: number;
+      participantBId: number;
       participantAType:
         | 'CUSTOMER'
         | 'WEBUSER'

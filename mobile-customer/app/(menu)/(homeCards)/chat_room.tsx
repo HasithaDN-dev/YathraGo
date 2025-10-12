@@ -1,9 +1,3 @@
-
-import { API_BASE_URL } from '../../../config/api';
-import { useAuth } from '../../../hooks/useAuth';
-
-// Commented out dummy data. Now using API data.
-// interface ChatMessage { ... }
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, ScrollView, Image, TextInput, TouchableOpacity, Platform, Keyboard, TouchableWithoutFeedback, Text, Linking } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -11,8 +5,21 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Typography } from '@/components/Typography';
 import { ArrowLeft, PaperPlaneRight, Camera, Paperclip, Phone } from 'phosphor-react-native';
 import { useLocalSearchParams, router } from 'expo-router';
+import { API_BASE_URL } from '../../../config/api';
+import { useAuth } from '../../../hooks/useAuth';
 
-  const { id: conversationId, name, phone } = useLocalSearchParams<{ id: string; name: string; phone?: string }>();
+// Minimal chat message shape for UI bubbles
+interface ChatMessage {
+  id: string | number;
+  text?: string;
+  time: string;
+  mine?: boolean;
+  imageUri?: string;
+}
+
+export default function ChatRoomScreen() {
+  const { id: idParam, name, phone } = useLocalSearchParams<{ id: string; name: string; phone?: string }>();
+  const conversationId = Number(idParam);
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<any[]>([]);
   const [draft, setDraft] = useState('');
@@ -36,12 +43,11 @@ import { useLocalSearchParams, router } from 'expo-router';
 
   // Ensure input bar stays above keyboard: hide emoji panel when keyboard opens
   useEffect(() => {
-  const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
+    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
       setKeyboardVisible(true);
       setKeyboardHeight(e.endCoordinates?.height ?? 0);
     });
     const changeSub = Keyboard.addListener('keyboardDidChangeFrame', (e) => {
-      // Update height on frame changes (e.g., predictive bar, emoji row)
       setKeyboardVisible((e.endCoordinates?.height ?? 0) > 0);
       setKeyboardHeight(e.endCoordinates?.height ?? 0);
     });
@@ -71,7 +77,7 @@ import { useLocalSearchParams, router } from 'expo-router';
         <Image source={require('../../../assets/images/profile_Picture.png')} style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10 }} />
         <View className="flex-1">
           <Typography variant="subhead" className="text-black">{name || 'Driver'}</Typography>
-          <Typography variant="caption-1" className="text-brand-neutralGray">05:15 am</Typography>
+          <Typography variant="caption-1" className="text-brand-neutralGray">{/* last seen placeholder */} </Typography>
         </View>
         <TouchableOpacity onPress={dial} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Phone size={22} color="#143373" />
@@ -83,23 +89,23 @@ import { useLocalSearchParams, router } from 'expo-router';
   // Send a message to backend
   const send = async (overrideText?: string) => {
     const textToSend = (overrideText ?? draft).trim();
-    if (!textToSend || !user) return;
+    if (!textToSend || !user || !conversationId) return;
     setDraft('');
     try {
       const res = await fetch(`${API_BASE_URL}/chat/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          conversationId: Number(conversationId),
+          conversationId,
           senderId: Number(user.id),
           senderType: 'CUSTOMER',
-          text: textToSend,
+          message: textToSend,
         }),
       });
       if (res.ok) {
         // Re-fetch messages after sending
         fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/messages`)
-          .then((res) => res.json())
+          .then((r) => r.json())
           .then((data) => setMessages(data));
       }
     } catch {}
@@ -214,15 +220,16 @@ import { useLocalSearchParams, router } from 'expo-router';
               <Typography variant="body" className="text-center mt-8">Loading...</Typography>
             ) : messages.length === 0 ? (
               <Typography variant="body" className="text-center mt-8">No messages.</Typography>
-            ) : messages.map((m) => (
-              <Bubble key={m.id} m={{
-                ...m,
+            ) : messages.map((m) => {
+              const bubble: ChatMessage = {
+                id: m.id,
                 mine: m.senderId === Number(user?.id) && m.senderType === 'CUSTOMER',
-                text: m.text,
+                text: m.message,
                 imageUri: m.imageUrl,
-                time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString() : '',
-              }} />
-            ))}
+                time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString() : '',
+              };
+              return <Bubble key={m.id} m={bubble} />;
+            })}
           </ScrollView>
 
           {/* Absolute overlay for emoji panel and toolbar */}
