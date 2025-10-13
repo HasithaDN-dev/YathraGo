@@ -74,6 +74,7 @@ export class CustomerServiceExtension {
         message: 'File upload failed: filename missing.',
       };
     }
+    // file.filename may already have subfolder prefix (e.g., 'child/filename.jpg')
     return { success: true, filename: file.filename };
   }
 }

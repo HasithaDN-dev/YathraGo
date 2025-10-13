@@ -17,9 +17,24 @@ interface DefaultProfileSettings {
   specificProfileId?: string; // Only used when option is SPECIFIC_PROFILE
 }
 
+interface CustomerProfile {
+  customer_id: number;
+  firstName: string;
+  lastName: string;
+  gender: string;
+  phone: string;
+  email: string;
+  address: string;
+  profileImageUrl: string | null;
+  emergencyContact: string;
+  status: string;
+  registrationStatus: string;
+}
+
 interface ProfileState {
   profiles: Profile[];
   activeProfile: Profile | null;
+  customerProfile: CustomerProfile | null;
   isLoading: boolean;
   error: string | null;
   defaultProfileSettings: DefaultProfileSettings;
@@ -38,6 +53,7 @@ interface ProfileState {
 export const useProfileStore = create<ProfileState>((set, get) => ({
   profiles: [],
   activeProfile: null,
+  customerProfile: null,
   isLoading: false,
   error: null,
   defaultProfileSettings: {
@@ -48,8 +64,9 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   loadProfiles: async (token) => {
     set({ isLoading: true, error: null });
     try {
-      const profiles = await getProfilesApi(token);
+      const { profiles, customerProfile } = await getProfilesApi(token);
       console.log('Loaded profiles:', profiles.map(p => `${p.type}-${p.id}: ${p.firstName} ${p.lastName}`));
+      console.log('Loaded customer profile:', customerProfile);
       
       // Load default profile settings
       const settings = await get().getDefaultProfileSettings();
@@ -85,7 +102,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         console.log('Fallback to first profile:', profileToActivate);
       }
 
-      set({ profiles, activeProfile: profileToActivate, isLoading: false });
+      set({ profiles, customerProfile, activeProfile: profileToActivate, isLoading: false });
       
       // If we have profiles, mark profile as complete
       if (profiles.length > 0) {
