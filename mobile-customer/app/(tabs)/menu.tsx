@@ -3,6 +3,7 @@ import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../lib/stores/auth.store';
+import { useProfileStore } from '../../lib/stores/profile.store';
 import { 
   ArrowLeftIcon,
   CreditCardIcon,
@@ -10,13 +11,15 @@ import {
   MapPinIcon,
   HeadsetIcon,
   InfoIcon,
-  SignOutIcon
+  SignOutIcon,
+  GearIcon
 } from 'phosphor-react-native';
 import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
 
 export default function MenuScreen() {
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
+  const { activeProfile } = useProfileStore();
   const router = useRouter();
 
 
@@ -45,18 +48,24 @@ export default function MenuScreen() {
     },
     {
       id: '4',
+      title: 'Default Profile Settings',
+      icon: GearIcon,
+      action: () => router.push('/(menu)/default-profile-settings'),
+    },
+    {
+      id: '5',
       title: 'Help and Support',
       icon: HeadsetIcon,
       action: () => router.push('/(menu)/help_and_support'),
     },
     {
-      id: '5',
+      id: '6',
       title: 'About us',
       icon: InfoIcon,
       action: () => router.push('/(menu)/about_us'),
     },
     {
-      id: '6',
+      id: '7',
       title: 'Logout',
       icon: SignOutIcon,
       action: () => {handleLogout()},
@@ -74,18 +83,26 @@ export default function MenuScreen() {
              {/* Profile Image */}
              <View className="mr-4">
                <Image
-                 source={require('../../assets/images/profile_Picture.png')}
+                 source={
+                   activeProfile?.profileImageUrl || activeProfile?.childImageUrl
+                     ? { uri: activeProfile.profileImageUrl || activeProfile.childImageUrl }
+                     : require('../../assets/images/profile_Picture.png')
+                 }
                  style={{ width: 64, height: 64, borderRadius: 32, resizeMode: 'cover' }}
                />
              </View>
              
-             {/* Profile InfoIcon */}
+             {/* Profile Info */}
              <View className="flex-1">
                <Typography variant="subhead" weight="semibold" className="text-black mb-2">
-                 078 - 456 7891
+                 {user?.phone || '078 - 456 7891'}
                </Typography>
                <Typography variant="footnote" className="text-brand-neutralGray">
-                 Kasun Fernando
+                 {activeProfile ? (
+                   activeProfile.type === 'child' 
+                     ? `${activeProfile.firstName || ''} ${activeProfile.lastName || ''}`.trim() || 'Child'
+                     : `${activeProfile.firstName || ''} ${activeProfile.lastName || ''}`.trim() || 'Staff Passenger'
+                 ) : 'Customer Profile'}
                </Typography>
              </View>
              

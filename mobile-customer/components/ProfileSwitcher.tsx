@@ -3,13 +3,10 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView, Image } from 'react-native';
 import { useProfileStore } from '../lib/stores/profile.store';
-import { useAuthStore } from '../lib/stores/auth.store';
 import { Ionicons } from '@expo/vector-icons';
-import { Typography } from './Typography';
 
 const ProfileSwitcher: React.FC = () => {
   const { profiles, activeProfile, setActiveProfile, setDefaultProfile, isLoading } = useProfileStore();
-  const { logout } = useAuthStore();
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const getProfileIcon = (type: 'child' | 'staff') => {
@@ -18,6 +15,20 @@ const ProfileSwitcher: React.FC = () => {
 
   const getProfileColor = (type: 'child' | 'staff') => {
     return type === 'child' ? '#4F46E5' : '#059669';
+  };
+
+  const getDisplayName = (profile: any) => {
+    if (profile.type === 'child') {
+      return `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Child';
+    }
+    return `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Staff Passenger';
+  };
+
+  const getProfileLabel = (profile: any) => {
+    if (profile.type === 'child') {
+      return profile.relationship || 'Child';
+    }
+    return 'Own';
   };
 
   const handleProfileSelect = async (profile: any) => {
@@ -79,10 +90,10 @@ const ProfileSwitcher: React.FC = () => {
 
         <View className="flex-1">
           <Text className="text-lg font-semibold text-gray-900">
-            {activeProfile.name}
+            {getDisplayName(activeProfile)}
           </Text>
-          <Text className="text-sm text-gray-500 capitalize">
-            {activeProfile.type} Profile
+          <Text className="text-sm text-gray-500">
+            {getProfileLabel(activeProfile)}
           </Text>
         </View>
       </TouchableOpacity>
@@ -151,10 +162,10 @@ const ProfileSwitcher: React.FC = () => {
 
                     <View className="flex-1">
                       <Text className="text-base font-medium text-gray-900">
-                        {profile.name}
+                        {getDisplayName(profile)}
                       </Text>
-                      <Text className="text-sm text-gray-500 capitalize">
-                        {profile.type} Profile
+                      <Text className="text-sm text-gray-500">
+                        {getProfileLabel(profile)}
                       </Text>
                   </View>
                   </TouchableOpacity>

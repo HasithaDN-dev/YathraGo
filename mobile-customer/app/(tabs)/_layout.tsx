@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import React, { useState } from 'react';
+import React from 'react';
 import { HapticTab } from '@/components/HapticTab';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,36 +9,8 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { HouseIcon, ClockIcon, BellIcon, ListIcon, NavigationArrowIcon } from 'phosphor-react-native';
 import { Header } from '@/components/ui/Header';
 
-// Profile data
-const profiles = [
-  {
-    id: '1',
-    name: 'My Elder Son',
-    fullName: 'Supun Thilina',
-    type: 'child' as const
-  },
-  {
-    id: '2',
-    name: 'Kevin',
-    fullName: 'Kevin Silva',
-    type: 'child' as const
-  },
-  {
-    id: '3',
-    name: 'My',
-    fullName: 'My Account',
-    type: 'parent' as const
-  }
-];
-
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const [selectedProfile, setSelectedProfile] = useState(profiles[0]);
-
-  const handleProfileSelect = (profile: typeof profiles[0]) => {
-    setSelectedProfile(profile);
-    console.log('Profile selected:', profile.name);
-  };
 
   const handleRefresh = () => {
     console.log('Refresh pressed');
@@ -49,9 +21,6 @@ export default function TabLayout() {
       {/* Header Component - Shared across all tabs, now below the device header */}
       <SafeAreaView edges={["top"]} className="bg-gray-100">
         <Header
-          profiles={profiles}
-          selectedProfile={selectedProfile}
-          onProfileSelect={handleProfileSelect}
           onRefreshPress={handleRefresh}
         />
       </SafeAreaView>
