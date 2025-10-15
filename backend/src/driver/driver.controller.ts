@@ -9,6 +9,7 @@ import {
   Req,
   UseInterceptors,
   UploadedFiles,
+  Get,
 } from '@nestjs/common';
 import { DriverService } from './driver.service';
 import { CompleteDriverRegistrationDto } from './dto/complete-driver-registration.dto'; // Import the new DTO
@@ -165,4 +166,11 @@ export class DriverController {
   //   const driverId = req.user.userId;
   //   return this.driverService.uploadDriverDocuments(driverId, documentsData);
   // }
+  // Endpoint to fetch driver details for hardcoded driverId (for frontend welcome message)
+  @Get('details')
+  async getDriverDetails() {
+    // Hardcoded driverId for demo
+    const driverId = 1;
+    return this.driverService.getDriverDetailsById(driverId);
+  }
 }
