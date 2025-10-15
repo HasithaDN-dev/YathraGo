@@ -178,10 +178,11 @@ model Driver {
   createdAt                DateTime           @default(now())
   updatedAt                DateTime           @updatedAt
   vehicles                 Vehicle[]
-  cities                   DriverCities[]
-  rideRequests             ChildRideRequest[]
+  driverCities             DriverCities[]
+  childRideRequests        ChildRideRequest[]
   driverRoutes             DriverRoute[]
   routeWaypoints           RouteWaypoint[]
+  childTrips     Child_Trip[]
 }
 
 model FoundedBackupDrivers {
@@ -267,8 +268,7 @@ model Child {
   customerId      Int?
   Customer        Customer? @relation(fields: [customerId], references: [customer_id])
 
-  city           City?              @relation(fields: [cityId], references: [id])
-  cityId         Int?
+  // relations for ride requests and route waypoints
   rideRequests   ChildRideRequest[]
   routeWaypoints RouteWaypoint[]
 
@@ -284,6 +284,10 @@ model Child_Trip {
   dropOff      String
   startTime    DateTime
   endTime      DateTime
+  driverId     Int?     // Foreign key to Driver
+  driver       Driver? @relation(fields: [driverId], references: [driver_id])
+
+  @@index([driverId]) // Index for faster queries
 }
 
 model Staff_Passenger {
@@ -349,7 +353,6 @@ enum ChildAssignRequestStatus {
   Rejected
 }
 
-
 // --- City Table ---
 model City {
   id        Int      @id @default(autoincrement())
@@ -358,9 +361,6 @@ model City {
   longitude Float
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  drivers  DriverCities[]
-  children Child[]
 }
 
 // --- Driver's Available Cities (Many-to-Many) ---
@@ -368,23 +368,22 @@ model DriverCities {
   id       Int    @id @default(autoincrement())
   driver   Driver @relation(fields: [driverId], references: [driver_id])
   driverId Int
-  city     City   @relation(fields: [cityId], references: [id])
-  cityId   Int
+  // store an ordered list of city IDs representing the driver's route
+  cityIds  Int[]
 
-  @@unique([driverId, cityId])
+  @@unique([driverId])
 }
 
 // --- Child Ride Requests ---
 model ChildRideRequest {
-  id        Int      @id @default(autoincrement())
-  child     Child    @relation(fields: [childId], references: [child_id])
+  id        Int                      @id @default(autoincrement())
+  child     Child                    @relation(fields: [childId], references: [child_id])
   childId   Int
-  driver    Driver   @relation(fields: [driverId], references: [driver_id])
+  driver    Driver                   @relation(fields: [driverId], references: [driver_id])
   driverId  Int
-  status    ChildAssignRequestStatus  @default(Pending) // PENDING, ACCEPTED, REJECTED
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+  status    ChildAssignRequestStatus @default(Pending)
+  createdAt DateTime                 @default(now())
+  updatedAt DateTime                 @updatedAt
 }
 
 // --- Driver Route (Optimized Route) ---
