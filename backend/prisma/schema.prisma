@@ -307,6 +307,7 @@ model Staff_Passenger {
 
 model Staff_Trip {
   staffTrip_id    Int      @id @default(autoincrement())
+  driver_id       Int
   pickUpLocation  String
   dropOffLocation String
   startTime       DateTime
