@@ -4,14 +4,19 @@ import { tokenService } from '../services/token.service';
 import { useAuthStore } from '../stores/auth.store';
 
 // Simple in-memory cache for profiles
-let profileCache: { data: Profile[]; timestamp: number } | null = null;
+let profileCache: { data: ProfileApiResponse; timestamp: number } | null = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+interface ProfileApiResponse {
+  profiles: Profile[];
+  customerProfile: any;
+}
 
 /**
  * Fetches all profiles associated with the logged-in user (children + staff).
  * Uses simple caching to reduce API calls.
  */
-export const getProfilesApi = async (token: string): Promise<Profile[]> => {
+export const getProfilesApi = async (token: string): Promise<ProfileApiResponse> => {
   // Check cache first
   if (profileCache && (Date.now() - profileCache.timestamp) < CACHE_DURATION) {
     console.log('Using cached profiles');
@@ -57,15 +62,32 @@ export const getProfilesApi = async (token: string): Promise<Profile[]> => {
     }
   }
   
+  // Extract customer profile data
+  const customerProfile = data.profile ? {
+    customer_id: data.profile.customer_id,
+    firstName: data.profile.firstName,
+    lastName: data.profile.lastName,
+    gender: data.profile.gender,
+    phone: data.profile.phone,
+    email: data.profile.email,
+    address: data.profile.address,
+    profileImageUrl: data.profile.profileImageUrl,
+    emergencyContact: data.profile.emergencyContact,
+    status: data.profile.status,
+    registrationStatus: data.profile.registrationStatus,
+  } : null;
+
   // Cache the result
+  const result = { profiles, customerProfile };
   profileCache = {
-    data: profiles,
+    data: result,
     timestamp: Date.now()
   };
   
   console.log('Extracted profiles with unique IDs:', profiles);
   console.log('Profile IDs:', profiles.map(p => `${p.type}: ${p.id}`));
-  return profiles;
+  console.log('Customer profile:', customerProfile);
+  return result;
 };
 
 /**
@@ -280,7 +302,7 @@ export const uploadChildProfileImageApi = async (
   } as any);
 
   const authenticatedFetch = tokenService.createAuthenticatedFetch();
-  // If you have a separate endpoint for child, change the URL here
+  // Ensure the endpoint uploads to the child folder
   const response = await authenticatedFetch(`${API_BASE_URL}/customer/upload-child-image`, {
     method: 'POST',
     headers: {

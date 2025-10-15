@@ -10,6 +10,7 @@ import { Typography } from '../../components/Typography';
 import { GoogleMapPicker } from '../../components/GoogleMapPicker';
 import { registerStaffApi } from '../../lib/api/profile.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
+import { useProfileStore } from '../../lib/stores/profile.store';
 import { StaffProfileData } from '../../types/customer.types';
 import { LocationDetails } from '../../types/location.types';
 import { Colors } from '@/constants/Colors'; // Ensure this import is correct
@@ -28,6 +29,7 @@ export default function StaffPassengerScreen() {
   
   // Get the accessToken and the action to complete the profile from the global store.
   const { accessToken, setProfileComplete } = useAuthStore();
+  const { refreshProfiles } = useProfileStore();
 
   const handleInputChange = (field: keyof StaffProfileData, value: string) => {
     setFormData(prev => ({
@@ -114,6 +116,10 @@ export default function StaffPassengerScreen() {
       if (!isAddMode) {
         setProfileComplete(true);
         console.log('Staff registration: Profile marked as complete');
+        
+        // Refresh profiles to include the newly created profile
+        await refreshProfiles(accessToken);
+        console.log('Staff registration: Profiles refreshed');
       }
 
       // 3. Navigate based on mode
@@ -122,7 +128,11 @@ export default function StaffPassengerScreen() {
         router.back(); // Go back to add profile screen
       } else {
         Alert.alert('Success', 'Staff passenger registration completed successfully!');
-        // The `app/(app)/_layout.tsx` guard will automatically navigate to main app
+        
+        // Explicitly navigate to home page after successful registration
+        setTimeout(() => {
+          router.replace('/(tabs)');
+        }, 1000); // Small delay to allow the alert to show
       }
 
     } catch (error) {
