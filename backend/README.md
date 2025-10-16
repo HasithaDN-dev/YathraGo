@@ -1,138 +1,290 @@
+# YathraGo Backend
+
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
-
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+YathraGo is a comprehensive transport management system backend built with modern web technologies. This backend API serves the YathraGo mobile and web applications, providing secure authentication, real-time communication, and robust data management for transport operations.
 
+## Technologies Used
 
-## Project setup
+### Core Framework
+- **NestJS** - A progressive Node.js framework for building efficient and scalable server-side applications
+- **TypeScript** - Strongly typed programming language that builds on JavaScript
+- **Node.js** - JavaScript runtime environment
+
+### Database & ORM
+- **PostgreSQL** - Advanced open-source relational database
+- **Prisma ORM** - Next-generation ORM for Node.js and TypeScript
+  - Type-safe database client
+  - Database migrations
+  - Database introspection
+  - Query builder with IntelliSense
+
+### Authentication & Security
+- **JWT (JSON Web Tokens)** - Secure token-based authentication
+- **Passport.js** - Authentication middleware for Node.js
+- **Argon2** - Secure password hashing algorithm
+- **Class Validator** - Decorator-based validation for TypeScript classes
+- **Class Transformer** - Transform objects to and from different representations
+
+### Communication & Notifications
+- **Twilio** - SMS and voice communication platform
+- **Android SMS Gateway** - SMS sending service integration
+
+### File Handling & HTTP
+- **Multer** - Node.js middleware for handling multipart/form-data (file uploads)
+- **Axios** - Promise-based HTTP client for making API requests
+
+### API Documentation
+- **Swagger/OpenAPI** - API documentation and testing interface
+
+### Development & Testing
+- **Jest** - JavaScript testing framework
+- **ESLint** - Code linting and style enforcement
+- **Prettier** - Code formatting
+- **SWC** - Fast TypeScript/JavaScript compiler
+
+### Additional Utilities
+- **UUID** - Unique identifier generation
+- **RxJS** - Reactive extensions for JavaScript
+- **js-cookie** - Cookie handling utilities
+
+## Architecture Features
+
+### Modular Structure
+- **User Management** - Customer, driver, and owner authentication
+- **Vehicle Management** - Vehicle registration and tracking
+- **Authentication Module** - Secure login and registration
+- **Prisma Module** - Database connection and operations
+- **Common Module** - Shared utilities and middleware
+
+### Security Features
+- JWT-based authentication
+- Role-based access control
+- Input validation and sanitization
+- Secure password storage with Argon2
+- OTP-based phone verification
+
+### Database Design
+- Relational database structure with PostgreSQL
+- Type-safe queries with Prisma
+- Automated migrations
+- Data integrity constraints
+
+## Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+- PostgreSQL database
+- Twilio account (for SMS functionality)
+
+## Environment Setup
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Database
+DATABASE_URL="postgresql://username:password@localhost:5432/yathrago"
+DIRECT_URL="postgresql://username:password@localhost:5432/yathrago"
+
+# JWT
+JWT_SECRET="your-jwt-secret-key"
+JWT_EXPIRES_IN="7d"
+
+# Twilio Configuration
+TWILIO_ACCOUNT_SID="your-twilio-account-sid"
+TWILIO_AUTH_TOKEN="your-twilio-auth-token"
+TWILIO_PHONE_NUMBER="your-twilio-phone-number"
+
+# Other configurations
+PORT=3000
+```
+
+## Project Setup
+
+### 1. Install Dependencies
 
 ```bash
 npm install
 ```
 
-## Compile and run the project
+### 2. Database Setup
 
 ```bash
-# development
-$ npm run start
+# Generate Prisma client
+npx prisma generate
 
-# watch mode
-$ npm run start:dev
+# Run database migrations
+npx prisma migrate dev
 
-# production mode
-$ npm run start:prod
+# (Optional) Seed the database
+npx prisma db seed
 ```
 
-## Run tests
+### 3. Start the Application
 
 ```bash
-# unit tests
-$ npm run test
+# Development mode
+npm run start:dev
 
-# e2e tests
-$ npm run test:e2e
+# Production mode
+npm run start:prod
 
-# test coverage
-$ npm run test:cov
+# Debug mode
+npm run start:debug
 ```
 
-## Generating Modules, Controllers, and Services
+## API Documentation
 
-NestJS provides CLI commands to quickly scaffold modules, controllers, and services. These commands automatically create the necessary folders and files in the correct structure.
+Once the server is running, you can access the Swagger API documentation at:
+```
+http://localhost:3000/api
+```
 
-#### 1. Generate a Module
+## Database Management
+
+### Prisma Commands
 
 ```bash
-npx nest g module <module-name>
-```
-**Example:**
-```bash
-npx nest g module passenger
-```
-This will create a new folder `src/passenger/` (if it doesn't exist) and a file `passenger.module.ts` inside it.
+# View database in Prisma Studio
+npx prisma studio
 
-#### 2. Generate a Controller
+# Reset database
+npx prisma migrate reset
 
-```bash
-npx nest g controller <module-name>
-```
-**Example:**
-```bash
-npx nest g controller passenger
-```
-This will create `src/passenger/passenger.controller.ts`.
+# Deploy migrations to production
+npx prisma migrate deploy
 
-#### 3. Generate a Service
+# Pull schema from existing database
+npx prisma db pull
+
+# Push schema changes without migrations
+npx prisma db push
+```
+
+## Testing
 
 ```bash
-npx nest g service <module-name>
-```
-**Example:**
-```bash
-npx nest g service passenger
-```
-This will create `src/passenger/passenger.service.ts`.
+# Unit tests
+npm run test
 
-You can repeat these commands for any feature/module you want to add. The CLI will generate the folder and files if they do not exist.
+# E2E tests
+npm run test:e2e
+
+# Test coverage
+npm run test:cov
+
+# Watch mode
+npm run test:watch
+```
+
+## Code Quality
+
+```bash
+# Lint code
+npm run lint
+
+# Format code
+npm run format
+```
+
+## API Endpoints
+
+### Authentication
+- `POST /auth/register` - User registration
+- `POST /auth/login` - User login
+- `POST /auth/verify-phone` - Phone verification
+- `POST /auth/send-otp` - Send OTP
+- `POST /auth/refresh` - Refresh JWT token
+
+### User Management
+- `GET /user/profile` - Get user profile
+- `PUT /user/profile` - Update user profile
+- `POST /user/upload-avatar` - Upload profile picture
+
+### Customer Operations
+- `GET /customer/vehicles` - Get available vehicles
+- `POST /customer/booking` - Create booking
+- `GET /customer/bookings` - Get user bookings
+
+### Driver Operations
+- `GET /driver/profile` - Get driver profile
+- `PUT /driver/status` - Update driver status
+- `GET /driver/bookings` - Get driver bookings
+
+### Vehicle Management
+- `POST /vehicle/register` - Register vehicle
+- `GET /vehicle/list` - Get vehicles
+- `PUT /vehicle/update` - Update vehicle details
+
+## Project Structure
+
+```
+src/
+├── auth/              # Authentication module
+├── common/            # Shared utilities and middleware
+├── customer/          # Customer-specific operations
+├── driver/            # Driver-specific operations
+├── owner/             # Vehicle owner operations
+├── prisma/            # Prisma service and configuration
+├── user/              # User management
+├── vehicle/           # Vehicle management
+├── app.controller.ts  # Main app controller
+├── app.module.ts      # Root module
+├── app.service.ts     # Main app service
+└── main.ts            # Application entry point
+```
+
+## Database Schema
+
+The application uses PostgreSQL with Prisma ORM. Key entities include:
+
+- **User** - Base user information
+- **Customer** - Customer-specific data
+- **Driver** - Driver profiles and status
+- **Owner** - Vehicle owner information
+- **Vehicle** - Vehicle details and specifications
+- **Booking** - Ride booking information
+- **OtpCode** - OTP verification codes
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Environment Variables for Production
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Ensure all environment variables are properly set in your production environment:
+
+- Database connection strings
+- JWT secrets
+- Twilio credentials
+- Any other service API keys
+
+### Build for Production
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run build
+npm run start:prod
 ```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
 
 ## Support
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+For questions and support regarding the YathraGo backend:
 
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+1. Check the API documentation at `/api` endpoint
+2. Review the codebase documentation
+3. Contact the development team
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This project is proprietary software. All rights reserved.

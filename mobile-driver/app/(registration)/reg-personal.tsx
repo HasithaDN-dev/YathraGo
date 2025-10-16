@@ -50,6 +50,7 @@ export default function RegisterScreen() {
 
     if (!result.canceled) {
       setProfileImage(result.assets[0]);
+      updatePersonalInfo({ profileImage: result.assets[0] });
     }
   };
 
@@ -75,7 +76,6 @@ export default function RegisterScreen() {
     // Navigate to next screen
     router.push('/(registration)/reg-verify');
   };
-
   return (
     <ScrollView className="flex-1 bg-white">
       <View className="px-6 py-20 items-center">

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Animated, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image, Animated, Alert,TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -64,6 +64,10 @@ const LicenseUploadBox: React.FC<LicenseUploadBoxProps> = ({ image, onUpload, si
 export default function VehicleDocScreen() {
   const router = useRouter();
   const { vehicleDocuments, updateVehicleDocuments, isRegistrationComplete, personalInfo, idVerification, vehicleInfo } = useDriverStore();
+
+  // Add local state for NIC and gender
+  const [nic, setNic] = useState('');
+  const [gender, setGender] = useState('');
   const { accessToken, setProfileComplete, setRegistrationStatus } = useAuthStore();
 
   const [revenueLicense, setRevenueLicense] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(vehicleDocuments.revenueLicense);
@@ -112,65 +116,16 @@ export default function VehicleDocScreen() {
   };
 
   const handleVerify = async () => {
-    // Save documents to store first before validation
-    updateVehicleDocuments({
-      revenueLicense,
-      vehicleInsurance,
-      registrationDoc,
-      licenseFront,
-      licenseBack,
-    });
-
-    // Give the store a moment to update
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // ====== DEBUG: Print EVERYTHING in the store ======
-    console.log('========== REGISTRATION DATA DEBUG ==========');
-    console.log('1. PERSONAL INFO:', JSON.stringify({
-      firstName: personalInfo.firstName,
-      lastName: personalInfo.lastName,
-      dateOfBirth: personalInfo.dateOfBirth,
-      email: personalInfo.email,
-      secondaryPhone: personalInfo.secondaryPhone,
-      city: personalInfo.city,
-      nic: personalInfo.nic,
-      gender: personalInfo.gender,
-      hasProfileImage: !!personalInfo.profileImage,
-    }, null, 2));
-    
-    console.log('2. ID VERIFICATION:', JSON.stringify({
-      hasFrontImage: !!idVerification.frontImage,
-      hasBackImage: !!idVerification.backImage,
-    }, null, 2));
-    
-    console.log('3. VEHICLE INFO:', JSON.stringify({
-      vehicleType: vehicleInfo.vehicleType,
-      vehicleBrand: vehicleInfo.vehicleBrand,
-      vehicleModel: vehicleInfo.vehicleModel,
-      yearOfManufacture: vehicleInfo.yearOfManufacture,
-      vehicleColor: vehicleInfo.vehicleColor,
-      licensePlate: vehicleInfo.licensePlate,
-      seats: vehicleInfo.seats,
-      hasFrontView: !!vehicleInfo.frontView,
-      hasSideView: !!vehicleInfo.sideView,
-      hasRearView: !!vehicleInfo.rearView,
-      hasInteriorView: !!vehicleInfo.interiorView,
-    }, null, 2));
-    
-    console.log('4. VEHICLE DOCUMENTS:', JSON.stringify({
-      hasRevenueLicense: !!vehicleDocuments.revenueLicense,
-      hasVehicleInsurance: !!vehicleDocuments.vehicleInsurance,
-      hasRegistrationDoc: !!vehicleDocuments.registrationDoc,
-      hasLicenseFront: !!vehicleDocuments.licenseFront,
-      hasLicenseBack: !!vehicleDocuments.licenseBack,
-    }, null, 2));
-    
-    const isComplete = isRegistrationComplete();
-    console.log('5. VALIDATION RESULT:', isComplete);
-    console.log('============================================');
-
-    if (!isComplete) {
-      Alert.alert('Error', 'Please complete all required fields before submitting. Check console for details.');
+    if (
+      !revenueLicense ||
+      !vehicleInsurance ||
+      !registrationDoc ||
+      !licenseFront ||
+      !licenseBack ||
+      !nic.trim() ||
+      !gender.trim()
+    ) {
+      Alert.alert('Error', 'Please complete all required fields before submitting.');
       return;
     }
 
@@ -181,107 +136,76 @@ export default function VehicleDocScreen() {
 
     setIsSubmitting(true);
     try {
-      // ========== SINGLE API CALL WITH ALL DATA ==========
-      // The backend expects ONE FormData request with ALL files and data
-      const completeFormData = new FormData();
-      
-      // 1. Add Personal Information as form fields
-      completeFormData.append('firstName', personalInfo.firstName);
-      completeFormData.append('lastName', personalInfo.lastName);
-      completeFormData.append('dateOfBirth', personalInfo.dateOfBirth);
-      completeFormData.append('email', personalInfo.email || '');
-      completeFormData.append('secondaryPhone', personalInfo.secondaryPhone);
-      completeFormData.append('city', personalInfo.city);
-      completeFormData.append('NIC', personalInfo.nic || '');
-      completeFormData.append('gender', personalInfo.gender || '');
-      
-      // 2. Add Profile Image
-      if (personalInfo.profileImage) {
-        completeFormData.append('profileImage', {
-          uri: personalInfo.profileImage.uri,
-          name: 'profile.jpg',
-          type: 'image/jpeg',
-        } as any);
+      // Step 1: Complete driver registration
+      const driverData = {
+        driverId: 0,
+        name: `${personalInfo.firstName} ${personalInfo.lastName}`,
+        email: personalInfo.email,
+        address: personalInfo.city,
+        profileImage: personalInfo.profileImage?.uri || "",
+        emergencyContact: personalInfo.secondaryPhone,
+        NIC: nic,
+        dateOfBirth: personalInfo.dateOfBirth,
+        gender: gender,
+        secondPhone: personalInfo.secondaryPhone,
+      };
+
+      const driverResult = await completeDriverRegistrationApi(accessToken, driverData);
+
+      // Step 2: Upload ID documents
+      if (idVerification.frontImage && idVerification.backImage) {
+        await uploadIdDocumentsApi(accessToken, {
+          frontImage: idVerification.frontImage,
+          backImage: idVerification.backImage,
+        });
       }
-      
-      // 3. Add ID Verification Images
-      if (idVerification.frontImage) {
-        completeFormData.append('idFrontImage', {
-          uri: idVerification.frontImage.uri,
-          name: 'idFront.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      if (idVerification.backImage) {
-        completeFormData.append('idBackImage', {
-          uri: idVerification.backImage.uri,
-          name: 'idBack.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      
-      // 4. Add Vehicle Information as form fields
-      completeFormData.append('vehicleType', vehicleInfo.vehicleType);
-      completeFormData.append('vehicleBrand', vehicleInfo.vehicleBrand);
-      completeFormData.append('vehicleModel', vehicleInfo.vehicleModel);
-      completeFormData.append('yearOfManufacture', vehicleInfo.yearOfManufacture);
-      completeFormData.append('vehicleColor', vehicleInfo.vehicleColor);
-      completeFormData.append('licensePlate', vehicleInfo.licensePlate);
-      completeFormData.append('seats', vehicleInfo.seats.toString());
-      completeFormData.append('femaleAssistant', String(vehicleInfo.femaleAssistant));
-      
-      // 5. Add Vehicle Images
-      if (vehicleInfo.frontView) {
-        completeFormData.append('vehicleFrontView', {
-          uri: vehicleInfo.frontView.uri,
-          name: 'vehicleFront.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      if (vehicleInfo.sideView) {
-        completeFormData.append('vehicleSideView', {
-          uri: vehicleInfo.sideView.uri,
-          name: 'vehicleSide.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      if (vehicleInfo.rearView) {
-        completeFormData.append('vehicleRearView', {
-          uri: vehicleInfo.rearView.uri,
-          name: 'vehicleRear.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      if (vehicleInfo.interiorView) {
-        completeFormData.append('vehicleInteriorView', {
-          uri: vehicleInfo.interiorView.uri,
-          name: 'vehicleInterior.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      
-      // 6. Add Vehicle Documents
-      if (vehicleDocuments.revenueLicense) {
-        completeFormData.append('revenueLicense', {
-          uri: vehicleDocuments.revenueLicense.assets[0].uri,
-          name: vehicleDocuments.revenueLicense.assets[0].name,
-          type: vehicleDocuments.revenueLicense.assets[0].mimeType,
-        } as any);
-      }
-      if (vehicleDocuments.vehicleInsurance) {
-        completeFormData.append('vehicleInsurance', {
-          uri: vehicleDocuments.vehicleInsurance.assets[0].uri,
-          name: vehicleDocuments.vehicleInsurance.assets[0].name,
-          type: vehicleDocuments.vehicleInsurance.assets[0].mimeType,
-        } as any);
-      }
-      if (vehicleDocuments.registrationDoc) {
-        completeFormData.append('registrationDoc', {
-          uri: vehicleDocuments.registrationDoc.assets[0].uri,
-          name: vehicleDocuments.registrationDoc.assets[0].name,
-          type: vehicleDocuments.registrationDoc.assets[0].mimeType,
-        } as any);
-      }
+
+      // Step 3: Register vehicle
+      const vehicleFormData = new FormData();
+      vehicleFormData.append('vehicleType', vehicleInfo.vehicleType);
+      vehicleFormData.append('vehicleBrand', vehicleInfo.vehicleBrand);
+      vehicleFormData.append('vehicleModel', vehicleInfo.vehicleModel);
+      vehicleFormData.append('yearOfManufacture', vehicleInfo.yearOfManufacture);
+      vehicleFormData.append('vehicleColor', vehicleInfo.vehicleColor);
+      vehicleFormData.append('licensePlate', vehicleInfo.licensePlate);
+      vehicleFormData.append('seats', vehicleInfo.seats.toString());
+      vehicleFormData.append('femaleAssistant', String(vehicleInfo.femaleAssistant));
+
+      // Add vehicle images
+      const imageFields = [
+        { key: 'vehicleFrontView', value: vehicleInfo.frontView, name: 'vehicleFront.jpg' },
+        { key: 'vehicleSideView', value: vehicleInfo.sideView, name: 'vehicleSide.jpg' },
+        { key: 'vehicleRearView', value: vehicleInfo.rearView, name: 'vehicleRear.jpg' },
+        { key: 'vehicleInteriorView', value: vehicleInfo.interiorView, name: 'vehicleInterior.jpg' },
+      ];
+      imageFields.forEach(({ key, value, name }) => {
+        if (value) {
+          vehicleFormData.append(key, {
+            uri: value.uri,
+            name,
+            type: 'image/jpeg',
+          } as any);
+        }
+      });
+
+      await registerVehicleApi(accessToken, vehicleFormData);
+
+      // Step 4: Upload vehicle documents
+      const documentsFormData = new FormData();
+      const docFields = [
+        { key: 'revenueLicense', value: vehicleDocuments.revenueLicense },
+        { key: 'vehicleInsurance', value: vehicleDocuments.vehicleInsurance },
+        { key: 'registrationDoc', value: vehicleDocuments.registrationDoc },
+      ];
+      docFields.forEach(({ key, value }) => {
+        if (value && value.assets && value.assets[0]) {
+          documentsFormData.append(key, {
+            uri: value.assets[0].uri,
+            name: value.assets[0].name,
+            type: value.assets[0].mimeType,
+          } as any);
+        }
+      });
       if (vehicleDocuments.licenseFront) {
         completeFormData.append('licenseFront', {
           uri: vehicleDocuments.licenseFront.uri,
@@ -326,8 +250,14 @@ export default function VehicleDocScreen() {
       router.replace('/(registration)/success');
 
     } catch (error) {
+      let errorMsg = 'Failed to complete registration. Please try again.';
+      if (error instanceof Error) {
+        errorMsg = error.message;
+      } else if (typeof error === 'string') {
+        errorMsg = error;
+      }
       console.error('Registration error:', error);
-      Alert.alert('Registration Failed', error instanceof Error ? error.message : 'Failed to complete registration. Please try again.');
+      Alert.alert('Registration Failed', errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -348,6 +278,30 @@ export default function VehicleDocScreen() {
         <Text className="text-sm text-brand-neutralGray mb-6">To ensure smooth verification and compliance with transport regulations, please upload valid registration documents for your vehicle. Make sure the document is clear, up-to-date, and matches your vehicle details.</Text>
 
         <View className="space-y-6">
+          {/* NIC Field */}
+          <View>
+            <Text className="text-base font-semibold mb-1">NIC *</Text>
+            <Text className="text-xs text-gray-500 mb-2">Enter your National Identity Card number.</Text>
+            <TextInput
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base"
+              value={nic}
+              onChangeText={setNic}
+              placeholder="NIC Number"
+              placeholderTextColor="#A0A0A0"
+            />
+          </View>
+          {/* Gender Field */}
+          <View>
+            <Text className="text-base font-semibold mb-1">Gender *</Text>
+            <Text className="text-xs text-gray-500 mb-2">Select your gender.</Text>
+            <TextInput
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base"
+              value={gender}
+              onChangeText={setGender}
+              placeholder="Gender (e.g., Male, Female, Other)"
+              placeholderTextColor="#A0A0A0"
+            />
+          </View>
           <View>
             <Text className="text-base font-semibold mb-1">Revenue License *</Text>
             <Text className="text-xs text-gray-500 mb-2">Upload the official vehicle registration certificate (RC) issued by the government.</Text>

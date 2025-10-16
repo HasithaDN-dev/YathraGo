@@ -17,6 +17,8 @@ import { Driver, RegistrationStatus } from '@prisma/client';
 export class DriverService {
   constructor(private prisma: PrismaService) {}
 
+  // Fetch driver details for a given driverId (for frontend welcome message)
+
   // --- EXISTING METHODS (from your provided driver.service.ts) ---
   async getDriverProfile(driverId: string) {
     const driver = await this.prisma.driver.findUnique({
@@ -216,6 +218,25 @@ export class DriverService {
   // Helper method to calculate trip duration in minutes
   private calculateDuration(startTime: Date, endTime: Date): number {
     const diffMs = new Date(endTime).getTime() - new Date(startTime).getTime();
-    return Math.round(diffMs / 60000); // Convert to minutes
+    return Math.round(diffMs / 60000); 
+  }  
+// Convert to minutes
+  // Fetch driver details for a given driverId (for frontend welcome message)
+  async getDriverDetailsById(driverId: number) {
+    const driver = await this.prisma.driver.findUnique({
+      where: { driver_id: driverId },
+      select: {
+        driver_id: true,
+        name: true,
+        email: true,
+        phone: true,
+        profile_picture_url: true,
+        status:true,
+      },
+    });
+    if (!driver) {
+      throw new NotFoundException('Driver not found');
+    }
+    return driver;
   }
 }

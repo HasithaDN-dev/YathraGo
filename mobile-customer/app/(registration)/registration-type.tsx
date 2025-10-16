@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FormHeader } from '../../components/ui/FormHeader';
 import { ButtonComponent } from '../../components/ui/ButtonComponent';
@@ -8,9 +8,15 @@ import { Colors } from '../../constants/Colors';
 
 export default function RegistrationTypeScreen() {
   const router = useRouter();
-  const [selectedType, setSelectedType] = useState<'staff' | 'child' | null>(null);
-
-  console.log('RegistrationTypeScreen: Component rendered');
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  
+  // Check if we should only show child registration
+  const childOnlyMode = mode === 'child';
+  
+  // Auto-select child if in child-only mode
+  const [selectedType, setSelectedType] = useState<'staff' | 'child' | null>(childOnlyMode ? 'child' : null);
+  
+  console.log('RegistrationTypeScreen: Component rendered', { mode, childOnlyMode, selectedType });
 
   const handleContinue = () => {
     if (!selectedType) {
@@ -30,72 +36,74 @@ export default function RegistrationTypeScreen() {
       <View className="flex-1 px-6 py-8 bg-white">
         <FormHeader
           title="Registration"
-          subtitle="Choose your registration type to get started"
+          subtitle={childOnlyMode ? "Add a child profile to your account" : "Choose your registration type to get started"}
           showLogo={true}
         />
 
         {/* Registration Type Cards */}
         <View className="flex-1 justify-center space-y-4">
-          {/* Staff Passenger Option */}
-          <TouchableOpacity
-            onPress={() => setSelectedType('staff')}
-            className={`p-6 rounded-xl border-2 bg-white ${
-              selectedType === 'staff'
-                ? 'border-blue-600'
-                : 'border-gray-200'
-            }`}
-            style={{
-              borderColor: selectedType === 'staff' ? Colors.tabIconSelected : '#E5E7EB',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text 
-                  className="text-xl font-semibold mb-2"
-                  style={{ 
-                    fontFamily: 'Figtree-SemiBold',
-                    color: '#000000'
+          {/* Staff Passenger Option - Only show if not in child-only mode */}
+          {!childOnlyMode && (
+            <TouchableOpacity
+              onPress={() => setSelectedType('staff')}
+              className={`p-6 rounded-xl border-2 bg-white ${
+                selectedType === 'staff'
+                  ? 'border-blue-600'
+                  : 'border-gray-200'
+              }`}
+              style={{
+                borderColor: selectedType === 'staff' ? Colors.tabIconSelected : '#E5E7EB',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 3,
+              }}
+            >
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1">
+                  <Text 
+                    className="text-xl font-semibold mb-2"
+                    style={{ 
+                      fontFamily: 'Figtree-SemiBold',
+                      color: '#000000'
+                    }}
+                  >
+                    Register as Staff Passenger
+                  </Text>
+                  <Text 
+                    className="text-gray-600"
+                    style={{ 
+                      fontFamily: 'Figtree-Regular',
+                      color: Colors.tabIconDefault
+                    }}
+                  >
+                    For employees commuting to work locations
+                  </Text>
+                </View>
+                <View
+                  className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
+                    selectedType === 'staff'
+                      ? 'border-blue-600'
+                      : 'border-gray-300'
+                  }`}
+                  style={{
+                    borderColor: selectedType === 'staff' ? Colors.tabIconSelected : '#D1D5DB',
+                    backgroundColor: selectedType === 'staff' ? Colors.tabIconSelected : 'transparent'
                   }}
                 >
-                  Register as Staff Passenger
-                </Text>
-                <Text 
-                  className="text-gray-600"
-                  style={{ 
-                    fontFamily: 'Figtree-Regular',
-                    color: Colors.tabIconDefault
-                  }}
-                >
-                  For employees commuting to work locations
-                </Text>
+                  {selectedType === 'staff' && (
+                    <View className="w-2 h-2 bg-white rounded-full" />
+                  )}
+                </View>
               </View>
-              <View
-                className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
-                  selectedType === 'staff'
-                    ? 'border-blue-600'
-                    : 'border-gray-300'
-                }`}
-                style={{
-                  borderColor: selectedType === 'staff' ? Colors.tabIconSelected : '#D1D5DB',
-                  backgroundColor: selectedType === 'staff' ? Colors.tabIconSelected : 'transparent'
-                }}
-              >
-                {selectedType === 'staff' && (
-                  <View className="w-2 h-2 bg-white rounded-full" />
-                )}
-              </View>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          )}
 
           {/* Child Registration Option */}
           <TouchableOpacity
             onPress={() => setSelectedType('child')}
-            className={`p-6 rounded-xl border-2 bg-white mt-10 ${
+            className={`p-6 rounded-xl border-2 bg-white ${childOnlyMode ? 'mt-0' : 'mt-10'} ${
               selectedType === 'child'
                 ? 'border-blue-600'
                 : 'border-gray-200'

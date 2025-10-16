@@ -37,4 +37,21 @@ export class RegisterChildDto {
   @IsOptional()
   @IsString()
   childImageUrl?: string;
+
+  // Location coordinates
+  @IsOptional()
+  @IsNumber()
+  schoolLatitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  schoolLongitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  pickupLatitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  pickupLongitude?: number;
 }
