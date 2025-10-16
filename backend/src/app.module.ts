@@ -11,6 +11,11 @@ import { AuthWebModule } from './auth-web/auth-web.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CustomerModule } from './customer/customer.module';
 import { OwnerModule } from './owner/owner.module';
+<<<<<<< Updated upstream
+=======
+import { ChatModule } from './chat/chat.module';
+import { CityModule } from './city/city.module';
+>>>>>>> Stashed changes
 
 @Module({
   imports: [
@@ -24,8 +29,15 @@ import { OwnerModule } from './owner/owner.module';
     DriverModule,
     VehicleModule,
     AuthWebModule,
+<<<<<<< Updated upstream
     CustomerModule,
     OwnerModule,
+=======
+  CustomerModule,
+  OwnerModule,
+  ChatModule,
+  CityModule,
+>>>>>>> Stashed changes
   ],
   controllers: [AppController],
   providers: [AppService],

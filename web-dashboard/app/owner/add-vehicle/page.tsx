@@ -52,6 +52,16 @@ interface FormErrors {
 }
 
 export default function AddVehiclePage() {
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [showEndingCityDropdown, setShowEndingCityDropdown] = useState(false);
+  const [citySearch, setCitySearch] = useState("");
+  const [endingCitySearch, setEndingCitySearch] = useState("");
+  const [cities, setCities] = useState<{ id: number; name: string }[]>([]);
+  React.useEffect(() => {
+    fetch("/cities")
+      .then((res) => res.json())
+      .then((data) => setCities(data));
+  }, []);
   const [formData, setFormData] = useState<FormData>({
     vehicleNo: "",
     type: "",
@@ -478,20 +488,48 @@ export default function AddVehiclePage() {
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <h3 className="text-lg font-semibold text-[var(--color-deep-navy)] mb-4">Route Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Starting City */}
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
-                    Starting City *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Colombo"
-                    value={formData.startingCity}
-                    onChange={(e) => handleInputChange("startingCity", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.startingCity ? "border-red-500 bg-red-50" : "border-gray-400"
-                    }`}
-                  />
+                {/* Starting City Searchable Dropdown */}
+                <div className="relative">
+                  <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">Starting City *</label>
+                  <div>
+                    <button
+                      type="button"
+                      className={`w-full px-3 py-2 border rounded-lg text-left focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.startingCity ? "border-red-500 bg-red-50" : "border-gray-400"}`}
+                      onClick={() => setShowCityDropdown((v) => !v)}
+                    >
+                      {formData.startingCity ? formData.startingCity : "Select City"}
+                    </button>
+                    {showCityDropdown && (
+                      <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1">
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder="Search city..."
+                          value={citySearch}
+                          onChange={e => setCitySearch(e.target.value)}
+                          className="w-full px-3 py-2 border-b border-gray-200 rounded-t-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <div className="max-h-48 overflow-y-auto">
+                          {cities.filter(city => city.name.toLowerCase().includes(citySearch.toLowerCase())).length === 0 ? (
+                            <div className="px-3 py-2 text-gray-400">No cities found</div>
+                          ) : (
+                            cities.filter(city => city.name.toLowerCase().includes(citySearch.toLowerCase())).map(city => (
+                              <div
+                                key={city.id}
+                                className={`px-3 py-2 cursor-pointer hover:bg-blue-50 ${formData.startingCity === city.name ? "bg-blue-100" : ""}`}
+                                onClick={() => {
+                                  handleInputChange("startingCity", city.name);
+                                  setShowCityDropdown(false);
+                                }}
+                              >
+                                {city.name}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   {errors.startingCity && (
                     <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
                       <AlertCircle className="w-4 h-4" />
@@ -500,20 +538,48 @@ export default function AddVehiclePage() {
                   )}
                 </div>
 
-                {/* Ending City */}
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
-                    Ending City *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Kandy"
-                    value={formData.endingCity}
-                    onChange={(e) => handleInputChange("endingCity", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.endingCity ? "border-red-500 bg-red-50" : "border-gray-400"
-                    }`}
-                  />
+                {/* Ending City Searchable Dropdown */}
+                <div className="relative">
+                  <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">Ending City *</label>
+                  <div>
+                    <button
+                      type="button"
+                      className={`w-full px-3 py-2 border rounded-lg text-left focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.endingCity ? "border-red-500 bg-red-50" : "border-gray-400"}`}
+                      onClick={() => setShowEndingCityDropdown((v) => !v)}
+                    >
+                      {formData.endingCity ? formData.endingCity : "Select City"}
+                    </button>
+                    {showEndingCityDropdown && (
+                      <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1">
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder="Search city..."
+                          value={endingCitySearch}
+                          onChange={e => setEndingCitySearch(e.target.value)}
+                          className="w-full px-3 py-2 border-b border-gray-200 rounded-t-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <div className="max-h-48 overflow-y-auto">
+                          {cities.filter(city => city.name.toLowerCase().includes(endingCitySearch.toLowerCase())).length === 0 ? (
+                            <div className="px-3 py-2 text-gray-400">No cities found</div>
+                          ) : (
+                            cities.filter(city => city.name.toLowerCase().includes(endingCitySearch.toLowerCase())).map(city => (
+                              <div
+                                key={city.id}
+                                className={`px-3 py-2 cursor-pointer hover:bg-blue-50 ${formData.endingCity === city.name ? "bg-blue-100" : ""}`}
+                                onClick={() => {
+                                  handleInputChange("endingCity", city.name);
+                                  setShowEndingCityDropdown(false);
+                                }}
+                              >
+                                {city.name}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   {errors.endingCity && (
                     <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
                       <AlertCircle className="w-4 h-4" />
@@ -795,7 +861,7 @@ export default function AddVehiclePage() {
             type="button"
             variant="outline"
             onClick={handleCancel}
-            className="border-[var(--neutral-gray)] text-[var(--neutral-gray)] hover:bg-[var(--light-gray)]"
+            className="border-[var(--neutral-gray)] text-[var(--neutral-gray)] hover:bg-[var(--neutral-gray)] hover:text-white"
           >
             Cancel
           </Button>
