@@ -141,6 +141,24 @@ export class DriverController {
       nice_back_pic_url: idBackImageUrl || '',
       second_phone: registrationData.secondaryPhone || '',
       vehicle_Reg_No: registrationData.licensePlate || '',
+      // Vehicle information
+      vehicleType: registrationData.vehicleType,
+      vehicleBrand: registrationData.vehicleBrand,
+      vehicleModel: registrationData.vehicleModel,
+      yearOfManufacture: registrationData.yearOfManufacture,
+      vehicleColor: registrationData.vehicleColor,
+      licensePlate: registrationData.licensePlate,
+      seats: registrationData.seats ? parseInt(registrationData.seats.toString()) : undefined,
+      femaleAssistant: registrationData.femaleAssistant === 'true' || registrationData.femaleAssistant === true,
+      // Vehicle images
+      vehicleFrontView: vehicleFrontViewUrl ?? undefined,
+      vehicleSideView: vehicleSideViewUrl ?? undefined,
+      vehicleRearView: vehicleRearViewUrl ?? undefined,
+      vehicleInteriorView: vehicleInteriorViewUrl ?? undefined,
+      // Vehicle documents
+      revenueLicenseUrl: revenueLicenseUrl ?? undefined,
+      vehicleInsuranceUrl: vehicleInsuranceUrl ?? undefined,
+      registrationDocUrl: registrationDocUrl ?? undefined,
     };
 
     return this.driverService.completeDriverRegistration(
@@ -157,30 +175,6 @@ export class DriverController {
     const driverId = req.user.userId; // Assuming userId is driver_id
     return this.driverService.getDriverProfile(driverId);
   }
-
-  // --- EXISTING PROFILE MANAGEMENT ENDPOINTS (from your provided driver.service.ts) ---
-  // Get driver profile by driver ID - NO JWT REQUIRED
-  @Get('profile/:driverId')
-  @HttpCode(HttpStatus.OK)
-  async getDriverProfile(@Param('driverId') driverId: string) {
-    return this.driverService.getDriverProfile(driverId);
-  }
-
-  // @UseGuards(JwtAuthGuard)
-  // @Put('profile')
-  // @HttpCode(HttpStatus.OK)
-  // async updateDriverProfile(@Req() req: AuthenticatedRequest, @Body() profileData: UpdateDriverProfileDto) {
-  //   const driverId = req.user.userId;
-  //   return this.driverService.updateDriverProfile(driverId, profileData);
-  // }
-
-  // @UseGuards(JwtAuthGuard)
-  // @Post('documents')
-  // @HttpCode(HttpStatus.OK)
-  // async uploadDriverDocuments(@Req() req: AuthenticatedRequest, @Body() documentsData: UploadDocumentsDto) {
-  //   const driverId = req.user.userId;
-  //   return this.driverService.uploadDriverDocuments(driverId, documentsData);
-  // }
 
   // --- NEW ENDPOINT TO GET DRIVER TRIP HISTORY (FILTERED BY DRIVER ID) ---
   // NO JWT REQUIRED - Just pass driver ID in URL
