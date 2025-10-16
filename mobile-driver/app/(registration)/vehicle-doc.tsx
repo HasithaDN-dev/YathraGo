@@ -8,8 +8,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useDriverStore } from '../../lib/stores/driver.store';
 import { useAuthStore } from '../../lib/stores/auth.store';
-import { registerVehicleApi, uploadVehicleDocumentsApi } from '../../lib/api/vehicle.api';
-import { completeDriverRegistrationApi, uploadIdDocumentsApi } from '../../lib/api/profile.api';
+import { API_BASE_URL } from '../../config/api';
 
 interface FileUploadItemProps {
   file: DocumentPicker.DocumentPickerSuccessResult | null;
@@ -80,25 +79,8 @@ export default function VehicleDocScreen() {
   const [progress, setProgress] = useState<{ [key: string]: number }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Update store when documents change
-  useEffect(() => {
-    updateVehicleDocuments({
-      revenueLicense,
-      vehicleInsurance,
-      registrationDoc,
-      licenseFront,
-      licenseBack,
-    });
-  }, [revenueLicense, vehicleInsurance, registrationDoc, licenseFront, licenseBack, updateVehicleDocuments]);
-
-  // Sync local state with store data
-  useEffect(() => {
-    setRevenueLicense(vehicleDocuments.revenueLicense);
-    setVehicleInsurance(vehicleDocuments.vehicleInsurance);
-    setRegistrationDoc(vehicleDocuments.registrationDoc);
-    setLicenseFront(vehicleDocuments.licenseFront);
-    setLicenseBack(vehicleDocuments.licenseBack);
-  }, [vehicleDocuments]);
+  // Sync local state with store data on mount
+  // Documents are saved when user clicks "Complete Registration"
 
   const startProgress = (key: string) => {
     setProgress(prev => ({ ...prev, [key]: 0 }));
@@ -225,23 +207,42 @@ export default function VehicleDocScreen() {
         }
       });
       if (vehicleDocuments.licenseFront) {
-        documentsFormData.append('licenseFront', {
+        completeFormData.append('licenseFront', {
           uri: vehicleDocuments.licenseFront.uri,
           name: 'licenseFront.jpg',
           type: 'image/jpeg',
         } as any);
       }
       if (vehicleDocuments.licenseBack) {
-        documentsFormData.append('licenseBack', {
+        completeFormData.append('licenseBack', {
           uri: vehicleDocuments.licenseBack.uri,
           name: 'licenseBack.jpg',
           type: 'image/jpeg',
         } as any);
       }
 
-      await uploadVehicleDocumentsApi(accessToken, documentsFormData);
+      console.log('========== SENDING COMPLETE REGISTRATION ==========');
+      console.log('FormData prepared with all files and data');
+      
+      // ========== SINGLE API CALL ==========
+      const response = await fetch(`${API_BASE_URL}/driver/register`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          // DON'T set Content-Type - let fetch set it with boundary for FormData
+        },
+        body: completeFormData,
+      });
 
-      // Step 5: Update registration status and complete profile
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Registration failed' }));
+        throw new Error(error.message || 'Failed to complete registration');
+      }
+
+      const result = await response.json();
+      console.log('Registration successful:', result);
+
+      // Update registration status
       setRegistrationStatus('ACCOUNT_CREATED');
       setProfileComplete(true);
 

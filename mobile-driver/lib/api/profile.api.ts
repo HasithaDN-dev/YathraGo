@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../../config/api';
-import { Driver, DriverProfileData, DriverRegistrationData, VehicleData, DocumentUploadData } from '../../types/driver.types';
+import { Driver, DriverProfileData, DriverRegistrationData, VehicleData, DocumentUploadData, DriverProfileComplete } from '../../types/driver.types';
 import { tokenService } from '../services/token.service';
 
 /**
@@ -129,4 +129,24 @@ export const getDriverRegistrationStatusApi = async (token: string): Promise<str
   
   const data = await response.json();
   return data.profile?.registrationStatus || 'OTP_PENDING';
+};
+
+/**
+ * Get driver profile by driver ID (without authentication - for testing)
+ */
+export const getDriverProfileById = async (driverId: number): Promise<DriverProfileComplete> => {
+  const response = await fetch(`${API_BASE_URL}/driver/profile/${driverId}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Failed to fetch driver profile' }));
+    throw new Error(error.message || 'Failed to fetch driver profile');
+  }
+  
+  const data = await response.json();
+  return data.profile;
 };

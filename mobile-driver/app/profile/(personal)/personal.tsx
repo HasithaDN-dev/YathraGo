@@ -1,37 +1,74 @@
-import React from 'react';
-import { View, Image, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Typography } from '@/components/Typography';
 import { ArrowLeft, PencilSimple, CaretRight } from 'phosphor-react-native';
 import { useRouter } from 'expo-router';
-
-const user = {
-    profilePic: undefined, // Replace with actual image URI if available
-    name: 'Nihal Perera',
-    country: 'Sri Lanka',
-    firstName: 'Nihal',
-    lastName: 'Perera',
-    nic: '810264220 V',
-    address: '123, Main Street, Colombo',
-    gender: 'Male',
-    phone: '+94 71 234 5678',
-    email: 'nihal.perera@email.com',
-    secondaryPhone: '+94 77 345 6789',
-};
-
-const fields = [
-    { label: 'First Name', value: user.firstName },
-    { label: 'Last Name', value: user.lastName },
-    { label: 'NIC', value: user.nic },
-    { label: 'Address', value: user.address },
-    { label: 'Gender', value: user.gender },
-    { label: 'Phone Number', value: user.phone },
-    { label: 'Email', value: user.email },
-    { label: 'Secondary Phone Number', value: user.secondaryPhone },
-];
+import { getDriverProfileById } from '@/lib/api/profile.api';
+import { DriverProfileComplete } from '@/types/driver.types';
 
 export default function PersonalDetailsScreen() {
     const router = useRouter();
     const [tab, setTab] = React.useState<'basic' | 'contact'>('basic');
+    const [driverProfile, setDriverProfile] = useState<DriverProfileComplete | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const DRIVER_ID = 1; // HARDCODED FOR TESTING
+
+    useEffect(() => {
+        fetchDriverProfile();
+    }, []);
+
+    const fetchDriverProfile = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const profile = await getDriverProfileById(DRIVER_ID);
+            setDriverProfile(profile);
+        } catch (err) {
+            console.error('Error fetching driver profile:', err);
+            setError('Failed to load profile data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <View className="flex-1 bg-gray-50 justify-center items-center">
+                <ActivityIndicator size="large" color="#1E3A5F" />
+            </View>
+        );
+    }
+
+    if (error || !driverProfile) {
+        return (
+            <View className="flex-1 bg-gray-50 justify-center items-center">
+                <Typography variant="body" className="text-red-500">
+                    {error || 'Failed to load profile'}
+                </Typography>
+                <TouchableOpacity onPress={fetchDriverProfile} className="mt-4 px-6 py-2 bg-brand-deepNavy rounded-lg">
+                    <Typography variant="body" className="text-white">Retry</Typography>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    // Extract first name and last name from full name
+    const nameParts = driverProfile.name.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    const fields = [
+        { label: 'First Name', value: firstName },
+        { label: 'Last Name', value: lastName },
+        { label: 'NIC', value: driverProfile.NIC },
+        { label: 'Address', value: driverProfile.address },
+        { label: 'Gender', value: driverProfile.gender },
+        { label: 'Phone Number', value: driverProfile.phone },
+        { label: 'Email', value: driverProfile.email || 'Not provided' },
+        { label: 'Secondary Phone Number', value: driverProfile.second_phone },
+    ];
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -50,15 +87,24 @@ export default function PersonalDetailsScreen() {
                 </View>
                 <View className="items-center">
                     <View className="w-24 h-24 rounded-full bg-brand-lightGray items-center justify-center mt-5 mb-12 overflow-hidden ">
-
-                        <Image source={require('../../../assets/images/profile.png.jpeg')} className="w-14 h-14 rounded-full" />
-
+                        {driverProfile.profile_picture_url ? (
+                            <Image 
+                                source={{ uri: driverProfile.profile_picture_url }} 
+                                className="w-24 h-24 rounded-full" 
+                                resizeMode="cover"
+                            />
+                        ) : (
+                            <Image 
+                                source={require('../../../assets/images/profile.png.jpeg')} 
+                                className="w-14 h-14 rounded-full" 
+                            />
+                        )}
                     </View>
                     <Typography variant="headline" weight="bold" className="text-white">
-                        {user.name}
+                        {driverProfile.name}
                     </Typography>
                     <Typography variant="body" className="text-white opacity-80 mb-2">
-                        {user.country}
+                        Sri Lanka
                     </Typography>
                     <TouchableOpacity className="border border-brand-brightOrange px-4 py-1 rounded-full mb-2">
                         <Typography variant="body" weight="medium" className="text-brand-brightOrange">

@@ -1,10 +1,11 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuthStore } from '../../lib/stores/auth.store';
 import { useDriverStore } from '../../lib/stores/driver.store';
 import ProfileMenuItem from '@/components/ui/ProfileMenuItem';
 import { Icon } from '@/components/ui/Icon';
+import { ProfileImage } from '@/components/ProfileImage';
 
 export default function MenuScreen() {
   const { logout } = useAuthStore();
@@ -15,10 +16,7 @@ export default function MenuScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
         <View style={styles.profileImageContainer}>
-          <Image
-            source={require('../../assets/images/profile.png.jpeg')}
-            style={styles.profileImage}
-          />
+          <ProfileImage style={styles.profileImage} size={96} />
           <TouchableOpacity style={styles.cameraButton}>
             <Icon name="Camera" size={20} color="#143373" />
           </TouchableOpacity>
