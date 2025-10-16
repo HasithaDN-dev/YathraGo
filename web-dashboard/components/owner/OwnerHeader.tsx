@@ -4,34 +4,11 @@ import { Bell, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import Cookies from "js-cookie";
-import { jwtDecode } from "jwt-decode";
+import { useOwner } from "@/components/owner/OwnerContext";
 
 export default function OwnerHeader() {
-  const [firstName, setFirstName] = useState<string>("");
-  const [lastName, setLastName] = useState<string>("");
-  const [role, setRole] = useState<string>("");
+  const { firstName, lastName, role } = useOwner();
 
-  useEffect(() => {
-    const token = Cookies.get("access_token");
-    if (token) {
-      try {
-        const decoded: any = jwtDecode(token);
-        if (decoded && decoded.first_name) {
-          setFirstName(decoded.first_name);
-        }
-        if (decoded && decoded.last_name) {
-          setLastName(decoded.last_name);
-        }
-        if (decoded && decoded.role) {
-          setRole(decoded.role);
-        }
-      } catch (err) {
-        // Invalid token
-      }
-    }
-  }, []);
   return (
     <header className="bg-white border-b border-[var(--neutral-gray)] px-6 py-4">
       <div className="flex items-center justify-between">
