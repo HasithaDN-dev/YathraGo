@@ -15,6 +15,8 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState(personalInfo.email);
   const [secondaryPhone, setSecondaryPhone] = useState(personalInfo.secondaryPhone);
   const [city, setCity] = useState(personalInfo.city);
+  const [nic, setNic] = useState(personalInfo.NIC);
+  const [gender, setGender] = useState(personalInfo.gender);
   const [profileImage, setProfileImage] = useState<ImagePicker.ImagePickerAsset | null>(personalInfo.profileImage);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,6 +28,8 @@ export default function RegisterScreen() {
     setEmail(personalInfo.email);
     setSecondaryPhone(personalInfo.secondaryPhone);
     setCity(personalInfo.city);
+    setNic(personalInfo.NIC);
+    setGender(personalInfo.gender);
     setProfileImage(personalInfo.profileImage);
   }, [personalInfo]);
 
@@ -50,12 +54,25 @@ export default function RegisterScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!firstName || !lastName || !dob || !city || !profileImage) {
+    if (!firstName || !lastName || !dob || !city || !nic || !gender || !profileImage) {
       Alert.alert('Error', 'Please fill all required fields and select a profile image.');
       return;
     }
 
-    // Data is already saved in store, just navigate to next screen
+    // Update store with all personal info including NIC and gender
+    updatePersonalInfo({
+      firstName,
+      lastName,
+      dateOfBirth: dob,
+      email,
+      secondaryPhone,
+      city,
+      NIC: nic,
+      gender,
+      profileImage,
+    });
+
+    // Navigate to next screen
     router.push('/(registration)/reg-verify');
   };
   return (
@@ -143,7 +160,7 @@ export default function RegisterScreen() {
           />
         </View>
 
-        <View className="w-full mb-6">
+        <View className="w-full mb-4">
           <Text className="text-sm font-medium text-gray-600 mb-1">City</Text>
           <View className="w-full relative">
             <TextInput
@@ -153,8 +170,29 @@ export default function RegisterScreen() {
               placeholder="Select City"
               placeholderTextColor="#A0A0A0"
             />
-            <Icon name="CaretDown" size={24} color="gray" style={{ position: 'absolute', right: 12, top: 12 }} />
           </View>
+        </View>
+
+        <View className="w-full mb-4">
+          <Text className="text-sm font-medium text-gray-600 mb-1">NIC *</Text>
+          <TextInput
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base"
+            value={nic}
+            onChangeText={setNic}
+            placeholder="Enter your NIC number"
+            placeholderTextColor="#A0A0A0"
+          />
+        </View>
+
+        <View className="w-full mb-6">
+          <Text className="text-sm font-medium text-gray-600 mb-1">Gender *</Text>
+          <TextInput
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base"
+            value={gender}
+            onChangeText={setGender}
+            placeholder="Male, Female, or Other"
+            placeholderTextColor="#A0A0A0"
+          />
         </View>
 
         <TouchableOpacity
