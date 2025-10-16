@@ -9,6 +9,8 @@ import {
   Req,
   UseInterceptors,
   UploadedFiles,
+  Get,
+  Param,
 } from '@nestjs/common';
 import { DriverService } from './driver.service';
 import { CompleteDriverRegistrationDto } from './dto/complete-driver-registration.dto'; // Import the new DTO
@@ -141,15 +143,12 @@ export class DriverController {
   }
 
   // --- EXISTING PROFILE MANAGEMENT ENDPOINTS (from your provided driver.service.ts) ---
-  // You would need to add these back if you want them exposed via the controller.
-  // Example:
-  // @UseGuards(JwtAuthGuard)
-  // @Get('profile')
-  // @HttpCode(HttpStatus.OK)
-  // async getDriverProfile(@Req() req: AuthenticatedRequest) {
-  //   const driverId = req.user.userId; // Assuming userId is driver_id
-  //   return this.driverService.getDriverProfile(driverId);
-  // }
+  // Get driver profile by driver ID - NO JWT REQUIRED
+  @Get('profile/:driverId')
+  @HttpCode(HttpStatus.OK)
+  async getDriverProfile(@Param('driverId') driverId: string) {
+    return this.driverService.getDriverProfile(driverId);
+  }
 
   // @UseGuards(JwtAuthGuard)
   // @Put('profile')
@@ -166,4 +165,12 @@ export class DriverController {
   //   const driverId = req.user.userId;
   //   return this.driverService.uploadDriverDocuments(driverId, documentsData);
   // }
+
+  // --- NEW ENDPOINT TO GET DRIVER TRIP HISTORY (FILTERED BY DRIVER ID) ---
+  // NO JWT REQUIRED - Just pass driver ID in URL
+  @Get('trip-history/:driverId')
+  @HttpCode(HttpStatus.OK)
+  async getDriverTripHistory(@Param('driverId') driverId: string) {
+    return this.driverService.getDriverTripHistory(driverId);
+  }
 }
