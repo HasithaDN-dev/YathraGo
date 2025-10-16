@@ -3,8 +3,8 @@ import { View, ActivityIndicator, Text, FlatList, TouchableOpacity } from 'react
 import MapView, { Polyline, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { fetchOptimizedRouteWithGPS, decodeOverviewPolyline } from '@/lib/api/maps.api';
 
-// Hardcode driver id = 1 as requested
-const DRIVER_ID = 1;
+// Temporary hardcoded driver id (updated to 2 per request)
+const DRIVER_ID = 2;
 
 export default function RouteScreen() {
   const [loading, setLoading] = useState(true);
@@ -15,9 +15,51 @@ export default function RouteScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   
 
-  // defer optimization until button press
+  // auto-optimize on mount using GPS
   useEffect(() => {
-    setLoading(false);
+    const run = async () => {
+      setLoading(true);
+      try {
+        let latitude: number | undefined;
+        let longitude: number | undefined;
+        try {
+          const Location = await import('expo-location');
+          const perm = await Location.requestForegroundPermissionsAsync();
+          if (perm.status === 'granted') {
+            const loc = await Location.getCurrentPositionAsync({});
+            latitude = loc.coords.latitude;
+            longitude = loc.coords.longitude;
+          }
+        } catch {}
+        const result = await fetchOptimizedRouteWithGPS(DRIVER_ID, latitude, longitude);
+        if (result.polyline) {
+          const d = decodeOverviewPolyline(result.polyline);
+          setCoords(d);
+          if (d.length > 0) {
+            setMarkers([
+              { latitude: d[0].latitude, longitude: d[0].longitude, title: 'Start' },
+              { latitude: d[d.length - 1].latitude, longitude: d[d.length - 1].longitude, title: 'End' },
+            ]);
+          }
+        }
+        const totalDistance = result.totalDistanceMeters;
+        const totalDuration = result.totalDurationSecs;
+        setSummary({ distance: `${(totalDistance / 1000).toFixed(2)} km`, duration: `${Math.round(totalDuration / 60)} min` });
+        const legsList = result.stops.map((s) => ({
+          start_address: '',
+          end_address: s.address,
+          distance: { value: s.legDistanceMeters, text: `${(s.legDistanceMeters / 1000).toFixed(1)} km` },
+          duration: { value: s.etaSecs, text: '' },
+        }));
+        setLegs(legsList);
+        setCurrentIndex(0);
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    run();
   }, []);
 
   if (loading)
@@ -74,55 +116,7 @@ export default function RouteScreen() {
           />
 
           <View style={{ marginTop: 8 }}>
-            <TouchableOpacity
-              onPress={async () => {
-                setLoading(true);
-                try {
-                  let latitude: number | undefined;
-                  let longitude: number | undefined;
-                  try {
-                    const Location = await import('expo-location');
-                    const perm = await Location.requestForegroundPermissionsAsync();
-                    if (perm.status === 'granted') {
-                      const loc = await Location.getCurrentPositionAsync({});
-                      latitude = loc.coords.latitude;
-                      longitude = loc.coords.longitude;
-                    }
-                  } catch {}
-                  const result = await fetchOptimizedRouteWithGPS(DRIVER_ID, latitude, longitude);
-                  if (result.polyline) {
-                    const d = decodeOverviewPolyline(result.polyline);
-                    setCoords(d);
-                    if (d.length > 0) {
-                      setMarkers([
-                        { latitude: d[0].latitude, longitude: d[0].longitude, title: 'Start' },
-                        { latitude: d[d.length - 1].latitude, longitude: d[d.length - 1].longitude, title: 'End' },
-                      ]);
-                    }
-                  }
-                  // compute summary from cumulative legs
-                  const totalDistance = result.totalDistanceMeters;
-                  const totalDuration = result.totalDurationSecs;
-                  setSummary({ distance: `${(totalDistance / 1000).toFixed(2)} km`, duration: `${Math.round(totalDuration / 60)} min` });
-                  // Present a simple leg list from stops
-                  const legsList = result.stops.map((s) => ({
-                    start_address: '',
-                    end_address: s.address,
-                    distance: { value: s.legDistanceMeters, text: `${(s.legDistanceMeters / 1000).toFixed(1)} km` },
-                    duration: { value: s.etaSecs, text: '' },
-                  }));
-                  setLegs(legsList);
-                  setCurrentIndex(0);
-                } catch (e) {
-                  console.warn(e);
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              style={{ alignItems: 'center', padding: 10, backgroundColor: '#0ea5e9', borderRadius: 8 }}
-            >
-              <Text style={{ color: 'white', fontWeight: '600' }}>Optimize Route</Text>
-            </TouchableOpacity>
+            {/* Removed duplicate Optimize button (auto-optimizes on mount) */}
             <View style={{ height: 8 }} />
             <TouchableOpacity
               onPress={async () => {

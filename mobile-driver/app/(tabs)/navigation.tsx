@@ -178,7 +178,7 @@ export default function NavigationScreen({
                     </Typography>
                     <View className="mt-4">
                         <CustomButton
-                            title="View Optimized Route"
+                            title="Open Navigation"
                             onPress={() => router.push('/(tabs)/route')}
                             size="small"
                         />

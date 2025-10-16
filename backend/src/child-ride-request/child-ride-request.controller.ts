@@ -5,10 +5,10 @@ import { ChildRideRequestService } from './child-ride-request.service';
 export class ChildRideRequestController {
   constructor(private readonly service: ChildRideRequestService) {}
 
-  // For demo, use hardcoded driverId = 1
+  // For demo, use hardcoded driverId = 2
   @Get()
   async getChildRideRequestsForDriver() {
-    const driverId = 1;
+    const driverId = 2;
     return this.service.getRequestsForDriver(driverId);
   }
 }

@@ -178,8 +178,8 @@ export class DriverController {
   // Endpoint to fetch driver details for hardcoded driverId (for frontend welcome message)
   @Get('details')
   async getDriverDetails() {
-    // Hardcoded driverId for demo
-    const driverId = 1;
+    // Hardcoded driverId for demo (updated to 2)
+    const driverId = 2;
     return this.driverService.getDriverDetailsById(driverId);
   }
 
