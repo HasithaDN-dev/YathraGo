@@ -149,6 +149,15 @@ export class DriverController {
     );
   }
 
+  // --- PROFILE MANAGEMENT ENDPOINTS ---
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  @HttpCode(HttpStatus.OK)
+  async getDriverProfile(@Req() req: AuthenticatedRequest) {
+    const driverId = req.user.userId; // Assuming userId is driver_id
+    return this.driverService.getDriverProfile(driverId);
+  }
+
   // --- EXISTING PROFILE MANAGEMENT ENDPOINTS (from your provided driver.service.ts) ---
   // Get driver profile by driver ID - NO JWT REQUIRED
   @Get('profile/:driverId')
@@ -180,13 +189,13 @@ export class DriverController {
   async getDriverTripHistory(@Param('driverId') driverId: string) {
     return this.driverService.getDriverTripHistory(driverId);
   }
-  // Endpoint to fetch driver details for hardcoded driverId (for frontend welcome message)
-  @Get('details')
-  async getDriverDetails() {
-    // Hardcoded driverId for demo (updated to 2)
-    const driverId = 2;
-    return this.driverService.getDriverDetailsById(driverId);
-  }
+//   // Endpoint to fetch driver details for hardcoded driverId (for frontend welcome message)
+//   @Get('details')
+//   async getDriverDetails() {
+//     // Hardcoded driverId for demo (updated to 2)
+//     const driverId = 2;
+//     return this.driverService.getDriverDetailsById(driverId);
+//   }
 
   // --- Minimal route optimization endpoint ---
   @Post(':driverId/optimize-route')
