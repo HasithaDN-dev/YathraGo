@@ -9,7 +9,8 @@ import Cookies from "js-cookie";
 import { jwtDecode } from "jwt-decode";
 
 export default function OwnerHeader() {
-  const [username, setUsername] = useState<string>("");
+  const [firstName, setFirstName] = useState<string>("");
+  const [lastName, setLastName] = useState<string>("");
   const [role, setRole] = useState<string>("");
 
   useEffect(() => {
@@ -17,12 +18,11 @@ export default function OwnerHeader() {
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
-
-        console.log(decoded);
-        if (decoded && decoded.username) {
-          setUsername(decoded.username);
-        } else if (decoded && decoded.email) {
-          setUsername(decoded.email);
+        if (decoded && decoded.first_name) {
+          setFirstName(decoded.first_name);
+        }
+        if (decoded && decoded.last_name) {
+          setLastName(decoded.last_name);
         }
         if (decoded && decoded.role) {
           setRole(decoded.role);
@@ -62,8 +62,7 @@ export default function OwnerHeader() {
               <User className="w-4 h-4 text-[var(--black)]" />
             </div>
             <div className="hidden md:block">
-              <p className="text-sm font-medium text-[var(--color-deep-navy)]">{(username?.split('@')[0]) || "Owner"}</p>
-
+              <p className="text-sm font-medium text-[var(--color-deep-navy)]">{firstName || "Owner"} {lastName}</p>
               <p className="text-xs text-[var(--neutral-gray)]">{(role) || "Owner"}</p>
             </div>
           </div>

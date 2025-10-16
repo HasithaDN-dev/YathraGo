@@ -12,6 +12,8 @@ interface PersonalInfo {
   secondaryPhone: string;
   city: string;
   profileImage?: any;
+  nic?: string;
+  gender?: string;
 }
 
 interface IdVerification {
@@ -79,6 +81,8 @@ const initialPersonalInfo: PersonalInfo = {
   email: '',
   secondaryPhone: '',
   city: '',
+  nic: '',
+  gender: '',
 };
 
 const initialIdVerification: IdVerification = {};
@@ -168,14 +172,16 @@ export const useDriverStore = create<DriverState>((set, get) => ({
   isRegistrationComplete: () => {
     const { personalInfo, idVerification, vehicleInfo, vehicleDocuments } = get();
     
-    // Check personal info
+    // Check personal info (all fields including NIC and gender)
     const personalComplete = 
       personalInfo.firstName && 
       personalInfo.lastName && 
       personalInfo.dateOfBirth && 
       personalInfo.email && 
       personalInfo.secondaryPhone && 
-      personalInfo.city;
+      personalInfo.city &&
+      personalInfo.nic &&
+      personalInfo.gender;
 
     // Check ID verification
     const idComplete = idVerification.frontImage && idVerification.backImage;
@@ -201,6 +207,50 @@ export const useDriverStore = create<DriverState>((set, get) => ({
       vehicleDocuments.registrationDoc && 
       vehicleDocuments.licenseFront && 
       vehicleDocuments.licenseBack;
+
+    // DEBUG: Log validation breakdown
+    console.log('====== VALIDATION BREAKDOWN ======');
+    console.log('Personal Info Complete:', personalComplete);
+    if (!personalComplete) {
+      console.log('  - Missing Personal Fields:', {
+        firstName: !personalInfo.firstName,
+        lastName: !personalInfo.lastName,
+        dateOfBirth: !personalInfo.dateOfBirth,
+        email: !personalInfo.email,
+        secondaryPhone: !personalInfo.secondaryPhone,
+        city: !personalInfo.city,
+        nic: !personalInfo.nic,
+        gender: !personalInfo.gender,
+      });
+    }
+    console.log('ID Complete:', idComplete);
+    console.log('Vehicle Info Complete:', vehicleComplete);
+    if (!vehicleComplete) {
+      console.log('  - Missing Vehicle Fields:', {
+        vehicleType: !vehicleInfo.vehicleType,
+        vehicleBrand: !vehicleInfo.vehicleBrand,
+        vehicleModel: !vehicleInfo.vehicleModel,
+        yearOfManufacture: !vehicleInfo.yearOfManufacture,
+        vehicleColor: !vehicleInfo.vehicleColor,
+        licensePlate: !vehicleInfo.licensePlate,
+        seatsInvalid: !(vehicleInfo.seats > 0),
+        frontView: !vehicleInfo.frontView,
+        sideView: !vehicleInfo.sideView,
+        rearView: !vehicleInfo.rearView,
+        interiorView: !vehicleInfo.interiorView,
+      });
+    }
+    console.log('Documents Complete:', documentsComplete);
+    if (!documentsComplete) {
+      console.log('  - Missing Documents:', {
+        revenueLicense: !vehicleDocuments.revenueLicense,
+        vehicleInsurance: !vehicleDocuments.vehicleInsurance,
+        registrationDoc: !vehicleDocuments.registrationDoc,
+        licenseFront: !vehicleDocuments.licenseFront,
+        licenseBack: !vehicleDocuments.licenseBack,
+      });
+    }
+    console.log('==================================');
 
     return personalComplete && idComplete && vehicleComplete && documentsComplete;
   },
