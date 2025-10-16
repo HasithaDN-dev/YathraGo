@@ -140,32 +140,15 @@ export class DriverController {
     );
   }
 
-  // --- EXISTING PROFILE MANAGEMENT ENDPOINTS (from your provided driver.service.ts) ---
-  // You would need to add these back if you want them exposed via the controller.
-  // Example:
-  // @UseGuards(JwtAuthGuard)
-  // @Get('profile')
-  // @HttpCode(HttpStatus.OK)
-  // async getDriverProfile(@Req() req: AuthenticatedRequest) {
-  //   const driverId = req.user.userId; // Assuming userId is driver_id
-  //   return this.driverService.getDriverProfile(driverId);
-  // }
+  // --- PROFILE MANAGEMENT ENDPOINTS ---
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  @HttpCode(HttpStatus.OK)
+  async getDriverProfile(@Req() req: AuthenticatedRequest) {
+    const driverId = req.user.userId; // Assuming userId is driver_id
+    return this.driverService.getDriverProfile(driverId);
+  }
 
-  // @UseGuards(JwtAuthGuard)
-  // @Put('profile')
-  // @HttpCode(HttpStatus.OK)
-  // async updateDriverProfile(@Req() req: AuthenticatedRequest, @Body() profileData: UpdateDriverProfileDto) {
-  //   const driverId = req.user.userId;
-  //   return this.driverService.updateDriverProfile(driverId, profileData);
-  // }
-
-  // @UseGuards(JwtAuthGuard)
-  // @Post('documents')
-  // @HttpCode(HttpStatus.OK)
-  // async uploadDriverDocuments(@Req() req: AuthenticatedRequest, @Body() documentsData: UploadDocumentsDto) {
-  //   const driverId = req.user.userId;
-  //   return this.driverService.uploadDriverDocuments(driverId, documentsData);
-  // }
   // Endpoint to fetch driver details for hardcoded driverId (for frontend welcome message)
   @Get('details')
   async getDriverDetails() {
