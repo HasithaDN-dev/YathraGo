@@ -1,53 +1,63 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Platform, Text, FlatList, TouchableOpacity } from 'react-native';
+import { View, ActivityIndicator, Text, FlatList, TouchableOpacity } from 'react-native';
 import MapView, { Polyline, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { getLatestRoute, fetchOptimizedRoute, decodeOverviewPolyline } from '@/lib/api/maps.api';
+import { fetchOptimizedRouteWithGPS, decodeOverviewPolyline } from '@/lib/api/maps.api';
 
-// Hardcode driver id = 1 as requested
-const DRIVER_ID = 1;
+// Temporary hardcoded driver id (updated to 2 per request)
+const DRIVER_ID = 2;
 
 export default function RouteScreen() {
   const [loading, setLoading] = useState(true);
-  const [coords, setCoords] = useState<Array<{ latitude: number; longitude: number }>>([]);
-  const [markers, setMarkers] = useState<Array<{ latitude: number; longitude: number; title?: string }>>([]);
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number }[]>([]);
+  const [markers, setMarkers] = useState<{ latitude: number; longitude: number; title?: string }[]>([]);
   const [legs, setLegs] = useState<any[]>([]);
   const [summary, setSummary] = useState<{ distance?: string; duration?: string } | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
   
 
+  // auto-optimize on mount using GPS
   useEffect(() => {
     const run = async () => {
+      setLoading(true);
       try {
-        // Trigger optimization on backend (hardcoded driver id 1)
-        await fetchOptimizedRoute(DRIVER_ID);
-      } catch (e) {
-        console.warn('Optimize call failed', e);
-      }
-
-      // fetch the latest saved route
-      const route = await getLatestRoute(DRIVER_ID);
-      const details = route?.routeDetails;
-      const overview = details?.routes?.[0]?.overview_polyline?.points;
-      const routeLegs = details?.routes?.[0]?.legs ?? [];
-      if (overview) {
-        const decoded = decodeOverviewPolyline(overview);
-        setCoords(decoded);
-        // mark start and end
-        if (decoded.length > 0) {
-          setMarkers([
-            { latitude: decoded[0].latitude, longitude: decoded[0].longitude, title: 'Start' },
-            { latitude: decoded[decoded.length - 1].latitude, longitude: decoded[decoded.length - 1].longitude, title: 'End' },
-          ]);
+        let latitude: number | undefined;
+        let longitude: number | undefined;
+        try {
+          const Location = await import('expo-location');
+          const perm = await Location.requestForegroundPermissionsAsync();
+          if (perm.status === 'granted') {
+            const loc = await Location.getCurrentPositionAsync({});
+            latitude = loc.coords.latitude;
+            longitude = loc.coords.longitude;
+          }
+        } catch {}
+        const result = await fetchOptimizedRouteWithGPS(DRIVER_ID, latitude, longitude);
+        if (result.polyline) {
+          const d = decodeOverviewPolyline(result.polyline);
+          setCoords(d);
+          if (d.length > 0) {
+            setMarkers([
+              { latitude: d[0].latitude, longitude: d[0].longitude, title: 'Start' },
+              { latitude: d[d.length - 1].latitude, longitude: d[d.length - 1].longitude, title: 'End' },
+            ]);
+          }
         }
-      }
-      // set legs and summary for UI
-      if (routeLegs.length > 0) {
-        setLegs(routeLegs);
-        // compute total
-        const totalDistance = routeLegs.reduce((acc: number, l: any) => acc + (l.distance?.value ?? 0), 0);
-        const totalDuration = routeLegs.reduce((acc: number, l: any) => acc + (l.duration?.value ?? 0), 0);
+        const totalDistance = result.totalDistanceMeters;
+        const totalDuration = result.totalDurationSecs;
         setSummary({ distance: `${(totalDistance / 1000).toFixed(2)} km`, duration: `${Math.round(totalDuration / 60)} min` });
+        const legsList = result.stops.map((s) => ({
+          start_address: '',
+          end_address: s.address,
+          distance: { value: s.legDistanceMeters, text: `${(s.legDistanceMeters / 1000).toFixed(1)} km` },
+          duration: { value: s.etaSecs, text: '' },
+        }));
+        setLegs(legsList);
+        setCurrentIndex(0);
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     run();
   }, []);
@@ -106,35 +116,19 @@ export default function RouteScreen() {
           />
 
           <View style={{ marginTop: 8 }}>
+            {/* Removed duplicate Optimize button (auto-optimizes on mount) */}
+            <View style={{ height: 8 }} />
             <TouchableOpacity
               onPress={async () => {
-                setLoading(true);
                 try {
-                  await fetchOptimizedRoute(DRIVER_ID);
-                  const r = await getLatestRoute(DRIVER_ID);
-                  const ov = r?.routeDetails?.routes?.[0]?.overview_polyline?.points;
-                  if (ov) {
-                    const d = decodeOverviewPolyline(ov);
-                    setCoords(d);
-                    setMarkers([
-                      { latitude: d[0].latitude, longitude: d[0].longitude, title: 'Start' },
-                      { latitude: d[d.length - 1].latitude, longitude: d[d.length - 1].longitude, title: 'End' },
-                    ]);
-                  }
-                  const newLegs = r?.routeDetails?.routes?.[0]?.legs ?? [];
-                  setLegs(newLegs);
-                  const totalDistance = newLegs.reduce((acc: number, l: any) => acc + (l.distance?.value ?? 0), 0);
-                  const totalDuration = newLegs.reduce((acc: number, l: any) => acc + (l.duration?.value ?? 0), 0);
-                  setSummary({ distance: `${(totalDistance / 1000).toFixed(2)} km`, duration: `${Math.round(totalDuration / 60)} min` });
-                } catch (e) {
-                  console.warn(e);
-                } finally {
-                  setLoading(false);
-                }
+                  // mark current as arrived (requires backend waypoint id; fallback no-op)
+                  // here we just advance the index for UI simplicity
+                  setCurrentIndex((i) => Math.min(i + 1, Math.max(legs.length - 1, 0)));
+                } catch {}
               }}
-              style={{ alignItems: 'center', padding: 10, backgroundColor: '#0ea5e9', borderRadius: 8 }}
+              style={{ alignItems: 'center', padding: 10, backgroundColor: '#10b981', borderRadius: 8 }}
             >
-              <Text style={{ color: 'white', fontWeight: '600' }}>Re-optimize Route</Text>
+              <Text style={{ color: 'white', fontWeight: '600' }}>Next Stop</Text>
             </TouchableOpacity>
           </View>
         </View>
