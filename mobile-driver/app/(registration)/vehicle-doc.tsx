@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Animated, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Animated, Alert,TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -65,6 +65,10 @@ const LicenseUploadBox: React.FC<LicenseUploadBoxProps> = ({ image, onUpload, si
 export default function VehicleDocScreen() {
   const router = useRouter();
   const { vehicleDocuments, updateVehicleDocuments, isRegistrationComplete, personalInfo, idVerification, vehicleInfo } = useDriverStore();
+
+  // Add local state for NIC and gender
+  const [nic, setNic] = useState('');
+  const [gender, setGender] = useState('');
   const { accessToken, setProfileComplete, setRegistrationStatus } = useAuthStore();
 
   const [revenueLicense, setRevenueLicense] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(vehicleDocuments.revenueLicense);
@@ -130,7 +134,15 @@ export default function VehicleDocScreen() {
   };
 
   const handleVerify = async () => {
-    if (!isRegistrationComplete()) {
+    if (
+      !revenueLicense ||
+      !vehicleInsurance ||
+      !registrationDoc ||
+      !licenseFront ||
+      !licenseBack ||
+      !nic.trim() ||
+      !gender.trim()
+    ) {
       Alert.alert('Error', 'Please complete all required fields before submitting.');
       return;
     }
@@ -144,15 +156,15 @@ export default function VehicleDocScreen() {
     try {
       // Step 1: Complete driver registration
       const driverData = {
-        driverId: 0, // Will be set by backend
+        driverId: 0,
         name: `${personalInfo.firstName} ${personalInfo.lastName}`,
         email: personalInfo.email,
         address: personalInfo.city,
-        profileImageUrl: personalInfo.profileImage?.uri,
+        profileImage: personalInfo.profileImage?.uri || "",
         emergencyContact: personalInfo.secondaryPhone,
-        NIC: '', // Will be extracted from ID verification
+        NIC: nic,
         dateOfBirth: personalInfo.dateOfBirth,
-        gender: '', // Not collected in current form
+        gender: gender,
         secondPhone: personalInfo.secondaryPhone,
       };
 
@@ -178,61 +190,40 @@ export default function VehicleDocScreen() {
       vehicleFormData.append('femaleAssistant', String(vehicleInfo.femaleAssistant));
 
       // Add vehicle images
-      if (vehicleInfo.frontView) {
-        vehicleFormData.append('vehicleFrontView', {
-          uri: vehicleInfo.frontView.uri,
-          name: 'vehicleFront.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      if (vehicleInfo.sideView) {
-        vehicleFormData.append('vehicleSideView', {
-          uri: vehicleInfo.sideView.uri,
-          name: 'vehicleSide.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      if (vehicleInfo.rearView) {
-        vehicleFormData.append('vehicleRearView', {
-          uri: vehicleInfo.rearView.uri,
-          name: 'vehicleRear.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      if (vehicleInfo.interiorView) {
-        vehicleFormData.append('vehicleInteriorView', {
-          uri: vehicleInfo.interiorView.uri,
-          name: 'vehicleInterior.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
+      const imageFields = [
+        { key: 'vehicleFrontView', value: vehicleInfo.frontView, name: 'vehicleFront.jpg' },
+        { key: 'vehicleSideView', value: vehicleInfo.sideView, name: 'vehicleSide.jpg' },
+        { key: 'vehicleRearView', value: vehicleInfo.rearView, name: 'vehicleRear.jpg' },
+        { key: 'vehicleInteriorView', value: vehicleInfo.interiorView, name: 'vehicleInterior.jpg' },
+      ];
+      imageFields.forEach(({ key, value, name }) => {
+        if (value) {
+          vehicleFormData.append(key, {
+            uri: value.uri,
+            name,
+            type: 'image/jpeg',
+          } as any);
+        }
+      });
 
       await registerVehicleApi(accessToken, vehicleFormData);
 
       // Step 4: Upload vehicle documents
       const documentsFormData = new FormData();
-      
-      if (vehicleDocuments.revenueLicense) {
-        documentsFormData.append('revenueLicense', {
-          uri: vehicleDocuments.revenueLicense.assets[0].uri,
-          name: vehicleDocuments.revenueLicense.assets[0].name,
-          type: vehicleDocuments.revenueLicense.assets[0].mimeType,
-        } as any);
-      }
-      if (vehicleDocuments.vehicleInsurance) {
-        documentsFormData.append('vehicleInsurance', {
-          uri: vehicleDocuments.vehicleInsurance.assets[0].uri,
-          name: vehicleDocuments.vehicleInsurance.assets[0].name,
-          type: vehicleDocuments.vehicleInsurance.assets[0].mimeType,
-        } as any);
-      }
-      if (vehicleDocuments.registrationDoc) {
-        documentsFormData.append('registrationDoc', {
-          uri: vehicleDocuments.registrationDoc.assets[0].uri,
-          name: vehicleDocuments.registrationDoc.assets[0].name,
-          type: vehicleDocuments.registrationDoc.assets[0].mimeType,
-        } as any);
-      }
+      const docFields = [
+        { key: 'revenueLicense', value: vehicleDocuments.revenueLicense },
+        { key: 'vehicleInsurance', value: vehicleDocuments.vehicleInsurance },
+        { key: 'registrationDoc', value: vehicleDocuments.registrationDoc },
+      ];
+      docFields.forEach(({ key, value }) => {
+        if (value && value.assets && value.assets[0]) {
+          documentsFormData.append(key, {
+            uri: value.assets[0].uri,
+            name: value.assets[0].name,
+            type: value.assets[0].mimeType,
+          } as any);
+        }
+      });
       if (vehicleDocuments.licenseFront) {
         documentsFormData.append('licenseFront', {
           uri: vehicleDocuments.licenseFront.uri,
@@ -258,8 +249,14 @@ export default function VehicleDocScreen() {
       router.replace('/(registration)/success');
 
     } catch (error) {
+      let errorMsg = 'Failed to complete registration. Please try again.';
+      if (error instanceof Error) {
+        errorMsg = error.message;
+      } else if (typeof error === 'string') {
+        errorMsg = error;
+      }
       console.error('Registration error:', error);
-      Alert.alert('Registration Failed', error instanceof Error ? error.message : 'Failed to complete registration. Please try again.');
+      Alert.alert('Registration Failed', errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -280,6 +277,30 @@ export default function VehicleDocScreen() {
         <Text className="text-sm text-brand-neutralGray mb-6">To ensure smooth verification and compliance with transport regulations, please upload valid registration documents for your vehicle. Make sure the document is clear, up-to-date, and matches your vehicle details.</Text>
 
         <View className="space-y-6">
+          {/* NIC Field */}
+          <View>
+            <Text className="text-base font-semibold mb-1">NIC *</Text>
+            <Text className="text-xs text-gray-500 mb-2">Enter your National Identity Card number.</Text>
+            <TextInput
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base"
+              value={nic}
+              onChangeText={setNic}
+              placeholder="NIC Number"
+              placeholderTextColor="#A0A0A0"
+            />
+          </View>
+          {/* Gender Field */}
+          <View>
+            <Text className="text-base font-semibold mb-1">Gender *</Text>
+            <Text className="text-xs text-gray-500 mb-2">Select your gender.</Text>
+            <TextInput
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base"
+              value={gender}
+              onChangeText={setGender}
+              placeholder="Gender (e.g., Male, Female, Other)"
+              placeholderTextColor="#A0A0A0"
+            />
+          </View>
           <View>
             <Text className="text-base font-semibold mb-1">Revenue License *</Text>
             <Text className="text-xs text-gray-500 mb-2">Upload the official vehicle registration certificate (RC) issued by the government.</Text>

@@ -4,14 +4,19 @@ import { tokenService } from '../services/token.service';
 import { useAuthStore } from '../stores/auth.store';
 
 // Simple in-memory cache for profiles
-let profileCache: { data: Profile[]; timestamp: number } | null = null;
+let profileCache: { data: ProfileApiResponse; timestamp: number } | null = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+interface ProfileApiResponse {
+  profiles: Profile[];
+  customerProfile: any;
+}
 
 /**
  * Fetches all profiles associated with the logged-in user (children + staff).
  * Uses simple caching to reduce API calls.
  */
-export const getProfilesApi = async (token: string): Promise<Profile[]> => {
+export const getProfilesApi = async (token: string): Promise<ProfileApiResponse> => {
   // Check cache first
   if (profileCache && (Date.now() - profileCache.timestamp) < CACHE_DURATION) {
     console.log('Using cached profiles');
@@ -34,33 +39,55 @@ export const getProfilesApi = async (token: string): Promise<Profile[]> => {
   const profiles: Profile[] = [];
   
   if (data.profile) {
-    // Add children profiles
+    // Add children profiles with prefixed IDs to avoid conflicts
     if (data.profile.children && Array.isArray(data.profile.children)) {
-      profiles.push(...data.profile.children.map((child: any) => ({
+      profiles.push(...data.profile.children.map((child: any, index: number) => ({
         ...child,
-        name: child.childName,
+        id: `child-${child.child_id || index}`,
+        firstName: child.childFirstName,
+        lastName: child.childLastName,
         type: 'child' as const,
       })));
     }
     
-    // Add staff profile if exists
+    // Add staff profile if exists (using customer's own name) with prefixed ID
     if (data.profile.staffPassenger) {
       profiles.push({
         ...data.profile.staffPassenger,
-        name: 'Staff Passenger',
+        id: `staff-${data.profile.staffPassenger.id}`,
+        firstName: data.profile.firstName || '',
+        lastName: data.profile.lastName || '',
         type: 'staff' as const,
       });
     }
   }
   
+  // Extract customer profile data
+  const customerProfile = data.profile ? {
+    customer_id: data.profile.customer_id,
+    firstName: data.profile.firstName,
+    lastName: data.profile.lastName,
+    gender: data.profile.gender,
+    phone: data.profile.phone,
+    email: data.profile.email,
+    address: data.profile.address,
+    profileImageUrl: data.profile.profileImageUrl,
+    emergencyContact: data.profile.emergencyContact,
+    status: data.profile.status,
+    registrationStatus: data.profile.registrationStatus,
+  } : null;
+
   // Cache the result
+  const result = { profiles, customerProfile };
   profileCache = {
-    data: profiles,
+    data: result,
     timestamp: Date.now()
   };
   
-  console.log('Extracted profiles:', profiles);
-  return profiles;
+  console.log('Extracted profiles with unique IDs:', profiles);
+  console.log('Profile IDs:', profiles.map(p => `${p.type}: ${p.id}`));
+  console.log('Customer profile:', customerProfile);
+  return result;
 };
 
 /**
@@ -128,9 +155,30 @@ export const registerChildApi = async (
   
   // Get the user from auth store to include customerId
   const { user } = useAuthStore.getState();
+  
+  // Extract coordinates from location details
+  const schoolLatitude = data.schoolLocationDetails?.coordinates?.latitude || data.schoolLatitude;
+  const schoolLongitude = data.schoolLocationDetails?.coordinates?.longitude || data.schoolLongitude;
+  const pickupLatitude = data.pickupLocationDetails?.coordinates?.latitude || data.pickupLatitude;
+  const pickupLongitude = data.pickupLocationDetails?.coordinates?.longitude || data.pickupLongitude;
+  
+  // Create payload with only DTO-expected fields
   const payload = {
-    ...data,
-    customerId: user?.id
+    customerId: user?.id,
+    childFirstName: data.childFirstName,
+    childLastName: data.childLastName,
+    gender: data.gender,
+    relationship: data.relationship,
+    nearbyCity: data.nearbyCity,
+    schoolLocation: data.schoolLocation,
+    school: data.school,
+    pickUpAddress: data.pickUpAddress,
+    childImageUrl: data.childImageUrl,
+    // Add coordinates if available
+    ...(schoolLatitude && { schoolLatitude }),
+    ...(schoolLongitude && { schoolLongitude }),
+    ...(pickupLatitude && { pickupLatitude }),
+    ...(pickupLongitude && { pickupLongitude }),
   };
   
   console.log('Child registration payload:', payload);
@@ -181,12 +229,23 @@ export const registerStaffApi = async (
   
   // Get the user from auth store to include customerId
   const { user } = useAuthStore.getState();
+  
+  // Extract only the fields needed by the backend DTO
   const payload = {
-    ...data,
-    customerId: user?.id
+    customerId: user?.id,
+    nearbyCity: data.nearbyCity,
+    workLocation: data.workLocation,
+    workAddress: data.workAddress,
+    pickUpLocation: data.pickUpLocation,
+    pickupAddress: data.pickupAddress,
+    // Extract coordinates from location details
+    workLatitude: data.workLocationDetails?.coordinates.latitude,
+    workLongitude: data.workLocationDetails?.coordinates.longitude,
+    pickupLatitude: data.pickupLocationDetails?.coordinates.latitude,
+    pickupLongitude: data.pickupLocationDetails?.coordinates.longitude,
   };
   
-  console.log('Staff registration payload:', payload);
+  console.log('Staff registration payload with coordinates:', payload);
   
   const response = await authenticatedFetch(`${API_BASE_URL}/customer/register-staff-passenger`, {
     method: 'POST',
@@ -243,7 +302,7 @@ export const uploadChildProfileImageApi = async (
   } as any);
 
   const authenticatedFetch = tokenService.createAuthenticatedFetch();
-  // If you have a separate endpoint for child, change the URL here
+  // Ensure the endpoint uploads to the child folder
   const response = await authenticatedFetch(`${API_BASE_URL}/customer/upload-child-image`, {
     method: 'POST',
     headers: {

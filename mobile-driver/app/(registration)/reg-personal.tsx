@@ -18,19 +18,6 @@ export default function RegisterScreen() {
   const [profileImage, setProfileImage] = useState<ImagePicker.ImagePickerAsset | null>(personalInfo.profileImage);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Update store when form fields change
-  useEffect(() => {
-    updatePersonalInfo({
-      firstName,
-      lastName,
-      dateOfBirth: dob,
-      email,
-      secondaryPhone,
-      city,
-      profileImage,
-    });
-  }, [firstName, lastName, dob, email, secondaryPhone, city, profileImage, updatePersonalInfo]);
-
   // Sync local state with store data
   useEffect(() => {
     setFirstName(personalInfo.firstName);
@@ -58,6 +45,7 @@ export default function RegisterScreen() {
 
     if (!result.canceled) {
       setProfileImage(result.assets[0]);
+      updatePersonalInfo({ profileImage: result.assets[0] });
     }
   };
 
@@ -70,7 +58,6 @@ export default function RegisterScreen() {
     // Data is already saved in store, just navigate to next screen
     router.push('/(registration)/reg-verify');
   };
-
   return (
     <ScrollView className="flex-1 bg-white">
       <View className="px-6 py-20 items-center">

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_BASE_URL } from '../../config/api';
 import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Typography } from '@/components/Typography';
 import {
@@ -16,6 +17,33 @@ export default function HomeScreen() {
   const [tripStarted, setTripStarted] = useState(false);
   const [isButtonEnabled, setIsButtonEnabled] = useState(false);
   const [currentTripStatus, setCurrentTripStatus] = useState<'pending' | 'on-the-way' | 'completed'>('pending');
+  const [studentCount, setStudentCount] = useState<number>(0);
+  const [driverName, setDriverName] = useState<string>('');
+
+  useEffect(() => {
+    // Fetch student count
+    fetch(`${API_BASE_URL}/driver/child-ride-requests`)
+      .then(res => res.json())
+      .then(data => setStudentCount(data.length || 0))
+      .catch(() => setStudentCount(0));
+    // Fetch driver name
+    fetch(`${API_BASE_URL}/driver/details`)
+      .then(res => res.json())
+      .then(data => setDriverName(data.name || ''))
+      .catch(() => setDriverName(''));
+
+    //fetch driver status
+    fetch(`${API_BASE_URL}/driver/details`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'ACTIVE') {
+          setIsOnline(true);
+        } else {
+          setIsOnline(false);
+        }
+      })
+      .catch(() => setIsOnline(false));
+  }, []);
 
   const toggleOnlineStatus = () => {
     setIsOnline(!isOnline);
@@ -64,7 +92,7 @@ export default function HomeScreen() {
                 Welcome Back
               </Typography>
               <Typography variant="body" className="text-white opacity-80">
-                Hemal Perera
+                {driverName || 'Driver'}
               </Typography>
             </View>
           </View>
@@ -183,7 +211,7 @@ export default function HomeScreen() {
               </Typography>
             </View>
             <Typography variant="title-2" weight="bold" className="text-brand-deepNavy">
-              8 Students
+              {studentCount} Students
             </Typography>
           </View>
 

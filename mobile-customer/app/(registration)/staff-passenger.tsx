@@ -4,21 +4,32 @@ import { View, Alert, ScrollView } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomInput } from '../../components/ui/CustomInput';
+import { LocationInputField } from '../../components/ui/LocationInputField';
 import { ButtonComponent } from '../../components/ui/ButtonComponent';
 import { Typography } from '../../components/Typography';
+import { GoogleMapPicker } from '../../components/GoogleMapPicker';
 import { registerStaffApi } from '../../lib/api/profile.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
+import { useProfileStore } from '../../lib/stores/profile.store';
 import { StaffProfileData } from '../../types/customer.types';
+import { LocationDetails } from '../../types/location.types';
 import { Colors } from '@/constants/Colors'; // Ensure this import is correct
+
+type LocationPickerType = 'work' | 'pickup' | null;
 
 export default function StaffPassengerScreen() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<StaffProfileData>>({});
+  const [workLocationDetails, setWorkLocationDetails] = useState<LocationDetails | null>(null);
+  const [pickupLocationDetails, setPickupLocationDetails] = useState<LocationDetails | null>(null);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [locationPickerType, setLocationPickerType] = useState<LocationPickerType>(null);
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isAddMode = mode === 'add';
   
   // Get the accessToken and the action to complete the profile from the global store.
   const { accessToken, setProfileComplete } = useAuthStore();
+  const { refreshProfiles } = useProfileStore();
 
   const handleInputChange = (field: keyof StaffProfileData, value: string) => {
     setFormData(prev => ({
@@ -27,24 +38,52 @@ export default function StaffPassengerScreen() {
     }));
   };
 
-  const validateForm = (): boolean => {
-
-    const requiredFields: (keyof StaffProfileData)[] = [
-      'nearbyCity',
-      'workLocation',
-      'workAddress',
-      'pickUpLocation',
-      'pickupAddress'
-    ];
-
-    for (const field of requiredFields) {
-      const value = formData[field];
-      if (!value || (typeof value === 'string' && !value.trim())) {
-        const fieldName = field.replace(/([A-Z])/g, ' $1').toLowerCase();
-        Alert.alert('Error', `${fieldName} is required`);
-        return false;
-      }
+  const handleLocationSelect = (location: LocationDetails) => {
+    if (locationPickerType === 'work') {
+      setWorkLocationDetails(location);
+      handleInputChange('workLocation', location.name);
+      handleInputChange('workAddress', location.address);
+      setFormData(prev => ({
+        ...prev,
+        workLocationDetails: location
+      }));
+    } else if (locationPickerType === 'pickup') {
+      setPickupLocationDetails(location);
+      handleInputChange('pickUpLocation', location.name);
+      handleInputChange('pickupAddress', location.address);
+      setFormData(prev => ({
+        ...prev,
+        pickupLocationDetails: location
+      }));
     }
+    setShowLocationPicker(false);
+    setLocationPickerType(null);
+  };
+
+  const openLocationPicker = (type: 'work' | 'pickup') => {
+    setLocationPickerType(type);
+    setShowLocationPicker(true);
+  };
+
+  const validateForm = (): boolean => {
+    // Check if nearby city is filled
+    if (!formData.nearbyCity || !formData.nearbyCity.trim()) {
+      Alert.alert('Error', 'Nearby city is required');
+      return false;
+    }
+
+    // Check if work location is selected
+    if (!workLocationDetails) {
+      Alert.alert('Error', 'Please select your work location on the map');
+      return false;
+    }
+
+    // Check if pickup location is selected
+    if (!pickupLocationDetails) {
+      Alert.alert('Error', 'Please select your pickup location on the map');
+      return false;
+    }
+
     return true;
   };
 
@@ -57,14 +96,30 @@ export default function StaffPassengerScreen() {
     setLoading(true);
     try {
       console.log('Staff registration: Starting API call...');
+      
+      // Prepare the complete form data with location details
+      const completeFormData: StaffProfileData = {
+        nearbyCity: formData.nearbyCity!,
+        workLocation: workLocationDetails!.name,
+        workAddress: workLocationDetails!.address,
+        pickUpLocation: pickupLocationDetails!.name,
+        pickupAddress: pickupLocationDetails!.address,
+        workLocationDetails: workLocationDetails!,
+        pickupLocationDetails: pickupLocationDetails!,
+      };
+
       // 1. Call the final registration API function.
-      const result = await registerStaffApi(accessToken, formData as StaffProfileData);
+      const result = await registerStaffApi(accessToken, completeFormData);
       console.log('Staff registration: API call successful:', result);
       
       // 2. **CRITICAL STEP**: Update the global state to mark the profile as complete.
       if (!isAddMode) {
         setProfileComplete(true);
         console.log('Staff registration: Profile marked as complete');
+        
+        // Refresh profiles to include the newly created profile
+        await refreshProfiles(accessToken);
+        console.log('Staff registration: Profiles refreshed');
       }
 
       // 3. Navigate based on mode
@@ -73,7 +128,11 @@ export default function StaffPassengerScreen() {
         router.back(); // Go back to add profile screen
       } else {
         Alert.alert('Success', 'Staff passenger registration completed successfully!');
-        // The `app/(app)/_layout.tsx` guard will automatically navigate to main app
+        
+        // Explicitly navigate to home page after successful registration
+        setTimeout(() => {
+          router.replace('/(tabs)');
+        }, 1000); // Small delay to allow the alert to show
       }
 
     } catch (error) {
@@ -137,39 +196,21 @@ return (
             required
           />
 
-          <CustomInput
+          {/* Work Location with Map */}
+          <LocationInputField
             label="Work Location"
-            placeholder="Enter work location name"
-            value={formData.workLocation || ''}
-            onChangeText={(value: string) => handleInputChange('workLocation', value)}
+            placeholder="Tap to select work location on map"
+            value={workLocationDetails}
+            onPress={() => openLocationPicker('work')}
             required
           />
 
-          <CustomInput
-            label="Work Address"
-            placeholder="Enter full work address"
-            value={formData.workAddress || ''}
-            onChangeText={(value: string) => handleInputChange('workAddress', value)}
-            multiline
-            numberOfLines={3}
-            required
-          />
-
-          <CustomInput
+          {/* Pickup Location with Map */}
+          <LocationInputField
             label="Pickup Location"
-            placeholder="Enter pickup location name"
-            value={formData.pickUpLocation || ''}
-            onChangeText={(value: string) => handleInputChange('pickUpLocation', value)}
-            required
-          />
-
-          <CustomInput
-            label="Pickup Address"
-            placeholder="Enter full pickup address"
-            value={formData.pickupAddress || ''}
-            onChangeText={(value: string) => handleInputChange('pickupAddress', value)}
-            multiline
-            numberOfLines={3}
+            placeholder="Tap to select pickup location on map"
+            value={pickupLocationDetails}
+            onPress={() => openLocationPicker('pickup')}
             required
           />
         </View>
@@ -209,6 +250,19 @@ return (
           </Typography>
         </View>
       </ScrollView>
+
+      {/* Google Map Location Picker */}
+      <GoogleMapPicker
+        isVisible={showLocationPicker}
+        onClose={() => {
+          setShowLocationPicker(false);
+          setLocationPickerType(null);
+        }}
+        onLocationSelect={handleLocationSelect}
+        title={locationPickerType === 'work' ? 'Select Work Location' : 'Select Pickup Location'}
+        placeholder={locationPickerType === 'work' ? 'Search for your workplace' : 'Search for pickup location'}
+        initialLocation={locationPickerType === 'work' ? workLocationDetails || undefined : pickupLocationDetails || undefined}
+      />
     </View>
   </SafeAreaView>
 );

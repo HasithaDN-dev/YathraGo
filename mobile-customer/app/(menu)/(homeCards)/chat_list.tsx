@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, ScrollView, TextInput, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
@@ -6,142 +6,44 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Card } from '@/components/ui/Card';
 import { MagnifyingGlass } from 'phosphor-react-native';
 import { router } from 'expo-router';
+import { API_BASE_URL } from '../../../config/api';
+import { useAuth } from '../../../hooks/useAuth';
 
-const conversations = [
-  {
-    id: '1',
-    name: 'Sunil Samarathunga',
-    lastMessage: 'Madam, Our vehicle will not come to get …',
-    time: '05:15 am',
-  phone: '+94710000001',
-  },
-  {
-    id: '2',
-    name: 'Kamal Perera',
-    lastMessage: 'We will be 10 minutes late today',
-  time: 'Yesterday',
-  phone: '+94710000002',
-  },
-  {
-    id: '3',
-    name: 'Tharindu Silva',
-    lastMessage: 'Route updated for tomorrow',
-  time: '02/08/2025',
-  phone: '+94710000003',
-  },
-  // Additional dummy data
-  {
-    id: '4',
-    name: 'Nimal Jayasinghe',
-    lastMessage: 'Can you confirm the pickup location?',
-  time: 'Today',
-  phone: '+94710000004',
-  },
-  {
-    id: '5',
-    name: 'Amaya Fernando',
-    lastMessage: 'Thanks for the update! See you tomorrow.',
-  time: '08:42 am',
-  phone: '+94710000005',
-  },
-  {
-    id: '6',
-    name: 'Sajith Kumar',
-    lastMessage: 'We might reach around 7:45.',
-  time: 'Mon',
-  phone: '+94710000006',
-  },
-  {
-    id: '7',
-    name: 'Dilani Perera',
-    lastMessage: 'Please share driver contact.',
-  time: 'Yesterday',
-  phone: '+94710000007',
-  },
-  {
-    id: '8',
-    name: 'Ruwan Weerasinghe',
-    lastMessage: 'All good. Child picked up safely.',
-  time: '07:05 am',
-  phone: '+94710000008',
-  },
-  {
-    id: '9',
-    name: 'Shanika De Silva',
-    lastMessage: 'Could you drop near the side gate?',
-  time: 'Fri',
-  phone: '+94710000009',
-  },
-  {
-    id: '10',
-    name: 'Nadeesha Karunaratne',
-    lastMessage: 'I will be on leave tomorrow.',
-  time: '03/08/2025',
-  phone: '+94710000010',
-  },
-  {
-    id: '11',
-    name: 'Ishara Gunasekara',
-    lastMessage: 'Payment done. Please confirm.',
-  time: 'Thu',
-  phone: '+94710000011',
-  },
-  {
-    id: '12',
-    name: 'Lakmal Jayawardena',
-    lastMessage: 'Traffic is heavy on High Level Road.',
-  time: '06:58 am',
-  phone: '+94710000012',
-  },
-  {
-    id: '13',
-    name: 'Chathura Ranasinghe',
-    lastMessage: 'Is the afternoon trip available?',
-  time: 'Wed',
-  phone: '+94710000013',
-  },
-  {
-    id: '14',
-    name: 'Hasini Abeysekera',
-    lastMessage: 'Thank you for the quick response.',
-  time: '10:12 am',
-  phone: '+94710000014',
-  },
-  {
-    id: '15',
-    name: 'Harsha Wijeratne',
-    lastMessage: 'Please wait 5 minutes. We are coming.',
-  time: 'Today',
-  phone: '+94710000015',
-  },
-  {
-    id: '16',
-    name: 'Tharaka Senanayake',
-    lastMessage: 'Can we change the morning stop?',
-  time: 'Tue',
-  phone: '+94710000016',
-  },
-  {
-    id: '17',
-    name: 'Piumi Rodrigo',
-    lastMessage: 'Child will be absent next Monday.',
-  time: 'Sun',
-  phone: '+94710000017',
-  },
-  {
-    id: '18',
-    name: 'Sachin Pathirana',
-    lastMessage: 'Please share the monthly summary.',
-  time: '09:30 am',
-  phone: '+94710000018',
-  },
-];
+// Commented out dummy data. Now using API data.
+// const conversations = [ ... ];
 
 export default function ChatListScreen() {
   const [query, setQuery] = useState('');
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
-  const filtered = conversations.filter((c) =>
-    c.name.toLowerCase().includes(query.toLowerCase())
+  useEffect(() => {
+    if (!user) return;
+    setLoading(true);
+    // Fetch conversations for the logged-in user (assume CUSTOMER type)
+    fetch(`${API_BASE_URL}/chat/conversations?userId=${user.id}&userType=CUSTOMER`)
+      .then((res) => res.json())
+      .then((data) => setConversations(data))
+      .catch(() => setConversations([]))
+      .finally(() => setLoading(false));
+  }, [user]);
+
+  // Normalize backend conversation shape to UI-friendly fields
+  const normalized = conversations.map((c) => {
+    const other = c.otherParticipant || {};
+    const last = c.lastMessage || c.messages?.[0] || null;
+    return {
+      id: c.id,
+      name: other.name || 'Chat',
+      phone: other.phone || '',
+      lastMessage: last?.message || '',
+      time: last?.timestamp ? new Date(last.timestamp).toLocaleTimeString() : '',
+    };
+  });
+
+  const filtered = normalized.filter((c) =>
+    (c.name || '').toLowerCase().includes(query.toLowerCase())
   );
 
   return (
@@ -167,7 +69,11 @@ export default function ChatListScreen() {
         {/* Conversation cards (scrollable) */}
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className="px-4 pb-6">
-            {filtered.map((c) => (
+            {loading ? (
+              <Typography variant="body" className="text-center mt-8">Loading...</Typography>
+            ) : filtered.length === 0 ? (
+              <Typography variant="body" className="text-center mt-8">No conversations found.</Typography>
+            ) : filtered.map((c) => (
               <TouchableOpacity
                 key={c.id}
                 activeOpacity={0.8}

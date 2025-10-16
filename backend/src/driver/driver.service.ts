@@ -17,6 +17,8 @@ import { Driver, RegistrationStatus } from '@prisma/client';
 export class DriverService {
   constructor(private prisma: PrismaService) {}
 
+  // Fetch driver details for a given driverId (for frontend welcome message)
+
   // --- EXISTING METHODS (from your provided driver.service.ts) ---
   async getDriverProfile(driverId: string) {
     const driver = await this.prisma.driver.findUnique({
@@ -185,7 +187,7 @@ export class DriverService {
         email: true,
         phone: true,
         profile_picture_url: true,
-        status: true,
+        status:true,
       },
     });
     if (!driver) {

@@ -1,9 +1,9 @@
-import { 
-  Controller, 
-  Get, 
+import {
+  Controller,
+  Get,
   Post,
-  UseGuards, 
-  Body, 
+  UseGuards,
+  Body,
   Put,
   UseInterceptors,
   UploadedFiles,
@@ -110,8 +110,12 @@ export class OwnerController {
       ...parsedDriverDto,
       nic_front_pic_url: id_front ? `uploads/driver/${id_front}` : '',
       nice_back_pic_url: id_back ? `uploads/driver/${id_back}` : '',
-      driver_license_front_url: license_front ? `uploads/driver/${license_front}` : '',
-      driver_license_back_url: license_back ? `uploads/driver/${license_back}` : '',
+      driver_license_front_url: license_front
+        ? `uploads/driver/${license_front}`
+        : '',
+      driver_license_back_url: license_back
+        ? `uploads/driver/${license_back}`
+        : '',
       profile_picture_url: '', // Default empty for owner-created drivers
     };
 

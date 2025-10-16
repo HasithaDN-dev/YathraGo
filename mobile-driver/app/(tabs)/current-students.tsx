@@ -1,87 +1,57 @@
-import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Image, TextInput } from 'react-native';
+
+import { useEffect, useState } from 'react';
+// Student type for API data
+interface Student {
+    id: string | number;
+    name: string;
+    profilePic?: string;
+    pickupLocation: string;
+    distance: string;
+    contactNumber: string;
+}
+import { API_BASE_URL } from '../../config/api';
+import { View, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { Typography } from '@/components/Typography';
 import { StudentCard } from '@/components/StudentCard';
-import { ArrowLeft, Users, Calendar, MapPin, MagnifyingGlass } from 'phosphor-react-native';
+import { ArrowLeft, Users, Calendar, MagnifyingGlass } from 'phosphor-react-native';
 import { useRouter } from 'expo-router';
 
-// Mock data for demonstration
-const mockStudents = [
-    {
-        id: '1',
-        name: 'Aisha Perera',
-        profilePic: undefined,
-        pickupLocation: 'Maharagama Junction, Colombo',
-        distance: '2.3 km',
-        contactNumber: '+94 71 234 5678'
-    },
-    {
-        id: '2',
-        name: 'Rahul Silva',
-        profilePic: undefined,
-        pickupLocation: 'Dehiwala Junction, Colombo',
-        distance: '1.8 km',
-        contactNumber: '+94 77 345 6789'
-    },
-    {
-        id: '3',
-        name: 'Priya Fernando',
-        profilePic: undefined,
-        pickupLocation: 'Mount Lavinia, Colombo',
-        distance: '3.1 km',
-        contactNumber: '+94 76 456 7890'
-    },
-    {
-        id: '4',
-        name: 'Kavindu Rajapaksa',
-        profilePic: undefined,
-        pickupLocation: 'Moratuwa Junction, Colombo',
-        distance: '4.2 km',
-        contactNumber: '+94 75 567 8901'
-    },
-    {
-        id: '5',
-        name: 'Nethmi Bandara',
-        profilePic: undefined,
-        pickupLocation: 'Panadura Junction, Colombo',
-        distance: '5.7 km',
-        contactNumber: '+94 74 678 9012'
-    },
-    {
-        id: '6',
-        name: 'Dilshan Mendis',
-        profilePic: undefined,
-        pickupLocation: 'Kalutara Junction, Colombo',
-        distance: '6.8 km',
-        contactNumber: '+94 73 789 0123'
-    },
-    {
-        id: '7',
-        name: 'Sachini Gunasekara',
-        profilePic: undefined,
-        pickupLocation: 'Wadduwa Junction, Colombo',
-        distance: '7.2 km',
-        contactNumber: '+94 72 890 1234'
-    },
-    {
-        id: '8',
-        name: 'Tharindu Weerasinghe',
-        profilePic: undefined,
-        pickupLocation: 'Bandaragama Junction, Colombo',
-        distance: '8.1 km',
-        contactNumber: '+94 71 901 2345'
-    }
-];
 
 export default function CurrentStudentsScreen() {
-  const router = useRouter();
-  const [students] = useState(mockStudents);
-  const [searchQuery, setSearchQuery] = useState('');
+    const router = useRouter();
+        const [students, setStudents] = useState<Student[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.pickupLocation.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    useEffect(() => {
+        async function fetchStudents() {
+            try {
+                setLoading(true);
+                const res = await fetch(`${API_BASE_URL}/driver/child-ride-requests`);
+                const data = await res.json();
+                // Transform API data to StudentCard format
+                        const mapped: Student[] = data.map((req: any) => ({
+                            id: req.child.child_id,
+                            name: `${req.child.childFirstName} ${req.child.childLastName}`,
+                            profilePic: undefined, // Add if available
+                            pickupLocation: req.child.nearbyCity || '',
+                            distance: '', // Optionally calculate or leave blank
+                            contactNumber: '', // Optionally add if available
+                        }));
+                setStudents(mapped);
+            } catch (err) {
+                setStudents([]);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchStudents();
+    }, []);
+
+    const filteredStudents = students.filter(student =>
+        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.pickupLocation.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     const handleStudentPress = (studentId: string) => {
         console.log('Student pressed:', studentId);
@@ -151,58 +121,62 @@ export default function CurrentStudentsScreen() {
                 </View>
             </View>
 
-                    {/* Search Bar */}
-        <View className="px-6 pt-6">
-          <View className="bg-white rounded-xl p-3 flex-row items-center shadow-sm border border-gray-100">
-            <MagnifyingGlass size={20} color="#6b7280" weight="regular" />
-            <TextInput
-              className="flex-1 ml-3 text-body font-figtree-regular text-brand-deepNavy"
-              placeholder="Search students or locations..."
-              placeholderTextColor="#6b7280"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-        </View>
+            {/* Search Bar */}
+            <View className="px-6 pt-6">
+                <View className="bg-white rounded-xl p-3 flex-row items-center shadow-sm border border-gray-100">
+                    <MagnifyingGlass size={20} color="#6b7280" weight="regular" />
+                    <TextInput
+                        className="flex-1 ml-3 text-body font-figtree-regular text-brand-deepNavy"
+                        placeholder="Search students or locations..."
+                        placeholderTextColor="#6b7280"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                    />
+                </View>
+            </View>
 
-        {/* Students List */}
-        <ScrollView className="flex-1 px-6 pt-4" showsVerticalScrollIndicator={false}>
-          <View className="mb-4">
-            <Typography variant="headline" weight="semibold" className="text-brand-deepNavy mb-2">
-              Pickup Locations
-            </Typography>
-            <Typography variant="body" className="text-brand-neutralGray">
-              {filteredStudents.length} students found
-            </Typography>
-          </View>
-
-                                {filteredStudents.length > 0 ? (
-          filteredStudents.map((student, index) => (
-            <StudentCard
-              key={student.id}
-              name={student.name}
-              profilePic={student.profilePic}
-              pickupLocation={student.pickupLocation}
-              distance={student.distance}
-              contactNumber={student.contactNumber}
-              onPress={() => handleStudentPress(student.id)}
-            />
-          ))
-        ) : (
-          <View className="items-center justify-center py-12">
-            <Users size={48} color="#6b7280" weight="regular" />
-            <Typography variant="headline" weight="semibold" className="text-brand-neutralGray mt-4 mb-2">
-              No students found
-            </Typography>
-            <Typography variant="body" className="text-brand-neutralGray text-center">
-              Try adjusting your search criteria
-            </Typography>
-          </View>
-        )}
-
-        {/* Bottom Spacing */}
-        <View className="h-6" />
+            {/* Students List */}
+            <ScrollView className="flex-1 px-6 pt-4" showsVerticalScrollIndicator={false}>
+                <View className="mb-4">
+                    <Typography variant="headline" weight="semibold" className="text-brand-deepNavy mb-2">
+                        Pickup Locations
+                    </Typography>
+                    <Typography variant="body" className="text-brand-neutralGray">
+                        {filteredStudents.length} students found
+                    </Typography>
+                </View>
+                {loading ? (
+                    <View className="items-center justify-center py-12">
+                        <Typography variant="headline" weight="semibold" className="text-brand-neutralGray mt-4 mb-2">
+                            Loading students...
+                        </Typography>
+                    </View>
+                ) : filteredStudents.length > 0 ? (
+                    filteredStudents.map((student, index) => (
+                        <StudentCard
+                            key={student.id}
+                            name={student.name}
+                            profilePic={student.profilePic}
+                            pickupLocation={student.pickupLocation}
+                            distance={student.distance}
+                            contactNumber={student.contactNumber}
+                              onPress={() => handleStudentPress(String(student.id))}
+                        />
+                    ))
+                ) : (
+                    <View className="items-center justify-center py-12">
+                        <Users size={48} color="#6b7280" weight="regular" />
+                        <Typography variant="headline" weight="semibold" className="text-brand-neutralGray mt-4 mb-2">
+                            No students found
+                        </Typography>
+                        <Typography variant="body" className="text-brand-neutralGray text-center">
+                            Try adjusting your search criteria
+                        </Typography>
+                    </View>
+                )}
+                {/* Bottom Spacing */}
+                <View className="h-6" />
             </ScrollView>
         </View>
     );
-} 
+}
