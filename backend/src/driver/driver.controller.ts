@@ -141,6 +141,24 @@ export class DriverController {
       nice_back_pic_url: idBackImageUrl || '',
       second_phone: registrationData.secondaryPhone || '',
       vehicle_Reg_No: registrationData.licensePlate || '',
+      // Vehicle information
+      vehicleType: registrationData.vehicleType,
+      vehicleBrand: registrationData.vehicleBrand,
+      vehicleModel: registrationData.vehicleModel,
+      yearOfManufacture: registrationData.yearOfManufacture,
+      vehicleColor: registrationData.vehicleColor,
+      licensePlate: registrationData.licensePlate,
+      seats: registrationData.seats ? parseInt(registrationData.seats.toString()) : undefined,
+      femaleAssistant: registrationData.femaleAssistant === 'true' || registrationData.femaleAssistant === true,
+      // Vehicle images
+      vehicleFrontView: vehicleFrontViewUrl ?? undefined,
+      vehicleSideView: vehicleSideViewUrl ?? undefined,
+      vehicleRearView: vehicleRearViewUrl ?? undefined,
+      vehicleInteriorView: vehicleInteriorViewUrl ?? undefined,
+      // Vehicle documents
+      revenueLicenseUrl: revenueLicenseUrl ?? undefined,
+      vehicleInsuranceUrl: vehicleInsuranceUrl ?? undefined,
+      registrationDocUrl: registrationDocUrl ?? undefined,
     };
 
     return this.driverService.completeDriverRegistration(

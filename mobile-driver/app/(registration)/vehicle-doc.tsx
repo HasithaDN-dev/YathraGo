@@ -201,7 +201,7 @@ export default function VehicleDocScreen() {
       setProfileComplete(true);
 
       // Navigate to success screen
-      router.replace('/(registration)/success');
+      router.push('/(registration)/success');
 
     } catch (error) {
       let errorMsg = 'Failed to complete registration. Please try again.';

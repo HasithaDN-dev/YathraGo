@@ -144,6 +144,7 @@ export class DriverService {
     }
 
     try {
+      // Update driver information
       const updatedDriver = await this.prisma.driver.update({
         where: { driver_id: driver.driver_id },
         data: {
@@ -163,6 +164,47 @@ export class DriverService {
           registrationStatus: RegistrationStatus.ACCOUNT_CREATED, // Set to ACCOUNT_CREATED after all details
         },
       });
+
+      // Create vehicle if vehicle information is provided
+      if (
+        registrationData.vehicleType &&
+        registrationData.vehicleBrand &&
+        registrationData.vehicleModel &&
+        registrationData.yearOfManufacture &&
+        registrationData.licensePlate
+      ) {
+        const manufactureYear = parseInt(registrationData.yearOfManufacture);
+        
+        // Validate that manufactureYear is a valid number
+        if (isNaN(manufactureYear)) {
+          throw new BadRequestException('Invalid year of manufacture');
+        }
+
+        await this.prisma.vehicle.create({
+          data: {
+            type: registrationData.vehicleType,
+            brand: registrationData.vehicleBrand,
+            model: registrationData.vehicleModel,
+            manufactureYear: manufactureYear,
+            registrationNumber: registrationData.licensePlate,
+            color: registrationData.vehicleColor || '',
+            route: [], // Empty array for now, can be updated later
+            no_of_seats: registrationData.seats || 1,
+            air_conditioned: false, // Default value
+            assistant: registrationData.femaleAssistant || false,
+            rear_picture_url: registrationData.vehicleRearView || '',
+            front_picture_url: registrationData.vehicleFrontView || '',
+            side_picture_url: registrationData.vehicleSideView || '',
+            inside_picture_url: registrationData.vehicleInteriorView || '',
+            revenue_license_url: registrationData.revenueLicenseUrl,
+            insurance_front_url: registrationData.vehicleInsuranceUrl,
+            insurance_back_url: null, // Not provided in registration flow
+            vehicle_reg_url: registrationData.registrationDocUrl,
+            driverId: updatedDriver.driver_id, // Link vehicle to driver
+          },
+        });
+      }
+
       return updatedDriver;
     } catch (error) {
       console.error('Error completing driver registration:', error);

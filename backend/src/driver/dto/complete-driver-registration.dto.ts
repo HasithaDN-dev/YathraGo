@@ -7,6 +7,8 @@ import {
   IsOptional,
   IsEmail,
   IsPhoneNumber,
+  IsInt,
+  IsBoolean,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -89,4 +91,81 @@ export class CompleteDriverRegistrationDto {
   @IsString()
   @IsOptional()
   vehicle_Reg_No?: string; // This field is present in your Driver model
+
+  // Vehicle Information (added for driver registration with vehicle)
+  @ApiProperty({ description: 'Vehicle type', required: false })
+  @IsString()
+  @IsOptional()
+  vehicleType?: string;
+
+  @ApiProperty({ description: 'Vehicle brand', required: false })
+  @IsString()
+  @IsOptional()
+  vehicleBrand?: string;
+
+  @ApiProperty({ description: 'Vehicle model', required: false })
+  @IsString()
+  @IsOptional()
+  vehicleModel?: string;
+
+  @ApiProperty({ description: 'Year of manufacture', required: false })
+  @IsString()
+  @IsOptional()
+  yearOfManufacture?: string;
+
+  @ApiProperty({ description: 'Vehicle color', required: false })
+  @IsString()
+  @IsOptional()
+  vehicleColor?: string;
+
+  @ApiProperty({ description: 'License plate number', required: false })
+  @IsString()
+  @IsOptional()
+  licensePlate?: string;
+
+  @ApiProperty({ description: 'Number of seats', required: false })
+  @IsInt()
+  @IsOptional()
+  seats?: number;
+
+  @ApiProperty({ description: 'Female assistant available', required: false })
+  @IsBoolean()
+  @IsOptional()
+  femaleAssistant?: boolean;
+
+  // Vehicle Image URLs
+  @ApiProperty({ description: 'Vehicle front view URL', required: false })
+  @IsString()
+  @IsOptional()
+  vehicleFrontView?: string;
+
+  @ApiProperty({ description: 'Vehicle side view URL', required: false })
+  @IsString()
+  @IsOptional()
+  vehicleSideView?: string;
+
+  @ApiProperty({ description: 'Vehicle rear view URL', required: false })
+  @IsString()
+  @IsOptional()
+  vehicleRearView?: string;
+
+  @ApiProperty({ description: 'Vehicle interior view URL', required: false })
+  @IsString()
+  @IsOptional()
+  vehicleInteriorView?: string;
+
+  @ApiProperty({ description: 'Revenue license URL', required: false })
+  @IsString()
+  @IsOptional()
+  revenueLicenseUrl?: string;
+
+  @ApiProperty({ description: 'Vehicle insurance URL', required: false })
+  @IsString()
+  @IsOptional()
+  vehicleInsuranceUrl?: string;
+
+  @ApiProperty({ description: 'Vehicle registration document URL', required: false })
+  @IsString()
+  @IsOptional()
+  registrationDocUrl?: string;
 }
