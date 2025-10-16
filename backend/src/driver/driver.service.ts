@@ -187,7 +187,7 @@ export class DriverService {
         email: true,
         phone: true,
         profile_picture_url: true,
-        status:true,
+        status: true,
       },
     });
     if (!driver) {

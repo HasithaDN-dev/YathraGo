@@ -14,6 +14,7 @@ import { OwnerModule } from './owner/owner.module';
 import { ChildRideRequestModule } from './child-ride-request/child-ride-request.module';
 import { ChatModule } from './chat/chat.module';
 import { DriverRouteModule } from './driver-route/driver-route.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { DriverRouteModule } from './driver-route/driver-route.module';
     ChildRideRequestModule,
     DriverRouteModule,
     ChatModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

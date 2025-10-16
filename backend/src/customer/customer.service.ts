@@ -178,7 +178,6 @@ export class CustomerService extends CustomerServiceExtension {
         throw new BadRequestException('Customer not found');
       }
 
-
       // Helper to build full image URL, now expects path with subfolder
       const baseUrl = process.env.SERVER_BASE_URL || 'http://localhost:3000';
       const getImageUrl = (filepath: string | null) =>
