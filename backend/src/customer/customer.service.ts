@@ -163,6 +163,46 @@ export class CustomerService extends CustomerServiceExtension {
         throw new BadRequestException('Customer not found');
       }
 
+      // Helper to build full image URL, now expects path with subfolder
+      const baseUrl = process.env.SERVER_BASE_URL || 'http://localhost:3000';
+      const getImageUrl = (filepath: string | null) =>
+        filepath ? `${baseUrl}/uploads/${filepath}` : null;
+
+      // Map children with full image URLs
+      const childrenWithFullImageUrl = (customer.children || []).map(
+        (child) => {
+          // If childImageUrl exists and does not already include a subfolder, prefix with 'child/'
+          let childImagePath = child.childImageUrl || null;
+          if (childImagePath && !childImagePath.includes('/')) {
+            childImagePath = `child/${childImagePath}`;
+          }
+          return {
+            ...child,
+            childImageUrl: getImageUrl(childImagePath),
+          };
+        },
+      );
+
+      // For customer profile image, prefix with 'customer/' if not already present
+      let customerImagePath = customer.profileImageUrl || null;
+      if (customerImagePath && !customerImagePath.includes('/')) {
+        customerImagePath = `customer/${customerImagePath}`;
+      }
+
+      // Map customer profile image URL
+      const profileWithFullImageUrl = {
+        ...customer,
+        profileImageUrl: getImageUrl(customerImagePath),
+        children: childrenWithFullImageUrl,
+        // Add staffPassenger with profileImageUrl if exists
+        staffPassenger: customer.staffPassenger
+          ? {
+              ...customer.staffPassenger,
+              profileImageUrl: getImageUrl(customerImagePath),
+            }
+          : null,
+      };
+
       const result = {
         success: true,
         profile: customer,

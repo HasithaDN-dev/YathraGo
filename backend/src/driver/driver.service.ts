@@ -174,4 +174,23 @@ export class DriverService {
       );
     }
   }
+
+  // Fetch driver details for a given driverId (for frontend welcome message)
+  async getDriverDetailsById(driverId: number) {
+    const driver = await this.prisma.driver.findUnique({
+      where: { driver_id: driverId },
+      select: {
+        driver_id: true,
+        name: true,
+        email: true,
+        phone: true,
+        profile_picture_url: true,
+        status: true,
+      },
+    });
+    if (!driver) {
+      throw new NotFoundException('Driver not found');
+    }
+    return driver;
+  }
 }
