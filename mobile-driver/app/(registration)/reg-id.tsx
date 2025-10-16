@@ -31,7 +31,7 @@ export default function RegIdScreen() {
   const handleVerify = () => {
     if (frontImage && backImage) {
       // Data is already saved in store, just navigate to next screen
-      router.push('/(registration)/vehicle-doc');
+      router.push('/(registration)/ownership');
     } else {
       Alert.alert('Error', 'Please upload both front and back images of your ID.');
     }
