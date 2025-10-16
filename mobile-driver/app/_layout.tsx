@@ -64,7 +64,7 @@ export default function RootLayout() {
         </Stack.Protected>
 
         {/* Registration routes - accessible when authenticated but not account  created yet */}
-        <Stack.Protected guard={isLoggedIn}>
+        <Stack.Protected guard={isLoggedIn && registrationStatus !== 'ACCOUNT_CREATED'}>
           <Stack.Screen name="(registration)" options={{ headerShown: false }} />
         </Stack.Protected>
 

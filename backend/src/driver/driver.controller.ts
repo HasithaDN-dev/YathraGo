@@ -158,30 +158,6 @@ export class DriverController {
     return this.driverService.getDriverProfile(driverId);
   }
 
-  // --- EXISTING PROFILE MANAGEMENT ENDPOINTS (from your provided driver.service.ts) ---
-  // Get driver profile by driver ID - NO JWT REQUIRED
-  @Get('profile/:driverId')
-  @HttpCode(HttpStatus.OK)
-  async getDriverProfile(@Param('driverId') driverId: string) {
-    return this.driverService.getDriverProfile(driverId);
-  }
-
-  // @UseGuards(JwtAuthGuard)
-  // @Put('profile')
-  // @HttpCode(HttpStatus.OK)
-  // async updateDriverProfile(@Req() req: AuthenticatedRequest, @Body() profileData: UpdateDriverProfileDto) {
-  //   const driverId = req.user.userId;
-  //   return this.driverService.updateDriverProfile(driverId, profileData);
-  // }
-
-  // @UseGuards(JwtAuthGuard)
-  // @Post('documents')
-  // @HttpCode(HttpStatus.OK)
-  // async uploadDriverDocuments(@Req() req: AuthenticatedRequest, @Body() documentsData: UploadDocumentsDto) {
-  //   const driverId = req.user.userId;
-  //   return this.driverService.uploadDriverDocuments(driverId, documentsData);
-  // }
-
   // --- NEW ENDPOINT TO GET DRIVER TRIP HISTORY (FILTERED BY DRIVER ID) ---
   // NO JWT REQUIRED - Just pass driver ID in URL
   @Get('trip-history/:driverId')

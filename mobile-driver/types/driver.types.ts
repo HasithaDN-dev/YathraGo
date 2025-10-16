@@ -15,30 +15,6 @@ export interface Driver {
   updatedAt: string;
 }
 
-// Complete driver profile from backend API (matches Prisma Driver model)
-export interface DriverProfileComplete {
-  driver_id: number;
-  NIC: string;
-  address: string;
-  date_of_birth: string; // ISO date string
-  date_of_joining: string; // ISO date string
-  driver_license_back_url: string;
-  driver_license_front_url: string;
-  name: string;
-  gender: string;
-  nic_front_pic_url: string;
-  nice_back_pic_url: string;
-  phone: string;
-  profile_picture_url: string;
-  second_phone: string;
-  vehicle_Reg_No: string;
-  email?: string;
-  status: string;
-  registrationStatus: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export type DriverRegistrationStatus = 
   | 'OTP_PENDING'
   | 'OTP_VERIFIED'
