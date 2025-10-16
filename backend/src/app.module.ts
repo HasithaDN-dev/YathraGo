@@ -13,6 +13,7 @@ import { CustomerModule } from './customer/customer.module';
 import { OwnerModule } from './owner/owner.module';
 import { ChildRideRequestModule } from './child-ride-request/child-ride-request.module';
 import { ChatModule } from './chat/chat.module';
+import { DriverRouteModule } from './driver-route/driver-route.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ChatModule } from './chat/chat.module';
     CustomerModule,
     OwnerModule,
     ChildRideRequestModule,
+    DriverRouteModule,
     ChatModule,
   ],
   controllers: [AppController],

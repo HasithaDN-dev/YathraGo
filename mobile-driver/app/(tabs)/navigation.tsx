@@ -12,6 +12,7 @@ import {
     Phone
 } from 'phosphor-react-native';
 import CustomButton from '@/components/ui/CustomButton';
+import { useRouter } from 'expo-router';
 
 // Types for the navigation screen props
 interface TripDetails {
@@ -65,6 +66,7 @@ export default function NavigationScreen({
     onViewTrip,
 }: NavigationScreenProps) {
     const [showEmergencyDrawer, setShowEmergencyDrawer] = useState(false);
+    const router = useRouter();
 
     const openEmergencyDrawer = () => {
         setShowEmergencyDrawer(true);
@@ -174,6 +176,13 @@ export default function NavigationScreen({
                     <Typography variant="body" className="text-brand-neutralGray mt-2">
                         Heading to the destination...
                     </Typography>
+                    <View className="mt-4">
+                        <CustomButton
+                            title="View Optimized Route"
+                            onPress={() => router.push('/(tabs)/route')}
+                            size="small"
+                        />
+                    </View>
                 </View>
 
               
