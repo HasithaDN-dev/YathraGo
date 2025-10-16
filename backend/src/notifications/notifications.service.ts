@@ -1,3 +1,14 @@
+  async updateCustomerFcmToken(customerId: number, fcmToken: string) {
+    try {
+      await this.prisma.customer.update({
+        where: { customer_id: customerId },
+        data: { fcmToken },
+      });
+      return { success: true, message: 'FCM token updated successfully' };
+    } catch (error) {
+      return { success: false, message: 'Failed to update FCM token', error: error?.message };
+    }
+  }
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FirebaseService } from '../common/services/firebase.service';
@@ -17,6 +28,18 @@ export class NotificationsService {
     private readonly prisma: PrismaService,
     private readonly firebase: FirebaseService,
   ) {}
+
+  async updateCustomerFcmToken(customerId: number, fcmToken: string) {
+    try {
+      await this.prisma.customer.update({
+        where: { customer_id: customerId },
+        data: { fcmToken },
+      });
+      return { success: true, message: 'FCM token updated successfully' };
+    } catch (error) {
+      return { success: false, message: 'Failed to update FCM token', error: error?.message };
+    }
+  }
 
   async sendNotification(dto: SendNotificationInput) {
     // Normalize enums to Prisma enum values

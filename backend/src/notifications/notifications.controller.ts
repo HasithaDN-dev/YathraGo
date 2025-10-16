@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Param, Query } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { SendNotificationDto } from './dto/send-notification.dto';
 
@@ -27,6 +27,17 @@ export class NotificationsController {
       receiver,
       parseInt(receiverId, 10),
       duration ? parseInt(duration, 10) : undefined,
+    );
+  }
+  // Update FCM token for a customer
+  @Put('fcm-token/:customerId')
+  async updateFcmToken(
+    @Param('customerId') customerId: string,
+    @Body('fcmToken') fcmToken: string,
+  ) {
+    return this.notificationsService.updateCustomerFcmToken(
+      parseInt(customerId, 10),
+      fcmToken,
     );
   }
 }
