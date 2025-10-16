@@ -499,7 +499,7 @@ export default function AddDriverPage() {
                     onClick={startBackgroundVerification}
                     variant="outline"
                     size="sm"
-                    className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                    className="border-blue-500 text-blue-600 hover:bg-blue-600 hover:text-white"
                   >
                     Start Verification
                   </Button>
@@ -629,7 +629,7 @@ export default function AddDriverPage() {
             type="button"
             variant="outline"
             onClick={handleCancel}
-            className="border-gray-400 text-gray-600 hover:bg-gray-50"
+            className="border-gray-400 text-gray-600 hover:bg-gray-600 hover:text-white"
           >
             Cancel
           </Button>

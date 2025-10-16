@@ -75,25 +75,8 @@ export default function VehicleDocScreen() {
   const [progress, setProgress] = useState<{ [key: string]: number }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Update store when documents change
-  useEffect(() => {
-    updateVehicleDocuments({
-      revenueLicense,
-      vehicleInsurance,
-      registrationDoc,
-      licenseFront,
-      licenseBack,
-    });
-  }, [revenueLicense, vehicleInsurance, registrationDoc, licenseFront, licenseBack, updateVehicleDocuments]);
-
-  // Sync local state with store data
-  useEffect(() => {
-    setRevenueLicense(vehicleDocuments.revenueLicense);
-    setVehicleInsurance(vehicleDocuments.vehicleInsurance);
-    setRegistrationDoc(vehicleDocuments.registrationDoc);
-    setLicenseFront(vehicleDocuments.licenseFront);
-    setLicenseBack(vehicleDocuments.licenseBack);
-  }, [vehicleDocuments]);
+  // Sync local state with store data on mount
+  // Documents are saved when user clicks "Complete Registration"
 
   const startProgress = (key: string) => {
     setProgress(prev => ({ ...prev, [key]: 0 }));
