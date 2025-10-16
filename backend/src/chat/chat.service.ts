@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, UserTypes } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { NotificationsService } from 'src/notifications/notifications.service';
 
 @Injectable()
 export class ChatService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async upsertConversation(
     aId: number,
@@ -137,6 +141,46 @@ export class ChatService {
     await this.prisma.conversation.update({
       where: { id: params.conversationId },
       data: { updatedAt: new Date() },
+    });
+
+    // Determine receiver profile to notify
+    const isA =
+      convo.participantAId === params.senderId &&
+      convo.participantAType === params.senderType;
+    const receiverId = isA ? convo.participantBId : convo.participantAId;
+    const receiverType = isA ? convo.participantBType : convo.participantAType;
+
+    // Resolve sender's display name
+    let senderName = 'User';
+    if (params.senderType === 'CUSTOMER') {
+      const c = await this.prisma.customer.findUnique({
+        where: { customer_id: params.senderId },
+        select: { firstName: true, lastName: true },
+      });
+      if (c) senderName = `${c.firstName} ${c.lastName}`.trim();
+    } else if (params.senderType === 'DRIVER') {
+      const d = await this.prisma.driver.findUnique({
+        where: { driver_id: params.senderId },
+        select: { name: true },
+      });
+      if (d?.name) senderName = d.name;
+    } else if (params.senderType === 'WEBUSER') {
+      const w = await this.prisma.webuser.findUnique({
+        where: { id: params.senderId },
+        select: { username: true, email: true },
+      });
+      if (w) senderName = w.username ?? w.email ?? 'User';
+    }
+
+    // Fire push + store notification as Others
+    await this.notifications.sendNewMessagePush({
+      senderName,
+      messageText:
+        params.message ??
+        (params.imageUrl ? '📷 Sent an image' : 'New message'),
+      receiverType,
+      receiverId,
+      conversationId: params.conversationId,
     });
 
     return msg;

@@ -1,6 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { admin } from './firebase.config';
 import type { Message, MulticastMessage } from 'firebase-admin/messaging';
+import axios from 'axios';
+
+type ExpoPushResponse = {
+  data?: unknown;
+  errors?: unknown;
+};
 
 @Injectable()
 export class FirebaseService {
@@ -19,6 +25,25 @@ export class FirebaseService {
     body: string,
     data?: Record<string, string>,
   ) {
+    // If the token is an Expo push token, use Expo Push API
+    if (token.startsWith('ExponentPushToken')) {
+      try {
+        const res = await axios.post('https://exp.host/--/api/v2/push/send', {
+          to: token,
+          title,
+          body,
+          data,
+        });
+        const result = res.data as ExpoPushResponse;
+        this.logger.log(`Expo push sent: ${JSON.stringify(result)}`);
+        return result;
+      } catch (error) {
+        this.logger.error('Error sending Expo push:', error);
+        throw error;
+      }
+    }
+
+    // Default: send via Firebase Admin (FCM token)
     const message: Message = {
       notification: {
         title,
