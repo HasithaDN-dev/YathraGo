@@ -174,4 +174,48 @@ export class DriverService {
       );
     }
   }
+
+  // --- METHOD TO GET DRIVER TRIP HISTORY FILTERED BY DRIVER ID ---
+  async getDriverTripHistory(driverId: string) {
+    // First verify driver exists
+    const driver = await this.prisma.driver.findUnique({
+      where: { driver_id: parseInt(driverId) },
+    });
+
+    if (!driver) {
+      throw new NotFoundException(`Driver with ID ${driverId} not found`);
+    }
+
+    // Fetch all trips for this specific driver from Child_Trip table
+    const trips = await this.prisma.child_Trip.findMany({
+      where: {
+        driverId: parseInt(driverId), // Filter by driver ID
+      },
+      orderBy: {
+        date: 'desc', // Most recent trips first
+      },
+    });
+
+    return {
+      success: true,
+      driverId: parseInt(driverId),
+      driverName: driver.name,
+      totalTrips: trips.length,
+      trips: trips.map((trip) => ({
+        tripId: trip.childTrip_id,
+        date: trip.date,
+        pickUp: trip.pickUp,
+        dropOff: trip.dropOff,
+        startTime: trip.startTime,
+        endTime: trip.endTime,
+        duration: this.calculateDuration(trip.startTime, trip.endTime),
+      })),
+    };
+  }
+
+  // Helper method to calculate trip duration in minutes
+  private calculateDuration(startTime: Date, endTime: Date): number {
+    const diffMs = new Date(endTime).getTime() - new Date(startTime).getTime();
+    return Math.round(diffMs / 60000); // Convert to minutes
+  }
 }

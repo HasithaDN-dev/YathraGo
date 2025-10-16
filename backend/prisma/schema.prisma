@@ -33,14 +33,13 @@ model OtpCode {
 }
 
 model Webuser {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  username  String
-  role      String   @default("owner")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  password     String
+  username     String
+  role         String        @default("owner")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   vehicleOwner VehicleOwner?
 }
 
@@ -96,10 +95,31 @@ model Vehicle {
 }
 
 model Chat {
-  id        Int      @id @default(autoincrement())
-  message   String
-  timestamp DateTime @default(now())
-  seen      Boolean  @default(false)
+  id             Int           @id @default(autoincrement())
+  message        String?
+  timestamp      DateTime      @default(now())
+  seen           Boolean       @default(false)
+  conversationId Int
+  imageUrl       String?
+  senderId       Int
+  senderType     UserTypes
+  status         MessageStatus @default(SENT)
+  conversation   Conversation  @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId])
+}
+
+model Conversation {
+  id               Int       @id @default(autoincrement())
+  participantAId   Int
+  participantAType UserTypes
+  participantBId   Int
+  participantBType UserTypes
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  messages         Chat[]
+
+  @@unique([participantAId, participantAType, participantBId, participantBType])
 }
 
 model BackupDriver {
@@ -177,6 +197,11 @@ model Driver {
   registrationStatus       RegistrationStatus @default(OTP_PENDING)
   createdAt                DateTime           @default(now())
   updatedAt                DateTime           @updatedAt
+  childRideRequests        ChildRideRequest[]
+  childTrips               Child_Trip[]
+  driverCities             DriverCities?
+  driverRoutes             DriverRoute[]
+  routeWaypoints           RouteWaypoint[]
   vehicles                 Vehicle[]
 }
 
@@ -185,7 +210,7 @@ model FoundedBackupDrivers {
 }
 
 model VehicleOwner {
-  id         Int      @id
+  id         Int       @id
   first_name String?
   last_name  String?
   phone      String?
@@ -193,14 +218,11 @@ model VehicleOwner {
   company    String?
   Address    String?
   vehicles   Vehicle[]
-  webuser    Webuser  @relation(fields: [id], references: [id])
+  webuser    Webuser   @relation(fields: [id], references: [id])
 }
 
 model Customer {
   customer_id        Int                @id @default(autoincrement())
-  firstName          String
-  lastName           String
-  gender             Gender             @default(Unspecified)
   phone              String             @unique
   email              String?
   address            String?
@@ -210,6 +232,9 @@ model Customer {
   registrationStatus RegistrationStatus @default(OTP_PENDING)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+  firstName          String
+  gender             Gender             @default(Unspecified)
+  lastName           String
   children           Child[]
   staffPassenger     Staff_Passenger?
 
@@ -245,18 +270,24 @@ model Ratings_and_Reviews {
 }
 
 model Child {
-  child_id       Int       @id @default(autoincrement())
-  relationship   String
-  nearbyCity     String
-  schoolLocation String
-  school         String
-  childFirstName String
-  childLastName  String
-  gender         Gender   @default(Unspecified)
-  childImageUrl  String?
-  pickUpAddress  String
-  customerId     Int?
-  Customer       Customer? @relation(fields: [customerId], references: [customer_id])
+  child_id        Int                @id @default(autoincrement())
+  relationship    String
+  nearbyCity      String
+  schoolLocation  String
+  school          String
+  childImageUrl   String?
+  pickUpAddress   String
+  customerId      Int?
+  childFirstName  String
+  childLastName   String
+  gender          Gender             @default(Unspecified)
+  pickupLatitude  Float?
+  pickupLongitude Float?
+  schoolLatitude  Float?
+  schoolLongitude Float?
+  Customer        Customer?          @relation(fields: [customerId], references: [customer_id])
+  rideRequests    ChildRideRequest[]
+  routeWaypoints  RouteWaypoint[]
 
   @@index([customerId])
   @@index([school])
@@ -270,17 +301,25 @@ model Child_Trip {
   dropOff      String
   startTime    DateTime
   endTime      DateTime
+  driverId     Int?
+  driver       Driver?  @relation(fields: [driverId], references: [driver_id])
+
+  @@index([driverId])
 }
 
 model Staff_Passenger {
-  id             Int      @id @default(autoincrement())
-  customerId     Int      @unique
-  nearbyCity     String
-  workLocation   String
-  workAddress    String
-  pickUpLocation String
-  pickupAddress  String
-  Customer       Customer @relation(fields: [customerId], references: [customer_id])
+  id              Int      @id @default(autoincrement())
+  customerId      Int      @unique
+  nearbyCity      String
+  workLocation    String
+  workAddress     String
+  pickUpLocation  String
+  pickupAddress   String
+  pickupLatitude  Float?
+  pickupLongitude Float?
+  workLatitude    Float?
+  workLongitude   Float?
+  Customer        Customer @relation(fields: [customerId], references: [customer_id])
 
   @@index([customerId])
   @@index([workLocation])
@@ -299,6 +338,54 @@ model Staff_Trip {
 model Child_Assign_To {
   assign_id Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
+}
+
+model City {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  latitude  Float
+  longitude Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DriverCities {
+  id       Int    @id @default(autoincrement())
+  driverId Int    @unique
+  cityIds  Int[]
+  driver   Driver @relation(fields: [driverId], references: [driver_id])
+}
+
+model ChildRideRequest {
+  id        Int                      @id @default(autoincrement())
+  childId   Int
+  driverId  Int
+  status    ChildAssignRequestStatus @default(Pending)
+  createdAt DateTime                 @default(now())
+  updatedAt DateTime                 @updatedAt
+  child     Child                    @relation(fields: [childId], references: [child_id])
+  driver    Driver                   @relation(fields: [driverId], references: [driver_id])
+}
+
+model DriverRoute {
+  id           Int             @id @default(autoincrement())
+  driverId     Int
+  date         DateTime
+  routeDetails Json
+  createdAt    DateTime        @default(now())
+  driver       Driver          @relation(fields: [driverId], references: [driver_id])
+  waypoints    RouteWaypoint[]
+}
+
+model RouteWaypoint {
+  id            Int         @id @default(autoincrement())
+  driverRouteId Int
+  childId       Int
+  driverId      Int
+  order         Int
+  child         Child       @relation(fields: [childId], references: [child_id])
+  driver        Driver      @relation(fields: [driverId], references: [driver_id])
+  driverRoute   DriverRoute @relation(fields: [driverRouteId], references: [id])
 }
 
 enum RegistrationStatus {
@@ -323,4 +410,24 @@ enum Gender {
   Male
   Female
   Unspecified
+}
+
+enum ChildAssignRequestStatus {
+  Pending
+  Assigned
+  Rejected
+}
+
+enum UserTypes {
+  CUSTOMER
+  WEBUSER
+  BACKUPDRIVER
+  DRIVER
+  VEHICLEOWNER
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  SEEN
 }
