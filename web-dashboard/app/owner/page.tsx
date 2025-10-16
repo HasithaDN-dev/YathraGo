@@ -69,7 +69,9 @@ const ActivityBadge: React.FC<{ status: ActivityEntry["status"] }> = ({ status }
 
 export default function OwnerDashboard() {
   // Mock data - replace with actual data fetching
-  const ownerName = "John Doe";
+  // TODO: Replace with actual data fetching from backend or context
+  const ownerFirstName = "John"; // Replace with actual value
+  const ownerLastName = "Doe";   // Replace with actual value
   const stats = {
     totalVehicles: 12,
     totalDrivers: 8,
@@ -110,10 +112,10 @@ export default function OwnerDashboard() {
       {/* Welcome Header */}
       <div className="bg-white rounded-lg shadow-sm border border-[var(--neutral-gray)] p-6">
         <h1 className="text-3xl font-bold text-[var(--color-deep-navy)]">
-          Welcome, {ownerName}
+          Welcome, {ownerFirstName} {ownerLastName}
         </h1>
         <p className="text-[var(--neutral-gray)] mt-2">
-          Here&apos;s an overview of your fleet operations
+          Here&apos;s an overview of your fleet operations, {ownerFirstName} {ownerLastName}
         </p>
       </div>
 
