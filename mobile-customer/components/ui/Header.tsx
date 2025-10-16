@@ -20,8 +20,24 @@ export const Header: React.FC<HeaderProps> = ({
   const { profiles, activeProfile, setActiveProfile, loadProfiles, isLoading } = useProfileStore();
   const { accessToken } = useAuthStore();
 
+  // Debug logging for profile data
+  console.log('Header - Profile Store State:', {
+    profilesCount: profiles.length,
+    profiles: profiles,
+    activeProfile: activeProfile,
+    isLoading: isLoading,
+    accessToken: accessToken ? 'Present' : 'Missing'
+  });
+
   useEffect(() => {
+    console.log('Header - useEffect triggered:', {
+      hasAccessToken: !!accessToken,
+      profilesLength: profiles.length,
+      willLoadProfiles: accessToken && profiles.length === 0
+    });
+    
     if (accessToken && profiles.length === 0) {
+      console.log('Header - Loading profiles with access token');
       loadProfiles(accessToken);
     }
   }, [accessToken, profiles.length, loadProfiles]);
@@ -31,13 +47,37 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const handleProfileSelect = (profile: Profile) => {
+    console.log('Header - Profile selected:', {
+      profileId: profile.id,
+      profileType: profile.type,
+      profileName: `${profile.firstName || ''} ${profile.lastName || ''}`.trim(),
+      fullProfile: profile
+    });
     setActiveProfile(profile.id);
     setIsDropdownOpen(false);
   };
 
   const handleAddMorePress = () => {
     setIsDropdownOpen(false);
-    router.push('/(registration)/registration-type');
+    
+    // Check if any profile is of type 'staff'
+    const hasStaffProfile = profiles.some(profile => profile.type === 'staff');
+    
+    console.log('Header - handleAddMorePress:', {
+      profilesCount: profiles.length,
+      hasStaffProfile: hasStaffProfile,
+      profileTypes: profiles.map(p => p.type)
+    });
+    
+    if (hasStaffProfile) {
+      // If staff profile exists, only allow child registration
+      console.log('Header - Navigating to child-only registration');
+      router.push('/(registration)/registration-type?mode=child');
+    } else {
+      // If no staff profile, show both options
+      console.log('Header - Navigating to full registration options');
+      router.push('/(registration)/registration-type');
+    }
   };
 
   // Show loading state if profiles are being loaded
@@ -63,17 +103,34 @@ export const Header: React.FC<HeaderProps> = ({
   }
 
   const getDisplayName = (profile: Profile) => {
-    if (profile.type === 'child') {
-      return `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Child';
-    }
-    return `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Staff Passenger';
+    const displayName = profile.type === 'child' 
+      ? `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Child'
+      : `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Staff Passenger';
+    
+    console.log('Header - getDisplayName:', {
+      profileId: profile.id,
+      profileType: profile.type,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      displayName: displayName
+    });
+    
+    return displayName;
   };
 
   const getProfileLabel = (profile: Profile) => {
-    if (profile.type === 'child') {
-      return profile.relationship || 'Child';
-    }
-    return 'Own';
+    const label = profile.type === 'child' 
+      ? profile.relationship || 'Child'
+      : 'Own';
+    
+    console.log('Header - getProfileLabel:', {
+      profileId: profile.id,
+      profileType: profile.type,
+      relationship: profile.relationship,
+      label: label
+    });
+    
+    return label;
   };
 
 

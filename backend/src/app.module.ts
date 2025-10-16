@@ -12,6 +12,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { CustomerModule } from './customer/customer.module';
 import { OwnerModule } from './owner/owner.module';
 import { ChildRideRequestModule } from './child-ride-request/child-ride-request.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ChildRideRequestModule } from './child-ride-request/child-ride-request.
     CustomerModule,
     OwnerModule,
     ChildRideRequestModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

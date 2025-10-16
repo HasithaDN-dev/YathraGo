@@ -10,6 +10,7 @@ import { ButtonComponent } from '../../components/ui/ButtonComponent';
 import { Typography } from '../../components/Typography';
 import { registerChildApi, uploadChildProfileImageApi } from '../../lib/api/profile.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
+import { useProfileStore } from '../../lib/stores/profile.store';
 import { ChildProfileData } from '../../types/customer.types';
 import { GoogleMapPicker } from '../../components/GoogleMapPicker';
 import { LocationDetails } from '../../types/location.types';
@@ -30,6 +31,7 @@ export default function ChildRegistrationScreen() {
 
   // Get the accessToken and the action to complete the profile from the store.
   const { accessToken, setProfileComplete } = useAuthStore();
+  const { refreshProfiles } = useProfileStore();
 
   const handleInputChange = (field: keyof ChildProfileData, value: string) => {
     setFormData(prev => ({
@@ -125,6 +127,10 @@ export default function ChildRegistrationScreen() {
       if (!isAddMode) {
         setProfileComplete(true);
         console.log('Child registration: Profile marked as complete');
+        
+        // Refresh profiles to include the newly created profile
+        await refreshProfiles(accessToken);
+        console.log('Child registration: Profiles refreshed');
       }
 
       // 3. Navigate based on mode
@@ -133,7 +139,11 @@ export default function ChildRegistrationScreen() {
         router.back(); // Go back to add profile screen
       } else {
         Alert.alert('Success', 'Child registration completed successfully!');
-        // The `app/(app)/_layout.tsx` guard will automatically navigate to main app
+        
+        // Explicitly navigate to home page after successful registration
+        setTimeout(() => {
+          router.replace('/(tabs)');
+        }, 1000); // Small delay to allow the alert to show
       }
 
     } catch (error) {

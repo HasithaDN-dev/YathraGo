@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RegisterStaffPassengerDto } from './dto/register_staff_passenger.dto';
 import { RegisterChildDto } from './dto/register-child.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateChildDto } from './dto/update-child.dto';
+import { UpdateStaffDto } from './dto/update-staff.dto';
 import { CustomerRegisterDto } from './dto/customer-register.dto';
 import { BadRequestException } from '@nestjs/common/exceptions/bad-request.exception';
 import { CustomerServiceExtension } from './customer.service.extension';
@@ -176,9 +178,50 @@ export class CustomerService extends CustomerServiceExtension {
         throw new BadRequestException('Customer not found');
       }
 
+
+      // Helper to build full image URL, now expects path with subfolder
+      const baseUrl = process.env.SERVER_BASE_URL || 'http://localhost:3000';
+      const getImageUrl = (filepath: string | null) =>
+        filepath ? `${baseUrl}/uploads/${filepath}` : null;
+
+      // Map children with full image URLs
+      const childrenWithFullImageUrl = (customer.children || []).map(
+        (child) => {
+          // If childImageUrl exists and does not already include a subfolder, prefix with 'child/'
+          let childImagePath = child.childImageUrl || null;
+          if (childImagePath && !childImagePath.includes('/')) {
+            childImagePath = `child/${childImagePath}`;
+          }
+          return {
+            ...child,
+            childImageUrl: getImageUrl(childImagePath),
+          };
+        },
+      );
+
+      // For customer profile image, prefix with 'customer/' if not already present
+      let customerImagePath = customer.profileImageUrl || null;
+      if (customerImagePath && !customerImagePath.includes('/')) {
+        customerImagePath = `customer/${customerImagePath}`;
+      }
+
+      // Map customer profile image URL
+      const profileWithFullImageUrl = {
+        ...customer,
+        profileImageUrl: getImageUrl(customerImagePath),
+        children: childrenWithFullImageUrl,
+        // Add staffPassenger with profileImageUrl if exists
+        staffPassenger: customer.staffPassenger
+          ? {
+              ...customer.staffPassenger,
+              profileImageUrl: getImageUrl(customerImagePath),
+            }
+          : null,
+      };
+
       const result = {
         success: true,
-        profile: customer,
+        profile: profileWithFullImageUrl,
       };
 
       console.log(
@@ -196,45 +239,143 @@ export class CustomerService extends CustomerServiceExtension {
     }
   }
 
-  async updateCustomerProfile(
-    customerId: string,
-    profileData: UpdateProfileDto,
-  ) {
+  async updateCustomerProfile(userId: number, profileData: UpdateProfileDto) {
     console.log(
-      '[SERVICE] updateCustomerProfile - Input customerId:',
-      customerId,
-    );
-    console.log(
-      '[SERVICE] updateCustomerProfile - Input data:',
-      JSON.stringify(profileData, null, 2),
+      '[SERVICE] updateCustomerProfile - Input:',
+      JSON.stringify({ userId, profileData }, null, 2),
     );
 
     try {
-      const updatedCustomer = await this.prisma.customer.update({
-        where: { customer_id: parseInt(customerId) },
+      const customer = await this.prisma.customer.update({
+        where: { customer_id: userId },
         data: {
-          firstName: profileData?.firstName ?? undefined,
-          lastName: profileData?.lastName ?? undefined,
-          gender: profileData?.gender ?? undefined,
-          email: profileData?.email ?? undefined,
-          address: profileData?.address ?? undefined,
-          profileImageUrl: profileData?.profileImageUrl ?? undefined,
-          emergencyContact: profileData?.emergencyContact ?? undefined,
+          firstName: profileData.firstName,
+          lastName: profileData.lastName,
+          gender: profileData.gender,
+          email: profileData.email,
+          address: profileData.address,
+          profileImageUrl: profileData.profileImageUrl,
+          emergencyContact: profileData.emergencyContact,
         },
       });
 
-      const result = {
+      const response = {
         success: true,
-        message: 'Profile updated successfully',
-        profile: updatedCustomer,
+        message: 'Customer profile updated successfully.',
+        customer,
       };
       console.log(
         '[SERVICE] updateCustomerProfile - Output:',
-        JSON.stringify(result, null, 2),
+        JSON.stringify(response, null, 2),
       );
-      return result;
+      return response;
     } catch (error) {
       console.error('[SERVICE] updateCustomerProfile - Error:', error);
+      throw error;
+    }
+  }
+
+  async updateChildProfile(
+    childId: number,
+    childData: UpdateChildDto,
+    userId: number,
+  ) {
+    console.log(
+      '[SERVICE] updateChildProfile - Input:',
+      JSON.stringify({ childId, childData, userId }, null, 2),
+    );
+
+    try {
+      // Verify child belongs to this customer
+      const existingChild = await this.prisma.child.findFirst({
+        where: {
+          child_id: childId,
+          customerId: userId,
+        },
+      });
+
+      if (!existingChild) {
+        throw new BadRequestException('Child not found or unauthorized');
+      }
+
+      const updatedChild = await this.prisma.child.update({
+        where: { child_id: childId },
+        data: {
+          childFirstName: childData.childFirstName,
+          childLastName: childData.childLastName,
+          gender: childData.gender,
+          relationship: childData.relationship,
+          nearbyCity: childData.nearbyCity,
+          school: childData.school,
+          schoolLocation: childData.schoolLocation,
+          pickUpAddress: childData.pickUpAddress,
+          childImageUrl: childData.childImageUrl,
+          schoolLatitude: childData.schoolLatitude,
+          schoolLongitude: childData.schoolLongitude,
+          pickupLatitude: childData.pickupLatitude,
+          pickupLongitude: childData.pickupLongitude,
+        },
+      });
+
+      const response = {
+        success: true,
+        message: 'Child profile updated successfully.',
+        child: updatedChild,
+      };
+      console.log(
+        '[SERVICE] updateChildProfile - Output:',
+        JSON.stringify(response, null, 2),
+      );
+      return response;
+    } catch (error) {
+      console.error('[SERVICE] updateChildProfile - Error:', error);
+      throw error;
+    }
+  }
+
+  async updateStaffProfile(userId: number, staffData: UpdateStaffDto) {
+    console.log(
+      '[SERVICE] updateStaffProfile - Input:',
+      JSON.stringify({ userId, staffData }, null, 2),
+    );
+
+    try {
+      // Verify staff profile belongs to this customer
+      const existingStaff = await this.prisma.staff_Passenger.findFirst({
+        where: { customerId: userId },
+      });
+
+      if (!existingStaff) {
+        throw new BadRequestException('Staff profile not found');
+      }
+
+      const updatedStaff = await this.prisma.staff_Passenger.update({
+        where: { id: existingStaff.id },
+        data: {
+          nearbyCity: staffData.nearbyCity,
+          workLocation: staffData.workLocation,
+          workAddress: staffData.workAddress,
+          pickUpLocation: staffData.pickUpLocation,
+          pickupAddress: staffData.pickupAddress,
+          workLatitude: staffData.workLatitude,
+          workLongitude: staffData.workLongitude,
+          pickupLatitude: staffData.pickupLatitude,
+          pickupLongitude: staffData.pickupLongitude,
+        },
+      });
+
+      const response = {
+        success: true,
+        message: 'Staff profile updated successfully.',
+        staff: updatedStaff,
+      };
+      console.log(
+        '[SERVICE] updateStaffProfile - Output:',
+        JSON.stringify(response, null, 2),
+      );
+      return response;
+    } catch (error) {
+      console.error('[SERVICE] updateStaffProfile - Error:', error);
       throw error;
     }
   }
