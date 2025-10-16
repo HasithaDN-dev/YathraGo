@@ -221,7 +221,7 @@ export default function ChildRegistrationScreen() {
 
             <CustomInput
               label="Relationship"
-              placeholder="e.g., Father, Mother, Guardian"
+              placeholder="e.g. Son , Daughter"
               value={formData.relationship || ''}
               onChangeText={(value: string) => handleInputChange('relationship', value)}
               required
