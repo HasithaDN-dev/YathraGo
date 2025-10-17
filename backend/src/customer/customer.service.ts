@@ -218,4 +218,111 @@ export class CustomerService {
       };
     }
   }
+
+  // Get all customers for admin dashboard
+  async getAllCustomers() {
+    try {
+      const customers = await this.prisma.customer.findMany({
+        select: {
+          customer_id: true,
+          name: true,
+          phone: true,
+          email: true,
+          address: true,
+          status: true,
+          registrationStatus: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      return {
+        success: true,
+        count: customers.length,
+        customers,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error?.message || 'Failed to fetch customers',
+        customers: [],
+      };
+    }
+  }
+
+  // Get user counts by role for admin dashboard
+  async getUserCounts() {
+    try {
+      // Count all customers
+      const totalCustomers = await this.prisma.customer.count();
+
+      // Count parents (customers who have children)
+      const parentsCount = await this.prisma.customer.count({
+        where: {
+          children: {
+            some: {}, // Has at least one child
+          },
+        },
+      });
+
+      // Count staff passengers
+      const staffPassengersCount = await this.prisma.staff_Passenger.count();
+
+      // Count drivers
+      const driversCount = await this.prisma.driver.count();
+
+      // Count owners
+      const ownersCount = await this.prisma.vehicleOwner.count();
+
+      // Count admins
+      const adminsCount = await this.prisma.admin.count();
+
+      // Count managers
+      const managersCount = await this.prisma.manager.count();
+
+      // Count backup drivers
+      const backupDriversCount = await this.prisma.backupDriver.count();
+
+      // Count children
+      const childrenCount = await this.prisma.child.count();
+
+      // Count webusers
+      const webusersCount = await this.prisma.webuser.count();
+
+      return {
+        success: true,
+        counts: {
+          parents: parentsCount,
+          staffPassengers: staffPassengersCount,
+          drivers: driversCount,
+          owners: ownersCount,
+          admins: adminsCount,
+          managers: managersCount,
+          backupDrivers: backupDriversCount,
+          children: childrenCount,
+          webusers: webusersCount,
+          totalCustomers: totalCustomers,
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error?.message || 'Failed to fetch user counts',
+        counts: {
+          parents: 0,
+          staffPassengers: 0,
+          drivers: 0,
+          owners: 0,
+          admins: 0,
+          managers: 0,
+          backupDrivers: 0,
+          children: 0,
+          webusers: 0,
+          totalCustomers: 0,
+        },
+      };
+    }
+  }
 }

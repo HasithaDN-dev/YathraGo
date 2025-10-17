@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -967,16 +967,53 @@ export default function RolePermissionManagementPage() {
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
+  
+  // State for real user counts from database
+  const [userCounts, setUserCounts] = useState({
+    parents: 0,
+    staffPassengers: 0,
+    drivers: 0,
+    owners: 0,
+    admins: 0,
+    managers: 0,
+    backupDrivers: 0,
+    children: 0,
+    webusers: 0,
+    totalCustomers: 0,
+  });
+  const [loadingCounts, setLoadingCounts] = useState(true);
 
+  // Fetch user counts from backend
+  useEffect(() => {
+    async function fetchUserCounts() {
+      try {
+        const response = await fetch('http://localhost:3002/customer/counts');
+        const data = await response.json();
+        
+        if (data.success) {
+          setUserCounts(data.counts);
+        }
+        setLoadingCounts(false);
+      } catch (error) {
+        console.error('Failed to fetch user counts:', error);
+        setLoadingCounts(false);
+      }
+    }
+
+    fetchUserCounts();
+  }, []); // Run once when component mounts
+
+  // Use real counts from database instead of hardcoded values
   const roles = [
-    { name: "Parents", userCount: 24 },
-    { name: "Staff Passengers", userCount: 12 },
-    { name: "Drivers", userCount: 8 },
-    { name: "Owners", userCount: 3 },
-    { name: "Admins", userCount: 2 },
-    { name: "Managers", userCount: 5 },
-    { name: "Driver Coordinators", userCount: 4 },
-    { name: "Finance Managers", userCount: 2 },
+    { name: "Parents", userCount: userCounts.parents },
+    { name: "Staff Passengers", userCount: userCounts.staffPassengers },
+    { name: "Drivers", userCount: userCounts.drivers },
+    { name: "Owners", userCount: userCounts.owners },
+    { name: "Admins", userCount: userCounts.admins },
+    { name: "Managers", userCount: userCounts.managers },
+    { name: "Backup Drivers", userCount: userCounts.backupDrivers },
+    { name: "Children", userCount: userCounts.children },
+    { name: "Web Users", userCount: userCounts.webusers },
   ];
 
   const permissions = [

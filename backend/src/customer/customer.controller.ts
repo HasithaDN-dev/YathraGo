@@ -20,6 +20,20 @@ import { AuthenticatedRequest } from '../common/interfaces/authenticated-request
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
+  // GET ALL CUSTOMERS - For admin dashboard
+  @Get('all')
+  @HttpCode(HttpStatus.OK)
+  async getAllCustomers() {
+    return this.customerService.getAllCustomers();
+  }
+
+  // GET USER COUNTS BY ROLE - For admin dashboard
+  @Get('counts')
+  @HttpCode(HttpStatus.OK)
+  async getUserCounts() {
+    return this.customerService.getUserCounts();
+  }
+
   // Complete customer registration after OTP verification
   @Post('customer-register')
   @HttpCode(HttpStatus.OK)

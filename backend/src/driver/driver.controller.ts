@@ -1,3 +1,4 @@
+// ...existing code...
 // src/driver/driver.controller.ts
 import {
   Controller,
@@ -34,6 +35,7 @@ interface AuthenticatedRequest extends Request {
 @Controller('driver') // Base route for driver-related operations
 export class DriverController {
   constructor(private driverService: DriverService) {}
+
 
   // --- NEW ENDPOINT FOR SINGLE-PHASE DRIVER REGISTRATION (SECURE) ---
   @UseGuards(JwtAuthGuard) // Protect with JWT Guard
@@ -78,20 +80,44 @@ export class DriverController {
     @Body() registrationData: any,
   ) {
     const phone = req.user.phone; // Securely get phone from JWT
-    
+
     // Map file fields to URLs
-    const profileImageUrl = files.profileImage?.[0]?.filename ? `uploads/vehicle/${files.profileImage[0].filename}` : null;
-    const idFrontImageUrl = files.idFrontImage?.[0]?.filename ? `uploads/vehicle/${files.idFrontImage[0].filename}` : null;
-    const idBackImageUrl = files.idBackImage?.[0]?.filename ? `uploads/vehicle/${files.idBackImage[0].filename}` : null;
-    const vehicleFrontViewUrl = files.vehicleFrontView?.[0]?.filename ? `uploads/vehicle/${files.vehicleFrontView[0].filename}` : null;
-    const vehicleSideViewUrl = files.vehicleSideView?.[0]?.filename ? `uploads/vehicle/${files.vehicleSideView[0].filename}` : null;
-    const vehicleRearViewUrl = files.vehicleRearView?.[0]?.filename ? `uploads/vehicle/${files.vehicleRearView[0].filename}` : null;
-    const vehicleInteriorViewUrl = files.vehicleInteriorView?.[0]?.filename ? `uploads/vehicle/${files.vehicleInteriorView[0].filename}` : null;
-    const revenueLicenseUrl = files.revenueLicense?.[0]?.filename ? `uploads/vehicle/${files.revenueLicense[0].filename}` : null;
-    const vehicleInsuranceUrl = files.vehicleInsurance?.[0]?.filename ? `uploads/vehicle/${files.vehicleInsurance[0].filename}` : null;
-    const registrationDocUrl = files.registrationDoc?.[0]?.filename ? `uploads/vehicle/${files.registrationDoc[0].filename}` : null;
-    const licenseFrontUrl = files.licenseFront?.[0]?.filename ? `uploads/vehicle/${files.licenseFront[0].filename}` : null;
-    const licenseBackUrl = files.licenseBack?.[0]?.filename ? `uploads/vehicle/${files.licenseBack[0].filename}` : null;
+    const profileImageUrl = files.profileImage?.[0]?.filename
+      ? `uploads/vehicle/${files.profileImage[0].filename}`
+      : null;
+    const idFrontImageUrl = files.idFrontImage?.[0]?.filename
+      ? `uploads/vehicle/${files.idFrontImage[0].filename}`
+      : null;
+    const idBackImageUrl = files.idBackImage?.[0]?.filename
+      ? `uploads/vehicle/${files.idBackImage[0].filename}`
+      : null;
+    const vehicleFrontViewUrl = files.vehicleFrontView?.[0]?.filename
+      ? `uploads/vehicle/${files.vehicleFrontView[0].filename}`
+      : null;
+    const vehicleSideViewUrl = files.vehicleSideView?.[0]?.filename
+      ? `uploads/vehicle/${files.vehicleSideView[0].filename}`
+      : null;
+    const vehicleRearViewUrl = files.vehicleRearView?.[0]?.filename
+      ? `uploads/vehicle/${files.vehicleRearView[0].filename}`
+      : null;
+    const vehicleInteriorViewUrl = files.vehicleInteriorView?.[0]?.filename
+      ? `uploads/vehicle/${files.vehicleInteriorView[0].filename}`
+      : null;
+    const revenueLicenseUrl = files.revenueLicense?.[0]?.filename
+      ? `uploads/vehicle/${files.revenueLicense[0].filename}`
+      : null;
+    const vehicleInsuranceUrl = files.vehicleInsurance?.[0]?.filename
+      ? `uploads/vehicle/${files.vehicleInsurance[0].filename}`
+      : null;
+    const registrationDocUrl = files.registrationDoc?.[0]?.filename
+      ? `uploads/vehicle/${files.registrationDoc[0].filename}`
+      : null;
+    const licenseFrontUrl = files.licenseFront?.[0]?.filename
+      ? `uploads/vehicle/${files.licenseFront[0].filename}`
+      : null;
+    const licenseBackUrl = files.licenseBack?.[0]?.filename
+      ? `uploads/vehicle/${files.licenseBack[0].filename}`
+      : null;
 
     // Prepare the registration data with file URLs
     const completeRegistrationData: CompleteDriverRegistrationDto = {
