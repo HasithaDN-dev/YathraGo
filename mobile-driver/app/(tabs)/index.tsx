@@ -54,8 +54,8 @@ export default function HomeScreen() {
     setCurrentTripStatus('on-the-way');
     setIsButtonEnabled(true);
     console.log('Starting trip...');
-    // Navigate to navigation tab
-    //router.push('/(tabs)/navigation');
+    // Navigate to navigation tab to start the step-by-step trip flow
+    router.push('/(tabs)/navigation');
   };
 
   // useEffect(() => {

@@ -117,9 +117,110 @@ export class DriverRouteService {
       include: {
         waypoints: {
           orderBy: { order: 'asc' },
+          include: {
+            child: {
+              select: {
+                child_id: true,
+                childFirstName: true,
+                childLastName: true,
+                pickUpAddress: true,
+                school: true,
+                pickupLatitude: true,
+                pickupLongitude: true,
+                schoolLatitude: true,
+                schoolLongitude: true,
+              },
+            },
+          },
         },
       },
     });
     return route;
+  }
+
+  async getTodayRouteForDriver(driverId: number) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const route = await this.prisma.driverRoute.findFirst({
+      where: {
+        driverId,
+        date: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        waypoints: {
+          orderBy: { order: 'asc' },
+          include: {
+            child: {
+              select: {
+                child_id: true,
+                childFirstName: true,
+                childLastName: true,
+                pickUpAddress: true,
+                school: true,
+                pickupLatitude: true,
+                pickupLongitude: true,
+                schoolLatitude: true,
+                schoolLongitude: true,
+              },
+            },
+            attendance: {
+              where: {
+                status: 'completed',
+              },
+              select: {
+                id: true,
+                type: true,
+                timestamp: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!route) {
+      return null;
+    }
+
+    // Transform the data for frontend consumption
+    const waypoints = route.waypoints.map((waypoint) => ({
+      waypointId: waypoint.id,
+      order: waypoint.order,
+      type: waypoint.type,
+      childId: waypoint.childId,
+      childName: `${waypoint.child.childFirstName} ${waypoint.child.childLastName}`,
+      pickupAddress: waypoint.child.pickUpAddress,
+      school: waypoint.child.school,
+      lat:
+        waypoint.latitude ||
+        (waypoint.type === 'PICKUP'
+          ? waypoint.child.pickupLatitude
+          : waypoint.child.schoolLatitude),
+      lng:
+        waypoint.longitude ||
+        (waypoint.type === 'PICKUP'
+          ? waypoint.child.pickupLongitude
+          : waypoint.child.schoolLongitude),
+      address: waypoint.address,
+      eta: waypoint.eta,
+      distance: waypoint.cumulativeDistanceMeters,
+      isCompleted: waypoint.attendance.length > 0,
+    }));
+
+    return {
+      routeId: route.id,
+      driverId: route.driverId,
+      date: route.date,
+      waypoints,
+      totalStops: waypoints.length,
+      completedStops: waypoints.filter((w) => w.isCompleted).length,
+    };
   }
 }

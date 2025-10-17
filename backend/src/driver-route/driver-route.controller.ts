@@ -16,6 +16,22 @@ export class DriverRouteController {
     return this.service.getLatestRouteForDriver(driverId);
   }
 
+  @Get('today/:driverId')
+  async getTodayRoute(@Param('driverId', ParseIntPipe) driverId: number) {
+    const route = await this.service.getTodayRouteForDriver(driverId);
+    if (!route) {
+      return {
+        success: false,
+        message: 'No route found for today',
+        data: null,
+      };
+    }
+    return {
+      success: true,
+      data: route,
+    };
+  }
+
   // optional: return a simplified ordered stops array with polyline for quick rendering
   @Get(':driverId/summary')
   async getLatestSummary(@Param('driverId', ParseIntPipe) driverId: number) {
