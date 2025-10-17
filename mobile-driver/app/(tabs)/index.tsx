@@ -10,40 +10,59 @@ import {
 } from 'phosphor-react-native';
 import CustomButton from '@/components/ui/CustomButton';
 import { useRouter } from 'expo-router';
+import { useAuthStore } from '@/lib/stores/auth.store';
+import { tokenService } from '@/lib/services/token.service';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [isOnline, setIsOnline] = useState(true);
   const [tripStarted, setTripStarted] = useState(false);
   const [isButtonEnabled, setIsButtonEnabled] = useState(false);
   const [currentTripStatus, setCurrentTripStatus] = useState<'pending' | 'on-the-way' | 'completed'>('pending');
   const [studentCount, setStudentCount] = useState<number>(0);
   const [driverName, setDriverName] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch student count
-    fetch(`${API_BASE_URL}/driver/child-ride-requests`)
-      .then(res => res.json())
-      .then(data => setStudentCount(data.length || 0))
-      .catch(() => setStudentCount(0));
-    // Fetch driver name
-    fetch(`${API_BASE_URL}/driver/details`)
-      .then(res => res.json())
-      .then(data => setDriverName(data.name || ''))
-      .catch(() => setDriverName(''));
-
-    //fetch driver status
-    fetch(`${API_BASE_URL}/driver/details`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'ACTIVE') {
-          setIsOnline(true);
-        } else {
-          setIsOnline(false);
-        }
-      })
-      .catch(() => setIsOnline(false));
+    fetchDriverData();
   }, []);
+
+  const fetchDriverData = async () => {
+    try {
+      setLoading(true);
+      const authenticatedFetch = tokenService.createAuthenticatedFetch();
+      
+      // Fetch driver profile using authenticated endpoint
+      const profileResponse = await authenticatedFetch(`${API_BASE_URL}/driver/profile`);
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json();
+        const profile = profileData.profile;
+        setDriverName(profile.name || user?.name || 'Driver');
+        setIsOnline(profile.status === 'ACTIVE');
+      } else {
+        // Fallback to user from store
+        setDriverName(user?.name || 'Driver');
+        setIsOnline(user?.status === 'ACTIVE');
+      }
+
+      // Fetch student count
+      const studentsResponse = await authenticatedFetch(`${API_BASE_URL}/driver/child-ride-requests`);
+      if (studentsResponse.ok) {
+        const studentsData = await studentsResponse.json();
+        setStudentCount(studentsData.length || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching driver data:', error);
+      // Fallback to data from auth store
+      if (user) {
+        setDriverName(user.name || 'Driver');
+        setIsOnline(user.status === 'ACTIVE');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleOnlineStatus = () => {
     setIsOnline(!isOnline);
@@ -55,7 +74,7 @@ export default function HomeScreen() {
     setIsButtonEnabled(true);
     console.log('Starting trip...');
     // Navigate to navigation tab
-    //router.push('/(tabs)/navigation');
+    router.push('/(tabs)/navigation');
   };
 
   // useEffect(() => {

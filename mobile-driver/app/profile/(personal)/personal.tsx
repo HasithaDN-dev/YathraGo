@@ -3,17 +3,16 @@ import { View, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 're
 import { Typography } from '@/components/Typography';
 import { ArrowLeft, PencilSimple, CaretRight } from 'phosphor-react-native';
 import { useRouter } from 'expo-router';
-import { getDriverProfileById } from '@/lib/api/profile.api';
-import { DriverProfileComplete } from '@/types/driver.types';
+import { getDriverProfileApi } from '@/lib/api/profile.api';
+import { tokenService } from '@/lib/services/token.service';
+import { Driver } from '@/types/driver.types';
 
 export default function PersonalDetailsScreen() {
     const router = useRouter();
     const [tab, setTab] = React.useState<'basic' | 'contact'>('basic');
-    const [driverProfile, setDriverProfile] = useState<DriverProfileComplete | null>(null);
+    const [driverProfile, setDriverProfile] = useState<Driver | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    const DRIVER_ID = 1; // HARDCODED FOR TESTING
 
     useEffect(() => {
         fetchDriverProfile();
@@ -23,7 +22,11 @@ export default function PersonalDetailsScreen() {
         try {
             setLoading(true);
             setError(null);
-            const profile = await getDriverProfileById(DRIVER_ID);
+            const token = await tokenService.getToken();
+            if (!token) {
+                throw new Error('No authentication token');
+            }
+            const profile = await getDriverProfileApi(token);
             setDriverProfile(profile);
         } catch (err) {
             console.error('Error fetching driver profile:', err);
@@ -62,12 +65,12 @@ export default function PersonalDetailsScreen() {
     const fields = [
         { label: 'First Name', value: firstName },
         { label: 'Last Name', value: lastName },
-        { label: 'NIC', value: driverProfile.NIC },
-        { label: 'Address', value: driverProfile.address },
-        { label: 'Gender', value: driverProfile.gender },
+        { label: 'NIC', value: (driverProfile as any).NIC || 'Not provided' },
+        { label: 'Address', value: driverProfile.address || 'Not provided' },
+        { label: 'Gender', value: (driverProfile as any).gender || 'Not provided' },
         { label: 'Phone Number', value: driverProfile.phone },
         { label: 'Email', value: driverProfile.email || 'Not provided' },
-        { label: 'Secondary Phone Number', value: driverProfile.second_phone },
+        { label: 'Secondary Phone Number', value: (driverProfile as any).second_phone || 'Not provided' },
     ];
 
     return (
@@ -87,9 +90,9 @@ export default function PersonalDetailsScreen() {
                 </View>
                 <View className="items-center">
                     <View className="w-24 h-24 rounded-full bg-brand-lightGray items-center justify-center mt-5 mb-12 overflow-hidden ">
-                        {driverProfile.profile_picture_url ? (
+                        {driverProfile.profileImageUrl ? (
                             <Image 
-                                source={{ uri: driverProfile.profile_picture_url }} 
+                                source={{ uri: driverProfile.profileImageUrl }} 
                                 className="w-24 h-24 rounded-full" 
                                 resizeMode="cover"
                             />

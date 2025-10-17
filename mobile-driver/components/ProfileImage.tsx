@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Image, View, ActivityIndicator } from 'react-native';
-import { getDriverProfileById } from '@/lib/api/profile.api';
+import { getDriverProfileApi } from '@/lib/api/profile.api';
+import { tokenService } from '@/lib/services/token.service';
+import { useAuthStore } from '@/lib/stores/auth.store';
 
 interface ProfileImageProps {
   className?: string;
@@ -11,8 +13,7 @@ interface ProfileImageProps {
 export const ProfileImage: React.FC<ProfileImageProps> = ({ className, style, size = 96 }) => {
   const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const DRIVER_ID = 1; // HARDCODED FOR TESTING
+  const { user } = useAuthStore();
 
   useEffect(() => {
     fetchProfilePicture();
@@ -20,11 +21,17 @@ export const ProfileImage: React.FC<ProfileImageProps> = ({ className, style, si
 
   const fetchProfilePicture = async () => {
     try {
-      const profile = await getDriverProfileById(DRIVER_ID);
-      setProfilePicUrl(profile.profile_picture_url || null);
+      const token = await tokenService.getToken();
+      if (!token) {
+        throw new Error('No authentication token');
+      }
+      
+      const profile = await getDriverProfileApi(token);
+      setProfilePicUrl(profile.profileImageUrl || null);
     } catch (error) {
       console.error('Error fetching profile picture:', error);
-      setProfilePicUrl(null);
+      // Fallback to user from store
+      setProfilePicUrl(user?.profileImageUrl || null);
     } finally {
       setLoading(false);
     }

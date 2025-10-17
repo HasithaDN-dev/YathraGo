@@ -28,10 +28,10 @@ import { computeGreedyOrder } from './optimizer.util';
 // Extend Request to include user property from JwtPayload
 // This interface MUST match what your JwtStrategy returns in its validate method.
 // Based on your provided JwtStrategy, it returns:
-// { userId: string, phone: string, userType: UserType, isVerified: boolean }
+// { sub: string, phone: string, userType: UserType, isVerified: boolean }
 interface AuthenticatedRequest extends Request {
   user: {
-    userId: string; // This is payload.sub (driver_id or customer_id as string)
+    sub: string; // This is payload.sub (driver_id or customer_id as string)
     phone: string;
     userType: UserType;
     isVerified: boolean;
@@ -148,8 +148,12 @@ export class DriverController {
       yearOfManufacture: registrationData.yearOfManufacture,
       vehicleColor: registrationData.vehicleColor,
       licensePlate: registrationData.licensePlate,
-      seats: registrationData.seats ? parseInt(registrationData.seats.toString()) : undefined,
-      femaleAssistant: registrationData.femaleAssistant === 'true' || registrationData.femaleAssistant === true,
+      seats: registrationData.seats
+        ? parseInt(registrationData.seats.toString())
+        : undefined,
+      femaleAssistant:
+        registrationData.femaleAssistant === 'true' ||
+        registrationData.femaleAssistant === true,
       // Vehicle images
       vehicleFrontView: vehicleFrontViewUrl ?? undefined,
       vehicleSideView: vehicleSideViewUrl ?? undefined,
@@ -172,32 +176,37 @@ export class DriverController {
   @Get('profile')
   @HttpCode(HttpStatus.OK)
   async getDriverProfile(@Req() req: AuthenticatedRequest) {
-    const driverId = req.user.userId; // Assuming userId is driver_id
+    const driverId = req.user.sub; // Get driver ID from JWT token
     return this.driverService.getDriverProfile(driverId);
   }
 
-  // --- NEW ENDPOINT TO GET DRIVER TRIP HISTORY (FILTERED BY DRIVER ID) ---
-  // NO JWT REQUIRED - Just pass driver ID in URL
-  @Get('trip-history/:driverId')
+  // --- AUTHENTICATED ENDPOINT TO GET DRIVER TRIP HISTORY ---
+  @UseGuards(JwtAuthGuard)
+  @Get('trip-history')
   @HttpCode(HttpStatus.OK)
-  async getDriverTripHistory(@Param('driverId') driverId: string) {
+  async getDriverTripHistory(@Req() req: AuthenticatedRequest) {
+    const driverId = req.user.sub; // Get driver ID from JWT token
     return this.driverService.getDriverTripHistory(driverId);
   }
-//   // Endpoint to fetch driver details for hardcoded driverId (for frontend welcome message)
-//   @Get('details')
-//   async getDriverDetails() {
-//     // Hardcoded driverId for demo (updated to 2)
-//     const driverId = 2;
-//     return this.driverService.getDriverDetailsById(driverId);
-//   }
+
+  // --- AUTHENTICATED ENDPOINT TO GET DRIVER DETAILS ---
+  @UseGuards(JwtAuthGuard)
+  @Get('details')
+  @HttpCode(HttpStatus.OK)
+  async getDriverDetails(@Req() req: AuthenticatedRequest) {
+    const driverId = req.user.sub; // Get driver ID from JWT token
+    return this.driverService.getDriverDetailsById(parseInt(driverId, 10));
+  }
 
   // --- Minimal route optimization endpoint ---
-  @Post(':driverId/optimize-route')
+  @UseGuards(JwtAuthGuard)
+  @Post('optimize-route')
   @HttpCode(HttpStatus.OK)
   async optimizeRoute(
-    @Param('driverId', ParseIntPipe) driverId: number,
+    @Req() req: AuthenticatedRequest,
     @Body() body: { latitude?: number; longitude?: number },
   ) {
+    const driverId = parseInt(req.user.sub, 10); // Get driver ID from JWT token
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
       return { error: 'Server maps key not configured' };
@@ -210,6 +219,8 @@ export class DriverController {
         child: {
           select: {
             child_id: true,
+            childFirstName: true,
+            childLastName: true,
             pickUpAddress: true,
             school: true,
             pickupLatitude: true,
@@ -232,9 +243,14 @@ export class DriverController {
       type: 'pickup' | 'dropoff';
       childId: number;
       address: string;
+      childName: string;
     }> = [];
     for (const r of requests) {
       const c = r.child;
+      const childName =
+        `${c.childFirstName || ''} ${c.childLastName || ''}`.trim() ||
+        `Student ${c.child_id}`;
+
       if (c.pickupLatitude != null && c.pickupLongitude != null) {
         stops.push({
           lat: c.pickupLatitude,
@@ -242,6 +258,7 @@ export class DriverController {
           type: 'pickup',
           childId: c.child_id,
           address: c.pickUpAddress,
+          childName,
         });
       }
       if (c.schoolLatitude != null && c.schoolLongitude != null) {
@@ -251,6 +268,7 @@ export class DriverController {
           type: 'dropoff',
           childId: c.child_id,
           address: c.school ?? '',
+          childName,
         });
       }
     }
@@ -313,6 +331,7 @@ export class DriverController {
       type: 'pickup' | 'dropoff';
       childId: number;
       address: string;
+      childName: string;
       etaSecs: number;
       legDistanceMeters: number;
     }> = [];
@@ -384,6 +403,123 @@ export class DriverController {
       return updated;
     } catch (e) {
       return { ok: false };
+    }
+  }
+
+  // Get driver route cities (start and end points)
+  @Get('route-cities')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async getDriverRouteCities(@Req() req: AuthenticatedRequest) {
+    try {
+      const driverId = parseInt(req.user.sub, 10);
+
+      // Get driver's city IDs
+      const driverCities = await this.prisma.driverCities.findUnique({
+        where: { driverId },
+      });
+
+      if (
+        !driverCities ||
+        !driverCities.cityIds ||
+        driverCities.cityIds.length === 0
+      ) {
+        return {
+          success: false,
+          message: 'No route cities found for driver',
+        };
+      }
+
+      const firstCityId = driverCities.cityIds[0];
+      const lastCityId = driverCities.cityIds[driverCities.cityIds.length - 1];
+
+      // Fetch city names
+      const cities = await this.prisma.city.findMany({
+        where: {
+          id: { in: [firstCityId, lastCityId] },
+        },
+      });
+
+      const startCity = cities.find((c) => c.id === firstCityId);
+      const endCity = cities.find((c) => c.id === lastCityId);
+
+      return {
+        success: true,
+        startPoint: startCity?.name || 'Unknown',
+        endPoint: endCity?.name || 'Unknown',
+        startCityId: firstCityId,
+        endCityId: lastCityId,
+      };
+    } catch (error) {
+      console.error('Error fetching driver route cities:', error);
+      return {
+        success: false,
+        message: 'Failed to fetch route cities',
+      };
+    }
+  }
+
+  // Mark attendance for pickup/dropoff
+  @Post('mark-attendance')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async markAttendance(
+    @Req() req: AuthenticatedRequest,
+    @Body()
+    body: {
+      childId: number;
+      type: 'pickup' | 'dropoff';
+      latitude?: number;
+      longitude?: number;
+      notes?: string;
+      status?: string;
+    },
+  ) {
+    try {
+      const driverId = parseInt(req.user.sub, 10);
+
+      // Create attendance record
+      const attendance = await this.prisma.attendance.create({
+        data: {
+          driverId,
+          childId: body.childId,
+          type: body.type,
+          latitude: body.latitude,
+          longitude: body.longitude,
+          notes: body.notes || `${body.type} completed`,
+          status: body.status || 'completed',
+        },
+      });
+
+      // Update waypoint status if it exists
+      const waypoint = await this.prisma.routeWaypoint.findFirst({
+        where: {
+          driverId,
+          childId: body.childId,
+          type: body.type.toUpperCase() as any,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (waypoint) {
+        await this.prisma.routeWaypoint.update({
+          where: { id: waypoint.id },
+          data: { status: 'ARRIVED' },
+        });
+      }
+
+      return {
+        success: true,
+        attendance,
+        message: `${body.type} attendance marked successfully`,
+      };
+    } catch (error) {
+      console.error('Error marking attendance:', error);
+      return {
+        success: false,
+        message: 'Failed to mark attendance',
+        error: error.message,
+      };
     }
   }
 }

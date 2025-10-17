@@ -102,15 +102,12 @@ export default function HistoryScreen() {
   const [currentHeaderDate, setCurrentHeaderDate] = useState<string>('');
   const scrollViewRef = useRef<ScrollView>(null);
   const dateHeaderRefs = useRef<{ [key: string]: number }>({});
-  
-  // HARDCODED FOR TESTING - Using driver ID 1
-  const driverId = 1;
 
-  // Fetch trip history
+  // Fetch trip history using authenticated session
   const fetchTripHistory = async () => {
     try {
       setError(null);
-      const response = await getDriverTripHistory(driverId);
+      const response = await getDriverTripHistory();
       setTrips(response.trips);
       
       // Group trips by date
@@ -140,7 +137,7 @@ export default function HistoryScreen() {
 
   useEffect(() => {
     fetchTripHistory();
-  }, [driverId]);
+  }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
