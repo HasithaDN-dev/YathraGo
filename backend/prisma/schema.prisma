@@ -33,14 +33,18 @@ model OtpCode {
 }
 
 model Webuser {
-  id           Int           @id @default(autoincrement())
-  email        String        @unique
-  password     String
-  username     String
-  role         String        @default("owner")
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  username  String
+  fcmToken  String?  
+  role      String   @default("owner")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   vehicleOwner VehicleOwner?
+
+  @@index([fcmToken])
 }
 
 model Admin {
@@ -48,7 +52,7 @@ model Admin {
   email       String   @unique
   password    String
   firstName   String
-  lastName    String
+  lastName    String 
   permissions String[]
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -126,8 +130,11 @@ model BackupDriver {
   id             Int    @id @default(autoincrement())
   name           String
   phone          String
+  fcmToken       String?  
   vehicle_Reg_No String
   NIC            String
+
+   @@index([fcmToken])
 }
 
 model Absence_Child {
@@ -136,11 +143,18 @@ model Absence_Child {
   createdAt DateTime @default(now())
 }
 
-model DriverNotification {
-  id      Int      @id @default(autoincrement())
-  title   String
-  message String
-  date    DateTime @default(now())
+model Notification {
+  id          Int               @id @default(autoincrement())
+  sender      String
+  message     String
+  type        NotificationTypes
+  receiver    UserTypes
+  receiverId  Int
+  createdAt   DateTime          @default(now())
+  isExpanded  Boolean           @default(false)
+
+  @@index([type])
+  @@index([receiver, receiverId])
 }
 
 model MonthlyPayment {
@@ -193,6 +207,7 @@ model Driver {
   second_phone             String
   vehicle_Reg_No           String
   email                    String?
+  fcmToken                 String?  
   status                   String             @default("ACTIVE")
   registrationStatus       RegistrationStatus @default(OTP_PENDING)
   createdAt                DateTime           @default(now())
@@ -202,6 +217,9 @@ model Driver {
   driverCities             DriverCities?
   driverRoutes             DriverRoute[]
   routeWaypoints           RouteWaypoint[]
+  childTrips     Child_Trip[]
+
+   @@index([fcmToken])
   vehicles                 Vehicle[]
 }
 
@@ -228,6 +246,7 @@ model Customer {
   address            String?
   profileImageUrl    String?
   emergencyContact   String?
+  fcmToken           String?  
   status             String             @default("ACTIVE")
   registrationStatus RegistrationStatus @default(OTP_PENDING)
   createdAt          DateTime           @default(now())
@@ -241,6 +260,7 @@ model Customer {
   @@index([phone])
   @@index([registrationStatus])
   @@index([status])
+  @@index([fcmToken])
 }
 
 model Complaints {
@@ -449,6 +469,13 @@ enum MessageStatus {
   SENT
   DELIVERED
   SEEN
+}
+
+enum  NotificationTypes {
+      System
+      Alert
+      Other
+      Chat
 }
 
 // Waypoint type for route stops
