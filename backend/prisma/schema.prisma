@@ -465,6 +465,7 @@ enum MessageStatus {
 
 enum  NotificationTypes {
       System
-      Alerts
-      Others
+      Alert
+      Other
+      Chat
 }

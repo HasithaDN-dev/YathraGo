@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, ScrollView, TouchableOpacity, TextInput, Image } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, ScrollView, TouchableOpacity, TextInput, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { 
@@ -24,63 +24,61 @@ export default function NotificationsScreen() {
   const [searchInput, setSearchInput] = useState('');
   const [suggestedSenders, setSuggestedSenders] = useState<string[]>([]);
   const [selectedSender, setSelectedSender] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const { notifications, loadForProfile, toggleExpanded } = useNotificationsStore();
   const { accessToken } = useAuthStore();
   const { activeProfile, customerProfile } = useProfileStore();
 
-  // Fetch notifications from backend for the active profile
-  useEffect(() => {
-    const fetch = async () => {
-      if (!accessToken || !activeProfile) return;
-      const receiver: ReceiverType = 'CUSTOMER';
-      // activeProfile.id is like 'child-101' | 'staff-201' | parent profile uses customer id
-      let receiverId: number | null = null;
-      if (activeProfile.type === 'child') {
-        const m = String(activeProfile.id).match(/(\d+)/);
-        receiverId = m ? parseInt(m[1], 10) : null;
-      } else if (activeProfile.type === 'staff') {
-        const m = String(activeProfile.id).match(/(\d+)/);
-        receiverId = m ? parseInt(m[1], 10) : null;
-      }
-      // If no specific child/staff id parsed, fall back to customer id
-      if (!receiverId && customerProfile?.customer_id) {
-        receiverId = customerProfile.customer_id;
-      }
-      if (receiverId) {
-        await loadForProfile(accessToken, receiver, receiverId);
-      }
-    };
-    fetch();
+  // Fetch notifications function
+  const fetchNotifications = useCallback(async () => {
+    if (!accessToken || !activeProfile) return;
+    const receiver: ReceiverType = 'CUSTOMER';
+    let receiverId: number | null = null;
+    if (activeProfile.type === 'child') {
+      const m = String(activeProfile.id).match(/(\d+)/);
+      receiverId = m ? parseInt(m[1], 10) : null;
+    } else if (activeProfile.type === 'staff') {
+      const m = String(activeProfile.id).match(/(\d+)/);
+      receiverId = m ? parseInt(m[1], 10) : null;
+    }
+    if (!receiverId && customerProfile?.customer_id) {
+      receiverId = customerProfile.customer_id;
+    }
+    if (receiverId) {
+      await loadForProfile(accessToken, receiver, receiverId);
+    }
   }, [accessToken, activeProfile, loadForProfile, customerProfile?.customer_id]);
 
-  // Auto-refresh when screen is focused (poll every 30s while focused)
+  // Initial load
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  // Auto-refresh when screen is focused (poll every 5 seconds)
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       let interval: NodeJS.Timeout | null = null;
-      const run = async () => {
-        if (!accessToken || !activeProfile) return;
-        const receiver: ReceiverType = 'CUSTOMER';
-        let receiverId: number | null = null;
-        if (activeProfile.type === 'child' || activeProfile.type === 'staff') {
-          const m = String(activeProfile.id).match(/(\d+)/);
-          receiverId = m ? parseInt(m[1], 10) : null;
-        }
-        if (!receiverId && customerProfile?.customer_id) {
-          receiverId = customerProfile.customer_id;
-        }
-        if (receiverId) {
-          await loadForProfile(accessToken, receiver, receiverId);
-        }
-      };
-      // Initial load on focus
-      run();
-      // Polling every 30 seconds
-      interval = setInterval(run, 30000);
+      
+      // Immediate fetch when screen comes into focus
+      fetchNotifications();
+      
+      // Polling every 5 seconds
+      interval = setInterval(() => {
+        fetchNotifications();
+      }, 5000);
+      
       return () => {
         if (interval) clearInterval(interval);
       };
-    }, [accessToken, activeProfile, customerProfile?.customer_id, loadForProfile])
+    }, [fetchNotifications])
   );
+
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchNotifications();
+    setRefreshing(false);
+  }, [fetchNotifications]);
 
 
 
@@ -94,10 +92,17 @@ export default function NotificationsScreen() {
         return <Gear size={20} color="#8B5CF6" weight="fill" />;
       case 'alert':
         return <Warning size={20} color="#EF4444" weight="fill" />;
+      case 'chat':
+        return (
+          <Image
+            source={require('../../assets/images/chat.png')}
+            style={{ width: 32, height: 32, borderRadius: 16, resizeMode: 'cover' }}
+          />
+        );
       case 'other':
         return (
           <Image
-            source={require('../../assets/images/profile_Picture.png')}
+            source={require('../../assets/images/notificationBell.png')}
             style={{ width: 32, height: 32, borderRadius: 16, resizeMode: 'cover' }}
           />
         );
@@ -112,6 +117,8 @@ export default function NotificationsScreen() {
         return 'bg-red-500'; // errorRed
       case 'system':
         return 'bg-yellow-400'; // softOrange
+      case 'chat':
+        return 'bg-blue-400'; // chat blue
       case 'other':
         return 'bg-gray-300'; // lightGray
       default:
@@ -177,11 +184,11 @@ export default function NotificationsScreen() {
         {/* Filter Options */}
         <Card className="p-4">
           <View className="flex-row justify-between items-center">
-            <View className="flex-row">
+            <View className="flex-row flex-wrap">
               {['All', 'Alerts', 'System', 'Others'].map((filter) => (
                 <TouchableOpacity
                   key={filter}
-                  className={`px-4 py-2 rounded-full ${selectedFilter === filter ? 'bg-brand-deepNavy' : 'bg-brand-lightGray'}${filter !== 'All' ? ' ml-3' : ''}`}
+                  className={`px-4 py-2 rounded-full ${selectedFilter === filter ? 'bg-brand-deepNavy' : 'bg-brand-lightGray'}${filter !== 'All' ? ' ml-3' : ''} mb-2`}
                   onPress={() => setSelectedFilter(filter)}
                 >
                   <Typography
@@ -198,13 +205,22 @@ export default function NotificationsScreen() {
       </View>
 
       {/* Notifications List (scrollable) */}
-      <ScrollView className="flex-1 px-4" contentContainerClassName="space-y-5 pb-6">
+      <ScrollView 
+        className="flex-1 px-4" 
+        contentContainerClassName="space-y-5 pb-6"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
+        }
+      >
         {notifications
           .filter((notification) => {
             if (selectedFilter === 'All') return true;
-            if (selectedFilter === 'Alerts') return notification.type === 'alert' || notification.type === 'alerts';
+            if (selectedFilter === 'Alerts') return notification.type === 'alert';
             if (selectedFilter === 'System') return notification.type === 'system';
-            if (selectedFilter === 'Others') return notification.type === 'other' || notification.type === 'others';
+            if (selectedFilter === 'Others') return notification.type === 'other' || notification.type === 'chat';
             return true;
           })
           .filter((notification) => {

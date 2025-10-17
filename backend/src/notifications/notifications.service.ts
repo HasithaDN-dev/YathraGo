@@ -6,7 +6,7 @@ import { NotificationTypes, UserTypes, Prisma } from '@prisma/client';
 type SendNotificationInput = {
   sender: string;
   message: string;
-  type: 'SYSTEM' | 'ALERT' | 'OTHER';
+  type: 'SYSTEM' | 'ALERT' | 'OTHER' | 'CHAT';
   receiver: 'CUSTOMER' | 'DRIVER' | 'WEBUSER' | 'VEHICLEOWNER' | 'BACKUPDRIVER';
   receiverId: number;
   data?: Record<string, string>;
@@ -105,7 +105,7 @@ export class NotificationsService {
     }));
   }
 
-  // Send push for a new chat message and store it as a Notification (type Others)
+  // Send push for a new chat message and store it as a Notification (type Chat)
   async sendNewMessagePush(params: {
     senderName: string;
     messageText: string;
@@ -126,12 +126,12 @@ export class NotificationsService {
       conversationId,
     } = params;
 
-    // Persist notification with type Others and sender's name
+    // Persist notification with type Chat and sender's name
     await this.prisma.notification.create({
       data: {
         sender: senderName,
         message: messageText,
-        type: NotificationTypes.Others,
+        type: NotificationTypes.Chat,
         receiver: this.mapReceiver(receiverType),
         receiverId,
       },
@@ -221,10 +221,12 @@ export class NotificationsService {
       case 'SYSTEM':
         return NotificationTypes.System;
       case 'ALERT':
-        return NotificationTypes.Alerts;
+        return NotificationTypes.Alert;
+      case 'CHAT':
+        return NotificationTypes.Chat;
       case 'OTHER':
       default:
-        return NotificationTypes.Others;
+        return NotificationTypes.Other;
     }
   }
 

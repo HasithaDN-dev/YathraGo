@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, ScrollView, Image, TextInput, TouchableOpacity, Platform, Keyboard, TouchableWithoutFeedback, Text, Linking, Alert } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { View, ScrollView, Image, TextInput, TouchableOpacity, Platform, Keyboard, TouchableWithoutFeedback, Text, Linking, Alert, RefreshControl } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Typography } from '@/components/Typography';
 import { ArrowLeft, PaperPlaneRight, Camera, Paperclip, Phone } from 'phosphor-react-native';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -17,6 +18,8 @@ interface ChatMessage {
   time: string;
   mine?: boolean;
   imageUri?: string;
+  seen?: boolean;
+  status?: string;
 }
 
 export default function ChatRoomScreen() {
@@ -30,7 +33,10 @@ export default function ChatRoomScreen() {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [toolbarHeight, setToolbarHeight] = useState(56);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { user } = useAuth();
+  const lastMessageIdRef = useRef<number | null>(null);
+  const hasLoadedOnceRef = useRef(false);
 
   // Cached image component
   const CachedImage = ({ imageUri, style }: { imageUri: string; style: any }) => {
@@ -78,16 +84,94 @@ export default function ChatRoomScreen() {
     );
   };
 
-  // Fetch messages for this conversation
+  // Fetch messages function
+  const fetchMessages = useCallback(async () => {
+    if (!conversationId) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/messages`);
+      const data = await res.json();
+      
+      // Check if there are new messages
+      const hasNewMessages = data.length > 0 && 
+        lastMessageIdRef.current !== null && 
+        data[data.length - 1].id !== lastMessageIdRef.current;
+      
+      setMessages(data);
+      
+      // Update last message ID
+      if (data.length > 0) {
+        lastMessageIdRef.current = data[data.length - 1].id;
+      }
+      
+      // Auto-scroll to bottom if there are new messages
+      if (hasNewMessages) {
+        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+      }
+    } catch (error) {
+      console.error('Failed to fetch messages:', error);
+    }
+  }, [conversationId]);
+
+  // Mark messages as seen
+  const markMessagesAsSeen = useCallback(async () => {
+    if (!conversationId || !user) return;
+    try {
+      await fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/mark-seen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: Number(user.id),
+          userType: 'CUSTOMER',
+        }),
+      });
+      // Refresh messages to get updated seen status
+      await fetchMessages();
+    } catch (error) {
+      console.error('Failed to mark messages as seen:', error);
+    }
+  }, [conversationId, user, fetchMessages]);
+
+  // Initial load
   useEffect(() => {
     if (!conversationId) return;
-    setLoading(true);
-    fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/messages`)
-      .then((res) => res.json())
-      .then((data) => setMessages(data))
-      .catch(() => setMessages([]))
-      .finally(() => setLoading(false));
-  }, [conversationId]);
+    // Only show loading on the very first load ever
+    if (!hasLoadedOnceRef.current) {
+      setLoading(true);
+      fetchMessages().finally(() => {
+        setLoading(false);
+        hasLoadedOnceRef.current = true;
+      });
+    }
+  }, [conversationId, fetchMessages]);
+
+  // Auto-refresh when screen is focused (poll every 3 seconds)
+  useFocusEffect(
+    useCallback(() => {
+      let interval: NodeJS.Timeout;
+      
+      // Immediate fetch when screen comes into focus
+      fetchMessages().then(() => {
+        // Mark messages as seen after initial fetch
+        markMessagesAsSeen();
+      });
+      
+      // Set up polling every 3 seconds
+      interval = setInterval(() => {
+        fetchMessages();
+      }, 3000);
+
+      return () => {
+        if (interval) clearInterval(interval);
+      };
+    }, [fetchMessages, markMessagesAsSeen])
+  );
+
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchMessages();
+    setRefreshing(false);
+  }, [fetchMessages]);
 
   // Ensure input bar stays above keyboard: hide emoji panel when keyboard opens
   useEffect(() => {
@@ -152,9 +236,7 @@ export default function ChatRoomScreen() {
       });
       if (res.ok) {
         // Re-fetch messages after sending
-        fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/messages`)
-          .then((r) => r.json())
-          .then((data) => setMessages(data));
+        await fetchMessages();
       }
     } catch {}
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
@@ -252,9 +334,7 @@ export default function ChatRoomScreen() {
 
         if (res.ok) {
           // Re-fetch messages after sending
-          fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/messages`)
-            .then((r) => r.json())
-            .then((data) => setMessages(data));
+          await fetchMessages();
         } else {
           // Remove the optimistic update if failed
           if (tempMsgId) {
@@ -282,18 +362,23 @@ export default function ChatRoomScreen() {
   const captureAndSendImage = async () => {
     try {
       Keyboard.dismiss();
+      console.log('Requesting camera permissions...');
       const perm = await ImagePicker.requestCameraPermissionsAsync();
+      console.log('Camera permission status:', perm.status);
       if (perm.status !== 'granted') {
         Alert.alert('Permission Required', 'Camera permission is needed to take photos');
         return;
       }
+      console.log('Launching camera...');
       const res = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaType.Images,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 0.7,
       });
+      console.log('Camera result:', res);
       if (!res.canceled && res.assets && res.assets.length > 0) {
         const uri = res.assets[0].uri;
+        console.log('Image captured, URI:', uri);
         await sendImageMessage(uri);
       }
     } catch (error) {
@@ -305,19 +390,24 @@ export default function ChatRoomScreen() {
   const pickAndSendImage = async () => {
     try {
       Keyboard.dismiss();
+      console.log('Requesting media library permissions...');
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      console.log('Media library permission status:', perm.status);
       if (perm.status !== 'granted') {
         Alert.alert('Permission Required', 'Photo library permission is needed to select images');
         return;
       }
+      console.log('Launching image library...');
       const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType.Images,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
         quality: 0.8,
         selectionLimit: 1,
       });
+      console.log('Image library result:', res);
       if (!res.canceled && res.assets && res.assets.length > 0) {
         const uri = res.assets[0].uri;
+        console.log('Image selected, URI:', uri);
         await sendImageMessage(uri);
       }
     } catch (error) {
@@ -327,23 +417,61 @@ export default function ChatRoomScreen() {
   };
 
   const Bubble = ({ m }: { m: ChatMessage }) => {
-  if (m.imageUri) {
+    // Status indicator component (only for sent messages)
+    const StatusIndicator = () => {
+      if (!m.mine) return null;
+      
+      const getStatusIcon = () => {
+        if (m.seen || m.status === 'SEEN') {
+          // Double check mark (seen)
+          return (
+            <View className="flex-row ml-1">
+              <Text style={{ fontSize: 10, color: '#3B82F6' }}>✓✓</Text>
+            </View>
+          );
+        } else if (m.status === 'DELIVERED') {
+          // Double check mark (delivered but not seen)
+          return (
+            <View className="flex-row ml-1">
+              <Text style={{ fontSize: 10, color: '#9CA3AF' }}>✓✓</Text>
+            </View>
+          );
+        } else {
+          // Single check mark (sent)
+          return (
+            <View className="flex-row ml-1">
+              <Text style={{ fontSize: 10, color: '#9CA3AF' }}>✓</Text>
+            </View>
+          );
+        }
+      };
+
+      return getStatusIcon();
+    };
+
+    if (m.imageUri) {
       return (
         <View className={`${m.mine ? 'self-end' : 'self-start'} mb-3`}>
           <CachedImage
             imageUri={m.imageUri}
             style={{ width: 220, height: 160, borderRadius: 12, backgroundColor: '#e5e7eb' }}
           />
-          <Typography variant="caption-2" className="text-brand-neutralGray mt-1 self-end">{m.time}</Typography>
+          <View className="flex-row items-center mt-1 self-end">
+            <Typography variant="caption-2" className="text-brand-neutralGray">{m.time}</Typography>
+            <StatusIndicator />
+          </View>
         </View>
       );
     }
-  const isThumbsUpOnly = (m.text?.trim() ?? '') === '👍';
+    const isThumbsUpOnly = (m.text?.trim() ?? '') === '👍';
     if (isThumbsUpOnly) {
       return (
         <View className={`${m.mine ? 'self-end' : 'self-start'} mb-3`}>
           <Text style={{ fontSize: 36, lineHeight: 40 }}>{'👍'}</Text>
-          <Typography variant="caption-2" className="text-brand-neutralGray mt-1 self-end">{m.time}</Typography>
+          <View className="flex-row items-center mt-1 self-end">
+            <Typography variant="caption-2" className="text-brand-neutralGray">{m.time}</Typography>
+            <StatusIndicator />
+          </View>
         </View>
       );
     }
@@ -358,7 +486,10 @@ export default function ChatRoomScreen() {
         }}
       >
         <Typography variant="footnote" className="text-black">{m.text}</Typography>
-        <Typography variant="caption-2" className="text-brand-neutralGray mt-1 self-end">{m.time}</Typography>
+        <View className="flex-row items-center mt-1 self-end">
+          <Typography variant="caption-2" className="text-brand-neutralGray">{m.time}</Typography>
+          <StatusIndicator />
+        </View>
       </View>
     );
   };
@@ -379,6 +510,12 @@ export default function ChatRoomScreen() {
                 (keyboardVisible ? 0 : insets.bottom),
             }}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+              />
+            }
             keyboardShouldPersistTaps="handled"
             onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
           >
@@ -392,7 +529,9 @@ export default function ChatRoomScreen() {
                 mine: m.senderId === Number(user?.id) && m.senderType === 'CUSTOMER',
                 text: m.message,
                 imageUri: m.imageUrl ? `${API_BASE_URL}/${m.imageUrl}` : undefined,
-                time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString() : '',
+                time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+                seen: m.seen,
+                status: m.status,
               };
               return <Bubble key={m.id} m={bubble} />;
             })}

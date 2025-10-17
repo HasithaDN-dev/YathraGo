@@ -51,7 +51,17 @@ export class ChatService {
       },
       orderBy: { updatedAt: 'desc' },
       include: {
-        messages: { take: 1, orderBy: { id: 'desc' } },
+        messages: {
+          orderBy: { id: 'desc' },
+          select: {
+            id: true,
+            message: true,
+            timestamp: true,
+            seen: true,
+            senderId: true,
+            senderType: true,
+          },
+        },
       },
     });
 
@@ -192,6 +202,29 @@ export class ChatService {
       data: { seen: true, status: 'SEEN' },
     });
     return updated;
+  }
+
+  async markConversationMessagesAsSeen(
+    conversationId: number,
+    forUserId: number,
+    forUserType: UserTypes,
+  ) {
+    // Mark all messages in this conversation that were NOT sent by the current user as seen
+    const result = await this.prisma.chat.updateMany({
+      where: {
+        conversationId,
+        seen: false,
+        NOT: {
+          senderId: forUserId,
+          senderType: forUserType,
+        },
+      },
+      data: {
+        seen: true,
+        status: 'SEEN',
+      },
+    });
+    return result;
   }
 
   handleImageUpload(file: Express.Multer.File) {

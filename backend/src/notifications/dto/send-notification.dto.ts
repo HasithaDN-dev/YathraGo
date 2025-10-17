@@ -11,6 +11,7 @@ export enum InputNotificationType {
   SYSTEM = 'SYSTEM',
   ALERT = 'ALERT',
   OTHER = 'OTHER',
+  CHAT = 'CHAT',
 }
 
 export enum InputReceiverType {
