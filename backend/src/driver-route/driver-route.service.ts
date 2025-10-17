@@ -33,26 +33,33 @@ export class DriverRouteService {
       return { message: 'No assigned children found' };
     }
 
-    // prepare waypoints as strings "lat,lng" for Google API
-    const waypoints: string[] = [];
-    // mapping from waypoint index to childId so we can persist exact mapping
-    const waypointToChildId: Record<number, number> = {};
-    let wpIndex = 0;
+    // prepare waypoints for Google API and metadata mapping
+    const waypointCoords: Array<{
+      lat: number;
+      lng: number;
+      type: 'PICKUP' | 'DROPOFF';
+      childId: number;
+    }> = [];
     requests.forEach((r) => {
       const c = r.child;
-      // pickup
       if (c.pickupLatitude != null && c.pickupLongitude != null) {
-        waypoints.push(`${c.pickupLatitude},${c.pickupLongitude}`);
-        waypointToChildId[wpIndex] = c.child_id;
-        wpIndex++;
+        waypointCoords.push({
+          lat: c.pickupLatitude,
+          lng: c.pickupLongitude,
+          type: 'PICKUP',
+          childId: c.child_id,
+        });
       }
-      // dropoff (school)
       if (c.schoolLatitude != null && c.schoolLongitude != null) {
-        waypoints.push(`${c.schoolLatitude},${c.schoolLongitude}`);
-        waypointToChildId[wpIndex] = c.child_id;
-        wpIndex++;
+        waypointCoords.push({
+          lat: c.schoolLatitude,
+          lng: c.schoolLongitude,
+          type: 'DROPOFF',
+          childId: c.child_id,
+        });
       }
     });
+    const waypoints: string[] = waypointCoords.map((w) => `${w.lat},${w.lng}`);
 
     // call google directions api with optimize:true
     const directions = await this.google.getOptimizedDirections(waypoints);
@@ -68,20 +75,34 @@ export class DriverRouteService {
     });
 
     // create route waypoints with order using waypoint_order if available
-    const order: number[] = directions.routes?.[0]?.waypoint_order ?? [];
-    // waypoint_order refers to the indices of the supplied waypoints array
-    const total = order.length ? order.length : waypoints.length;
-    for (let i = 0; i < total; i++) {
-      const mappedIndex = order.length ? order[i] : i;
-      const childId =
-        waypointToChildId[mappedIndex] ?? requests[0].child.child_id;
-
+    const route = directions.routes?.[0];
+    const order: number[] = route?.waypoint_order ?? [];
+    const legs = route?.legs ?? [];
+    // If Google reorders, follow that; else use the original order
+    const finalOrder = order.length
+      ? order
+      : waypointCoords.map((_, idx) => idx);
+    let cumulativeDistance = 0;
+    for (let i = 0; i < finalOrder.length; i++) {
+      const mappedIndex = finalOrder[i];
+      const wp = waypointCoords[mappedIndex];
+      const leg = legs[i];
+      if (leg?.distance?.value != null)
+        cumulativeDistance += leg.distance.value;
       await this.prisma.routeWaypoint.create({
         data: {
           driverRouteId: driverRoute.id,
-          childId,
+          childId: wp.childId,
           driverId,
           order: i,
+          type: wp.type as any,
+          latitude: wp.lat,
+          longitude: wp.lng,
+          address: leg?.end_address ?? undefined,
+          eta: leg?.arrival_time
+            ? new Date(leg.arrival_time.value * 1000)
+            : undefined,
+          cumulativeDistanceMeters: cumulativeDistance,
         },
       });
     }
@@ -93,6 +114,11 @@ export class DriverRouteService {
     const route = await this.prisma.driverRoute.findFirst({
       where: { driverId },
       orderBy: { createdAt: 'desc' },
+      include: {
+        waypoints: {
+          orderBy: { order: 'asc' },
+        },
+      },
     });
     return route;
   }

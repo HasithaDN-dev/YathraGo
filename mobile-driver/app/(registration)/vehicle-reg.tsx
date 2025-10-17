@@ -44,24 +44,6 @@ export default function VehicleRegScreen() {
   const [rearView, setRearView] = useState<ImagePicker.ImagePickerAsset | null>(vehicleInfo.rearView);
   const [interiorView, setInteriorView] = useState<ImagePicker.ImagePickerAsset | null>(vehicleInfo.interiorView);
 
-  // Update store when form fields change
-  useEffect(() => {
-    updateVehicleInfo({
-      vehicleType,
-      vehicleBrand,
-      vehicleModel,
-      yearOfManufacture,
-      vehicleColor,
-      licensePlate,
-      seats,
-      femaleAssistant,
-      frontView,
-      sideView,
-      rearView,
-      interiorView,
-    });
-  }, [vehicleType, vehicleBrand, vehicleModel, yearOfManufacture, vehicleColor, licensePlate, seats, femaleAssistant, frontView, sideView, rearView, interiorView, updateVehicleInfo]);
-
   // Sync local state with store data
   useEffect(() => {
     setVehicleType(vehicleInfo.vehicleType);
@@ -86,7 +68,7 @@ export default function VehicleRegScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
@@ -98,7 +80,21 @@ export default function VehicleRegScreen() {
   };
 
   const handleNext = () => {
-    // Data is already saved in store, just navigate to next screen
+    // Save data to store before navigating
+    updateVehicleInfo({
+      vehicleType,
+      vehicleBrand,
+      vehicleModel,
+      yearOfManufacture,
+      vehicleColor,
+      licensePlate,
+      seats,
+      femaleAssistant,
+      frontView,
+      sideView,
+      rearView,
+      interiorView,
+    });
     router.push('/(registration)/vehicle-doc');
   };
 

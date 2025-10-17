@@ -4,34 +4,11 @@ import { Bell, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import Cookies from "js-cookie";
-import { jwtDecode } from "jwt-decode";
+import { useOwner } from "@/components/owner/OwnerContext";
 
 export default function OwnerHeader() {
-  const [username, setUsername] = useState<string>("");
-  const [role, setRole] = useState<string>("");
+  const { firstName, lastName, role } = useOwner();
 
-  useEffect(() => {
-    const token = Cookies.get("access_token");
-    if (token) {
-      try {
-        const decoded: any = jwtDecode(token);
-
-        console.log(decoded);
-        if (decoded && decoded.username) {
-          setUsername(decoded.username);
-        } else if (decoded && decoded.email) {
-          setUsername(decoded.email);
-        }
-        if (decoded && decoded.role) {
-          setRole(decoded.role);
-        }
-      } catch (err) {
-        // Invalid token
-      }
-    }
-  }, []);
   return (
     <header className="bg-white border-b border-[var(--neutral-gray)] px-6 py-4">
       <div className="flex items-center justify-between">
@@ -62,8 +39,7 @@ export default function OwnerHeader() {
               <User className="w-4 h-4 text-[var(--black)]" />
             </div>
             <div className="hidden md:block">
-              <p className="text-sm font-medium text-[var(--color-deep-navy)]">{(username?.split('@')[0]) || "Owner"}</p>
-
+              <p className="text-sm font-medium text-[var(--color-deep-navy)]">{firstName || "Owner"} {lastName}</p>
               <p className="text-xs text-[var(--neutral-gray)]">{(role) || "Owner"}</p>
             </div>
           </div>

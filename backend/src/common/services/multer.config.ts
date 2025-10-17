@@ -1,9 +1,16 @@
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 export const multerConfigVehicle = {
   storage: diskStorage({
-    destination: join(__dirname, '../../../uploads/vehicle'), // make sure this folder exists
+    destination: (req, file, cb) => {
+      const dest = join(__dirname, '../../../uploads/vehicle');
+      if (!existsSync(dest)) {
+        mkdirSync(dest, { recursive: true });
+      }
+      cb(null, dest);
+    },
     filename: (req, file, cb) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const ext = extname(file.originalname);
@@ -14,7 +21,13 @@ export const multerConfigVehicle = {
 
 export const multerConfigDriver = {
   storage: diskStorage({
-    destination: join(__dirname, '../../../uploads/driver'), // make sure this folder exists
+    destination: (req, file, cb) => {
+      const dest = join(__dirname, '../../../uploads/driver');
+      if (!existsSync(dest)) {
+        mkdirSync(dest, { recursive: true });
+      }
+      cb(null, dest);
+    },
     filename: (req, file, cb) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const ext = extname(file.originalname);

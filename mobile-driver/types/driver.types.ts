@@ -30,16 +30,43 @@ export interface DriverProfileData {
 }
 
 export interface DriverRegistrationData {
-  driverId: number;
-  name: string;
-  email?: string;
-  address?: string;
-  profileImageUrl?: string;
-  emergencyContact?: string;
+  // Personal Details
+  firstName: string;
+  lastName: string;
   NIC: string;
+  city: string;
   dateOfBirth: string;
   gender: string;
-  secondPhone?: string;
+  profileImage: string;
+  email?: string;
+  secondaryPhone?: string;
+  
+  // ID Documents
+  idFrontImage?: any;
+  idBackImage?: any;
+  
+  // Vehicle Information
+  vehicleType?: string;
+  vehicleBrand?: string;
+  vehicleModel?: string;
+  yearOfManufacture?: string;
+  vehicleColor?: string;
+  licensePlate?: string;
+  seats?: number;
+  femaleAssistant?: boolean;
+  
+  // Vehicle Images
+  vehicleFrontView?: any;
+  vehicleSideView?: any;
+  vehicleRearView?: any;
+  vehicleInteriorView?: any;
+  
+  // Vehicle Documents
+  revenueLicense?: any;
+  vehicleInsurance?: any;
+  registrationDoc?: any;
+  licenseFront?: any;
+  licenseBack?: any;
 }
 
 export interface VehicleData {

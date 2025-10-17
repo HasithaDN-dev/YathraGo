@@ -1,6 +1,163 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from 'next/navigation';
+
+// Small in-file searchable select for cities. Keeps things local and avoids
+// introducing new dependencies. Features: filtering, keyboard navigation,
+// basic a11y and an error display that integrates with the page's existing
+// validation UI.
+interface CitySelectProps {
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+  error?: string;
+}
+
+
+function SearchableCitySelect({ value, onChange, placeholder, error }: CitySelectProps) {
+  const [query, setQuery] = useState(value || "");
+  const [open, setOpen] = useState(false);
+  const [highlighted, setHighlighted] = useState<number>(-1);
+  const [options, setOptions] = useState<string[]>([]);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
+  const debounceRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setQuery(value || "");
+  }, [value]);
+
+  // fetch options from backend with debounce
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    // schedule fetch
+  debounceRef.current = window.setTimeout(async () => {
+      try {
+        const q = encodeURIComponent(query || '');
+  const res = await fetch(`http://localhost:3000/cities${q ? `?q=${q}` : ''}`);
+        if (res.ok) {
+          const data = await res.json();
+          // data expected to be array of { id, name, latitude, longitude }
+          setOptions(Array.isArray(data) ? data.map((d: { name: string }) => d.name) : []);
+        } else {
+          setOptions([]);
+        }
+      } catch {
+        setOptions([]);
+      }
+    }, 250);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [query]);
+
+  const filtered = options.filter((c) => c.toLowerCase().includes(query.toLowerCase()));
+
+  const openList = () => setOpen(true);
+  const closeList = () => {
+    setOpen(false);
+    setHighlighted(-1);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setOpen(true);
+      setHighlighted((h) => Math.min(h + 1, filtered.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlighted((h) => Math.max(h - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (open && highlighted >= 0 && highlighted < filtered.length) {
+        const v = filtered[highlighted];
+        setQuery(v);
+        onChange(v);
+        closeList();
+      } else {
+        // commit typed value if it exactly matches a fetched option
+        const exact = options.find((c) => c.toLowerCase() === query.toLowerCase());
+        if (exact) {
+          onChange(exact);
+        } else {
+          onChange(query);
+        }
+        closeList();
+      }
+    } else if (e.key === "Escape") {
+      closeList();
+    }
+  };
+
+  const handleSelect = (city: string) => {
+    setQuery(city);
+    onChange(city);
+    closeList();
+    inputRef.current?.focus();
+  };
+
+  return (
+    <div className="relative">
+      <input
+        ref={inputRef}
+        type="text"
+        value={query}
+        placeholder={placeholder}
+        onFocus={openList}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          onChange(""); // clear current selection while typing
+          setOpen(true);
+        }}
+        onKeyDown={onKeyDown}
+        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          error ? "border-red-500 bg-red-50" : "border-gray-400"
+        }`}
+  aria-haspopup="listbox"
+  aria-controls="city-listbox"
+      />
+
+      {open && (
+        <ul
+          id="city-listbox"
+          role="listbox"
+          ref={listRef}
+          className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-md bg-white border border-gray-200 shadow-sm"
+        >
+          {filtered.length === 0 && (
+            <li className="px-3 py-2 text-sm text-gray-500">No cities found</li>
+          )}
+          {filtered.map((city, idx) => (
+            <li
+              key={city}
+              role="option"
+              aria-selected={value === city}
+              onMouseDown={(e) => e.preventDefault()} // prevent blur before click
+              onClick={() => handleSelect(city)}
+              onMouseEnter={() => setHighlighted(idx)}
+              className={`px-3 py-2 cursor-pointer text-sm ${
+                highlighted === idx ? "bg-blue-50" : "hover:bg-gray-50"
+              } ${value === city ? "font-semibold" : ""}`}
+            >
+              {city}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {error && (
+        <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
+          <AlertCircle className="w-4 h-4" />
+          <span>{error}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, X, CheckCircle, AlertCircle, Calendar } from "lucide-react";
@@ -10,6 +167,8 @@ interface FormData {
   type: string;
   brand: string;
   model: string;
+  manufactureYear: string;
+  color: string;
   startingCity: string;
   endingCity: string;
   no_of_seats: string;
@@ -37,6 +196,8 @@ interface FormErrors {
   endingCity?: string;
   no_of_seats?: string;
   seatingCapacity?: string;
+  manufactureYear?: string;
+  color?: string;
   insuranceExpiry?: string;
   air_conditioned?: string;
   assistant?: string;
@@ -52,6 +213,7 @@ interface FormErrors {
 }
 
 export default function AddVehiclePage() {
+  const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     vehicleNo: "",
     type: "",
@@ -73,6 +235,8 @@ export default function AddVehiclePage() {
     insurance_back: null,
     vehicle_reg: null,
     uploadedFiles: [],
+      manufactureYear: "",
+      color: "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -81,7 +245,6 @@ export default function AddVehiclePage() {
   const [dragOverField, setDragOverField] = useState<string | null>(null);
 
   const vehicleTypes = [
-    { value: "", label: "Select Vehicle Type" },
     { value: "bus", label: "Bus" },
     { value: "mini-bus", label: "Mini Bus" },
     { value: "van", label: "Van" },
@@ -133,6 +296,18 @@ export default function AddVehiclePage() {
       if (expiryDate <= today) {
         newErrors.insuranceExpiry = "Insurance expiry date must be in the future";
       }
+    }
+
+    // ManufactureYear validation (simple number check)
+    if (!formData.manufactureYear.trim()) {
+      newErrors.manufactureYear = 'Manufacture year is required';
+    } else if (!/^[0-9]{4}$/.test(formData.manufactureYear)) {
+      newErrors.manufactureYear = 'Enter a valid 4-digit year';
+    }
+
+    // Color validation
+    if (!formData.color.trim()) {
+      newErrors.color = 'Color is required';
     }
 
     // File upload validation
@@ -247,9 +422,12 @@ export default function AddVehiclePage() {
 
     try {
       const formDataToSend = new FormData();
+      if (formData.vehicleNo) formDataToSend.append("registrationNumber", formData.vehicleNo);
       formDataToSend.append("type", formData.type);
       formDataToSend.append("brand", formData.brand);
       formDataToSend.append("model", formData.model);
+  formDataToSend.append("manufactureYear", formData.manufactureYear);
+  formDataToSend.append("color", formData.color);
       formDataToSend.append("startingCity", formData.startingCity);
       formDataToSend.append("endingCity", formData.endingCity);
       formDataToSend.append("no_of_seats", formData.no_of_seats);
@@ -285,9 +463,10 @@ export default function AddVehiclePage() {
         }
         throw new Error(msg);
       }
-      
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 5000);
+      // on success navigate to vehicle list
+      try { router.push('/owner/vehicle-list'); } catch {}
       
       // Reset form
       setFormData({
@@ -310,6 +489,8 @@ export default function AddVehiclePage() {
         insurance_front: null,
         insurance_back: null,
         vehicle_reg: null,
+        manufactureYear: "",
+        color: "",
         uploadedFiles: [],
       });
     } catch (error) {
@@ -340,6 +521,8 @@ export default function AddVehiclePage() {
       insurance_front: null,
       insurance_back: null,
       vehicle_reg: null,
+      manufactureYear: "",
+      color: "",
       uploadedFiles: [],
     });
     setErrors({});
@@ -415,6 +598,9 @@ export default function AddVehiclePage() {
                     errors.type ? "border-red-500 bg-red-50" : "border-gray-400"
                   }`}
                 >
+                  <option value="" disabled>
+                    -- Select vehicle type --
+                  </option>
                   {vehicleTypes.map((type) => (
                     <option key={type.value} value={type.value}>
                       {type.label}
@@ -472,6 +658,55 @@ export default function AddVehiclePage() {
                   </div>
                 )}
               </div>
+
+              {/* Manufacture Year */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
+                  Manufacture Year *
+                </label>
+                <input
+                  type="number"
+                  placeholder="e.g., 2018"
+                  min={1900}
+                  max={new Date().getFullYear()}
+                  value={formData.manufactureYear}
+                  onChange={(e) => handleInputChange("manufactureYear", String(e.target.value))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.manufactureYear ? "border-red-500 bg-red-50" : "border-gray-400"
+                  }`}
+                />
+                <p className="text-xs text-gray-500 mt-1">Enter the 4-digit manufacturing year (1900 - {new Date().getFullYear()}).</p>
+                {errors.manufactureYear && (
+                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{errors.manufactureYear}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Color */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
+                  Color *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., White"
+                  value={formData.color}
+                  onChange={(e) => handleInputChange("color", e.target.value)}
+                  onBlur={() => handleInputChange('color', String(formData.color).trim().replace(/\s+/g, ' '))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.color ? "border-red-500 bg-red-50" : "border-gray-400"
+                  }`}
+                />
+                <p className="text-xs text-gray-500 mt-1">Enter vehicle color (e.g., White, Metallic Silver).</p>
+                {errors.color && (
+                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{errors.color}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Route Section */}
@@ -480,47 +715,29 @@ export default function AddVehiclePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Starting City */}
                 <div>
-                  <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
-                    Starting City *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Colombo"
-                    value={formData.startingCity}
-                    onChange={(e) => handleInputChange("startingCity", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.startingCity ? "border-red-500 bg-red-50" : "border-gray-400"
-                    }`}
-                  />
-                  {errors.startingCity && (
-                    <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
-                      <AlertCircle className="w-4 h-4" />
-                      <span>{errors.startingCity}</span>
-                    </div>
-                  )}
-                </div>
+                    <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
+                      Starting City *
+                    </label>
+                    <SearchableCitySelect
+                      value={formData.startingCity}
+                      onChange={(val: string) => handleInputChange("startingCity", val)}
+                      placeholder="e.g., Colombo"
+                      error={errors.startingCity}
+                    />
+                  </div>
 
-                {/* Ending City */}
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
-                    Ending City *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Kandy"
-                    value={formData.endingCity}
-                    onChange={(e) => handleInputChange("endingCity", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.endingCity ? "border-red-500 bg-red-50" : "border-gray-400"
-                    }`}
-                  />
-                  {errors.endingCity && (
-                    <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
-                      <AlertCircle className="w-4 h-4" />
-                      <span>{errors.endingCity}</span>
-                    </div>
-                  )}
-                </div>
+                  {/* Ending City */}
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
+                      Ending City *
+                    </label>
+                    <SearchableCitySelect
+                      value={formData.endingCity}
+                      onChange={(val: string) => handleInputChange("endingCity", val)}
+                      placeholder="e.g., Kandy"
+                      error={errors.endingCity}
+                    />
+                  </div>
               </div>
             </div>
 
@@ -536,7 +753,10 @@ export default function AddVehiclePage() {
                   min="1"
                   max="100"
                   value={formData.seatingCapacity}
-                  onChange={(e) => handleInputChange("seatingCapacity", e.target.value)}
+                  onChange={(e) => {
+                    handleInputChange("seatingCapacity", e.target.value);
+                    handleInputChange("no_of_seats", e.target.value);
+                  }}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.seatingCapacity ? "border-red-500 bg-red-50" : "border-gray-400"
                   }`}
@@ -571,6 +791,25 @@ export default function AddVehiclePage() {
                     <span>{errors.insuranceExpiry}</span>
                   </div>
                 )}
+              </div>
+              {/* Air conditioned & Assistant toggles */}
+              <div className="flex items-center gap-6 mt-2">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.air_conditioned}
+                    onChange={(e) => handleInputChange('air_conditioned', e.target.checked)}
+                  />
+                  <span className="text-sm">Air Conditioned</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.assistant}
+                    onChange={(e) => handleInputChange('assistant', e.target.checked)}
+                  />
+                  <span className="text-sm">Assistant</span>
+                </label>
               </div>
             </div>
           </CardContent>
@@ -795,7 +1034,7 @@ export default function AddVehiclePage() {
             type="button"
             variant="outline"
             onClick={handleCancel}
-            className="border-[var(--neutral-gray)] text-[var(--neutral-gray)] hover:bg-[var(--light-gray)]"
+            className="border-[var(--neutral-gray)] text-[var(--neutral-gray)] hover:bg-[var(--neutral-gray)] hover:text-white"
           >
             Cancel
           </Button>

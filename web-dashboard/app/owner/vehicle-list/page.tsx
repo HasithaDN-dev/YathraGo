@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -17,9 +17,9 @@ import { useRouter } from "next/navigation";
 
 interface Vehicle {
   id: string;
-  vehicleNo: string;
+  registrationNumber: string;
   type: string;
-  capacity: number;
+  no_of_seats: number;
   status: "Active" | "Inactive";
   assignedDriver: string;
 }
@@ -27,43 +27,11 @@ interface Vehicle {
 const mockVehicles: Vehicle[] = [
   {
     id: "1",
-    vehicleNo: "ABC-123",
+    registrationNumber: "ABC-123",
     type: "Bus",
-    capacity: 40,
+    no_of_seats: 40,
     status: "Active",
     assignedDriver: "John Smith",
-  },
-  {
-    id: "2",
-    vehicleNo: "XYZ-789",
-    type: "Van",
-    capacity: 15,
-    status: "Active",
-    assignedDriver: "Sarah Johnson",
-  },
-  {
-    id: "3",
-    vehicleNo: "DEF-456",
-    type: "Bus",
-    capacity: 35,
-    status: "Inactive",
-    assignedDriver: "Mike Wilson",
-  },
-  {
-    id: "4",
-    vehicleNo: "GHI-321",
-    type: "Mini Bus",
-    capacity: 25,
-    status: "Active",
-    assignedDriver: "Emily Davis",
-  },
-  {
-    id: "5",
-    vehicleNo: "JKL-654",
-    type: "Van",
-    capacity: 12,
-    status: "Active",
-    assignedDriver: "David Brown",
   },
 ];
 
@@ -74,7 +42,36 @@ export default function VehicleListPage() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [filteredVehicles, setFilteredVehicles] = useState(mockVehicles);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
+
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      try {
+        const token = typeof document !== 'undefined' ? document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1] : undefined;
+        const res = await fetch('http://localhost:3000/vehicles', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          credentials: 'include',
+        });
+        if (!res.ok) {
+          console.error('Failed to fetch vehicles', res.status);
+          setVehicles(mockVehicles);
+          setFilteredVehicles(mockVehicles);
+          return;
+        }
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : [];
+        setVehicles(list);
+        setFilteredVehicles(list);
+      } catch (err) {
+        console.error('Error fetching vehicles', err);
+        setVehicles(mockVehicles);
+        setFilteredVehicles(mockVehicles);
+      }
+    };
+
+    void fetchVehicles();
+  }, []);
 
   const itemsPerPage = 5;
   const totalPages = Math.ceil(filteredVehicles.length / itemsPerPage);
@@ -83,13 +80,13 @@ export default function VehicleListPage() {
   const currentVehicles = filteredVehicles.slice(startIndex, endIndex);
 
   const handleFilter = () => {
-    let filtered = mockVehicles;
+    let filtered = vehicles;
 
     if (searchTerm) {
       filtered = filtered.filter(
         (vehicle) =>
-          vehicle.vehicleNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          vehicle.assignedDriver.toLowerCase().includes(searchTerm.toLowerCase())
+          (vehicle.registrationNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (vehicle.assignedDriver || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -110,7 +107,7 @@ export default function VehicleListPage() {
     setSelectedRoute("");
     setSelectedStatus("");
     setSelectedType("");
-    setFilteredVehicles(mockVehicles);
+    setFilteredVehicles(vehicles);
     setCurrentPage(1);
   };
 
@@ -194,7 +191,7 @@ export default function VehicleListPage() {
             <Button
               variant="outline"
               onClick={handleFilter}
-              className="border-[var(--neutral-gray)] text-[var(--color-deep-navy)] hover:bg-[var(--light-gray)]"
+              className="border-[var(--neutral-gray)] text-[var(--color-deep-navy)] hover:bg-[var(--color-deep-navy)] hover:text-white"
             >
               <Filter className="w-4 h-4 mr-2" />
               Filter
@@ -214,7 +211,7 @@ export default function VehicleListPage() {
           <Button
             variant="outline"
             onClick={clearFilters}
-            className="border-[var(--neutral-gray)] text-[var(--color-deep-navy)] hover:bg-[var(--light-gray)]"
+            className="border-[var(--neutral-gray)] text-[var(--color-deep-navy)] hover:bg-[var(--color-deep-navy)] hover:text-white"
           >
             Clear Filters
           </Button>
@@ -227,24 +224,12 @@ export default function VehicleListPage() {
           <table className="min-w-full">
             <thead className="bg-[var(--light-gray)] border-b border-[var(--neutral-gray)]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
-                  Vehicle No.
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
-                  Capacity
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
-                  Assigned Driver
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">Vehicle No.</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">Capacity</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">Assigned Driver</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--neutral-gray)] uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-[var(--neutral-gray)]">
@@ -253,21 +238,11 @@ export default function VehicleListPage() {
                   key={vehicle.id}
                   className="hover:bg-[var(--light-gray)] transition-colors cursor-pointer"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--color-deep-navy)]">
-                    {vehicle.vehicleNo}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
-                    {vehicle.type}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
-                    {vehicle.capacity} passengers
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <StatusBadge status={vehicle.status} />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">
-                    {vehicle.assignedDriver}
-                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--color-deep-navy)]">{vehicle.registrationNumber}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">{vehicle.type}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">{vehicle.no_of_seats} seats</td>
+                  <td className="px-6 py-4 whitespace-nowrap"><StatusBadge status={vehicle.status} /></td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">{vehicle.assignedDriver}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <button className="text-[var(--bright-orange)] hover:text-[var(--warm-yellow)]">

@@ -99,29 +99,29 @@ model Vehicle {
 }
 
 model Chat {
-  id              Int        @id @default(autoincrement())
-  message         String?
-  imageUrl        String?
-  timestamp       DateTime   @default(now())
-  seen            Boolean    @default(false)
-  senderId        Int
-  senderType      UserTypes
-  conversationId  Int
-  status          MessageStatus @default(SENT)
-  conversation    Conversation  @relation(fields: [conversationId], references: [id])
+  id             Int           @id @default(autoincrement())
+  message        String?
+  imageUrl       String?
+  timestamp      DateTime      @default(now())
+  seen           Boolean       @default(false)
+  senderId       Int
+  senderType     UserTypes
+  conversationId Int
+  status         MessageStatus @default(SENT)
+  conversation   Conversation  @relation(fields: [conversationId], references: [id])
 
   @@index([conversationId])
 }
 
 model Conversation {
-  id              Int        @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
   participantAId   Int
   participantAType UserTypes
   participantBId   Int
   participantBType UserTypes
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  messages        Chat[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  messages         Chat[]
 
   @@unique([participantAId, participantAType, participantBId, participantBType])
 }
@@ -212,14 +212,15 @@ model Driver {
   registrationStatus       RegistrationStatus @default(OTP_PENDING)
   createdAt                DateTime           @default(now())
   updatedAt                DateTime           @updatedAt
-  vehicles                 Vehicle[]
-  driverCities             DriverCities[]
   childRideRequests        ChildRideRequest[]
+  childTrips               Child_Trip[]
+  driverCities             DriverCities?
   driverRoutes             DriverRoute[]
   routeWaypoints           RouteWaypoint[]
   childTrips     Child_Trip[]
 
    @@index([fcmToken])
+  vehicles                 Vehicle[]
 }
 
 model FoundedBackupDrivers {
@@ -240,9 +241,6 @@ model VehicleOwner {
 
 model Customer {
   customer_id        Int                @id @default(autoincrement())
-  firstName          String
-  lastName           String
-  gender             Gender             @default(Unspecified)
   phone              String             @unique
   email              String?
   address            String?
@@ -253,6 +251,9 @@ model Customer {
   registrationStatus RegistrationStatus @default(OTP_PENDING)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+  firstName          String
+  gender             Gender             @default(Unspecified)
+  lastName           String
   children           Child[]
   staffPassenger     Staff_Passenger?
 
@@ -323,8 +324,8 @@ model Child_Trip {
   dropOff      String
   startTime    DateTime
   endTime      DateTime
-  driverId     Int?     // Foreign key to Driver
-  driver       Driver? @relation(fields: [driverId], references: [driver_id])
+  driverId     Int? // Foreign key to Driver
+  driver       Driver?  @relation(fields: [driverId], references: [driver_id])
 
   @@index([driverId]) // Index for faster queries
 }
@@ -439,14 +440,21 @@ model DriverRoute {
 
 // --- Waypoints Table ---
 model RouteWaypoint {
-  id            Int         @id @default(autoincrement())
-  driverRoute   DriverRoute @relation(fields: [driverRouteId], references: [id])
-  driverRouteId Int
-  child         Child       @relation(fields: [childId], references: [child_id])
-  childId       Int
-  driver        Driver      @relation(fields: [driverId], references: [driver_id])
-  driverId      Int
-  order         Int // Order of pickup
+  id                       Int          @id @default(autoincrement())
+  driverRoute              DriverRoute  @relation(fields: [driverRouteId], references: [id])
+  driverRouteId            Int
+  child                    Child        @relation(fields: [childId], references: [child_id])
+  childId                  Int
+  driver                   Driver       @relation(fields: [driverId], references: [driver_id])
+  driverId                 Int
+  order                    Int // 0-based order in the route
+  type                     WaypointType // pickup or dropoff
+  latitude                 Float?
+  longitude                Float?
+  address                  String?
+  eta                      DateTime? // estimated arrival time
+  cumulativeDistanceMeters Int? // distance from start to this stop
+  status                   String       @default("PENDING") // PENDING, ARRIVED, SKIPPED
 }
 
 enum UserTypes {
@@ -469,3 +477,10 @@ enum  NotificationTypes {
       Other
       Chat
 }
+
+// Waypoint type for route stops
+enum WaypointType {
+  PICKUP
+  DROPOFF
+}
+

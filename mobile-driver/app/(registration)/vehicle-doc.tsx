@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Animated, Alert,TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, Animated, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -8,8 +8,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useDriverStore } from '../../lib/stores/driver.store';
 import { useAuthStore } from '../../lib/stores/auth.store';
-import { registerVehicleApi, uploadVehicleDocumentsApi } from '../../lib/api/vehicle.api';
-import { completeDriverRegistrationApi, uploadIdDocumentsApi } from '../../lib/api/profile.api';
+import { completeDriverRegistrationApi } from '../../lib/api/profile.api';
 
 interface FileUploadItemProps {
   file: DocumentPicker.DocumentPickerSuccessResult | null;
@@ -64,11 +63,7 @@ const LicenseUploadBox: React.FC<LicenseUploadBoxProps> = ({ image, onUpload, si
 
 export default function VehicleDocScreen() {
   const router = useRouter();
-  const { vehicleDocuments, updateVehicleDocuments, isRegistrationComplete, personalInfo, idVerification, vehicleInfo } = useDriverStore();
-
-  // Add local state for NIC and gender
-  const [nic, setNic] = useState('');
-  const [gender, setGender] = useState('');
+  const { vehicleDocuments, updateVehicleDocuments, personalInfo, idVerification, vehicleInfo } = useDriverStore();
   const { accessToken, setProfileComplete, setRegistrationStatus } = useAuthStore();
 
   const [revenueLicense, setRevenueLicense] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(vehicleDocuments.revenueLicense);
@@ -139,11 +134,15 @@ export default function VehicleDocScreen() {
       !vehicleInsurance ||
       !registrationDoc ||
       !licenseFront ||
-      !licenseBack ||
-      !nic.trim() ||
-      !gender.trim()
+      !licenseBack
     ) {
       Alert.alert('Error', 'Please complete all required fields before submitting.');
+      return;
+    }
+
+    // Validate that personal info has NIC and gender
+    if (!personalInfo.NIC || !personalInfo.gender) {
+      Alert.alert('Error', 'NIC and Gender are required. Please go back and complete your personal information.');
       return;
     }
 
@@ -154,99 +153,55 @@ export default function VehicleDocScreen() {
 
     setIsSubmitting(true);
     try {
-      // Step 1: Complete driver registration
-      const driverData = {
-        driverId: 0,
-        name: `${personalInfo.firstName} ${personalInfo.lastName}`,
-        email: personalInfo.email,
-        address: personalInfo.city,
-        profileImage: personalInfo.profileImage?.uri || "",
-        emergencyContact: personalInfo.secondaryPhone,
-        NIC: nic,
+      // Prepare complete registration data with all collected information
+      const registrationData = {
+        firstName: personalInfo.firstName,
+        lastName: personalInfo.lastName,
+        NIC: personalInfo.NIC,
+        city: personalInfo.city,
         dateOfBirth: personalInfo.dateOfBirth,
-        gender: gender,
-        secondPhone: personalInfo.secondaryPhone,
+        gender: personalInfo.gender,
+        profileImage: personalInfo.profileImage?.uri || '',
+        email: personalInfo.email,
+        secondaryPhone: personalInfo.secondaryPhone,
+        
+        // ID Documents
+        idFrontImage: idVerification.frontImage,
+        idBackImage: idVerification.backImage,
+        
+        // Vehicle Information
+        vehicleType: vehicleInfo.vehicleType,
+        vehicleBrand: vehicleInfo.vehicleBrand,
+        vehicleModel: vehicleInfo.vehicleModel,
+        yearOfManufacture: vehicleInfo.yearOfManufacture,
+        vehicleColor: vehicleInfo.vehicleColor,
+        licensePlate: vehicleInfo.licensePlate,
+        seats: vehicleInfo.seats,
+        femaleAssistant: vehicleInfo.femaleAssistant,
+        
+        // Vehicle Images
+        vehicleFrontView: vehicleInfo.frontView,
+        vehicleSideView: vehicleInfo.sideView,
+        vehicleRearView: vehicleInfo.rearView,
+        vehicleInteriorView: vehicleInfo.interiorView,
+        
+        // Vehicle Documents
+        revenueLicense: revenueLicense,
+        vehicleInsurance: vehicleInsurance,
+        registrationDoc: registrationDoc,
+        licenseFront: licenseFront,
+        licenseBack: licenseBack,
       };
 
-      const driverResult = await completeDriverRegistrationApi(accessToken, driverData);
+      // Call the single API endpoint that handles everything
+      await completeDriverRegistrationApi(accessToken, registrationData);
 
-      // Step 2: Upload ID documents
-      if (idVerification.frontImage && idVerification.backImage) {
-        await uploadIdDocumentsApi(accessToken, {
-          frontImage: idVerification.frontImage,
-          backImage: idVerification.backImage,
-        });
-      }
-
-      // Step 3: Register vehicle
-      const vehicleFormData = new FormData();
-      vehicleFormData.append('vehicleType', vehicleInfo.vehicleType);
-      vehicleFormData.append('vehicleBrand', vehicleInfo.vehicleBrand);
-      vehicleFormData.append('vehicleModel', vehicleInfo.vehicleModel);
-      vehicleFormData.append('yearOfManufacture', vehicleInfo.yearOfManufacture);
-      vehicleFormData.append('vehicleColor', vehicleInfo.vehicleColor);
-      vehicleFormData.append('licensePlate', vehicleInfo.licensePlate);
-      vehicleFormData.append('seats', vehicleInfo.seats.toString());
-      vehicleFormData.append('femaleAssistant', String(vehicleInfo.femaleAssistant));
-
-      // Add vehicle images
-      const imageFields = [
-        { key: 'vehicleFrontView', value: vehicleInfo.frontView, name: 'vehicleFront.jpg' },
-        { key: 'vehicleSideView', value: vehicleInfo.sideView, name: 'vehicleSide.jpg' },
-        { key: 'vehicleRearView', value: vehicleInfo.rearView, name: 'vehicleRear.jpg' },
-        { key: 'vehicleInteriorView', value: vehicleInfo.interiorView, name: 'vehicleInterior.jpg' },
-      ];
-      imageFields.forEach(({ key, value, name }) => {
-        if (value) {
-          vehicleFormData.append(key, {
-            uri: value.uri,
-            name,
-            type: 'image/jpeg',
-          } as any);
-        }
-      });
-
-      await registerVehicleApi(accessToken, vehicleFormData);
-
-      // Step 4: Upload vehicle documents
-      const documentsFormData = new FormData();
-      const docFields = [
-        { key: 'revenueLicense', value: vehicleDocuments.revenueLicense },
-        { key: 'vehicleInsurance', value: vehicleDocuments.vehicleInsurance },
-        { key: 'registrationDoc', value: vehicleDocuments.registrationDoc },
-      ];
-      docFields.forEach(({ key, value }) => {
-        if (value && value.assets && value.assets[0]) {
-          documentsFormData.append(key, {
-            uri: value.assets[0].uri,
-            name: value.assets[0].name,
-            type: value.assets[0].mimeType,
-          } as any);
-        }
-      });
-      if (vehicleDocuments.licenseFront) {
-        documentsFormData.append('licenseFront', {
-          uri: vehicleDocuments.licenseFront.uri,
-          name: 'licenseFront.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      if (vehicleDocuments.licenseBack) {
-        documentsFormData.append('licenseBack', {
-          uri: vehicleDocuments.licenseBack.uri,
-          name: 'licenseBack.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-
-      await uploadVehicleDocumentsApi(accessToken, documentsFormData);
-
-      // Step 5: Update registration status and complete profile
+      // Update registration status and complete profile
       setRegistrationStatus('ACCOUNT_CREATED');
       setProfileComplete(true);
 
       // Navigate to success screen
-      router.replace('/(registration)/success');
+      router.push('/(registration)/success');
 
     } catch (error) {
       let errorMsg = 'Failed to complete registration. Please try again.';
@@ -277,30 +232,6 @@ export default function VehicleDocScreen() {
         <Text className="text-sm text-brand-neutralGray mb-6">To ensure smooth verification and compliance with transport regulations, please upload valid registration documents for your vehicle. Make sure the document is clear, up-to-date, and matches your vehicle details.</Text>
 
         <View className="space-y-6">
-          {/* NIC Field */}
-          <View>
-            <Text className="text-base font-semibold mb-1">NIC *</Text>
-            <Text className="text-xs text-gray-500 mb-2">Enter your National Identity Card number.</Text>
-            <TextInput
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base"
-              value={nic}
-              onChangeText={setNic}
-              placeholder="NIC Number"
-              placeholderTextColor="#A0A0A0"
-            />
-          </View>
-          {/* Gender Field */}
-          <View>
-            <Text className="text-base font-semibold mb-1">Gender *</Text>
-            <Text className="text-xs text-gray-500 mb-2">Select your gender.</Text>
-            <TextInput
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base"
-              value={gender}
-              onChangeText={setGender}
-              placeholder="Gender (e.g., Male, Female, Other)"
-              placeholderTextColor="#A0A0A0"
-            />
-          </View>
           <View>
             <Text className="text-base font-semibold mb-1">Revenue License *</Text>
             <Text className="text-xs text-gray-500 mb-2">Upload the official vehicle registration certificate (RC) issued by the government.</Text>
