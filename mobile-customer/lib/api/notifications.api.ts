@@ -1,7 +1,7 @@
 import { API_BASE_URL } from '../../config/api';
 
 export type NotificationType = 'system' | 'alerts' | 'others' | 'alert' | 'other' | 'chat';
-export type ReceiverType = 'CUSTOMER' | 'DRIVER' | 'WEBUSER' | 'VEHICLEOWNER' | 'BACKUPDRIVER';
+export type ReceiverType = 'CUSTOMER' | 'CHILD' | 'STAFF' | 'DRIVER' | 'WEBUSER' | 'VEHICLEOWNER' | 'BACKUPDRIVER';
 
 export interface NotificationDto {
   id: number;

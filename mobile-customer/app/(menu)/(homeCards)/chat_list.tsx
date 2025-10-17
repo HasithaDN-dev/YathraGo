@@ -9,6 +9,7 @@ import { MagnifyingGlass } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { API_BASE_URL } from '../../../config/api';
 import { useAuth } from '../../../hooks/useAuth';
+import { useProfileStore } from '../../../lib/stores/profile.store';
 
 // Commented out dummy data. Now using API data.
 // const conversations = [ ... ];
@@ -29,12 +30,30 @@ export default function ChatListScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { user } = useAuth();
+  const { activeProfile, customerProfile } = useProfileStore();
 
   // Fetch conversations function
   const fetchConversations = useCallback(async () => {
-    if (!user) return;
+    if (!user || !activeProfile) return;
+    
+    // Determine the correct userType and userId based on active profile
+    let userType: 'CUSTOMER' | 'CHILD' | 'STAFF' = 'CUSTOMER';
+    let userId = Number(user.id);
+    
+    if (activeProfile.type === 'child') {
+      userType = 'CHILD';
+      const m = String(activeProfile.id).match(/(\d+)/);
+      userId = m ? parseInt(m[1], 10) : userId;
+    } else if (activeProfile.type === 'staff') {
+      userType = 'STAFF';
+      const m = String(activeProfile.id).match(/(\d+)/);
+      userId = m ? parseInt(m[1], 10) : userId;
+    } else if (customerProfile?.customer_id) {
+      userId = customerProfile.customer_id;
+    }
+    
     try {
-      const res = await fetch(`${API_BASE_URL}/chat/conversations?userId=${user.id}&userType=CUSTOMER`);
+      const res = await fetch(`${API_BASE_URL}/chat/conversations?userId=${userId}&userType=${userType}`);
       const data = await res.json();
       
       // Transform and calculate unread counts
@@ -45,8 +64,8 @@ export default function ChatListScreen() {
         
         // Count unread messages (messages not sent by me and not seen)
         const unreadCount = messages.filter((msg: any) => 
-          msg.senderId !== Number(user.id) && 
-          msg.senderType !== 'CUSTOMER' && 
+          msg.senderId !== userId && 
+          msg.senderType !== userType && 
           msg.seen === false
         ).length;
         
@@ -73,14 +92,14 @@ export default function ChatListScreen() {
       console.error('Failed to fetch conversations:', error);
       setConversations([]);
     }
-  }, [user]);
+  }, [user, activeProfile, customerProfile?.customer_id]);
 
   // Initial load
   useEffect(() => {
-    if (!user) return;
+    if (!user || !activeProfile) return;
     setLoading(true);
     fetchConversations().finally(() => setLoading(false));
-  }, [user, fetchConversations]);
+  }, [user, activeProfile, fetchConversations]);
 
   // Auto-refresh when screen is focused (poll every 5 seconds)
   useFocusEffect(

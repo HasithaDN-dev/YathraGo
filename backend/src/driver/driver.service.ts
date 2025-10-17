@@ -174,7 +174,7 @@ export class DriverService {
         registrationData.licensePlate
       ) {
         const manufactureYear = parseInt(registrationData.yearOfManufacture);
-        
+
         // Validate that manufactureYear is a valid number
         if (isNaN(manufactureYear)) {
           throw new BadRequestException('Invalid year of manufacture');
@@ -260,9 +260,9 @@ export class DriverService {
   // Helper method to calculate trip duration in minutes
   private calculateDuration(startTime: Date, endTime: Date): number {
     const diffMs = new Date(endTime).getTime() - new Date(startTime).getTime();
-    return Math.round(diffMs / 60000); 
-  }  
-// Convert to minutes
+    return Math.round(diffMs / 60000);
+  }
+  // Convert to minutes
   // Fetch driver details for a given driverId (for frontend welcome message)
   async getDriverDetailsById(driverId: number) {
     const driver = await this.prisma.driver.findUnique({

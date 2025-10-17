@@ -6,20 +6,14 @@ import { SendNotificationDto } from './dto/send-notification.dto';
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
-  @Post()
-  sendNotification(@Body() dto: SendNotificationDto) {
-    return this.notificationsService.sendNotification(dto);
-  }
+  // Removed: Sending notification to CUSTOMER is not allowed. Only CHILD, STAFF, DRIVER can receive notifications.
+
+  // Kept: Broadcast/family notification logic for children/staff is still allowed.
 
   @Get()
   getNotifications(
     @Query('receiver')
-    receiver:
-      | 'CUSTOMER'
-      | 'DRIVER'
-      | 'WEBUSER'
-      | 'VEHICLEOWNER'
-      | 'BACKUPDRIVER',
+    receiver: 'CHILD' | 'STAFF' | 'DRIVER',
     @Query('receiverId') receiverId: string,
     @Query('duration') duration?: string,
   ) {

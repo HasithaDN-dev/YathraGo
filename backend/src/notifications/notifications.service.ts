@@ -1,13 +1,25 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FirebaseService } from '../common/services/firebase.service';
-import { NotificationTypes, UserTypes, Prisma } from '@prisma/client';
+import {
+  NotificationTypes,
+  UserTypes,
+  Prisma,
+  Notification as PrismaNotification,
+} from '@prisma/client';
 
 type SendNotificationInput = {
   sender: string;
   message: string;
   type: 'SYSTEM' | 'ALERT' | 'OTHER' | 'CHAT';
-  receiver: 'CUSTOMER' | 'DRIVER' | 'WEBUSER' | 'VEHICLEOWNER' | 'BACKUPDRIVER';
+  receiver:
+    | 'CUSTOMER'
+    | 'CHILD'
+    | 'STAFF'
+    | 'DRIVER'
+    | 'WEBUSER'
+    | 'VEHICLEOWNER'
+    | 'BACKUPDRIVER';
   receiverId: number;
   data?: Record<string, string>;
 };
@@ -41,6 +53,13 @@ export class NotificationsService {
 
   // Generic notification sender used elsewhere in the app
   async sendNotification(dto: SendNotificationInput) {
+    // Only allow CHILD, STAFF, DRIVER as receiver
+    const allowedTypes = ['CHILD', 'STAFF', 'DRIVER'];
+    if (!allowedTypes.includes(dto.receiver)) {
+      throw new Error(
+        'Only CHILD, STAFF, and DRIVER can receive notifications.',
+      );
+    }
     const type = this.mapType(dto.type);
     const receiver = this.mapReceiver(dto.receiver);
 
@@ -74,6 +93,8 @@ export class NotificationsService {
   async getNotifications(
     receiver:
       | 'CUSTOMER'
+      | 'CHILD'
+      | 'STAFF'
       | 'DRIVER'
       | 'WEBUSER'
       | 'VEHICLEOWNER'
@@ -105,12 +126,107 @@ export class NotificationsService {
     }));
   }
 
+  // Send notification to customer and all their profiles (children + staff)
+  async sendNotificationToCustomerFamily(
+    customerId: number,
+    sender: string,
+    message: string,
+    type: 'SYSTEM' | 'ALERT' | 'OTHER' | 'CHAT',
+  ) {
+    // Explicitly type the notifications array
+    const notifications: PrismaNotification[] = [];
+    const notifType = this.mapType(type);
+
+    // 1. Send to customer
+    const customerNotification = await this.prisma.notification.create({
+      data: {
+        sender,
+        message,
+        type: notifType,
+        receiver: UserTypes.CUSTOMER,
+        receiverId: customerId,
+      },
+    });
+    notifications.push(customerNotification);
+
+    // Get customer's FCM token for push
+    const customer = await this.prisma.customer.findUnique({
+      where: { customer_id: customerId },
+      select: { fcmToken: true },
+    });
+    if (customer?.fcmToken) {
+      await this.firebase.sendToDevice(customer.fcmToken, sender, message, {
+        type: String(notifType),
+        id: String(customerNotification.id),
+      });
+    }
+
+    // 2. Get all children of this customer
+    const children = await this.prisma.child.findMany({
+      where: { customerId },
+      select: { child_id: true },
+    });
+
+    // Send to each child
+    for (const child of children) {
+      const childNotification = await this.prisma.notification.create({
+        data: {
+          sender,
+          message,
+          type: notifType,
+          receiver: UserTypes.CHILD,
+          receiverId: child.child_id,
+        },
+      });
+      notifications.push(childNotification);
+
+      // Use same FCM token as customer (same device)
+      if (customer?.fcmToken) {
+        await this.firebase.sendToDevice(customer.fcmToken, sender, message, {
+          type: String(notifType),
+          id: String(childNotification.id),
+        });
+      }
+    }
+
+    // 3. Get staff passenger if exists
+    const staffPassenger = await this.prisma.staff_Passenger.findUnique({
+      where: { customerId },
+      select: { id: true },
+    });
+
+    if (staffPassenger) {
+      const staffNotification = await this.prisma.notification.create({
+        data: {
+          sender,
+          message,
+          type: notifType,
+          receiver: UserTypes.STAFF,
+          receiverId: staffPassenger.id,
+        },
+      });
+      notifications.push(staffNotification);
+
+      // Use same FCM token as customer (same device)
+      if (customer?.fcmToken) {
+        await this.firebase.sendToDevice(customer.fcmToken, sender, message, {
+          type: String(notifType),
+          id: String(staffNotification.id),
+        });
+      }
+    }
+
+    return notifications;
+  }
+
   // Send push for a new chat message and store it as a Notification (type Chat)
   async sendNewMessagePush(params: {
     senderName: string;
     messageText: string;
     receiverType:
       | 'CUSTOMER'
+      | 'CHILD'
+      | 'STAFF'
       | 'DRIVER'
       | 'WEBUSER'
       | 'VEHICLEOWNER'
@@ -166,6 +282,8 @@ export class NotificationsService {
   private async getReceiverToken(
     receiver:
       | 'CUSTOMER'
+      | 'CHILD'
+      | 'STAFF'
       | 'DRIVER'
       | 'WEBUSER'
       | 'VEHICLEOWNER'
@@ -173,6 +291,22 @@ export class NotificationsService {
     receiverId: number,
   ): Promise<string | null> {
     switch (receiver) {
+      case 'CHILD': {
+        // Children use customer's FCM token, but we need to fetch the customer first
+        const child = await this.prisma.child.findUnique({
+          where: { child_id: receiverId },
+          select: { Customer: { select: { fcmToken: true } } },
+        });
+        return child?.Customer?.fcmToken ?? null;
+      }
+      case 'STAFF': {
+        // Staff uses customer's FCM token (staff.id === customerId)
+        const staff = await this.prisma.staff_Passenger.findUnique({
+          where: { id: receiverId },
+          select: { Customer: { select: { fcmToken: true } } },
+        });
+        return staff?.Customer?.fcmToken ?? null;
+      }
       case 'WEBUSER': {
         const user = await this.prisma.webuser.findUnique({
           where: { id: receiverId },
@@ -236,6 +370,10 @@ export class NotificationsService {
     switch (key) {
       case 'CUSTOMER':
         return UserTypes.CUSTOMER;
+      case 'CHILD':
+        return UserTypes.CHILD;
+      case 'STAFF':
+        return UserTypes.STAFF;
       case 'DRIVER':
         return UserTypes.DRIVER;
       case 'WEBUSER':

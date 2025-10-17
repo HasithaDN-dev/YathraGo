@@ -32,18 +32,23 @@ export default function NotificationsScreen() {
   // Fetch notifications function
   const fetchNotifications = useCallback(async () => {
     if (!accessToken || !activeProfile) return;
-    const receiver: ReceiverType = 'CUSTOMER';
+    
+    let receiver: ReceiverType = 'CUSTOMER';
     let receiverId: number | null = null;
+    
     if (activeProfile.type === 'child') {
+      receiver = 'CHILD';
       const m = String(activeProfile.id).match(/(\d+)/);
       receiverId = m ? parseInt(m[1], 10) : null;
     } else if (activeProfile.type === 'staff') {
+      receiver = 'STAFF';
       const m = String(activeProfile.id).match(/(\d+)/);
       receiverId = m ? parseInt(m[1], 10) : null;
-    }
-    if (!receiverId && customerProfile?.customer_id) {
+    } else if (customerProfile?.customer_id) {
+      receiver = 'CUSTOMER';
       receiverId = customerProfile.customer_id;
     }
+    
     if (receiverId) {
       await loadForProfile(accessToken, receiver, receiverId);
     }

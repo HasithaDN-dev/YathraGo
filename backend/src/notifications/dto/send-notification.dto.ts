@@ -16,6 +16,8 @@ export enum InputNotificationType {
 
 export enum InputReceiverType {
   CUSTOMER = 'CUSTOMER',
+  CHILD = 'CHILD',
+  STAFF = 'STAFF',
   DRIVER = 'DRIVER',
   WEBUSER = 'WEBUSER',
   VEHICLEOWNER = 'VEHICLEOWNER',

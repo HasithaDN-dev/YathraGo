@@ -164,7 +164,10 @@ export class CompleteDriverRegistrationDto {
   @IsOptional()
   vehicleInsuranceUrl?: string;
 
-  @ApiProperty({ description: 'Vehicle registration document URL', required: false })
+  @ApiProperty({
+    description: 'Vehicle registration document URL',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   registrationDocUrl?: string;

@@ -49,15 +49,21 @@ export class OwnerController {
   @UseGuards(JwtGuard, RolesGuard)
   @Post('add-driver')
   @Roles('owner')
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'id_front', maxCount: 1 },
-    { name: 'id_back', maxCount: 1 },
-    { name: 'license_front', maxCount: 1 },
-    { name: 'license_back', maxCount: 1 },
-    { name: 'profile_picture', maxCount: 1 },
-  ], multerConfigDriver))
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'id_front', maxCount: 1 },
+        { name: 'id_back', maxCount: 1 },
+        { name: 'license_front', maxCount: 1 },
+        { name: 'license_back', maxCount: 1 },
+        { name: 'profile_picture', maxCount: 1 },
+      ],
+      multerConfigDriver,
+    ),
+  )
   async addDriver(
-    @UploadedFiles() files: {
+    @UploadedFiles()
+    files: {
       id_front?: Express.Multer.File[];
       id_back?: Express.Multer.File[];
       license_front?: Express.Multer.File[];
@@ -107,20 +113,32 @@ export class OwnerController {
       name: parsedDriverDto.name,
       NIC: parsedDriverDto.NIC,
       address: parsedDriverDto.address,
-      date_of_birth: parsedDriverDto.date_of_birth ?? parsedDriverDto.dateOfBirth,
+      date_of_birth:
+        parsedDriverDto.date_of_birth ?? parsedDriverDto.dateOfBirth,
       gender: parsedDriverDto.gender ?? parsedDriverDto.gender,
       phone: parsedDriverDto.phoneNumber ?? parsedDriverDto.phone,
       email: parsedDriverDto.email ?? null,
-      second_phone: parsedDriverDto.secondPhone ?? parsedDriverDto.second_phone ?? null,
+      second_phone:
+        parsedDriverDto.secondPhone ?? parsedDriverDto.second_phone ?? null,
       vehicle_Reg_No:
-        parsedDriverDto.assignedVehicle ?? parsedDriverDto.assignedVehicle ?? parsedDriverDto.vehicle_Reg_No ?? '',
-      driver_license_front_url: license_front ? `uploads/driver/${license_front}` : '',
-      driver_license_back_url: license_back ? `uploads/driver/${license_back}` : '',
+        parsedDriverDto.assignedVehicle ??
+        parsedDriverDto.assignedVehicle ??
+        parsedDriverDto.vehicle_Reg_No ??
+        '',
+      driver_license_front_url: license_front
+        ? `uploads/driver/${license_front}`
+        : '',
+      driver_license_back_url: license_back
+        ? `uploads/driver/${license_back}`
+        : '',
       nic_front_pic_url: id_front ? `uploads/driver/${id_front}` : '',
       nice_back_pic_url: id_back ? `uploads/driver/${id_back}` : '',
-      profile_picture_url: profile_picture ? `uploads/driver/${profile_picture}` : '',
+      profile_picture_url: profile_picture
+        ? `uploads/driver/${profile_picture}`
+        : '',
       // licenseNo removed per user request
-      backgroundVerificationStatus: parsedDriverDto.backgroundVerificationStatus ?? null,
+      backgroundVerificationStatus:
+        parsedDriverDto.backgroundVerificationStatus ?? null,
     };
 
     return this.ownerService.addDriver(driverData);

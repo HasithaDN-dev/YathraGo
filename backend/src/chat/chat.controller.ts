@@ -22,33 +22,7 @@ export class ChatController {
   constructor(private readonly chat: ChatService) {}
 
   // Create or get a conversation between two participants
-  @Post('conversations')
-  createConversation(
-    @Body()
-    body: {
-      participantAId: number;
-      participantBId: number;
-      participantAType:
-        | 'CUSTOMER'
-        | 'WEBUSER'
-        | 'BACKUPDRIVER'
-        | 'DRIVER'
-        | 'VEHICLEOWNER';
-      participantBType:
-        | 'CUSTOMER'
-        | 'WEBUSER'
-        | 'BACKUPDRIVER'
-        | 'DRIVER'
-        | 'VEHICLEOWNER';
-    },
-  ) {
-    return this.chat.upsertConversation(
-      Number(body.participantAId),
-      body.participantAType,
-      Number(body.participantBId),
-      body.participantBType,
-    );
-  }
+  // Removed: Creating conversation as CUSTOMER is not allowed. Only CHILD, STAFF, DRIVER can create conversations.
 
   // List conversations for a user+type
   @Get('conversations')
@@ -57,6 +31,8 @@ export class ChatController {
     @Query('userType')
     userType:
       | 'CUSTOMER'
+      | 'CHILD'
+      | 'STAFF'
       | 'WEBUSER'
       | 'BACKUPDRIVER'
       | 'DRIVER'
@@ -80,25 +56,7 @@ export class ChatController {
   }
 
   // Send a message (text or image)
-  @Post('messages')
-  sendMessage(
-    @Body()
-    body: {
-      conversationId: number;
-      senderId: number;
-      senderType: UserTypes;
-      message?: string | null;
-      imageUrl?: string | null;
-    },
-  ) {
-    return this.chat.sendMessage({
-      conversationId: Number(body.conversationId),
-      senderId: Number(body.senderId),
-      senderType: body.senderType,
-      message: body.message ?? null,
-      imageUrl: body.imageUrl ?? null,
-    });
-  }
+  // Removed: Sending chat message as CUSTOMER is not allowed. Only CHILD, STAFF, DRIVER can send messages.
 
   // Mark message as seen
   @Post('messages/:id/seen')

@@ -16,10 +16,16 @@ export class ChatService {
     bId: number,
     bType: UserTypes,
   ) {
-    // Ensure a deterministic ordering to satisfy the unique constraint regardless of call order
+    // Only allow CHILD, STAFF, DRIVER
+    const allowedTypes = ['CHILD', 'STAFF', 'DRIVER'];
+    if (!allowedTypes.includes(aType) || !allowedTypes.includes(bType)) {
+      throw new Error(
+        'Only CHILD, STAFF, and DRIVER can create conversations.',
+      );
+    }
+    // ...existing code...
     const [participantAId, participantAType, participantBId, participantBType] =
       aId < bId ? [aId, aType, bId, bType] : [bId, bType, aId, aType];
-
     const conv = await this.prisma.conversation.upsert({
       where: {
         participantAId_participantAType_participantBId_participantBType: {
@@ -84,6 +90,33 @@ export class ChatService {
             name = `${rec.firstName} ${rec.lastName}`.trim();
             phone = rec.phone;
           }
+        } else if (otherType === 'CHILD') {
+          const rec = await this.prisma.child.findUnique({
+            where: { child_id: otherId },
+            select: {
+              childFirstName: true,
+              childLastName: true,
+              Customer: { select: { phone: true } },
+            },
+          });
+          if (rec) {
+            name = `${rec.childFirstName} ${rec.childLastName}`.trim();
+            phone = rec.Customer?.phone ?? null;
+          }
+        } else if (otherType === 'STAFF') {
+          const rec = await this.prisma.staff_Passenger.findUnique({
+            where: { id: otherId },
+            select: {
+              Customer: {
+                select: { firstName: true, lastName: true, phone: true },
+              },
+            },
+          });
+          if (rec?.Customer) {
+            name =
+              `${rec.Customer.firstName} ${rec.Customer.lastName} (Staff)`.trim();
+            phone = rec.Customer.phone;
+          }
         } else if (otherType === 'DRIVER') {
           const rec = await this.prisma.driver.findUnique({
             where: { driver_id: otherId },
@@ -133,6 +166,12 @@ export class ChatService {
     message?: string | null;
     imageUrl?: string | null;
   }) {
+    // Only allow CHILD, STAFF, DRIVER as sender
+    const allowedTypes = ['CHILD', 'STAFF', 'DRIVER'];
+    if (!allowedTypes.includes(params.senderType)) {
+      throw new Error('Only CHILD, STAFF, and DRIVER can send messages.');
+    }
+    // ...existing code...
     const convo = await this.prisma.conversation.findUnique({
       where: { id: params.conversationId },
     });
@@ -162,24 +201,26 @@ export class ChatService {
 
     // Resolve sender's display name
     let senderName = 'User';
-    if (params.senderType === 'CUSTOMER') {
-      const c = await this.prisma.customer.findUnique({
-        where: { customer_id: params.senderId },
-        select: { firstName: true, lastName: true },
+    if (params.senderType === 'CHILD') {
+      const c = await this.prisma.child.findUnique({
+        where: { child_id: params.senderId },
+        select: { childFirstName: true, childLastName: true },
       });
-      if (c) senderName = `${c.firstName} ${c.lastName}`.trim();
+      if (c) senderName = `${c.childFirstName} ${c.childLastName}`.trim();
+    } else if (params.senderType === 'STAFF') {
+      const s = await this.prisma.staff_Passenger.findUnique({
+        where: { id: params.senderId },
+        select: { Customer: { select: { firstName: true, lastName: true } } },
+      });
+      if (s?.Customer)
+        senderName =
+          `${s.Customer.firstName} ${s.Customer.lastName} (Staff)`.trim();
     } else if (params.senderType === 'DRIVER') {
       const d = await this.prisma.driver.findUnique({
         where: { driver_id: params.senderId },
         select: { name: true },
       });
       if (d?.name) senderName = d.name;
-    } else if (params.senderType === 'WEBUSER') {
-      const w = await this.prisma.webuser.findUnique({
-        where: { id: params.senderId },
-        select: { username: true, email: true },
-      });
-      if (w) senderName = w.username ?? w.email ?? 'User';
     }
 
     // Fire push + store notification as Others

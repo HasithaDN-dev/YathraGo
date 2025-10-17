@@ -115,7 +115,9 @@ export class OwnerService {
         status: 'ACTIVE',
       };
 
-      const newDriver = await this.prisma.driver.create({ data: createPayload });
+      const newDriver = await this.prisma.driver.create({
+        data: createPayload,
+      });
 
       return {
         success: true,

@@ -10,6 +10,7 @@ import { API_BASE_URL } from '../../../config/api';
 import { useAuth } from '../../../hooks/useAuth';
 import * as FileSystem from 'expo-file-system';
 import { imageCache } from '../../../utils/imageCache';
+import { useProfileStore } from '../../../lib/stores/profile.store';
 
 // Minimal chat message shape for UI bubbles
 interface ChatMessage {
@@ -35,6 +36,7 @@ export default function ChatRoomScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { user } = useAuth();
+  const { activeProfile, customerProfile } = useProfileStore();
   const lastMessageIdRef = useRef<number | null>(null);
   const hasLoadedOnceRef = useRef(false);
 
@@ -114,14 +116,31 @@ export default function ChatRoomScreen() {
 
   // Mark messages as seen
   const markMessagesAsSeen = useCallback(async () => {
-    if (!conversationId || !user) return;
+    if (!conversationId || !user || !activeProfile) return;
+    
+    // Determine the correct userType and userId based on active profile
+    let userType: 'CUSTOMER' | 'CHILD' | 'STAFF' = 'CUSTOMER';
+    let userId = Number(user.id);
+    
+    if (activeProfile.type === 'child') {
+      userType = 'CHILD';
+      const m = String(activeProfile.id).match(/(\d+)/);
+      userId = m ? parseInt(m[1], 10) : userId;
+    } else if (activeProfile.type === 'staff') {
+      userType = 'STAFF';
+      const m = String(activeProfile.id).match(/(\d+)/);
+      userId = m ? parseInt(m[1], 10) : userId;
+    } else if (customerProfile?.customer_id) {
+      userId = customerProfile.customer_id;
+    }
+    
     try {
       await fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/mark-seen`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: Number(user.id),
-          userType: 'CUSTOMER',
+          userId,
+          userType,
         }),
       });
       // Refresh messages to get updated seen status
@@ -129,7 +148,7 @@ export default function ChatRoomScreen() {
     } catch (error) {
       console.error('Failed to mark messages as seen:', error);
     }
-  }, [conversationId, user, fetchMessages]);
+  }, [conversationId, user, activeProfile, customerProfile?.customer_id, fetchMessages]);
 
   // Initial load
   useEffect(() => {
@@ -221,16 +240,33 @@ export default function ChatRoomScreen() {
   // Send a message to backend
   const send = async (overrideText?: string) => {
     const textToSend = (overrideText ?? draft).trim();
-    if (!textToSend || !user || !conversationId) return;
+    if (!textToSend || !user || !conversationId || !activeProfile) return;
     setDraft('');
+    
+    // Determine the correct userType and userId based on active profile
+    let userType: 'CUSTOMER' | 'CHILD' | 'STAFF' = 'CUSTOMER';
+    let userId = Number(user.id);
+    
+    if (activeProfile.type === 'child') {
+      userType = 'CHILD';
+      const m = String(activeProfile.id).match(/(\d+)/);
+      userId = m ? parseInt(m[1], 10) : userId;
+    } else if (activeProfile.type === 'staff') {
+      userType = 'STAFF';
+      const m = String(activeProfile.id).match(/(\d+)/);
+      userId = m ? parseInt(m[1], 10) : userId;
+    } else if (customerProfile?.customer_id) {
+      userId = customerProfile.customer_id;
+    }
+    
     try {
       const res = await fetch(`${API_BASE_URL}/chat/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId,
-          senderId: Number(user.id),
-          senderType: 'CUSTOMER',
+          senderId: userId,
+          senderType: userType,
           message: textToSend,
         }),
       });
@@ -299,9 +335,25 @@ export default function ChatRoomScreen() {
   };
 
   const sendImageMessage = async (imageUri: string) => {
-    if (!user || !conversationId) return;
+    if (!user || !conversationId || !activeProfile) return;
 
     let tempMsgId: string | null = null;
+
+    // Determine the correct userType and userId based on active profile
+    let userType: 'CUSTOMER' | 'CHILD' | 'STAFF' = 'CUSTOMER';
+    let userId = Number(user.id);
+    
+    if (activeProfile.type === 'child') {
+      userType = 'CHILD';
+      const m = String(activeProfile.id).match(/(\d+)/);
+      userId = m ? parseInt(m[1], 10) : userId;
+    } else if (activeProfile.type === 'staff') {
+      userType = 'STAFF';
+      const m = String(activeProfile.id).match(/(\d+)/);
+      userId = m ? parseInt(m[1], 10) : userId;
+    } else if (customerProfile?.customer_id) {
+      userId = customerProfile.customer_id;
+    }
 
     try {
       // Show optimistic UI update
@@ -325,8 +377,8 @@ export default function ChatRoomScreen() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             conversationId,
-            senderId: Number(user.id),
-            senderType: 'CUSTOMER',
+            senderId: userId,
+            senderType: userType,
             message: null,
             imageUrl: imageUrl,
           }),
