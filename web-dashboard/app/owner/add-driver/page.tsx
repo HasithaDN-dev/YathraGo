@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +13,6 @@ import {
   Clock,
   Phone,
   User,
-  CreditCard,
   Car,
   Shield,
   Info,
@@ -21,36 +21,54 @@ import {
 interface FormData {
   name: string;
   phoneNumber: string;
-  licenseNo: string;
+  secondPhone?: string;
+  email?: string;
+  address?: string;
+  dateOfBirth?: string;
+  nic?: string;
   assignedVehicle: string;
+  vehicle_Reg_No?: string;
   id_front?: File | null;
   id_back?: File | null;
   license_front?: File | null;
   license_back?: File | null;
+  profile_picture?: File | null;
   backgroundVerificationStatus: "verified" | "pending" | "failed" | "not-started";
 }
 
 interface FormErrors {
   name?: string;
   phoneNumber?: string;
-  licenseNo?: string;
+  secondPhone?: string;
+  email?: string;
+  address?: string;
+  dateOfBirth?: string;
+  nic?: string;
+  // licenseNo removed per request
   assignedVehicle?: string;
   id_front?: string;
   id_back?: string;
   license_front?: string;
   license_back?: string;
+  profile_picture?: string;
 }
 
 export default function AddDriverPage() {
   const [formData, setFormData] = useState<FormData>({
     name: "",
     phoneNumber: "",
-    licenseNo: "",
+    secondPhone: "",
+    email: "",
+    address: "",
+    dateOfBirth: "",
+    nic: "",
+  // licenseNo removed per request
     assignedVehicle: "",
     id_front: null,
     id_back: null,
     license_front: null,
     license_back: null,
+    profile_picture: null,
     backgroundVerificationStatus: "not-started",
   });
 
@@ -59,15 +77,56 @@ export default function AddDriverPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [dragOverField, setDragOverField] = useState<string | null>(null);
+  const [profilePreviewUrl, setProfilePreviewUrl] = useState<string | null>(null);
 
   // Mock available vehicles
   const availableVehicles = [
-    { value: "", label: "Select Vehicle" },
-    { value: "ABC-123", label: "ABC-123 - Bus (40 seats)" },
-    { value: "XYZ-789", label: "XYZ-789 - Van (15 seats)" },
-    { value: "DEF-456", label: "DEF-456 - Mini Bus (25 seats)" },
-    { value: "GHI-321", label: "GHI-321 - Bus (35 seats)" },
+    { value: "", label: "Unassigned / Select Vehicle (optional)" },
   ];
+
+  // Real vehicles will be fetched from the backend; keep availableVehicles as initial placeholder
+  const [vehicles, setVehicles] = useState<Array<{ value: string; label: string }>>(availableVehicles);
+  const [vehiclesLoading, setVehiclesLoading] = useState(false);
+  const [vehiclesError, setVehiclesError] = useState<string | null>(null);
+
+  // Change this if the backend endpoint differs
+  // Backend provides vehicles at GET /vehicles (controller uses @Get('vehicles') with no prefix)
+  const VEHICLES_ENDPOINT = "http://localhost:3000/vehicles";
+
+  React.useEffect(() => {
+    let mounted = true;
+    setVehiclesLoading(true);
+    setVehiclesError(null);
+    (async () => {
+      try {
+        // Attach auth header from cookie if present (frontend stores access_token cookie)
+        const token = typeof document !== 'undefined' ? document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1] : undefined;
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+        const res = await fetch(VEHICLES_ENDPOINT, { credentials: 'include', headers });
+        if (!res.ok) {
+          if (res.status === 401) throw new Error('Unauthorized (401) - please login as owner');
+          throw new Error(`Failed to load vehicles: ${res.status}`);
+        }
+        const data: unknown = await res.json();
+        if (!mounted) return;
+        const opts = Array.isArray(data) ? data.map((v) => {
+          const vehicle = v as Record<string, unknown>;
+          const value = String(vehicle['registrationNumber'] ?? vehicle['reg_no'] ?? vehicle['id'] ?? vehicle['_id'] ?? '');
+          const label = vehicle['registrationNumber'] ? `${String(vehicle['registrationNumber'])} - ${String(vehicle['type'] ?? vehicle['model'] ?? '')}` : (String(vehicle['label'] ?? value));
+          return { value, label };
+        }) : [];
+        setVehicles([{ value: "", label: "Unassigned / Select Vehicle (optional)" }, ...opts]);
+      } catch (err: unknown) {
+        if (!mounted) return;
+        setVehiclesError(String((err as Error).message ?? err));
+      } finally {
+        if (mounted) setVehiclesLoading(false);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, []);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -81,24 +140,47 @@ export default function AddDriverPage() {
       newErrors.name = "Name should only contain letters and spaces";
     }
 
-    // Phone number validation
-    if (!formData.phoneNumber.trim()) {
+    // Phone number validation - Sri Lanka only (+94) format
+    const slPhoneNormalized = formData.phoneNumber.replace(/\s/g, "");
+    if (!slPhoneNormalized) {
       newErrors.phoneNumber = "Phone number is required";
-    } else if (!/^[\+]?[\d\s\-\(\)]{10,15}$/.test(formData.phoneNumber.replace(/\s/g, ""))) {
-      newErrors.phoneNumber = "Please enter a valid phone number";
+    } else if (!/^\+94\d{9}$/.test(slPhoneNormalized)) {
+      newErrors.phoneNumber = "Please enter a Sri Lanka phone number in the format +94XXXXXXXXX";
     }
 
-    // License number validation
-    if (!formData.licenseNo.trim()) {
-      newErrors.licenseNo = "License number is required";
-    } else if (formData.licenseNo.trim().length < 5) {
-      newErrors.licenseNo = "License number must be at least 5 characters";
+    // License number removed; no validation needed
+
+    // NIC validation (simple: required and length)
+    if (!formData.nic || !formData.nic.trim()) {
+      newErrors.nic = "NIC is required";
+    } else if (formData.nic.trim().length < 5) {
+      newErrors.nic = "NIC must be at least 5 characters";
     }
 
-    // Vehicle assignment validation
-    if (!formData.assignedVehicle) {
-      newErrors.assignedVehicle = "Please assign driver to a vehicle";
+    // DOB validation
+    if (!formData.dateOfBirth || !formData.dateOfBirth.trim()) {
+      newErrors.dateOfBirth = "Date of birth is required";
     }
+
+    // secondPhone validation (optional) - Sri Lanka +94 format
+    if (formData.secondPhone && formData.secondPhone.trim()) {
+      const s = formData.secondPhone.replace(/\s/g, "");
+      if (!/^\+94\d{9}$/.test(s)) {
+        newErrors.secondPhone = "Please enter a Sri Lanka phone number in the format +94XXXXXXXXX";
+      }
+    }
+
+    // Email required and basic format validation
+    if (!formData.email || !formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        newErrors.email = "Please enter a valid email address";
+      }
+    }
+
+  // Assign vehicle is optional (owner can leave driver unassigned)
 
     // File upload validation
     if (!formData.id_front) {
@@ -113,6 +195,7 @@ export default function AddDriverPage() {
     if (!formData.license_back) {
       newErrors.license_back = "License back picture is required";
     }
+  // Profile picture optional but if present validate type/size already done at upload
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -156,6 +239,19 @@ export default function AddDriverPage() {
       return;
     }
 
+    // If uploading profile picture, manage preview object URL (revoke previous)
+    if (field === 'profile_picture') {
+      try {
+        if (profilePreviewUrl) {
+          URL.revokeObjectURL(profilePreviewUrl);
+        }
+      } catch {}
+      try {
+        const url = URL.createObjectURL(file);
+        setProfilePreviewUrl(url);
+      } catch {}
+    }
+
     setFormData((prev) => ({
       ...prev,
       [field]: file,
@@ -167,7 +263,20 @@ export default function AddDriverPage() {
     }
   };
 
+  // helper to display image preview url for profile picture
+  // (profilePreviewUrl state is used for profile image preview)
+
   const removeFile = (field: keyof FormData) => {
+    // if removing profile picture, revoke the object URL preview if present
+    if (field === 'profile_picture') {
+      try {
+        if (profilePreviewUrl) {
+          URL.revokeObjectURL(profilePreviewUrl);
+        }
+      } catch {}
+      setProfilePreviewUrl(null);
+    }
+
     setFormData((prev) => ({
       ...prev,
       [field]: null,
@@ -215,14 +324,25 @@ export default function AddDriverPage() {
       const formDataToSend = new FormData();
       formDataToSend.append("name", formData.name);
       formDataToSend.append("phoneNumber", formData.phoneNumber);
-      formDataToSend.append("licenseNo", formData.licenseNo);
+      if (formData.secondPhone) formDataToSend.append("secondPhone", formData.secondPhone);
+      if (formData.email) formDataToSend.append("email", formData.email);
+      if (formData.address) formDataToSend.append("address", formData.address);
+      if (formData.dateOfBirth) formDataToSend.append("dateOfBirth", formData.dateOfBirth);
+      if (formData.nic) formDataToSend.append("NIC", formData.nic);
+  // also send backend-friendly field names
+  if (formData.dateOfBirth) formDataToSend.append("date_of_birth", formData.dateOfBirth);
+  if (formData.secondPhone) formDataToSend.append("second_phone", formData.secondPhone);
+  // licenseNo removed; not included in payload
       formDataToSend.append("assignedVehicle", formData.assignedVehicle);
+      // Map assignedVehicle to vehicle_Reg_No if needed by backend
+      if (formData.assignedVehicle) formDataToSend.append("vehicle_Reg_No", formData.assignedVehicle);
+      if (formData.profile_picture) formDataToSend.append("profile_picture", formData.profile_picture);
       formDataToSend.append("backgroundVerificationStatus", formData.backgroundVerificationStatus);
       
-      if (formData.id_front) formDataToSend.append("id_front", formData.id_front);
-      if (formData.id_back) formDataToSend.append("id_back", formData.id_back);
-      if (formData.license_front) formDataToSend.append("license_front", formData.license_front);
-      if (formData.license_back) formDataToSend.append("license_back", formData.license_back);
+  if (formData.id_front) formDataToSend.append("id_front", formData.id_front);
+  if (formData.id_back) formDataToSend.append("id_back", formData.id_back);
+  if (formData.license_front) formDataToSend.append("license_front", formData.license_front);
+  if (formData.license_back) formDataToSend.append("license_back", formData.license_back);
 
       // API call
       const token = typeof document !== 'undefined' ? document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1] : undefined;
@@ -252,15 +372,24 @@ export default function AddDriverPage() {
       setTimeout(() => setShowSuccess(false), 5000);
       
       // Reset form
+      try { if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl); } catch {}
+      setProfilePreviewUrl(null);
+
       setFormData({
         name: "",
         phoneNumber: "",
-        licenseNo: "",
+        secondPhone: "",
+        email: "",
+        address: "",
+        dateOfBirth: "",
+        nic: "",
+        // licenseNo removed
         assignedVehicle: "",
         id_front: null,
         id_back: null,
         license_front: null,
         license_back: null,
+        profile_picture: null,
         backgroundVerificationStatus: "not-started",
       });
     } catch (error) {
@@ -271,15 +400,24 @@ export default function AddDriverPage() {
   };
 
   const handleCancel = () => {
+    try { if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl); } catch {}
+    setProfilePreviewUrl(null);
+
     setFormData({
       name: "",
       phoneNumber: "",
-      licenseNo: "",
+      secondPhone: "",
+      email: "",
+      address: "",
+      dateOfBirth: "",
+      nic: "",
+      // licenseNo removed
       assignedVehicle: "",
       id_front: null,
       id_back: null,
       license_front: null,
       license_back: null,
+      profile_picture: null,
       backgroundVerificationStatus: "not-started",
     });
     setErrors({});
@@ -349,6 +487,25 @@ export default function AddDriverPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* NIC */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  NIC *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter NIC"
+                  value={formData.nic}
+                  onChange={(e) => handleInputChange("nic", e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.nic ? "border-red-500 bg-red-50" : "border-gray-400"}`}
+                />
+                {errors.nic && (
+                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{errors.nic}</span>
+                  </div>
+                )}
+              </div>
               {/* Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -383,8 +540,8 @@ export default function AddDriverPage() {
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
-                    type="tel"
-                    placeholder="+1 (555) 123-4567"
+                      type="tel"
+                      placeholder="+94XXXXXXXXX"
                     value={formData.phoneNumber}
                     onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
                     className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
@@ -392,10 +549,10 @@ export default function AddDriverPage() {
                     }`}
                   />
                 </div>
-                <p className="mt-1 text-xs text-gray-600 flex items-center gap-1">
-                  <Info className="w-3 h-3" />
-                  Include country code for international numbers
-                </p>
+                  <p className="mt-1 text-xs text-gray-600 flex items-center gap-1">
+                    <Info className="w-3 h-3" />
+                    Country code required: use Sri Lanka prefix +94 (example +94771234567)
+                  </p>
                 {errors.phoneNumber && (
                   <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
                     <AlertCircle className="w-4 h-4" />
@@ -404,39 +561,65 @@ export default function AddDriverPage() {
                 )}
               </div>
 
-              {/* License Number */}
+              {/* Second Phone */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  License Number *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Second Phone</label>
                 <div className="relative">
-                  <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
-                    type="text"
-                    placeholder="Enter license number"
-                    value={formData.licenseNo}
-                    onChange={(e) => handleInputChange("licenseNo", e.target.value.toUpperCase())}
-                    className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.licenseNo ? "border-red-500 bg-red-50" : "border-gray-400"
-                    }`}
+                    type="tel"
+                    placeholder="Optional: +94XXXXXXXXX"
+                    value={formData.secondPhone}
+                    onChange={(e) => handleInputChange("secondPhone", e.target.value)}
+                    className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.secondPhone ? "border-red-500 bg-red-50" : "border-gray-400"}`}
                   />
                 </div>
-                <p className="mt-1 text-xs text-gray-600 flex items-center gap-1">
-                  <Info className="w-3 h-3" />
-                  Commercial driving license number required
-                </p>
-                {errors.licenseNo && (
-                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>{errors.licenseNo}</span>
-                  </div>
-                )}
+                {errors.secondPhone && <div className="mt-1 text-red-600 text-sm">{errors.secondPhone}</div>}
               </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input
+                  type="email"
+                  placeholder="driver@example.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.email ? "border-red-500 bg-red-50" : "border-gray-400"}`}
+                />
+                {errors.email && <div className="mt-1 text-red-600 text-sm">{errors.email}</div>}
+              </div>
+
+              {/* Date of Birth */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth *</label>
+                <input
+                  type="date"
+                  value={formData.dateOfBirth}
+                  onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.dateOfBirth ? "border-red-500 bg-red-50" : "border-gray-400"}`}
+                />
+                {errors.dateOfBirth && <div className="mt-1 text-red-600 text-sm">{errors.dateOfBirth}</div>}
+              </div>
+
+              {/* Address */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                <input
+                  type="text"
+                  placeholder="Driver's address"
+                  value={formData.address}
+                  onChange={(e) => handleInputChange("address", e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.address ? "border-red-500 bg-red-50" : "border-gray-400"}`}
+                />
+              </div>
+
+              {/* License number removed per request */}
 
               {/* Assign to Vehicle */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Assign to Vehicle *
+                  Assign to Vehicle (optional)
                 </label>
                 <div className="relative">
                   <Car className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -447,21 +630,27 @@ export default function AddDriverPage() {
                       errors.assignedVehicle ? "border-red-500 bg-red-50" : "border-gray-400"
                     }`}
                   >
-                    {availableVehicles.map((vehicle) => (
-                      <option key={vehicle.value} value={vehicle.value}>
-                        {vehicle.label}
-                      </option>
-                    ))}
+                    {vehiclesLoading ? (
+                      <option value="">Loading vehicles...</option>
+                    ) : vehiclesError ? (
+                      <option value="">Failed to load vehicles</option>
+                    ) : (
+                      vehicles.map((vehicle) => (
+                        <option key={vehicle.value} value={vehicle.value}>
+                          {vehicle.label}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
                 <p className="mt-1 text-xs text-gray-600 flex items-center gap-1">
                   <Info className="w-3 h-3" />
-                  Driver will be assigned as primary operator for this vehicle
+                  Driver will be assigned as primary operator for this vehicle when selected. Leaving it blank keeps the driver unassigned.
                 </p>
-                {errors.assignedVehicle && (
-                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
+                {vehiclesError && (
+                  <div className="mt-1 flex items-center space-x-1 text-yellow-700 bg-yellow-50 px-2 py-1 rounded text-sm">
                     <AlertCircle className="w-4 h-4" />
-                    <span>{errors.assignedVehicle}</span>
+                    <span>{vehiclesError}</span>
                   </div>
                 )}
               </div>
@@ -619,6 +808,34 @@ export default function AddDriverPage() {
                 )}
               </div>
               {errors.license_back && <div className="mt-1 text-red-600 text-sm">{errors.license_back}</div>}
+            </div>
+
+            {/* Profile Picture */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">Profile Picture</label>
+              <div className={`flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 transition-colors ${
+                dragOverField === 'profile_picture' ? 'bg-blue-50 border-blue-300' : 'bg-gray-50'
+              }`} onDragOver={(e) => handleDragOver(e, 'profile_picture')} onDragLeave={handleDragLeave} onDrop={(e) => handleDrop(e, 'profile_picture')}>
+                <label className="cursor-pointer flex items-center gap-2 text-[var(--bright-orange)] font-medium hover:underline">
+                  <Upload className="w-5 h-5" />
+                  {formData.profile_picture ? 'Change Picture' : 'Select Picture or Drag & Drop'}
+                  <input type="file" accept="image/*" onChange={e => handleFileUpload('profile_picture', e.target.files)} className="hidden" />
+                </label>
+                {formData.profile_picture && (
+                  <div className="flex items-center gap-2">
+                    {profilePreviewUrl ? (
+                      <div className="w-16 h-16 rounded-full overflow-hidden border">
+                        <Image src={profilePreviewUrl} alt="preview" width={64} height={64} className="object-cover" />
+                      </div>
+                    ) : null}
+                    <div className="text-sm text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 flex items-center gap-1">
+                      {formData.profile_picture.name}
+                      <button type="button" onClick={() => removeFile('profile_picture')} className="ml-1 text-red-500 hover:text-red-700"><X className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {errors.profile_picture && <div className="mt-1 text-red-600 text-sm">{errors.profile_picture}</div>}
             </div>
           </CardContent>
         </Card>
