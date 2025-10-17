@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -33,38 +33,6 @@ const mockVehicles: Vehicle[] = [
     status: "Active",
     assignedDriver: "John Smith",
   },
-  {
-    id: "2",
-    registrationNumber: "XYZ-789",
-    type: "Van",
-    no_of_seats: 15,
-    status: "Active",
-    assignedDriver: "Sarah Johnson",
-  },
-  {
-    id: "3",
-    registrationNumber: "DEF-456",
-    type: "Bus",
-    no_of_seats: 35,
-    status: "Inactive",
-    assignedDriver: "Mike Wilson",
-  },
-  {
-    id: "4",
-    registrationNumber: "GHI-321",
-    type: "Mini Bus",
-    no_of_seats: 25,
-    status: "Active",
-    assignedDriver: "Emily Davis",
-  },
-  {
-    id: "5",
-    registrationNumber: "JKL-654",
-    type: "Van",
-    no_of_seats: 12,
-    status: "Active",
-    assignedDriver: "David Brown",
-  },
 ];
 
 export default function VehicleListPage() {
@@ -74,7 +42,36 @@ export default function VehicleListPage() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [filteredVehicles, setFilteredVehicles] = useState(mockVehicles);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
+
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      try {
+        const token = typeof document !== 'undefined' ? document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1] : undefined;
+        const res = await fetch('http://localhost:3000/vehicles', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          credentials: 'include',
+        });
+        if (!res.ok) {
+          console.error('Failed to fetch vehicles', res.status);
+          setVehicles(mockVehicles);
+          setFilteredVehicles(mockVehicles);
+          return;
+        }
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : [];
+        setVehicles(list);
+        setFilteredVehicles(list);
+      } catch (err) {
+        console.error('Error fetching vehicles', err);
+        setVehicles(mockVehicles);
+        setFilteredVehicles(mockVehicles);
+      }
+    };
+
+    void fetchVehicles();
+  }, []);
 
   const itemsPerPage = 5;
   const totalPages = Math.ceil(filteredVehicles.length / itemsPerPage);
@@ -83,13 +80,13 @@ export default function VehicleListPage() {
   const currentVehicles = filteredVehicles.slice(startIndex, endIndex);
 
   const handleFilter = () => {
-    let filtered = mockVehicles;
+    let filtered = vehicles;
 
     if (searchTerm) {
       filtered = filtered.filter(
         (vehicle) =>
-          vehicle.vehicleNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          vehicle.assignedDriver.toLowerCase().includes(searchTerm.toLowerCase())
+          (vehicle.registrationNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (vehicle.assignedDriver || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -110,7 +107,7 @@ export default function VehicleListPage() {
     setSelectedRoute("");
     setSelectedStatus("");
     setSelectedType("");
-    setFilteredVehicles(mockVehicles);
+    setFilteredVehicles(vehicles);
     setCurrentPage(1);
   };
 

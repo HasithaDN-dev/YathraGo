@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from 'next/navigation';
 
 // Small in-file searchable select for cities. Keeps things local and avoids
 // introducing new dependencies. Features: filtering, keyboard navigation,
@@ -166,6 +167,8 @@ interface FormData {
   type: string;
   brand: string;
   model: string;
+  manufactureYear: string;
+  color: string;
   startingCity: string;
   endingCity: string;
   no_of_seats: string;
@@ -193,6 +196,8 @@ interface FormErrors {
   endingCity?: string;
   no_of_seats?: string;
   seatingCapacity?: string;
+  manufactureYear?: string;
+  color?: string;
   insuranceExpiry?: string;
   air_conditioned?: string;
   assistant?: string;
@@ -208,6 +213,7 @@ interface FormErrors {
 }
 
 export default function AddVehiclePage() {
+  const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     vehicleNo: "",
     type: "",
@@ -229,6 +235,8 @@ export default function AddVehiclePage() {
     insurance_back: null,
     vehicle_reg: null,
     uploadedFiles: [],
+      manufactureYear: "",
+      color: "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -237,7 +245,6 @@ export default function AddVehiclePage() {
   const [dragOverField, setDragOverField] = useState<string | null>(null);
 
   const vehicleTypes = [
-    { value: "", label: "Select Vehicle Type" },
     { value: "bus", label: "Bus" },
     { value: "mini-bus", label: "Mini Bus" },
     { value: "van", label: "Van" },
@@ -289,6 +296,18 @@ export default function AddVehiclePage() {
       if (expiryDate <= today) {
         newErrors.insuranceExpiry = "Insurance expiry date must be in the future";
       }
+    }
+
+    // ManufactureYear validation (simple number check)
+    if (!formData.manufactureYear.trim()) {
+      newErrors.manufactureYear = 'Manufacture year is required';
+    } else if (!/^[0-9]{4}$/.test(formData.manufactureYear)) {
+      newErrors.manufactureYear = 'Enter a valid 4-digit year';
+    }
+
+    // Color validation
+    if (!formData.color.trim()) {
+      newErrors.color = 'Color is required';
     }
 
     // File upload validation
@@ -403,9 +422,12 @@ export default function AddVehiclePage() {
 
     try {
       const formDataToSend = new FormData();
+      if (formData.vehicleNo) formDataToSend.append("registrationNumber", formData.vehicleNo);
       formDataToSend.append("type", formData.type);
       formDataToSend.append("brand", formData.brand);
       formDataToSend.append("model", formData.model);
+  formDataToSend.append("manufactureYear", formData.manufactureYear);
+  formDataToSend.append("color", formData.color);
       formDataToSend.append("startingCity", formData.startingCity);
       formDataToSend.append("endingCity", formData.endingCity);
       formDataToSend.append("no_of_seats", formData.no_of_seats);
@@ -441,9 +463,10 @@ export default function AddVehiclePage() {
         }
         throw new Error(msg);
       }
-      
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 5000);
+      // on success navigate to vehicle list
+      try { router.push('/owner/vehicle-list'); } catch {}
       
       // Reset form
       setFormData({
@@ -466,6 +489,8 @@ export default function AddVehiclePage() {
         insurance_front: null,
         insurance_back: null,
         vehicle_reg: null,
+        manufactureYear: "",
+        color: "",
         uploadedFiles: [],
       });
     } catch (error) {
@@ -496,6 +521,8 @@ export default function AddVehiclePage() {
       insurance_front: null,
       insurance_back: null,
       vehicle_reg: null,
+      manufactureYear: "",
+      color: "",
       uploadedFiles: [],
     });
     setErrors({});
@@ -571,6 +598,9 @@ export default function AddVehiclePage() {
                     errors.type ? "border-red-500 bg-red-50" : "border-gray-400"
                   }`}
                 >
+                  <option value="" disabled>
+                    -- Select vehicle type --
+                  </option>
                   {vehicleTypes.map((type) => (
                     <option key={type.value} value={type.value}>
                       {type.label}
@@ -628,6 +658,55 @@ export default function AddVehiclePage() {
                   </div>
                 )}
               </div>
+
+              {/* Manufacture Year */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
+                  Manufacture Year *
+                </label>
+                <input
+                  type="number"
+                  placeholder="e.g., 2018"
+                  min={1900}
+                  max={new Date().getFullYear()}
+                  value={formData.manufactureYear}
+                  onChange={(e) => handleInputChange("manufactureYear", String(e.target.value))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.manufactureYear ? "border-red-500 bg-red-50" : "border-gray-400"
+                  }`}
+                />
+                <p className="text-xs text-gray-500 mt-1">Enter the 4-digit manufacturing year (1900 - {new Date().getFullYear()}).</p>
+                {errors.manufactureYear && (
+                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{errors.manufactureYear}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Color */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-deep-navy)] mb-2">
+                  Color *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., White"
+                  value={formData.color}
+                  onChange={(e) => handleInputChange("color", e.target.value)}
+                  onBlur={() => handleInputChange('color', String(formData.color).trim().replace(/\s+/g, ' '))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.color ? "border-red-500 bg-red-50" : "border-gray-400"
+                  }`}
+                />
+                <p className="text-xs text-gray-500 mt-1">Enter vehicle color (e.g., White, Metallic Silver).</p>
+                {errors.color && (
+                  <div className="mt-1 flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded text-sm">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>{errors.color}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Route Section */}
@@ -674,7 +753,10 @@ export default function AddVehiclePage() {
                   min="1"
                   max="100"
                   value={formData.seatingCapacity}
-                  onChange={(e) => handleInputChange("seatingCapacity", e.target.value)}
+                  onChange={(e) => {
+                    handleInputChange("seatingCapacity", e.target.value);
+                    handleInputChange("no_of_seats", e.target.value);
+                  }}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.seatingCapacity ? "border-red-500 bg-red-50" : "border-gray-400"
                   }`}
@@ -709,6 +791,25 @@ export default function AddVehiclePage() {
                     <span>{errors.insuranceExpiry}</span>
                   </div>
                 )}
+              </div>
+              {/* Air conditioned & Assistant toggles */}
+              <div className="flex items-center gap-6 mt-2">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.air_conditioned}
+                    onChange={(e) => handleInputChange('air_conditioned', e.target.checked)}
+                  />
+                  <span className="text-sm">Air Conditioned</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.assistant}
+                    onChange={(e) => handleInputChange('assistant', e.target.checked)}
+                  />
+                  <span className="text-sm">Assistant</span>
+                </label>
               </div>
             </div>
           </CardContent>

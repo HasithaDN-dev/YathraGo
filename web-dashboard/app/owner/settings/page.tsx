@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useOwner } from "@/components/owner/OwnerContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,6 +56,8 @@ interface PreferenceSettings {
 }
 
 export default function SettingsPage() {
+
+  const { setOwner, refreshOwner } = useOwner();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -202,6 +205,25 @@ export default function SettingsPage() {
         body: JSON.stringify(profileData),
       });
       if (!response.ok) throw new Error("Failed to update profile");
+      // Prefer backend as source of truth: try to use response body, otherwise refresh
+      try {
+        let respJson = null;
+        try {
+          respJson = await response.json();
+        } catch {}
+
+        if (respJson && (respJson.firstName || respJson.first_name || respJson.lastName || respJson.last_name)) {
+          setOwner({
+            firstName: respJson.firstName || respJson.first_name || profileData.firstName,
+            lastName: respJson.lastName || respJson.last_name || profileData.lastName,
+          });
+        } else {
+          // fallback to reloading profile from backend
+          try { await refreshOwner(); } catch {}
+        }
+      } catch {
+        // noop
+      }
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {

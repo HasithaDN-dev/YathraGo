@@ -117,8 +117,13 @@ export class VehicleController {
     const insurance_back = files.insurance_back?.[0]?.filename ?? null;
     const vehicle_reg = files.vehicle_reg?.[0]?.filename ?? null;
 
+    // Clean parsedVehicleDto to remove keys not present on the Prisma model
+    const { startingCity: _start, endingCity: _end, ...rest } = parsedVehicleDto as any;
+
     const vehicleData = {
-      ...parsedVehicleDto,
+      ...rest,
+      // ensure route exists and is an array
+      route: parsedVehicleDto.route || [],
       rear_picture_url: rear ? `uploads/vehicle/${rear}` : null,
       front_picture_url: front ? `uploads/vehicle/${front}` : null,
       side_picture_url: side ? `uploads/vehicle/${side}` : null,
