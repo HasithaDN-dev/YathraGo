@@ -272,17 +272,21 @@ model Customer {
   @@index([fcmToken])
 }
 
-model Complaints {
-  complaint_id Int      @id @default(autoincrement())
-  description  String
-  type         String
-  createdAt    DateTime @default(now())
-}
+model ComplaintsInquiries {
+  id             Int                     @id @default(autoincrement())
+  senderId       Int
+  senderUserType UserTypes
+  type           ComplaintInquiryTypes
+  description    String
+  category       ComplaintInquiryCategory
+  status         ComplaintStatus         @default(PENDING)
+  createdAt      DateTime                @default(now())
 
-model Inquires {
-  inquiry_id  Int      @id @default(autoincrement())
-  description String
-  createdAt   DateTime @default(now())
+  @@index([senderId])
+  @@index([type])
+  @@index([category])
+  @@index([senderUserType])
+  @@index([status])
 }
 
 model Absence_Staff {
@@ -575,4 +579,22 @@ enum Ridetype {
   School
   Work
   Both
+}
+
+enum ComplaintInquiryCategory {
+  SYSTEM
+  DRIVER
+  PAYMENT
+  OTHER
+}
+
+enum ComplaintInquiryTypes {
+  COMPLAINT
+  INQUIRY
+}
+
+enum ComplaintStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
 }
