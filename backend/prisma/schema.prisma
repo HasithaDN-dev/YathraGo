@@ -37,10 +37,10 @@ model Webuser {
   email        String        @unique
   password     String
   username     String
+  role         Role          @default(OWNER)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   fcmToken     String?
-  role         Role          @default(OWNER)
   vehicleOwner VehicleOwner?
 
   @@index([fcmToken])
@@ -142,7 +142,7 @@ model Absence_Child {
   createdAt DateTime @default(now())
   childId   Int
   date      DateTime @default(now()) @db.Date
-  child     Child    @relation("AbsentChildren", fields: [childId], references: [child_id])
+  Child     Child    @relation(fields: [childId], references: [child_id])
 
   @@unique([childId, date])
   @@index([childId])
@@ -314,7 +314,7 @@ model Child {
   pickupLatitude  Float?
   pickupLongitude Float?
   customerId      Int?
-  absences        Absence_Child[]    @relation("AbsentChildren")
+  Absence_Child   Absence_Child[]
   attendance      Attendance[]
   Customer        Customer?          @relation(fields: [customerId], references: [customer_id])
   ChildPayment    ChildPayment[]

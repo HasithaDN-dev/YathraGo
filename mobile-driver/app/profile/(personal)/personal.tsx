@@ -14,6 +14,8 @@ export default function PersonalDetailsScreen() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+//     const DRIVER_ID = 2; // HARDCODED FOR TESTING
+
     useEffect(() => {
         fetchDriverProfile();
     }, []);

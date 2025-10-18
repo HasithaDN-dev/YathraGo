@@ -106,6 +106,19 @@ export class ChatController {
     return this.chat.markSeen(id);
   }
 
+  // Mark all unread messages in a conversation as seen
+  @Post('conversations/:id/mark-seen')
+  markConversationAsSeen(
+    @Param('id', ParseIntPipe) conversationId: number,
+    @Body() body: { userId: number; userType: UserTypes },
+  ) {
+    return this.chat.markConversationMessagesAsSeen(
+      conversationId,
+      Number(body.userId),
+      body.userType,
+    );
+  }
+
   // Upload chat image
   @Post('upload-image')
   @HttpCode(HttpStatus.OK)

@@ -102,6 +102,9 @@ export default function HistoryScreen() {
   const [currentHeaderDate, setCurrentHeaderDate] = useState<string>('');
   const scrollViewRef = useRef<ScrollView>(null);
   const dateHeaderRefs = useRef<{ [key: string]: number }>({});
+  
+//   // HARDCODED FOR TESTING - Using driver ID 1
+//   const driverId = 2;
 
   // Fetch trip history using authenticated session
   const fetchTripHistory = async () => {

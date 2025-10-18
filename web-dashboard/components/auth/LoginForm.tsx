@@ -6,13 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import Link from "next/link";
-import {
-  AlertCircle,
-  AlertTriangle,
-  XCircle,
-  X,
-  ShieldAlert
-} from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 import Cookies from "js-cookie";
 
 interface LoginFormProps {

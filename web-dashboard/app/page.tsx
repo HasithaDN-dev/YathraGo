@@ -1,5 +1,6 @@
 import { Search, MapPin, Users, FileText, CheckCircle } from "lucide-react";
 import Image from "next/image";
+import LatestNotices from './components/LatestNotices';
 
 export default function Home() {
   return (
@@ -76,8 +77,18 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-8 scroll-mt-16" style={{background: 'linear-gradient(to bottom, #ffffff)'}}>
+      {/* Latest Notices Section */}
+      <section className="py-8 bg-indigo-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Latest Notices</h2>
+          </div>
+          <LatestNotices />
+        </div>
+      </section>
+
+  {/* Features Section */}
+  <section id="features" className="py-8 scroll-mt-16 bg-green-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
@@ -167,8 +178,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-8" style={{background: 'linear-gradient(to bottom, #ffffff)'}}>
+  {/* Stats Section */}
+  <section className="py-8 bg-yellow-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
@@ -191,8 +202,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* About Us and Testimonials Section */}
-      <section className="py-8" style={{background: 'linear-gradient(to bottom, #ffffff)'}}>
+  {/* About Us and Testimonials Section */}
+  <section className="py-8 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             {/* Left Side - About Us (3/5 of the space) */}

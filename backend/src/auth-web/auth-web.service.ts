@@ -1,4 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LoginDto, SignupDto } from './dto';
 import * as argon from 'argon2';
@@ -29,7 +30,7 @@ export class AuthWebService {
       });
 
       // If the user is an owner, create a VehicleOwner record with the same id
-      if (user.role === 'OWNER') {
+      if (user.role === Role.OWNER) {
         await this.prisma.vehicleOwner.create({
           data: {
             id: user.id,
@@ -76,7 +77,7 @@ export class AuthWebService {
   async signToken(
     userId: number,
     email: string,
-    role: string,
+    role: Role,
   ): Promise<{ access_token: string }> {
     const payload = {
       sub: userId,

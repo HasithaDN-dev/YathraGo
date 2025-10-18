@@ -96,25 +96,27 @@ export class OwnerService {
         );
       }
 
+      const createPayload: any = {
+        name: driverData.name,
+        NIC: driverData.NIC,
+        address: driverData.address,
+        date_of_birth: new Date(driverData.date_of_birth),
+        gender: driverData.gender,
+        phone: driverData.phone,
+        email: driverData.email || null,
+        second_phone: driverData.second_phone || null,
+        vehicle_Reg_No: driverData.vehicle_Reg_No || '',
+        profile_picture_url: driverData.profile_picture_url,
+        nic_front_pic_url: driverData.nic_front_pic_url,
+        nice_back_pic_url: driverData.nice_back_pic_url,
+        driver_license_front_url: driverData.driver_license_front_url,
+        driver_license_back_url: driverData.driver_license_back_url,
+        registrationStatus: RegistrationStatus.ACCOUNT_CREATED,
+        status: 'ACTIVE',
+      };
+
       const newDriver = await this.prisma.driver.create({
-        data: {
-          name: driverData.name,
-          NIC: driverData.NIC,
-          address: driverData.address,
-          date_of_birth: new Date(driverData.date_of_birth),
-          gender: driverData.gender,
-          phone: driverData.phone,
-          email: driverData.email || null,
-          second_phone: driverData.second_phone || null,
-          vehicle_Reg_No: driverData.vehicle_Reg_No || '',
-          profile_picture_url: driverData.profile_picture_url,
-          nic_front_pic_url: driverData.nic_front_pic_url,
-          nice_back_pic_url: driverData.nice_back_pic_url,
-          driver_license_front_url: driverData.driver_license_front_url,
-          driver_license_back_url: driverData.driver_license_back_url,
-          registrationStatus: RegistrationStatus.ACCOUNT_CREATED,
-          status: 'ACTIVE',
-        },
+        data: createPayload,
       });
 
       return {
