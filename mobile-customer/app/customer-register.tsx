@@ -1,16 +1,16 @@
 import * as ImagePicker from 'expo-image-picker';
-import { uploadCustomerProfileImageApi, completeCustomerProfileApi } from '../../lib/api/profile.api';
+import { uploadCustomerProfileImageApi, completeCustomerProfileApi } from '../lib/api/profile.api';
 // ...existing code...
 import React, { useState } from 'react';
 import { Picker } from '@react-native-picker/picker';
 import { View, Alert, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ButtonComponent } from '../../components/ui/ButtonComponent';
-import { CustomInput } from '../../components/ui/CustomInput';
-import { Typography } from '../../components/Typography';
-import { useAuthStore } from '../../lib/stores/auth.store';
-import { CustomerProfileData } from '../../types/customer.types';
+import { ButtonComponent } from '../components/ui/ButtonComponent';
+import { CustomInput } from '../components/ui/CustomInput';
+import { Typography } from '../components/Typography';
+import { useAuthStore } from '../lib/stores/auth.store';
+import { CustomerProfileData } from '../types/customer.types';
 import { Colors } from '@/constants/Colors'; // Ensure this import is correct
 
 export default function CustomerRegisterScreen() {
