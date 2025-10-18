@@ -148,7 +148,8 @@ export class AuthService {
   private async createCustomerUser(phone: string): Promise<UserEntity> {
     return (await this.prisma.customer.create({
       data: {
-        name: '', // Will be updated later
+        firstName: '', // Will be updated later
+        lastName: '',
         phone: phone,
         status: 'ACTIVE',
         registrationStatus: 'OTP_VERIFIED',

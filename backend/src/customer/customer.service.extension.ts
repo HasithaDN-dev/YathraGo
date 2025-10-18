@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CustomerRegisterDto } from './dto/customer-register.dto';
@@ -16,7 +17,8 @@ export class CustomerServiceExtension {
       const updatedCustomer = await this.prisma.customer.update({
         where: { customer_id: dto.customerId },
         data: {
-          name: dto.name,
+          firstName: dto.name?.split(' ')[0] || '',
+          lastName: dto.name?.split(' ').slice(1).join(' ') || '',
           email: dto.email,
           address: dto.address,
           profileImageUrl: dto.profileImageUrl,

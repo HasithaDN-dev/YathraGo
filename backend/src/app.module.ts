@@ -11,6 +11,7 @@ import { AuthWebModule } from './auth-web/auth-web.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CustomerModule } from './customer/customer.module';
 import { OwnerModule } from './owner/owner.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { OwnerModule } from './owner/owner.module';
     AuthWebModule,
     CustomerModule,
     OwnerModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

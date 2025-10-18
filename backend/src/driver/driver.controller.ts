@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 // ...existing code...
 // src/driver/driver.controller.ts
 import {
@@ -35,7 +36,6 @@ interface AuthenticatedRequest extends Request {
 @Controller('driver') // Base route for driver-related operations
 export class DriverController {
   constructor(private driverService: DriverService) {}
-
 
   // --- NEW ENDPOINT FOR SINGLE-PHASE DRIVER REGISTRATION (SECURE) ---
   @UseGuards(JwtAuthGuard) // Protect with JWT Guard

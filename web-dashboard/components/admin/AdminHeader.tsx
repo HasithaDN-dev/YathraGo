@@ -15,8 +15,8 @@ import {
 export default function AdminHeader() {
   return (
     <header className="flex justify-between bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between">
-        {/* Left side - YathraGo Logo */}
+      {/* Left side - YathraGo Logo */}
+      <div className="flex items-center">
         <Link href="/" className="cursor-pointer">
           <Image
             src="/logo.svg"
@@ -27,10 +27,10 @@ export default function AdminHeader() {
             priority
           />
         </Link>
-        </div>
+      </div>
 
-        {/* Right side - Notifications, Settings, and Admin Profile */}
-        <div className="flex items-center space-x-4">
+      {/* Right side - Notifications, Settings, and Admin Profile */}
+      <div className="flex items-center space-x-4">
           {/* Notifications */}
           <div className="relative">
             <Button variant="ghost" size="icon" className="relative">

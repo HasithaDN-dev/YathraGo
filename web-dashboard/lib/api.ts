@@ -37,7 +37,20 @@ export async function apiClient(endpoint: string, options: RequestInit = {}) {
  * API endpoints for the admin dashboard
  */
 export const api = {
-  // Customer endpoints
+  // Admin user management endpoints
+  admin: {
+    getParents: () => apiClient('/admin/users/parents'),
+    getStaffPassengers: () => apiClient('/admin/users/staff-passengers'),
+    getDrivers: () => apiClient('/admin/users/drivers'),
+    getOwners: () => apiClient('/admin/users/owners'),
+    getAdmins: () => apiClient('/admin/users/admins'),
+    getManagers: () => apiClient('/admin/users/managers'),
+    getBackupDrivers: () => apiClient('/admin/users/backup-drivers'),
+    getChildren: () => apiClient('/admin/users/children'),
+    getWebUsers: () => apiClient('/admin/users/web-users'),
+  },
+
+  // Customer endpoints (for customer count)
   customers: {
     getAll: () => apiClient('/customer/all'),
     getById: (id: number) => apiClient(`/customer/${id}`),

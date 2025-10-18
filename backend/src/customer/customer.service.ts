@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterStaffPassengerDto } from './dto/register_staff_passenger.dto';
@@ -79,7 +80,9 @@ export class CustomerService {
         await tx.child.create({
           data: {
             customerId: dto.customerId,
-            childName: dto.childName,
+            childFirstName: dto.childName?.split(' ')[0] || dto.childName || '',
+            childLastName: dto.childName?.split(' ').slice(1).join(' ') || '',
+            gender: 'Unspecified',
             relationship: dto.relationship,
             nearbyCity: dto.nearbyCity,
             schoolLocation: dto.schoolLocation,
@@ -163,7 +166,12 @@ export class CustomerService {
       const updatedCustomer = await this.prisma.customer.update({
         where: { customer_id: parseInt(customerId) },
         data: {
-          name: profileData?.name || '',
+          firstName:
+            profileData?.name?.split(' ')[0] || profileData?.firstName || '',
+          lastName:
+            profileData?.name?.split(' ').slice(1).join(' ') ||
+            profileData?.lastName ||
+            '',
           email: profileData?.email || '',
           address: profileData?.address || '',
           profileImageUrl: profileData?.profileImageUrl || '',
@@ -197,7 +205,8 @@ export class CustomerService {
       const updatedCustomer = await this.prisma.customer.update({
         where: { customer_id: dto.customerId },
         data: {
-          name: dto.name,
+          firstName: dto.name?.split(' ')[0] || '',
+          lastName: dto.name?.split(' ').slice(1).join(' ') || '',
           email: dto.email,
           address: dto.address,
           profileImageUrl: dto.profileImageUrl,
@@ -225,7 +234,8 @@ export class CustomerService {
       const customers = await this.prisma.customer.findMany({
         select: {
           customer_id: true,
-          name: true,
+          firstName: true,
+          lastName: true,
           phone: true,
           email: true,
           address: true,
