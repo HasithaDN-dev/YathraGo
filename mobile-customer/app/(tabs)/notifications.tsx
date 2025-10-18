@@ -25,29 +25,38 @@ export default function NotificationsScreen() {
   const [suggestedSenders, setSuggestedSenders] = useState<string[]>([]);
   const [selectedSender, setSelectedSender] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const { notifications, loadForProfile, toggleExpanded } = useNotificationsStore();
+  const { notifications, loadForTargets, toggleExpanded } = useNotificationsStore();
   const { accessToken } = useAuthStore();
   const { activeProfile, customerProfile } = useProfileStore();
 
   // Fetch notifications function
   const fetchNotifications = useCallback(async () => {
-    if (!accessToken || !activeProfile) return;
-    const receiver: ReceiverType = 'CUSTOMER';
-    let receiverId: number | null = null;
-    if (activeProfile.type === 'child') {
-      const m = String(activeProfile.id).match(/(\d+)/);
-      receiverId = m ? parseInt(m[1], 10) : null;
-    } else if (activeProfile.type === 'staff') {
-      const m = String(activeProfile.id).match(/(\d+)/);
-      receiverId = m ? parseInt(m[1], 10) : null;
+    if (!accessToken) return;
+
+    const targets: Array<{ userType: ReceiverType; userId: number }> = [];
+
+    // Always include parent customer notifications if available
+    if (customerProfile?.customer_id) {
+      targets.push({ userType: 'CUSTOMER', userId: customerProfile.customer_id });
     }
-    if (!receiverId && customerProfile?.customer_id) {
-      receiverId = customerProfile.customer_id;
+
+    // Add active profile target
+    if (activeProfile) {
+      // IDs are strings like child-12 or staff-34; extract numeric id
+      const match = String(activeProfile.id).match(/(\d+)/);
+      const numericId = match ? parseInt(match[1], 10) : undefined;
+
+      if (activeProfile.type === 'child' && numericId) {
+        targets.push({ userType: 'CHILD', userId: numericId });
+      } else if (activeProfile.type === 'staff' && numericId) {
+        targets.push({ userType: 'STAFF', userId: numericId });
+      }
     }
-    if (receiverId) {
-      await loadForProfile(accessToken, receiver, receiverId);
+
+    if (targets.length > 0) {
+      await loadForTargets(accessToken, targets);
     }
-  }, [accessToken, activeProfile, loadForProfile, customerProfile?.customer_id]);
+  }, [accessToken, activeProfile, customerProfile?.customer_id, loadForTargets]);
 
   // Initial load
   useEffect(() => {

@@ -9,6 +9,7 @@ import { MagnifyingGlass } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { API_BASE_URL } from '../../../config/api';
 import { useAuth } from '../../../hooks/useAuth';
+import { useProfileStore } from '../../../lib/stores/profile.store';
 
 // Commented out dummy data. Now using API data.
 // const conversations = [ ... ];
@@ -21,6 +22,7 @@ interface ConversationItem {
   time: string;
   timestamp: string;
   unreadCount: number;
+  avatarUri?: string | null;
 }
 
 export default function ChatListScreen() {
@@ -29,27 +31,77 @@ export default function ChatListScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { user } = useAuth();
+  const { activeProfile, customerProfile } = useProfileStore();
 
   // Fetch conversations function
   const fetchConversations = useCallback(async () => {
     if (!user) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/chat/conversations?userId=${user.id}&userType=CUSTOMER`);
-      const data = await res.json();
-      
+      // Build targets: always include parent CUSTOMER if available, plus activeProfile (child/staff)
+  const targets: { userId: number | string; userType: string }[] = [];
+
+      if (customerProfile?.customer_id) {
+        targets.push({ userId: customerProfile.customer_id, userType: 'CUSTOMER' });
+      }
+
+      if (activeProfile) {
+        // activeProfile.id is a string like 'child-8' - extract numeric id
+        const m = String(activeProfile.id).match(/(\d+)/);
+        const numericId = m ? parseInt(m[1], 10) : null;
+        if (numericId && activeProfile.type === 'child') {
+          targets.push({ userId: numericId, userType: 'CHILD' });
+        } else if (numericId && activeProfile.type === 'staff') {
+          targets.push({ userId: numericId, userType: 'STAFF' });
+        }
+      }
+
+      // Fallback: if no customerProfile found, still query the logged-in user as CUSTOMER
+      if (targets.length === 0) {
+        targets.push({ userId: Number(user.id), userType: 'CUSTOMER' });
+      }
+
+      // Fetch concurrently for all targets and merge
+      const responses = await Promise.all(
+        targets.map((t) =>
+          fetch(`${API_BASE_URL}/chat/conversations?userId=${t.userId}&userType=${t.userType}`).then((r) => r.ok ? r.json() : []),
+        ),
+      );
+
+      // Flatten and dedupe by conversation id
+      const allConvs: any[] = responses.flat();
+      const convMap = new Map<number, any>();
+      for (const c of allConvs) {
+        if (!convMap.has(c.id)) convMap.set(c.id, c);
+        else {
+          // If duplicate conversation appears from multiple targets, prefer the one with latest updatedAt
+          const existing = convMap.get(c.id);
+          if (new Date(c.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
+            convMap.set(c.id, c);
+          }
+        }
+      }
+
+      const mergedConversations = Array.from(convMap.values());
+
       // Transform and calculate unread counts
-      const transformed: ConversationItem[] = data.map((c: any) => {
+      const transformed: ConversationItem[] = mergedConversations.map((c: any) => {
         const other = c.otherParticipant || {};
         const messages = c.messages || [];
         const lastMsg = messages[0] || null; // Messages come in DESC order from backend
-        
+
         // Count unread messages (messages not sent by me and not seen)
-        const unreadCount = messages.filter((msg: any) => 
-          msg.senderId !== Number(user.id) && 
-          msg.senderType !== 'CUSTOMER' && 
-          msg.seen === false
+        const unreadCount = messages.filter((msg: any) =>
+          msg.senderId !== Number(user.id) && msg.senderType !== 'CUSTOMER' && msg.seen === false,
         ).length;
-        
+
+        // Determine avatar URL from common fields (fallback to bundled default image)
+        const avatarPath = other.profileImage || other.avatarUrl || other.imageUrl || other.avatar || '';
+        const avatarUri = avatarPath
+          ? avatarPath.startsWith('http')
+            ? avatarPath
+            : `${API_BASE_URL}/${avatarPath.replace(/^\//, '')}`
+          : null;
+
         return {
           id: c.id,
           name: other.name || 'Chat',
@@ -58,22 +110,24 @@ export default function ChatListScreen() {
           time: lastMsg?.timestamp ? new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
           timestamp: lastMsg?.timestamp || c.updatedAt || '',
           unreadCount,
+          // attach avatar so UI can render it
+          avatarUri,
         };
       });
-      
+
       // Sort by latest message timestamp (most recent first)
       const sorted = transformed.sort((a, b) => {
         if (!a.timestamp) return 1;
         if (!b.timestamp) return -1;
         return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
       });
-      
+
       setConversations(sorted);
     } catch (error) {
       console.error('Failed to fetch conversations:', error);
       setConversations([]);
     }
-  }, [user]);
+  }, [user, activeProfile, customerProfile]);
 
   // Initial load
   useEffect(() => {
@@ -152,16 +206,23 @@ export default function ChatListScreen() {
             ) : filtered.length === 0 ? (
               <Typography variant="body" className="text-center mt-8">No conversations found.</Typography>
             ) : filtered.map((c) => (
-              <TouchableOpacity
+                <TouchableOpacity
                 key={c.id}
                 activeOpacity={0.8}
-                onPress={() => router.push({ pathname: '/(menu)/(homeCards)/chat_room', params: { id: c.id, name: c.name, phone: c.phone } })}
+                onPress={() => router.push({ pathname: '/(menu)/(homeCards)/chat_room', params: { id: String(c.id), name: c.name, phone: c.phone, avatarUri: c.avatarUri } })}
               >
                 <View className="bg-white rounded-2xl px-3 py-3 mb-3 shadow-sm flex-row items-center">
-                  <Image
-                    source={require('../../../assets/images/profile_Picture.png')}
-                    style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10 }}
-                  />
+                  {c.avatarUri && c.avatarUri !== 'null' && c.avatarUri !== 'undefined' ? (
+                    <Image
+                      source={{ uri: c.avatarUri }}
+                      style={{ width: 44, height: 44, borderRadius: 22, marginRight: 12 }}
+                    />
+                  ) : (
+                    <Image
+                      source={require('../../../assets/images/profile_Picture.png')}
+                      style={{ width: 44, height: 44, borderRadius: 22, marginRight: 12 }}
+                    />
+                  )}
                   <View className="flex-1">
                     <Typography variant="subhead" className="text-black">{c.name}</Typography>
                     <Typography variant="caption-1" className="text-brand-neutralGray" numberOfLines={1}>

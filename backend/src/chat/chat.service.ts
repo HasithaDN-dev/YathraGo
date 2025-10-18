@@ -104,9 +104,29 @@ export class ChatService {
           }
         }
 
+        // determine avatar path depending on type
+        let avatarPath: string | null = null;
+        if (otherType === 'CUSTOMER') {
+          const rec = await this.prisma.customer.findUnique({ where: { customer_id: otherId }, select: { profileImageUrl: true } });
+          if (rec?.profileImageUrl) avatarPath = rec.profileImageUrl;
+        } else if (otherType === 'DRIVER') {
+          const rec = await this.prisma.driver.findUnique({ where: { driver_id: otherId }, select: { profile_picture_url: true } });
+          if (rec?.profile_picture_url) avatarPath = rec.profile_picture_url;
+        }
+
+        // Normalize to absolute URL if backend base URL provided
+        const base = (process.env.SERVER_BASE_URL || '').replace(/\/$/, '');
+        const avatarUrl = avatarPath
+          ? avatarPath.startsWith('http')
+            ? avatarPath
+            : base
+              ? `${base}/${avatarPath.replace(/^\/+/, '')}`
+              : avatarPath
+          : null;
+
         return {
           ...c,
-          otherParticipant: { id: otherId, type: otherType, name, phone },
+          otherParticipant: { id: otherId, type: otherType, name, phone, avatarUrl },
           lastMessage: c.messages?.[0] ?? null,
         };
       }),

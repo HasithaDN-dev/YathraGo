@@ -2,25 +2,11 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
-  IsObject,
   IsOptional,
   IsString,
+  IsBoolean,
 } from 'class-validator';
-
-export enum InputNotificationType {
-  SYSTEM = 'SYSTEM',
-  ALERT = 'ALERT',
-  OTHER = 'OTHER',
-  CHAT = 'CHAT',
-}
-
-export enum InputReceiverType {
-  CUSTOMER = 'CUSTOMER',
-  DRIVER = 'DRIVER',
-  WEBUSER = 'WEBUSER',
-  VEHICLEOWNER = 'VEHICLEOWNER',
-  BACKUPDRIVER = 'BACKUPDRIVER',
-}
+import { UserTypes, NotificationTypes } from '@prisma/client';
 
 export class SendNotificationDto {
   @IsString()
@@ -31,16 +17,47 @@ export class SendNotificationDto {
   @IsNotEmpty()
   message!: string;
 
-  @IsEnum(InputNotificationType)
-  type!: InputNotificationType;
+  @IsEnum(NotificationTypes)
+  @IsNotEmpty()
+  type!: NotificationTypes;
 
-  @IsEnum(InputReceiverType)
-  receiver!: InputReceiverType;
+  @IsEnum(UserTypes)
+  @IsNotEmpty()
+  receiver!: UserTypes;
 
   @IsInt()
+  @IsNotEmpty()
   receiverId!: number;
 
   @IsOptional()
-  @IsObject()
-  data?: Record<string, string>;
+  @IsInt()
+  conversationId?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isExpanded?: boolean;
+}
+
+export class GetNotificationsDto {
+  @IsEnum(UserTypes)
+  @IsNotEmpty()
+  userType!: UserTypes;
+
+  @IsInt()
+  @IsNotEmpty()
+  userId!: number;
+}
+
+export class MarkAsReadDto {
+  @IsInt()
+  @IsNotEmpty()
+  notificationId!: number;
+
+  @IsEnum(UserTypes)
+  @IsNotEmpty()
+  userType!: UserTypes;
+
+  @IsInt()
+  @IsNotEmpty()
+  userId!: number;
 }
