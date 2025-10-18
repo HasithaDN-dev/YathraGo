@@ -37,7 +37,7 @@ model Webuser {
   email        String        @unique
   password     String
   username     String
-  role         String        @default("owner")
+  role         Role          @default(OWNER)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   fcmToken     String?
@@ -575,4 +575,12 @@ enum Ridetype {
   School
   Work
   Both
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MANAGER
+  FINANCE_MANAGER
+  DRIVER_COORDINATOR
 }
