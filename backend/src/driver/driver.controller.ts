@@ -433,7 +433,7 @@ export class DriverController {
       const firstCityId = driverCities.cityIds[0];
       const lastCityId = driverCities.cityIds[driverCities.cityIds.length - 1];
 
-      // Fetch city names
+      // Fetch city names and coordinates
       const cities = await this.prisma.city.findMany({
         where: {
           id: { in: [firstCityId, lastCityId] },
@@ -449,12 +449,120 @@ export class DriverController {
         endPoint: endCity?.name || 'Unknown',
         startCityId: firstCityId,
         endCityId: lastCityId,
+        startLatitude: startCity?.latitude,
+        startLongitude: startCity?.longitude,
+        endLatitude: endCity?.latitude,
+        endLongitude: endCity?.longitude,
       };
     } catch (error) {
       console.error('Error fetching driver route cities:', error);
       return {
         success: false,
         message: 'Failed to fetch route cities',
+      };
+    }
+  }
+
+  // Get driver route cities with ETA
+  @Get('route-cities-with-eta')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async getDriverRouteCitiesWithETA(@Req() req: AuthenticatedRequest) {
+    try {
+      const driverId = parseInt(req.user.sub, 10);
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+
+      if (!apiKey) {
+        return {
+          success: false,
+          message: 'Server maps key not configured',
+        };
+      }
+
+      // Get driver's city IDs
+      const driverCities = await this.prisma.driverCities.findUnique({
+        where: { driverId },
+      });
+
+      if (
+        !driverCities ||
+        !driverCities.cityIds ||
+        driverCities.cityIds.length === 0
+      ) {
+        return {
+          success: false,
+          message: 'No route cities found for driver',
+        };
+      }
+
+      const firstCityId = driverCities.cityIds[0];
+      const lastCityId = driverCities.cityIds[driverCities.cityIds.length - 1];
+
+      // Fetch city details with coordinates
+      const cities = await this.prisma.city.findMany({
+        where: {
+          id: { in: [firstCityId, lastCityId] },
+        },
+      });
+
+      const startCity = cities.find((c) => c.id === firstCityId);
+      const endCity = cities.find((c) => c.id === lastCityId);
+
+      if (!startCity || !endCity) {
+        return {
+          success: false,
+          message: 'City details not found',
+        };
+      }
+
+      // Calculate ETA using Google Maps Distance Matrix API
+      let etaMinutes: number | null = null;
+      let distanceKm: number | null = null;
+
+      try {
+        const origin = `${startCity.latitude},${startCity.longitude}`;
+        const destination = `${endCity.latitude},${endCity.longitude}`;
+
+        const params = new URLSearchParams();
+        params.append('origins', origin);
+        params.append('destinations', destination);
+        params.append('key', apiKey);
+        params.append('mode', 'driving');
+
+        const url = `https://maps.googleapis.com/maps/api/distancematrix/json?${params.toString()}`;
+        const response = await axios.get(url, { timeout: 10000 });
+
+        if (response.data?.rows?.[0]?.elements?.[0]?.status === 'OK') {
+          const element = response.data.rows[0].elements[0];
+          const durationSeconds = element.duration?.value || 0;
+          const distanceMeters = element.distance?.value || 0;
+
+          etaMinutes = Math.ceil(durationSeconds / 60);
+          distanceKm = parseFloat((distanceMeters / 1000).toFixed(1));
+        }
+      } catch (error) {
+        console.error('Error calculating ETA:', error);
+        // Continue without ETA if API fails
+      }
+
+      return {
+        success: true,
+        startPoint: startCity.name,
+        endPoint: endCity.name,
+        startCityId: firstCityId,
+        endCityId: lastCityId,
+        startLatitude: startCity.latitude,
+        startLongitude: startCity.longitude,
+        endLatitude: endCity.latitude,
+        endLongitude: endCity.longitude,
+        etaMinutes,
+        distanceKm,
+      };
+    } catch (error) {
+      console.error('Error fetching route cities with ETA:', error);
+      return {
+        success: false,
+        message: 'Failed to fetch route cities with ETA',
       };
     }
   }
@@ -498,7 +606,7 @@ export class DriverController {
           childId: body.childId,
           type: body.type.toUpperCase() as any,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { id: 'desc' },
       });
 
       if (waypoint) {

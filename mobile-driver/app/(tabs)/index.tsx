@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../../config/api';
-import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image, RefreshControl } from 'react-native';
 import { Typography } from '@/components/Typography';
 import {
   Car, MapPin, Clock, CurrencyDollar, Star, Bell, Play, Pause, CompassIcon, Calendar,
@@ -12,6 +12,7 @@ import CustomButton from '@/components/ui/CustomButton';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/stores/auth.store';
 import { tokenService } from '@/lib/services/token.service';
+import { routeCitiesService } from '@/lib/services/route-cities.service';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -23,6 +24,13 @@ export default function HomeScreen() {
   const [studentCount, setStudentCount] = useState<number>(0);
   const [driverName, setDriverName] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // Route cities state
+  const [startCity, setStartCity] = useState<string>('Maharagama Junction');
+  const [endCity, setEndCity] = useState<string>('Royal College');
+  const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
 
   useEffect(() => {
     fetchDriverData();
@@ -52,6 +60,15 @@ export default function HomeScreen() {
         const studentsData = await studentsResponse.json();
         setStudentCount(studentsData.length || 0);
       }
+
+      // Fetch route cities with ETA (cached)
+      const routeData = await routeCitiesService.getRouteCitiesWithETA();
+      if (routeData && routeData.success) {
+        setStartCity(routeData.startPoint);
+        setEndCity(routeData.endPoint);
+        setEtaMinutes(routeData.etaMinutes || null);
+        setDistanceKm(routeData.distanceKm || null);
+      }
     } catch (error) {
       console.error('Error fetching driver data:', error);
       // Fallback to data from auth store
@@ -62,6 +79,12 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchDriverData();
+    setRefreshing(false);
   };
 
   const toggleOnlineStatus = () => {
@@ -98,7 +121,12 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-gray-50">
+    <ScrollView 
+      className="flex-1 bg-gray-50"
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       {/* Blue Header with rounded bottom corners */}
       <View className="bg-brand-deepNavy px-6 pt-20 pb-8 rounded-b-3xl">
         <View className="flex-row items-center justify-between mb-3">
@@ -163,8 +191,8 @@ export default function HomeScreen() {
             <Typography variant="caption-1" weight="medium" className="text-brand-deepNavy text-center">
               Start
             </Typography>
-            <Typography variant="caption-2" className="text-brand-neutralGray text-center">
-              Maharagama Junction
+            <Typography variant="caption-2" className="text-brand-neutralGray text-center" numberOfLines={2}>
+              {startCity}
             </Typography>
           </View>
 
@@ -175,8 +203,13 @@ export default function HomeScreen() {
               </Typography>
             </View>
             <Typography variant="caption-2" className="text-brand-neutralGray text-center">
-              ETA 8:20 AM
+              {etaMinutes ? routeCitiesService.formatETA(etaMinutes) : 'Calculating...'}
             </Typography>
+            {distanceKm && (
+              <Typography variant="caption-2" className="text-brand-neutralGray text-center">
+                {distanceKm} km
+              </Typography>
+            )}
           </View>
 
           <View className="flex-1 items-center">
@@ -186,8 +219,8 @@ export default function HomeScreen() {
             <Typography variant="caption-1" weight="medium" className="text-brand-deepNavy text-center">
               Destination
             </Typography>
-            <Typography variant="caption-2" className="text-brand-neutralGray text-center">
-              Royal College
+            <Typography variant="caption-2" className="text-brand-neutralGray text-center" numberOfLines={2}>
+              {endCity}
             </Typography>
           </View>
         </View>
@@ -240,7 +273,7 @@ export default function HomeScreen() {
                 Date
               </Typography>
               <Typography variant="body" className="text-brand-neutralGray">
-                October 15, 2025
+                {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
               </Typography>
             </View>
             <View className="items-end">
@@ -248,7 +281,7 @@ export default function HomeScreen() {
                 Total Distance
               </Typography>
               <Typography variant="body" className="text-brand-neutralGray">
-                12.5 km
+                {distanceKm ? `${distanceKm} km` : 'Calculating...'}
               </Typography>
             </View>
           </View>
@@ -263,14 +296,14 @@ export default function HomeScreen() {
 
         <View className="space-y-3">
           <View className="flex-row items-center justify-between p-3 bg-brand-lightGray rounded-lg">
-            <View className="flex-row items-center">
+            <View className="flex-row items-center flex-1">
               <ClockIcon size={20} color="#143373" weight="regular" />
-              <View className="ml-3">
+              <View className="ml-3 flex-1">
                 <Typography variant="body" weight="semibold" className="text-brand-deepNavy">
                   7:30 AM - Pickup
                 </Typography>
-                <Typography variant="caption-1" className="text-brand-neutralGray">
-                  Maharagama Junction → Royal College
+                <Typography variant="caption-1" className="text-brand-neutralGray" numberOfLines={1}>
+                  {startCity} → {endCity}
                 </Typography>
               </View>
             </View>
@@ -282,14 +315,14 @@ export default function HomeScreen() {
           </View>
 
           <View className="flex-row items-center justify-between p-3 bg-white border border-brand-lightGray rounded-lg">
-            <View className="flex-row items-center">
+            <View className="flex-row items-center flex-1">
               <ClockIcon size={20} color="#6b7280" weight="regular" />
-              <View className="ml-3">
+              <View className="ml-3 flex-1">
                 <Typography variant="body" weight="semibold" className="text-brand-deepNavy">
                   2:30 PM - Drop-off
                 </Typography>
-                <Typography variant="caption-1" className="text-brand-neutralGray">
-                  Royal College → Maharagama Junction
+                <Typography variant="caption-1" className="text-brand-neutralGray" numberOfLines={1}>
+                  {endCity} → {startCity}
                 </Typography>
               </View>
             </View>
