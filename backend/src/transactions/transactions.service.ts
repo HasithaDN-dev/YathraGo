@@ -37,8 +37,8 @@ export class TransactionsService {
         paymentYear: currentYear,
       },
       include: {
-        child: true,
-        customer: true,
+        Child: true,
+        Customer: true,
       },
       orderBy: {
         dueDate: 'asc',
@@ -48,7 +48,7 @@ export class TransactionsService {
     // Map to DTO format (optional, if you want to clean up or rename fields)
     return payments.map((p) => ({
       childId: p.childId,
-      childName: p.child?.childFirstName, // optional
+      childName: p.Child?.childFirstName, // optional
       paymentDate: p.updatedAt, // or dueDate / firstUsageDate
       paymentMethod: p.paymentMethod ?? undefined,
       transactionRef: p.transactionRef ?? undefined,
