@@ -8,7 +8,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useDriverStore } from '../../lib/stores/driver.store';
 import { useAuthStore } from '../../lib/stores/auth.store';
-import { API_BASE_URL } from '../../config/api';
+import { completeDriverRegistrationApi } from '../../lib/api/profile.api';
 
 interface FileUploadItemProps {
   file: DocumentPicker.DocumentPickerSuccessResult | null;
@@ -63,7 +63,7 @@ const LicenseUploadBox: React.FC<LicenseUploadBoxProps> = ({ image, onUpload, si
 
 export default function VehicleDocScreen() {
   const router = useRouter();
-  const { vehicleDocuments, updateVehicleDocuments, isRegistrationComplete, personalInfo, idVerification, vehicleInfo } = useDriverStore();
+  const { vehicleDocuments, updateVehicleDocuments, personalInfo, idVerification, vehicleInfo } = useDriverStore();
   const { accessToken, setProfileComplete, setRegistrationStatus } = useAuthStore();
 
   const [revenueLicense, setRevenueLicense] = useState<DocumentPicker.DocumentPickerSuccessResult | null>(vehicleDocuments.revenueLicense);
@@ -112,65 +112,20 @@ export default function VehicleDocScreen() {
   };
 
   const handleVerify = async () => {
-    // Save documents to store first before validation
-    updateVehicleDocuments({
-      revenueLicense,
-      vehicleInsurance,
-      registrationDoc,
-      licenseFront,
-      licenseBack,
-    });
+    if (
+      !revenueLicense ||
+      !vehicleInsurance ||
+      !registrationDoc ||
+      !licenseFront ||
+      !licenseBack
+    ) {
+      Alert.alert('Error', 'Please complete all required fields before submitting.');
+      return;
+    }
 
-    // Give the store a moment to update
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // ====== DEBUG: Print EVERYTHING in the store ======
-    console.log('========== REGISTRATION DATA DEBUG ==========');
-    console.log('1. PERSONAL INFO:', JSON.stringify({
-      firstName: personalInfo.firstName,
-      lastName: personalInfo.lastName,
-      dateOfBirth: personalInfo.dateOfBirth,
-      email: personalInfo.email,
-      secondaryPhone: personalInfo.secondaryPhone,
-      city: personalInfo.city,
-      nic: personalInfo.nic,
-      gender: personalInfo.gender,
-      hasProfileImage: !!personalInfo.profileImage,
-    }, null, 2));
-    
-    console.log('2. ID VERIFICATION:', JSON.stringify({
-      hasFrontImage: !!idVerification.frontImage,
-      hasBackImage: !!idVerification.backImage,
-    }, null, 2));
-    
-    console.log('3. VEHICLE INFO:', JSON.stringify({
-      vehicleType: vehicleInfo.vehicleType,
-      vehicleBrand: vehicleInfo.vehicleBrand,
-      vehicleModel: vehicleInfo.vehicleModel,
-      yearOfManufacture: vehicleInfo.yearOfManufacture,
-      vehicleColor: vehicleInfo.vehicleColor,
-      licensePlate: vehicleInfo.licensePlate,
-      seats: vehicleInfo.seats,
-      hasFrontView: !!vehicleInfo.frontView,
-      hasSideView: !!vehicleInfo.sideView,
-      hasRearView: !!vehicleInfo.rearView,
-      hasInteriorView: !!vehicleInfo.interiorView,
-    }, null, 2));
-    
-    console.log('4. VEHICLE DOCUMENTS:', JSON.stringify({
-      hasRevenueLicense: !!vehicleDocuments.revenueLicense,
-      hasVehicleInsurance: !!vehicleDocuments.vehicleInsurance,
-      hasRegistrationDoc: !!vehicleDocuments.registrationDoc,
-      hasLicenseFront: !!vehicleDocuments.licenseFront,
-      hasLicenseBack: !!vehicleDocuments.licenseBack,
-    }, null, 2));
-    
-    const isComplete = isRegistrationComplete();
-    console.log('5. VALIDATION RESULT:', isComplete);
-    console.log('============================================');
-
-    if (!isComplete) {
-      Alert.alert('Error', 'Please complete all required fields before submitting. Check console for details.');
+    // Validate that personal info has NIC and gender
+    if (!personalInfo.NIC || !personalInfo.gender) {
+      Alert.alert('Error', 'NIC and Gender are required. Please go back and complete your personal information.');
       return;
     }
 
@@ -181,153 +136,65 @@ export default function VehicleDocScreen() {
 
     setIsSubmitting(true);
     try {
-      // ========== SINGLE API CALL WITH ALL DATA ==========
-      // The backend expects ONE FormData request with ALL files and data
-      const completeFormData = new FormData();
-      
-      // 1. Add Personal Information as form fields
-      completeFormData.append('firstName', personalInfo.firstName);
-      completeFormData.append('lastName', personalInfo.lastName);
-      completeFormData.append('dateOfBirth', personalInfo.dateOfBirth);
-      completeFormData.append('email', personalInfo.email || '');
-      completeFormData.append('secondaryPhone', personalInfo.secondaryPhone);
-      completeFormData.append('city', personalInfo.city);
-      completeFormData.append('NIC', personalInfo.nic || '');
-      completeFormData.append('gender', personalInfo.gender || '');
-      
-      // 2. Add Profile Image
-      if (personalInfo.profileImage) {
-        completeFormData.append('profileImage', {
-          uri: personalInfo.profileImage.uri,
-          name: 'profile.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      
-      // 3. Add ID Verification Images
-      if (idVerification.frontImage) {
-        completeFormData.append('idFrontImage', {
-          uri: idVerification.frontImage.uri,
-          name: 'idFront.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      if (idVerification.backImage) {
-        completeFormData.append('idBackImage', {
-          uri: idVerification.backImage.uri,
-          name: 'idBack.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      
-      // 4. Add Vehicle Information as form fields
-      completeFormData.append('vehicleType', vehicleInfo.vehicleType);
-      completeFormData.append('vehicleBrand', vehicleInfo.vehicleBrand);
-      completeFormData.append('vehicleModel', vehicleInfo.vehicleModel);
-      completeFormData.append('yearOfManufacture', vehicleInfo.yearOfManufacture);
-      completeFormData.append('vehicleColor', vehicleInfo.vehicleColor);
-      completeFormData.append('licensePlate', vehicleInfo.licensePlate);
-      completeFormData.append('seats', vehicleInfo.seats.toString());
-      completeFormData.append('femaleAssistant', String(vehicleInfo.femaleAssistant));
-      
-      // 5. Add Vehicle Images
-      if (vehicleInfo.frontView) {
-        completeFormData.append('vehicleFrontView', {
-          uri: vehicleInfo.frontView.uri,
-          name: 'vehicleFront.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      if (vehicleInfo.sideView) {
-        completeFormData.append('vehicleSideView', {
-          uri: vehicleInfo.sideView.uri,
-          name: 'vehicleSide.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      if (vehicleInfo.rearView) {
-        completeFormData.append('vehicleRearView', {
-          uri: vehicleInfo.rearView.uri,
-          name: 'vehicleRear.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      if (vehicleInfo.interiorView) {
-        completeFormData.append('vehicleInteriorView', {
-          uri: vehicleInfo.interiorView.uri,
-          name: 'vehicleInterior.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      
-      // 6. Add Vehicle Documents
-      if (vehicleDocuments.revenueLicense) {
-        completeFormData.append('revenueLicense', {
-          uri: vehicleDocuments.revenueLicense.assets[0].uri,
-          name: vehicleDocuments.revenueLicense.assets[0].name,
-          type: vehicleDocuments.revenueLicense.assets[0].mimeType,
-        } as any);
-      }
-      if (vehicleDocuments.vehicleInsurance) {
-        completeFormData.append('vehicleInsurance', {
-          uri: vehicleDocuments.vehicleInsurance.assets[0].uri,
-          name: vehicleDocuments.vehicleInsurance.assets[0].name,
-          type: vehicleDocuments.vehicleInsurance.assets[0].mimeType,
-        } as any);
-      }
-      if (vehicleDocuments.registrationDoc) {
-        completeFormData.append('registrationDoc', {
-          uri: vehicleDocuments.registrationDoc.assets[0].uri,
-          name: vehicleDocuments.registrationDoc.assets[0].name,
-          type: vehicleDocuments.registrationDoc.assets[0].mimeType,
-        } as any);
-      }
-      if (vehicleDocuments.licenseFront) {
-        completeFormData.append('licenseFront', {
-          uri: vehicleDocuments.licenseFront.uri,
-          name: 'licenseFront.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-      if (vehicleDocuments.licenseBack) {
-        completeFormData.append('licenseBack', {
-          uri: vehicleDocuments.licenseBack.uri,
-          name: 'licenseBack.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
+      // Prepare complete registration data with all collected information
+      const registrationData = {
+        firstName: personalInfo.firstName,
+        lastName: personalInfo.lastName,
+        NIC: personalInfo.NIC,
+        city: personalInfo.city,
+        dateOfBirth: personalInfo.dateOfBirth,
+        gender: personalInfo.gender,
+        profileImage: personalInfo.profileImage?.uri || '',
+        email: personalInfo.email,
+        secondaryPhone: personalInfo.secondaryPhone,
+        
+        // ID Documents
+        idFrontImage: idVerification.frontImage,
+        idBackImage: idVerification.backImage,
+        
+        // Vehicle Information
+        vehicleType: vehicleInfo.vehicleType,
+        vehicleBrand: vehicleInfo.vehicleBrand,
+        vehicleModel: vehicleInfo.vehicleModel,
+        yearOfManufacture: vehicleInfo.yearOfManufacture,
+        vehicleColor: vehicleInfo.vehicleColor,
+        licensePlate: vehicleInfo.licensePlate,
+        seats: vehicleInfo.seats,
+        femaleAssistant: vehicleInfo.femaleAssistant,
+        
+        // Vehicle Images
+        vehicleFrontView: vehicleInfo.frontView,
+        vehicleSideView: vehicleInfo.sideView,
+        vehicleRearView: vehicleInfo.rearView,
+        vehicleInteriorView: vehicleInfo.interiorView,
+        
+        // Vehicle Documents
+        revenueLicense: revenueLicense,
+        vehicleInsurance: vehicleInsurance,
+        registrationDoc: registrationDoc,
+        licenseFront: licenseFront,
+        licenseBack: licenseBack,
+      };
 
-      console.log('========== SENDING COMPLETE REGISTRATION ==========');
-      console.log('FormData prepared with all files and data');
-      
-      // ========== SINGLE API CALL ==========
-      const response = await fetch(`${API_BASE_URL}/driver/register`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          // DON'T set Content-Type - let fetch set it with boundary for FormData
-        },
-        body: completeFormData,
-      });
+      // Call the single API endpoint that handles everything
+      await completeDriverRegistrationApi(accessToken, registrationData);
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Registration failed' }));
-        throw new Error(error.message || 'Failed to complete registration');
-      }
-
-      const result = await response.json();
-      console.log('Registration successful:', result);
-
-      // Update registration status
+      // Update registration status and complete profile
       setRegistrationStatus('ACCOUNT_CREATED');
       setProfileComplete(true);
 
       // Navigate to success screen
-      router.replace('/(registration)/success');
+      router.push('/(registration)/success');
 
     } catch (error) {
+      let errorMsg = 'Failed to complete registration. Please try again.';
+      if (error instanceof Error) {
+        errorMsg = error.message;
+      } else if (typeof error === 'string') {
+        errorMsg = error;
+      }
       console.error('Registration error:', error);
-      Alert.alert('Registration Failed', error instanceof Error ? error.message : 'Failed to complete registration. Please try again.');
+      Alert.alert('Registration Failed', errorMsg);
     } finally {
       setIsSubmitting(false);
     }

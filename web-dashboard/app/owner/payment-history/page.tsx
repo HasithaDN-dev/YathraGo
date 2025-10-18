@@ -342,7 +342,7 @@ export default function PaymentHistoryPage() {
               <Button
                 onClick={handleFilter}
                 variant="outline"
-                className="border-gray-400 text-gray-700 hover:bg-gray-50"
+                className="border-gray-400 text-gray-700 hover:bg-gray-700 hover:text-white"
               >
                 <Filter className="w-4 h-4 mr-2" />
                 Apply
@@ -355,7 +355,7 @@ export default function PaymentHistoryPage() {
             <Button
               onClick={clearFilters}
               variant="outline"
-              className="border-gray-400 text-gray-700 hover:bg-gray-50"
+              className="border-gray-400 text-gray-700 hover:bg-gray-700 hover:text-white"
             >
               Clear Filters
             </Button>
@@ -365,7 +365,7 @@ export default function PaymentHistoryPage() {
               <Button
                 onClick={() => handleExport("csv")}
                 variant="outline"
-                className="border-blue-900 text-blue-900 hover:bg-blue-50"
+                className="border-blue-900 text-blue-900 hover:bg-blue-900 hover:text-white"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Export CSV
@@ -373,7 +373,7 @@ export default function PaymentHistoryPage() {
               <Button
                 onClick={() => handleExport("pdf")}
                 variant="outline"
-                className="border-blue-900 text-blue-900 hover:bg-blue-50"
+                className="border-blue-900 text-blue-900 hover:bg-blue-900 hover:text-white"
               >
                 <FileText className="w-4 h-4 mr-2" />
                 Export PDF

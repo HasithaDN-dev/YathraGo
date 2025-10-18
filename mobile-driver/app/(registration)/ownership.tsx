@@ -28,11 +28,11 @@ const OwnershipScreen = () => {
 
       <View className="px-6 pb-8">
         <View className="flex-row space-x-4 mb-8">
-          <TouchableOpacity className="flex-1 bg-brand-deepNavy py-4 rounded-lg items-center" onPress={() => router.push('/(auth)/vehicle-reg')}>
+          <TouchableOpacity className="flex-1 bg-brand-deepNavy py-4 rounded-lg items-center" onPress={() => router.push('/(registration)/vehicle-reg')}>
             <Text className="text-white text-lg font-bold">Own Vehicle</Text>
           </TouchableOpacity>
-          <TouchableOpacity className="flex-1 border border-brand-lightNavy py-4 rounded-lg items-center" onPress={() => { /* Handle Added by Driver */ }}>
-            <Text className="text-brand-deepNavy text-lg font-bold">Added by Driver</Text>
+          <TouchableOpacity className="flex-1 border border-brand-lightNavy py-4 rounded-lg items-center" onPress={() => { /* Handle Added by Owner */ }}>
+            <Text className="text-brand-deepNavy text-lg font-bold">Added by Owner</Text>
           </TouchableOpacity>
         </View>
 

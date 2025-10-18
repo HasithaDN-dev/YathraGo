@@ -14,7 +14,9 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "This app needs location access to help you select pickup and work locations on the map."
+        "NSLocationWhenInUseUsageDescription": "This app needs location access to help you select pickup and work locations on the map.",
+        "NSCameraUsageDescription": "This app needs camera access to take photos for chat messages.",
+        "NSPhotoLibraryUsageDescription": "This app needs photo library access to select images for chat messages."
       },
       "config": {
         "googleMapsApiKey": "${EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}"
@@ -28,13 +30,19 @@
       "edgeToEdgeEnabled": true,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
       ],
       "config": {
         "googleMaps": {
           "apiKey": "${EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}"
         }
-      }
+      },
+      "package": "com.anonymous.mobilecustomer"
     },
     "web": {
       "bundler": "metro",
@@ -44,7 +52,14 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them in chat messages.",
+          "cameraPermission": "The app accesses your camera to let you take photos for chat messages."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

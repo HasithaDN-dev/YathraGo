@@ -11,6 +11,8 @@ interface PersonalInfo {
   email: string;
   secondaryPhone: string;
   city: string;
+  NIC: string;
+  gender: string;
   profileImage?: any;
   nic?: string;
   gender?: string;
@@ -81,7 +83,7 @@ const initialPersonalInfo: PersonalInfo = {
   email: '',
   secondaryPhone: '',
   city: '',
-  nic: '',
+  NIC: '',
   gender: '',
 };
 
@@ -180,7 +182,7 @@ export const useDriverStore = create<DriverState>((set, get) => ({
       personalInfo.email && 
       personalInfo.secondaryPhone && 
       personalInfo.city &&
-      personalInfo.nic &&
+      personalInfo.NIC &&
       personalInfo.gender;
 
     // Check ID verification

@@ -1,6 +1,8 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import React, { useEffect } from 'react';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 import { Stack, SplashScreen } from 'expo-router';
 import { useAuthStore } from '../lib/stores/auth.store';
 import { StatusBar } from 'expo-status-bar';
@@ -10,6 +12,25 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
+
+// Cross-platform notification handler: system tray + sound
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+if (Platform.OS === 'android') {
+  Notifications.setNotificationChannelAsync('default', {
+    name: 'default',
+    importance: Notifications.AndroidImportance.MAX,
+    sound: 'default',
+  });
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -59,8 +80,8 @@ export default function RootLayout() {
           <Stack.Screen name="(main)" options={{ headerShown: false }} />
         </Stack.Protected>
 
-        {/* Registration routes - accessible when authenticated but no profiles created yet */}
-        <Stack.Protected guard={isLoggedIn && !isProfileComplete}>
+        {/* Registration routes - accessible when authenticated (for adding more profiles) */}
+        <Stack.Protected guard={isLoggedIn}>
           <Stack.Screen name="(registration)" options={{ headerShown: false }} />
         </Stack.Protected>
 

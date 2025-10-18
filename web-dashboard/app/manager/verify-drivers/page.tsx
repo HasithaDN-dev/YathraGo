@@ -26,7 +26,7 @@ interface Driver {
   id: string;
   name: string;
   phoneNumber: string;
-  licenseNo: string;
+  // licenseNo removed
   ownerName: string;
   vehicleAssigned: string;
   submissionDate: string;
@@ -50,7 +50,6 @@ const mockDrivers: Driver[] = [
     id: "1",
     name: "Ramesh Kumar",
     phoneNumber: "+91-9876543210",
-    licenseNo: "KA123456789",
     ownerName: "Rajesh Kumar",
     vehicleAssigned: "KA-01-AB-1234",
     submissionDate: "2025-07-20",
@@ -71,7 +70,6 @@ const mockDrivers: Driver[] = [
     id: "2",
     name: "Suresh Patil",
     phoneNumber: "+91-9876543211",
-    licenseNo: "KA987654321",
     ownerName: "Priya Sharma",
     vehicleAssigned: "KA-02-CD-5678",
     submissionDate: "2025-07-19",
@@ -92,7 +90,6 @@ const mockDrivers: Driver[] = [
     id: "3",
     name: "Ganesh Reddy",
     phoneNumber: "+91-9876543212",
-    licenseNo: "KA456789123",
     ownerName: "Mohammed Ali",
     vehicleAssigned: "KA-03-EF-9012",
     submissionDate: "2025-07-18",
@@ -113,7 +110,6 @@ const mockDrivers: Driver[] = [
     id: "4",
     name: "Vijay Singh",
     phoneNumber: "+91-9876543213",
-    licenseNo: "KA789123456",
     ownerName: "Sunita Reddy",
     vehicleAssigned: "KA-04-GH-3456",
     submissionDate: "2025-07-17",
@@ -147,7 +143,6 @@ export default function VerifyDriversPage() {
   const filteredDrivers = drivers.filter((driver) => {
     const matchesSearch = 
       driver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      driver.licenseNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       driver.phoneNumber.includes(searchTerm) ||
       driver.ownerName.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -309,7 +304,7 @@ export default function VerifyDriversPage() {
               Reject Driver Application
             </h3>
             <p className="text-sm text-[var(--neutral-gray)] mb-4">
-              Driver: {selectedDriver?.name} ({selectedDriver?.licenseNo})
+              Driver: {selectedDriver?.name}
             </p>
             <textarea
               placeholder="Please provide a detailed reason for rejection..."
@@ -369,7 +364,8 @@ export default function VerifyDriversPage() {
                 <div className="space-y-2 text-sm">
                   <div><strong>Name:</strong> {selectedDriver.name}</div>
                   <div><strong>Phone:</strong> {selectedDriver.phoneNumber}</div>
-                  <div><strong>License No:</strong> {selectedDriver.licenseNo}</div>
+                  {/* License No removed */}
+                {/* License No removed */}
                   <div><strong>Owner:</strong> {selectedDriver.ownerName}</div>
                   <div><strong>Vehicle:</strong> {selectedDriver.vehicleAssigned}</div>
                   <div><strong>Applied:</strong> {new Date(selectedDriver.submissionDate).toLocaleDateString()}</div>
@@ -471,7 +467,7 @@ export default function VerifyDriversPage() {
                         </div>
                         <div className="flex items-center space-x-1 mt-1">
                           <CreditCard className="w-3 h-3 text-[var(--neutral-gray)]" />
-                          <span className="text-xs text-[var(--neutral-gray)]">{driver.licenseNo}</span>
+                          <span className="text-xs text-[var(--neutral-gray)]">N/A</span>
                         </div>
                       </div>
                     </div>

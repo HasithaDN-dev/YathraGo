@@ -9,6 +9,7 @@ export default function RegVerifyScreen() {
   const router = useRouter();
 
   const handleVerify = () => {
+    
     router.push('/(registration)/reg-id');
   };  
 
@@ -19,7 +20,7 @@ export default function RegVerifyScreen() {
         <Text className="text-xl font-bold text-white">Verify ID</Text>
       </View>
       <View className="flex-1 items-center justify-center px-6">
-        <Icon name="UserFocus" size={128} color="#A0A0A0" weight="light" />
+        <Icon name="User" size={128} color="#A0A0A0" weight="light" />
         <Text className="text-2xl font-bold mt-6 mb-4 text-center">Let's Verify Your Identity</Text>
         <Text className="text-base text-brand-neutralGray text-center mb-4 leading-6">
           To create your account, we need to make sure it's really you. Since we're a transportation service, complying with our security and <Text className="font-bold">privacy policies</Text> is essential.

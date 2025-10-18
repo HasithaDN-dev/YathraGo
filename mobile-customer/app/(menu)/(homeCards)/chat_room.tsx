@@ -1,44 +1,185 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, ScrollView, Image, TextInput, TouchableOpacity, Platform, Keyboard, TouchableWithoutFeedback, Text, Linking } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { View, ScrollView, Image, TextInput, TouchableOpacity, Platform, Keyboard, TouchableWithoutFeedback, Text, Linking, Alert, RefreshControl } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Typography } from '@/components/Typography';
 import { ArrowLeft, PaperPlaneRight, Camera, Paperclip, Phone } from 'phosphor-react-native';
 import { useLocalSearchParams, router } from 'expo-router';
+import { API_BASE_URL } from '../../../config/api';
+import { useAuth } from '../../../hooks/useAuth';
+import * as FileSystem from 'expo-file-system';
+import { imageCache } from '../../../utils/imageCache';
 
+// Minimal chat message shape for UI bubbles
 interface ChatMessage {
-  id: string;
+  id: string | number;
   text?: string;
   time: string;
   mine?: boolean;
   imageUri?: string;
+  seen?: boolean;
+  status?: string;
 }
 
 export default function ChatRoomScreen() {
-  const { name, phone } = useLocalSearchParams<{ id: string; name: string; phone?: string }>();
+  const { id: idParam, name, phone } = useLocalSearchParams<{ id: string; name: string; phone?: string }>();
+  const conversationId = Number(idParam);
   const insets = useSafeAreaInsets();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: '1', text: 'Hi!', time: '05:15 am' },
-    { id: '2', text: 'Hi Sunil', time: '05:15 am', mine: true },
-    { id: '3', text: 'ada vehicle eka enna poddak parakku wei', time: '05:16 am' },
-    { id: '4', text: 'Ah emhama hari hari', time: '05:17 am', mine: true },
-    { id: '5', text: 'Thanks remind Kalota.', time: '05:18 am' },
-  ]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<ScrollView>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [toolbarHeight, setToolbarHeight] = useState(56);
-  
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const { user } = useAuth();
+  const lastMessageIdRef = useRef<number | null>(null);
+  const hasLoadedOnceRef = useRef(false);
+
+  // Cached image component
+  const CachedImage = ({ imageUri, style }: { imageUri: string; style: any }) => {
+    const [cachedUri, setCachedUri] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+      const loadImage = async () => {
+        try {
+          setIsLoading(true);
+          
+          // If it's already a local URI, use it directly
+          if (imageUri.startsWith('file://') || imageUri.startsWith('content://')) {
+            setCachedUri(imageUri);
+            setIsLoading(false);
+            return;
+          }
+
+          // Try to get from cache first
+          let cachedImage = await imageCache.getCachedImage(imageUri);
+          
+          if (!cachedImage) {
+            // If not in cache, download and cache it
+            cachedImage = await imageCache.cacheImage(imageUri);
+          }
+          
+          setCachedUri(cachedImage || imageUri);
+        } catch (error) {
+          console.error('Error loading cached image:', error);
+          setCachedUri(imageUri);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      loadImage();
+    }, [imageUri]);
+
+    return (
+      <Image
+        source={{ uri: cachedUri || imageUri }}
+        style={style}
+        resizeMode="cover"
+      />
+    );
+  };
+
+  // Fetch messages function
+  const fetchMessages = useCallback(async () => {
+    if (!conversationId) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/messages`);
+      const data = await res.json();
+      
+      // Check if there are new messages
+      const hasNewMessages = data.length > 0 && 
+        lastMessageIdRef.current !== null && 
+        data[data.length - 1].id !== lastMessageIdRef.current;
+      
+      setMessages(data);
+      
+      // Update last message ID
+      if (data.length > 0) {
+        lastMessageIdRef.current = data[data.length - 1].id;
+      }
+      
+      // Auto-scroll to bottom if there are new messages
+      if (hasNewMessages) {
+        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+      }
+    } catch (error) {
+      console.error('Failed to fetch messages:', error);
+    }
+  }, [conversationId]);
+
+  // Mark messages as seen
+  const markMessagesAsSeen = useCallback(async () => {
+    if (!conversationId || !user) return;
+    try {
+      await fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/mark-seen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: Number(user.id),
+          userType: 'CUSTOMER',
+        }),
+      });
+      // Refresh messages to get updated seen status
+      await fetchMessages();
+    } catch (error) {
+      console.error('Failed to mark messages as seen:', error);
+    }
+  }, [conversationId, user, fetchMessages]);
+
+  // Initial load
+  useEffect(() => {
+    if (!conversationId) return;
+    // Only show loading on the very first load ever
+    if (!hasLoadedOnceRef.current) {
+      setLoading(true);
+      fetchMessages().finally(() => {
+        setLoading(false);
+        hasLoadedOnceRef.current = true;
+      });
+    }
+  }, [conversationId, fetchMessages]);
+
+  // Auto-refresh when screen is focused (poll every 3 seconds)
+  useFocusEffect(
+    useCallback(() => {
+      let interval: NodeJS.Timeout;
+      
+      // Immediate fetch when screen comes into focus
+      fetchMessages().then(() => {
+        // Mark messages as seen after initial fetch
+        markMessagesAsSeen();
+      });
+      
+      // Set up polling every 3 seconds
+      interval = setInterval(() => {
+        fetchMessages();
+      }, 3000);
+
+      return () => {
+        if (interval) clearInterval(interval);
+      };
+    }, [fetchMessages, markMessagesAsSeen])
+  );
+
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchMessages();
+    setRefreshing(false);
+  }, [fetchMessages]);
 
   // Ensure input bar stays above keyboard: hide emoji panel when keyboard opens
   useEffect(() => {
-  const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
+    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
       setKeyboardVisible(true);
       setKeyboardHeight(e.endCoordinates?.height ?? 0);
     });
     const changeSub = Keyboard.addListener('keyboardDidChangeFrame', (e) => {
-      // Update height on frame changes (e.g., predictive bar, emoji row)
       setKeyboardVisible((e.endCoordinates?.height ?? 0) > 0);
       setKeyboardHeight(e.endCoordinates?.height ?? 0);
     });
@@ -68,7 +209,7 @@ export default function ChatRoomScreen() {
         <Image source={require('../../../assets/images/profile_Picture.png')} style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10 }} />
         <View className="flex-1">
           <Typography variant="subhead" className="text-black">{name || 'Driver'}</Typography>
-          <Typography variant="caption-1" className="text-brand-neutralGray">05:15 am</Typography>
+          <Typography variant="caption-1" className="text-brand-neutralGray">{/* last seen placeholder */} </Typography>
         </View>
         <TouchableOpacity onPress={dial} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Phone size={22} color="#143373" />
@@ -77,81 +218,260 @@ export default function ChatRoomScreen() {
     </View>
   ), [name, phone]);
 
-  const send = (overrideText?: string) => {
+  // Send a message to backend
+  const send = async (overrideText?: string) => {
     const textToSend = (overrideText ?? draft).trim();
-    if (!textToSend) return;
-    const msg: ChatMessage = { id: String(Date.now()), text: textToSend, time: 'now', mine: true };
-    setMessages((prev) => [...prev, msg]);
-    if (!overrideText) setDraft('');
+    if (!textToSend || !user || !conversationId) return;
+    setDraft('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/chat/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          senderId: Number(user.id),
+          senderType: 'CUSTOMER',
+          message: textToSend,
+        }),
+      });
+      if (res.ok) {
+        // Re-fetch messages after sending
+        await fetchMessages();
+      }
+    } catch {}
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+  };
+
+  const uploadImageToServer = async (imageUri: string): Promise<string | null> => {
+    try {
+      // Test connectivity first
+      console.log('Testing connectivity to:', `${API_BASE_URL}/chat/conversations`);
+      try {
+        const testResponse = await fetch(`${API_BASE_URL}/chat/conversations?userId=1&userType=CUSTOMER`);
+        console.log('Connectivity test status:', testResponse.status);
+      } catch (connectError) {
+        console.error('Connectivity test failed:', connectError);
+        Alert.alert('Network Error', 'Cannot connect to server. Please check your internet connection and make sure the backend server is running.');
+        return null;
+      }
+
+      // Create FormData properly for React Native
+      const formData = new FormData();
+      
+      // Get file info to determine the correct type
+      const filename = imageUri.split('/').pop() || 'image.jpg';
+      const fileType = filename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+      
+      formData.append('file', {
+        uri: imageUri,
+        type: fileType,
+        name: filename,
+      } as any);
+
+      console.log('Uploading image:', { imageUri, filename, fileType });
+      console.log('API_BASE_URL:', API_BASE_URL);
+      console.log('Full upload URL:', `${API_BASE_URL}/chat/upload-image`);
+
+      const response = await fetch(`${API_BASE_URL}/chat/upload-image`, {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header - let fetch set it automatically for FormData
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      console.log('Upload response status:', response.status);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Upload result:', result);
+        return result.success ? result.imageUrl : null;
+      } else {
+        const errorText = await response.text();
+        console.error('Upload failed:', response.status, errorText);
+        return null;
+      }
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      return null;
+    }
+  };
+
+  const sendImageMessage = async (imageUri: string) => {
+    if (!user || !conversationId) return;
+
+    let tempMsgId: string | null = null;
+
+    try {
+      // Show optimistic UI update
+      tempMsgId = String(Date.now());
+      const tempMsg: ChatMessage = { 
+        id: tempMsgId, 
+        imageUri: imageUri, 
+        time: 'now', 
+        mine: true 
+      };
+      setMessages((prev) => [...prev, tempMsg]);
+      requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+
+      // Upload image to server
+      const imageUrl = await uploadImageToServer(imageUri);
+      
+      if (imageUrl) {
+        // Send message with uploaded image URL
+        const res = await fetch(`${API_BASE_URL}/chat/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            conversationId,
+            senderId: Number(user.id),
+            senderType: 'CUSTOMER',
+            message: null,
+            imageUrl: imageUrl,
+          }),
+        });
+
+        if (res.ok) {
+          // Re-fetch messages after sending
+          await fetchMessages();
+        } else {
+          // Remove the optimistic update if failed
+          if (tempMsgId) {
+            setMessages((prev) => prev.filter(msg => msg.id !== tempMsgId));
+          }
+          Alert.alert('Error', 'Failed to send image');
+        }
+      } else {
+        // Remove the optimistic update if upload failed
+        if (tempMsgId) {
+          setMessages((prev) => prev.filter(msg => msg.id !== tempMsgId));
+        }
+        Alert.alert('Error', 'Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Send image error:', error);
+      // Remove the optimistic update if failed
+      if (tempMsgId) {
+        setMessages((prev) => prev.filter(msg => msg.id !== tempMsgId));
+      }
+      Alert.alert('Error', 'Failed to send image');
+    }
   };
 
   const captureAndSendImage = async () => {
     try {
       Keyboard.dismiss();
+      console.log('Requesting camera permissions...');
       const perm = await ImagePicker.requestCameraPermissionsAsync();
+      console.log('Camera permission status:', perm.status);
       if (perm.status !== 'granted') {
+        Alert.alert('Permission Required', 'Camera permission is needed to take photos');
         return;
       }
+      console.log('Launching camera...');
       const res = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 0.7,
       });
+      console.log('Camera result:', res);
       if (!res.canceled && res.assets && res.assets.length > 0) {
         const uri = res.assets[0].uri;
-        const imgMsg: ChatMessage = { id: String(Date.now()), imageUri: uri, time: 'now', mine: true };
-        setMessages((prev) => [...prev, imgMsg]);
-        requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+        console.log('Image captured, URI:', uri);
+        await sendImageMessage(uri);
       }
-    } catch {
-      // no-op
+    } catch (error) {
+      console.error('Camera error:', error);
+      Alert.alert('Error', 'Failed to capture image');
     }
   };
 
   const pickAndSendImage = async () => {
     try {
       Keyboard.dismiss();
+      console.log('Requesting media library permissions...');
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      console.log('Media library permission status:', perm.status);
       if (perm.status !== 'granted') {
+        Alert.alert('Permission Required', 'Photo library permission is needed to select images');
         return;
       }
+      console.log('Launching image library...');
       const res = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
         quality: 0.8,
         selectionLimit: 1,
-      } as any);
+      });
+      console.log('Image library result:', res);
       if (!res.canceled && res.assets && res.assets.length > 0) {
         const uri = res.assets[0].uri;
-        const imgMsg: ChatMessage = { id: String(Date.now()), imageUri: uri, time: 'now', mine: true };
-        setMessages((prev) => [...prev, imgMsg]);
-        requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+        console.log('Image selected, URI:', uri);
+        await sendImageMessage(uri);
       }
-    } catch {
-      // no-op
+    } catch (error) {
+      console.error('Gallery error:', error);
+      Alert.alert('Error', 'Failed to select image');
     }
   };
 
   const Bubble = ({ m }: { m: ChatMessage }) => {
-  if (m.imageUri) {
+    // Status indicator component (only for sent messages)
+    const StatusIndicator = () => {
+      if (!m.mine) return null;
+      
+      const getStatusIcon = () => {
+        if (m.seen || m.status === 'SEEN') {
+          // Double check mark (seen)
+          return (
+            <View className="flex-row ml-1">
+              <Text style={{ fontSize: 10, color: '#3B82F6' }}>✓✓</Text>
+            </View>
+          );
+        } else if (m.status === 'DELIVERED') {
+          // Double check mark (delivered but not seen)
+          return (
+            <View className="flex-row ml-1">
+              <Text style={{ fontSize: 10, color: '#9CA3AF' }}>✓✓</Text>
+            </View>
+          );
+        } else {
+          // Single check mark (sent)
+          return (
+            <View className="flex-row ml-1">
+              <Text style={{ fontSize: 10, color: '#9CA3AF' }}>✓</Text>
+            </View>
+          );
+        }
+      };
+
+      return getStatusIcon();
+    };
+
+    if (m.imageUri) {
       return (
         <View className={`${m.mine ? 'self-end' : 'self-start'} mb-3`}>
-          <Image
-            source={{ uri: m.imageUri }}
-      style={{ width: 220, height: 160, borderRadius: 0, backgroundColor: '#e5e7eb' }}
-            resizeMode="cover"
+          <CachedImage
+            imageUri={m.imageUri}
+            style={{ width: 220, height: 160, borderRadius: 12, backgroundColor: '#e5e7eb' }}
           />
-          <Typography variant="caption-2" className="text-brand-neutralGray mt-1 self-end">{m.time}</Typography>
+          <View className="flex-row items-center mt-1 self-end">
+            <Typography variant="caption-2" className="text-brand-neutralGray">{m.time}</Typography>
+            <StatusIndicator />
+          </View>
         </View>
       );
     }
-  const isThumbsUpOnly = (m.text?.trim() ?? '') === '👍';
+    const isThumbsUpOnly = (m.text?.trim() ?? '') === '👍';
     if (isThumbsUpOnly) {
       return (
         <View className={`${m.mine ? 'self-end' : 'self-start'} mb-3`}>
           <Text style={{ fontSize: 36, lineHeight: 40 }}>{'👍'}</Text>
-          <Typography variant="caption-2" className="text-brand-neutralGray mt-1 self-end">{m.time}</Typography>
+          <View className="flex-row items-center mt-1 self-end">
+            <Typography variant="caption-2" className="text-brand-neutralGray">{m.time}</Typography>
+            <StatusIndicator />
+          </View>
         </View>
       );
     }
@@ -166,7 +486,10 @@ export default function ChatRoomScreen() {
         }}
       >
         <Typography variant="footnote" className="text-black">{m.text}</Typography>
-        <Typography variant="caption-2" className="text-brand-neutralGray mt-1 self-end">{m.time}</Typography>
+        <View className="flex-row items-center mt-1 self-end">
+          <Typography variant="caption-2" className="text-brand-neutralGray">{m.time}</Typography>
+          <StatusIndicator />
+        </View>
       </View>
     );
   };
@@ -187,12 +510,31 @@ export default function ChatRoomScreen() {
                 (keyboardVisible ? 0 : insets.bottom),
             }}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+              />
+            }
             keyboardShouldPersistTaps="handled"
             onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
           >
-            {messages.map((m) => (
-              <Bubble key={m.id} m={m} />
-            ))}
+            {loading ? (
+              <Typography variant="body" className="text-center mt-8">Loading...</Typography>
+            ) : messages.length === 0 ? (
+              <Typography variant="body" className="text-center mt-8">No messages.</Typography>
+            ) : messages.map((m) => {
+              const bubble: ChatMessage = {
+                id: m.id,
+                mine: m.senderId === Number(user?.id) && m.senderType === 'CUSTOMER',
+                text: m.message,
+                imageUri: m.imageUrl ? `${API_BASE_URL}/${m.imageUrl}` : undefined,
+                time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+                seen: m.seen,
+                status: m.status,
+              };
+              return <Bubble key={m.id} m={bubble} />;
+            })}
           </ScrollView>
 
           {/* Absolute overlay for emoji panel and toolbar */}

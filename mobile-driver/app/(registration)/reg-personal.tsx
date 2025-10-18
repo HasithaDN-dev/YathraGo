@@ -15,24 +15,25 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState(personalInfo.email);
   const [secondaryPhone, setSecondaryPhone] = useState(personalInfo.secondaryPhone);
   const [city, setCity] = useState(personalInfo.city);
+  const [nic, setNic] = useState(personalInfo.NIC);
+  const [gender, setGender] = useState(personalInfo.gender);
   const [profileImage, setProfileImage] = useState<ImagePicker.ImagePickerAsset | null>(personalInfo.profileImage);
   const [nic, setNic] = useState(personalInfo.nic || '');
   const [gender, setGender] = useState(personalInfo.gender || 'Male');
   const [isLoading, setIsLoading] = useState(false);
 
-  // REMOVED: useEffect auto-save causes issues
-  // Data will be saved when user clicks Continue button
-
   // Sync local state with store data
-  // useEffect(() => {
-  //   setFirstName(personalInfo.firstName);
-  //   setLastName(personalInfo.lastName);
-  //   setDob(personalInfo.dateOfBirth);
-  //   setEmail(personalInfo.email);
-  //   setSecondaryPhone(personalInfo.secondaryPhone);
-  //   setCity(personalInfo.city);
-  //   setProfileImage(personalInfo.profileImage);
-  // }, [personalInfo]);
+  useEffect(() => {
+    setFirstName(personalInfo.firstName);
+    setLastName(personalInfo.lastName);
+    setDob(personalInfo.dateOfBirth);
+    setEmail(personalInfo.email);
+    setSecondaryPhone(personalInfo.secondaryPhone);
+    setCity(personalInfo.city);
+    setNic(personalInfo.NIC);
+    setGender(personalInfo.gender);
+    setProfileImage(personalInfo.profileImage);
+  }, [personalInfo]);
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -50,16 +51,17 @@ export default function RegisterScreen() {
 
     if (!result.canceled) {
       setProfileImage(result.assets[0]);
+      updatePersonalInfo({ profileImage: result.assets[0] });
     }
   };
 
   const handleSubmit = async () => {
-    if (!firstName || !lastName || !dob || !city || !profileImage || !nic || !gender) {
-      Alert.alert('Error', 'Please fill all required fields including NIC and gender.');
+    if (!firstName || !lastName || !dob || !city || !nic || !gender || !profileImage) {
+      Alert.alert('Error', 'Please fill all required fields and select a profile image.');
       return;
     }
 
-    // Save ALL personal info to store before navigating
+    // Update store with all personal info including NIC and gender
     updatePersonalInfo({
       firstName,
       lastName,
@@ -67,15 +69,14 @@ export default function RegisterScreen() {
       email,
       secondaryPhone,
       city,
-      profileImage,
-      nic,
+      NIC: nic,
       gender,
+      profileImage,
     });
 
     // Navigate to next screen
     router.push('/(registration)/reg-verify');
   };
-
   return (
     <ScrollView className="flex-1 bg-white">
       <View className="px-6 py-20 items-center">
@@ -161,7 +162,7 @@ export default function RegisterScreen() {
           />
         </View>
 
-        <View className="w-full mb-6">
+        <View className="w-full mb-4">
           <Text className="text-sm font-medium text-gray-600 mb-1">City</Text>
           <View className="w-full relative">
             <TextInput
@@ -175,40 +176,25 @@ export default function RegisterScreen() {
         </View>
 
         <View className="w-full mb-4">
-          <Text className="text-sm font-medium text-gray-600 mb-1">National Identity Card (NIC) *</Text>
+          <Text className="text-sm font-medium text-gray-600 mb-1">NIC *</Text>
           <TextInput
             className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base"
             value={nic}
             onChangeText={setNic}
-            placeholder="123456789V or 123456789012"
-            autoCapitalize="characters"
-            maxLength={12}
+            placeholder="Enter your NIC number"
             placeholderTextColor="#A0A0A0"
           />
         </View>
 
         <View className="w-full mb-6">
-          <Text className="text-sm font-medium text-gray-600 mb-2">Gender *</Text>
-          <View className="flex-row justify-between">
-            <TouchableOpacity
-              className={`flex-1 mr-2 py-3 rounded-lg border ${gender === 'Male' ? 'bg-yellow-500 border-yellow-500' : 'bg-white border-gray-300'}`}
-              onPress={() => setGender('Male')}
-            >
-              <Text className={`text-center font-medium ${gender === 'Male' ? 'text-white' : 'text-gray-700'}`}>Male</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={`flex-1 mx-1 py-3 rounded-lg border ${gender === 'Female' ? 'bg-yellow-500 border-yellow-500' : 'bg-white border-gray-300'}`}
-              onPress={() => setGender('Female')}
-            >
-              <Text className={`text-center font-medium ${gender === 'Female' ? 'text-white' : 'text-gray-700'}`}>Female</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={`flex-1 ml-2 py-3 rounded-lg border ${gender === 'Other' ? 'bg-yellow-500 border-yellow-500' : 'bg-white border-gray-300'}`}
-              onPress={() => setGender('Other')}
-            >
-              <Text className={`text-center font-medium ${gender === 'Other' ? 'text-white' : 'text-gray-700'}`}>Other</Text>
-            </TouchableOpacity>
-          </View>
+          <Text className="text-sm font-medium text-gray-600 mb-1">Gender *</Text>
+          <TextInput
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base"
+            value={gender}
+            onChangeText={setGender}
+            placeholder="Male, Female, or Other"
+            placeholderTextColor="#A0A0A0"
+          />
         </View>
 
         <TouchableOpacity

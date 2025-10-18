@@ -44,7 +44,21 @@ export default function VehicleRegScreen() {
   const [rearView, setRearView] = useState<ImagePicker.ImagePickerAsset | null>(vehicleInfo.rearView);
   const [interiorView, setInteriorView] = useState<ImagePicker.ImagePickerAsset | null>(vehicleInfo.interiorView);
 
-  // REMOVED: useEffect auto-save - Data will be saved when user clicks Continue
+  // Sync local state with store data
+  useEffect(() => {
+    setVehicleType(vehicleInfo.vehicleType);
+    setVehicleBrand(vehicleInfo.vehicleBrand);
+    setVehicleModel(vehicleInfo.vehicleModel);
+    setYearOfManufacture(vehicleInfo.yearOfManufacture);
+    setVehicleColor(vehicleInfo.vehicleColor);
+    setLicensePlate(vehicleInfo.licensePlate);
+    setSeats(vehicleInfo.seats);
+    setFemaleAssistant(vehicleInfo.femaleAssistant);
+    setFrontView(vehicleInfo.frontView);
+    setSideView(vehicleInfo.sideView);
+    setRearView(vehicleInfo.rearView);
+    setInteriorView(vehicleInfo.interiorView);
+  }, [vehicleInfo]);
 
   const handleImageUpload = async (setImage: React.Dispatch<React.SetStateAction<ImagePicker.ImagePickerAsset | null>>) => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -66,7 +80,7 @@ export default function VehicleRegScreen() {
   };
 
   const handleNext = () => {
-    // Save ALL vehicle info to store before navigating
+    // Save data to store before navigating
     updateVehicleInfo({
       vehicleType,
       vehicleBrand,
@@ -81,8 +95,6 @@ export default function VehicleRegScreen() {
       rearView,
       interiorView,
     });
-    
-    // Navigate to next screen
     router.push('/(registration)/vehicle-doc');
   };
 
