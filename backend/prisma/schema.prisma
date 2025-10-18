@@ -127,7 +127,7 @@ model Conversation {
 }
 
 model BackupDriver {
-  id             Int    @id @default(autoincrement())
+  id             Int     @id @default(autoincrement())
   name           String
   phone          String
   fcmToken       String?  
@@ -139,8 +139,15 @@ model BackupDriver {
 
 model Absence_Child {
   absent_id Int      @id @default(autoincrement())
+  childId   Int
+  child     Child    @relation("AbsentChildren", fields: [childId], references: [child_id])
+  date      DateTime @default(now()) @db.Date
   reason    String
   createdAt DateTime @default(now())
+
+  @@unique([childId, date])
+  @@index([childId])
+  @@index([date])
 }
 
 model Notification {
@@ -221,6 +228,16 @@ model Driver {
 
    @@index([fcmToken])
   vehicles                 Vehicle[]
+  driverCities             DriverCities[]
+  childRideRequests        ChildRideRequest[]
+  staffRideRequests        StaffRideRequest[]
+  driverRoutes             DriverRoute[]
+  routeWaypoints           RouteWaypoint[]
+  childTrips               Child_Trip[]
+  attendance               Attendance[]
+  ChildPayment             ChildPayment[]
+
+  @@index([fcmToken])
 }
 
 model FoundedBackupDrivers {
@@ -256,6 +273,7 @@ model Customer {
   lastName           String
   children           Child[]
   staffPassenger     Staff_Passenger?
+  ChildPayment       ChildPayment[]
 
   @@index([phone])
   @@index([registrationStatus])
@@ -311,6 +329,9 @@ model Child {
   // relations for ride requests and route waypoints
   rideRequests   ChildRideRequest[]
   routeWaypoints RouteWaypoint[]
+  attendance     Attendance[]
+  absences       Absence_Child[]    @relation("AbsentChildren")
+  ChildPayment   ChildPayment[]
 
   @@index([customerId])
   @@index([school])
@@ -344,6 +365,10 @@ model Staff_Passenger {
   pickupLongitude Float?
   Customer        Customer @relation(fields: [customerId], references: [customer_id])
 
+  // NEW PAYMENT RELATIONS - ADD THESE
+
+  rideRequests StaffRideRequest[]
+
   @@index([customerId])
   @@index([workLocation])
   @@index([nearbyCity])
@@ -356,11 +381,6 @@ model Staff_Trip {
   startTime       DateTime
   endTime         DateTime
   date            DateTime @default(now())
-}
-
-model Child_Assign_To {
-  assign_id Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
 }
 
 enum RegistrationStatus {
@@ -387,9 +407,10 @@ enum Gender {
   Unspecified
 }
 
-enum ChildAssignRequestStatus {
+enum RequestStatus {
   Pending
   Assigned
+  Unassigned
   Rejected
 }
 
@@ -405,25 +426,45 @@ model City {
 
 // --- Driver's Available Cities (Many-to-Many) ---
 model DriverCities {
-  id       Int    @id @default(autoincrement())
-  driver   Driver @relation(fields: [driverId], references: [driver_id])
-  driverId Int
+  id             Int       @id @default(autoincrement())
+  driver         Driver    @relation(fields: [driverId], references: [driver_id])
+  driverId       Int
+  rideType       Ridetype  @default(Both)
   // store an ordered list of city IDs representing the driver's route
-  cityIds  Int[]
+  cityIds        Int[]
+  usualStartTime DateTime? @db.Time(6)
+  usualEndTime   DateTime? @db.Time(6)
 
   @@unique([driverId])
 }
 
 // --- Child Ride Requests ---
 model ChildRideRequest {
-  id        Int                      @id @default(autoincrement())
-  child     Child                    @relation(fields: [childId], references: [child_id])
-  childId   Int
-  driver    Driver                   @relation(fields: [driverId], references: [driver_id])
-  driverId  Int
-  status    ChildAssignRequestStatus @default(Pending)
-  createdAt DateTime                 @default(now())
-  updatedAt DateTime                 @updatedAt
+  id           Int           @id @default(autoincrement())
+  child        Child         @relation(fields: [childId], references: [child_id])
+  childId      Int
+  driver       Driver        @relation(fields: [driverId], references: [driver_id])
+  driverId     Int
+  status       RequestStatus @default(Pending)
+  Estimation   Float?
+  Amount       Float?
+  AssignedDate DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model StaffRideRequest {
+  id           Int             @id @default(autoincrement())
+  staff        Staff_Passenger @relation(fields: [staffId], references: [id])
+  staffId      Int
+  driver       Driver          @relation(fields: [driverId], references: [driver_id])
+  driverId     Int
+  status       RequestStatus   @default(Pending)
+  Estimation   Float?
+  Amount       Float?
+  AssignedDate DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 }
 
 // --- Driver Route (Optimized Route) ---
@@ -455,10 +496,95 @@ model RouteWaypoint {
   eta                      DateTime? // estimated arrival time
   cumulativeDistanceMeters Int? // distance from start to this stop
   status                   String       @default("PENDING") // PENDING, ARRIVED, SKIPPED
+  attendance               Attendance[]
+}
+
+// --- Attendance Table ---
+model Attendance {
+  id         Int            @id @default(autoincrement())
+  driver     Driver         @relation(fields: [driverId], references: [driver_id])
+  driverId   Int
+  child      Child          @relation(fields: [childId], references: [child_id])
+  childId    Int
+  waypoint   RouteWaypoint? @relation(fields: [waypointId], references: [id])
+  waypointId Int?
+  type       String // 'pickup' or 'dropoff'
+  latitude   Float?
+  longitude  Float?
+  notes      String?
+  tripId     Int?
+  status     String         @default("completed")
+  timestamp  DateTime       @default(now())
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([driverId])
+  @@index([childId])
+  @@index([waypointId])
+  @@index([timestamp])
+}
+
+// ...existing code...
+
+model ChildPayment {
+  id            Int  @id @default(autoincrement())
+  rideRequestId Int? // link to ChildRideRequest when created from request
+  childId       Int
+  driverId      Int
+  customerId    Int
+
+  paymentMonth Int
+  paymentYear  Int
+
+  baseMonthlyPrice  Float
+  isAdjusted        Boolean   @default(false)
+  adjustmentPercent Float?
+  adjustedPrice     Float?
+  adjustmentReason  String?
+  adjustmentDate    DateTime?
+
+  finalPrice    Float
+  amountPaid    Float              @default(0)
+  paymentStatus ChildPaymentStatus @default(NOT_DUE)
+
+  // store payment events (multiple payments in one day etc.)
+  paymentEvents Json?
+
+  dueDate            DateTime?
+  gracePeriodEndDate DateTime?
+
+  // add these fields:
+  paymentMethod      String?
+  transactionRef     String?
+
+  carryForwardDue Float @default(0)
+
+  Prepaid Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  child    Child    @relation(fields: [childId], references: [child_id])
+  driver   Driver   @relation(fields: [driverId], references: [driver_id])
+  customer Customer @relation(fields: [customerId], references: [customer_id])
+
+  @@unique([childId, paymentYear, paymentMonth], name: "unique_child_month")
+  @@index([driverId, paymentYear, paymentMonth])
+  @@index([customerId])
+}is
+
+enum ChildPaymentStatus {
+  NOT_DUE
+  PENDING
+  PAID
+  OVERDUE
+  GRACE_PERIOD
+  CANCELLED
 }
 
 enum UserTypes {
   CUSTOMER
+  CHILD
+  STAFF
   WEBUSER
   BACKUPDRIVER
   DRIVER
@@ -484,3 +610,15 @@ enum WaypointType {
   DROPOFF
 }
 
+enum NotificationTypes {
+  System
+  Alert
+  Other
+  Chat
+}
+
+enum Ridetype {
+  School
+  Work
+  Both
+}
