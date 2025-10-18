@@ -113,7 +113,8 @@ export default function FindVehicleScreen() {
           pathname: '/(menu)/(homeCards)/transport_overview', 
           params: { 
             tab: 'Vehicle',
-            driverId: vehicle.driverId 
+            driverId: vehicle.driverId,
+            vehicleId: vehicle.vehicleId,
           } 
         })}
         className="mb-4"

@@ -4,7 +4,11 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { SearchVehicleDto, VehicleSearchResponseDto } from './dto';
+import {
+  SearchVehicleDto,
+  VehicleSearchResponseDto,
+  VehicleDetailsResponseDto,
+} from './dto';
 import * as turf from '@turf/turf';
 
 @Injectable()
@@ -396,5 +400,105 @@ export class FindVehicleService {
       children: customer.children,
       staff: customer.staffPassenger,
     };
+  }
+
+  // Method to get detailed information about a specific driver and their vehicle
+  async getVehicleDetails(driverId: number): Promise<VehicleDetailsResponseDto> {
+    const driver = await this.prisma.driver.findUnique({
+      where: { driver_id: driverId },
+      include: {
+        driverCities: true,
+        vehicles: true,
+      },
+    });
+
+    if (!driver) {
+      throw new NotFoundException('Driver not found');
+    }
+
+    if (driver.status !== 'ACTIVE') {
+      throw new BadRequestException('Driver is not active');
+    }
+
+    // Get the primary vehicle
+    const vehicle = driver.vehicles[0];
+    if (!vehicle) {
+      throw new NotFoundException('Vehicle not found for this driver');
+    }
+
+    // Get driver cities/route information
+    const driverCity = driver.driverCities[0];
+    if (!driverCity) {
+      throw new NotFoundException('Route information not found for this driver');
+    }
+
+    // Get all cities to map cityIds to names
+    const cities = await this.prisma.city.findMany();
+    const cityMap = new Map(cities.map((city) => [city.id, city]));
+
+    // Get route city names
+    const routeCities = driverCity.cityIds
+      .map((id) => cityMap.get(id)?.name)
+      .filter((name): name is string => name !== undefined);
+
+    const startCity = cityMap.get(driverCity.cityIds[0])?.name || 'Unknown';
+    const endCity =
+      cityMap.get(driverCity.cityIds[driverCity.cityIds.length - 1])?.name ||
+      'Unknown';
+
+    // Format times (handle null values) - TIME fields for display only
+    const usualStartTime = driverCity.usualStartTime
+      ? this.formatTime(driverCity.usualStartTime)
+      : undefined;
+    const usualEndTime = driverCity.usualEndTime
+      ? this.formatTime(driverCity.usualEndTime)
+      : undefined;
+
+    // TODO: Calculate actual ratings and reviews from reviews table when implemented
+    // For now using placeholder values
+    const driverRating = 4.5;
+    const driverReviewsCount = 6;
+    const driverCompletedRides = 150;
+    const vehicleRating = 4.2;
+    const vehicleReviewsCount = 10;
+
+    // Build response
+    const response: VehicleDetailsResponseDto = {
+      // Driver Information
+      driverId: driver.driver_id,
+      driverName: driver.name,
+      driverPhone: driver.phone,
+      driverRating,
+      driverReviewsCount,
+      driverCompletedRides,
+      driverProfileImage: undefined, // TODO: Add profileImageUrl to Driver schema
+
+      // Vehicle Information
+      vehicleId: vehicle.id,
+      vehicleType: vehicle.type,
+      vehicleBrand: vehicle.brand,
+      vehicleModel: vehicle.model,
+      vehicleRegistrationNumber: vehicle.registrationNumber || 'N/A',
+      vehicleColor: vehicle.color,
+      vehicleDescription: undefined, // TODO: Add description to Vehicle schema
+      availableSeats: vehicle.no_of_seats,
+      airConditioned: vehicle.air_conditioned,
+      assistant: vehicle.assistant,
+      vehicleRating,
+      vehicleReviewsCount,
+      vehicleImages: [], // TODO: Add images array to Vehicle schema
+
+      // Route Information
+      startCity,
+      endCity,
+      routeCities,
+      rideType: driverCity.rideType,
+
+      // Time Information
+      usualStartTime,
+      usualEndTime,
+    };
+
+    return response;
   }
 }

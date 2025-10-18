@@ -29,6 +29,46 @@ export interface VehicleSearchResult {
   estimatedDropTime?: string;
 }
 
+export interface VehicleDetails {
+  // Driver Information
+  driverId: number;
+  driverName: string;
+  driverPhone: string;
+  driverRating: number;
+  driverReviewsCount: number;
+  driverCompletedRides: number;
+  driverProfileImage?: string;
+
+  // Vehicle Information
+  vehicleId: number;
+  vehicleType: string;
+  vehicleBrand: string;
+  vehicleModel: string;
+  vehicleRegistrationNumber: string;
+  vehicleColor: string;
+  vehicleDescription?: string;
+  availableSeats: number;
+  airConditioned: boolean;
+  assistant: boolean;
+  vehicleRating: number;
+  vehicleReviewsCount: number;
+  vehicleImages?: string[];
+
+  // Route Information
+  startCity: string;
+  endCity: string;
+  routeCities: string[];
+  rideType: 'School' | 'Work' | 'Both';
+  
+  // Time Information (display only)
+  usualStartTime?: string;
+  usualEndTime?: string;
+
+  // Distance from customer (if applicable)
+  distanceFromPickup?: number;
+  distanceFromDrop?: number;
+}
+
 export interface CustomerProfile {
   children: {
     child_id: number;
@@ -82,6 +122,17 @@ export const findVehicleApi = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || 'Failed to fetch customer profiles');
+    }
+    
+    return response.json();
+  },
+
+  getVehicleDetails: async (driverId: number): Promise<VehicleDetails> => {
+    const response = await fetch(`${API_BASE_URL}/find-vehicle/details/${driverId}`);
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch vehicle details');
     }
     
     return response.json();

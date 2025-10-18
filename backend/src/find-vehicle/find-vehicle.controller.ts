@@ -1,4 +1,4 @@
-import { Controller, Get, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Query, ParseIntPipe, Param } from '@nestjs/common';
 import { FindVehicleService } from './find-vehicle.service';
 import { SearchVehicleDto } from './dto';
 
@@ -16,5 +16,12 @@ export class FindVehicleController {
     @Query('customerId', ParseIntPipe) customerId: number,
   ) {
     return this.findVehicleService.getCustomerProfiles(customerId);
+  }
+
+  @Get('details/:driverId')
+  async getVehicleDetails(
+    @Param('driverId', ParseIntPipe) driverId: number,
+  ) {
+    return this.findVehicleService.getVehicleDetails(driverId);
   }
 }
