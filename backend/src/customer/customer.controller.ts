@@ -53,7 +53,10 @@ export class CustomerController {
     }),
   )
   uploadChildImage(@UploadedFile() file: Express.Multer.File) {
-    console.log('[CHILD UPLOAD] File received:', file ? file.filename : 'No file');
+    console.log(
+      '[CHILD UPLOAD] File received:',
+      file ? file.filename : 'No file',
+    );
     console.log('[CHILD UPLOAD] File path:', file ? file.path : 'No path');
     // Attach subfolder info for child images
     if (file) {

@@ -1,63 +1,111 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Calendar, CreditCard, ArrowLeft, PencilSimple, Bank } from 'phosphor-react-native';
+import { getDriverPayments, ChildPayment } from '../../lib/api/transactions.api';
+import { useAuthStore } from '../../lib/stores/auth.store';
 
-const paymentHistoryData = [
-  {
-    id: '1',
-    date: '2 May, 2025',
-    refId: 'YTDP12289',
-    method: 'Bank',
-    amount: '70,000',
-    status: 'Successful',
-  },
-  {
-    id: '2',
-    date: '12 April, 2025',
-    refId: 'YTDP12287',
-    method: 'Bank',
-    amount: '80,000',
-    status: 'Successful',
-  },
-  {
-    id: '3',
-    date: '16 March, 2025',
-    refId: 'YTDP10549',
-    method: 'Bank',
-    amount: '95,000',
-    status: 'Successful',
-  },
-];
+// Format date from ISO string to "2 May, 2025" format
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${date.getDate()} ${months[date.getMonth()]}, ${date.getFullYear()}`;
+};
 
-const PaymentHistoryItem = ({ item }: { item: (typeof paymentHistoryData)[0] }) => (
-  <View style={styles.card}>
-    <View style={styles.paymentItemRow}>
-      <View style={styles.paymentItemLeft}>
-        <Calendar size={16} color="#555" />
-        <Text style={styles.paymentDate}>{item.date}</Text>
+// Get status display config
+const getStatusConfig = (status: string): { backgroundColor: string; textColor: string; displayText: string } => {
+  switch (status) {
+    case 'PAID':
+      return { backgroundColor: '#D4EDDA', textColor: '#155724', displayText: 'Paid' };
+    case 'PENDING':
+      return { backgroundColor: '#FFF3CD', textColor: '#856404', displayText: 'Pending' };
+    case 'OVERDUE':
+      return { backgroundColor: '#F8D7DA', textColor: '#721C24', displayText: 'Overdue' };
+    case 'GRACE_PERIOD':
+      return { backgroundColor: '#FFE5CC', textColor: '#CC5500', displayText: 'Grace Period' };
+    case 'NOT_DUE':
+      return { backgroundColor: '#E2E3E5', textColor: '#383D41', displayText: 'Not Due' };
+    case 'CANCELLED':
+      return { backgroundColor: '#D6D8DB', textColor: '#1B1E21', displayText: 'Cancelled' };
+    default:
+      return { backgroundColor: '#E2E3E5', textColor: '#383D41', displayText: status };
+  }
+};
+
+const PaymentHistoryItem = ({ payment }: { payment: ChildPayment }) => {
+  const statusConfig = getStatusConfig(payment.paymentStatus);
+  const displayDate = payment.paymentDate 
+    ? formatDate(payment.paymentDate) 
+    : formatDate(payment.createdAt);
+  const displayMethod = payment.paymentMethod || '-';
+  const displayRef = payment.transactionRef || '-';
+  const isPaid = payment.paymentStatus === 'PAID';
+  const amountColor = isPaid ? '#143373' : '#EF4444'; // Warning color for unpaid
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.paymentItemRow}>
+        <View style={styles.paymentItemLeft}>
+          <Calendar size={16} color="#555" />
+          <Text style={styles.paymentDate}>{displayDate}</Text>
+        </View>
+        <View style={[styles.statusTagSuccessful, { backgroundColor: statusConfig.backgroundColor }]}>
+          <Text style={[styles.statusText, { color: statusConfig.textColor }]}>
+            {statusConfig.displayText}
+          </Text>
+        </View>
       </View>
-      <View style={styles.statusTagSuccessful}>
-        <Text style={styles.statusText}>{item.status}</Text>
+      <View style={styles.paymentDetailsRow}>
+        <View style={styles.paymentDetailsLeft}>
+          <Text style={styles.detailLabel}>Reference ID</Text>
+          <Text style={styles.detailValue}>{displayRef}</Text>
+          <Text style={styles.detailLabel}>Payment method</Text>
+          <Text style={styles.detailValue}>{displayMethod}</Text>
+        </View>
+        <View style={styles.paymentDetailsRight}>
+          <CreditCard size={20} color={amountColor} />
+          <Text style={[styles.amount, { color: amountColor }]}>
+            {payment.amountPaid.toFixed(2)} LKR
+          </Text>
+        </View>
       </View>
     </View>
-    <View style={styles.paymentDetailsRow}>
-      <View style={styles.paymentDetailsLeft}>
-        <Text style={styles.detailLabel}>Reference ID</Text>
-        <Text style={styles.detailValue}>{item.refId}</Text>
-        <Text style={styles.detailLabel}>Payment method</Text>
-        <Text style={styles.detailValue}>{item.method}</Text>
-      </View>
-      <View style={styles.paymentDetailsRight}>
-        <CreditCard size={20} color="#143373" />
-        <Text style={styles.amount}>{item.amount} LKR</Text>
-      </View>
-    </View>
-  </View>
-);
+  );
+};
 
 export default function EarningsScreen() {
+  const user = useAuthStore((state) => state.user);
+  const driverId = user?.id;
+  
+  const [payments, setPayments] = useState<ChildPayment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPayments = async () => {
+      if (!driverId) {
+        setError('Driver ID not found. Please log in again.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await getDriverPayments(driverId);
+        setPayments(response.items);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch payments:', err);
+        setError('Failed to load payment history');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPayments();
+  }, [driverId]);
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header and Earnings Section */}
@@ -108,8 +156,31 @@ export default function EarningsScreen() {
 
         <Text style={styles.sectionTitle}>Payment History</Text>
 
-        {paymentHistoryData.map((item) => (
-          <PaymentHistoryItem key={item.id} item={item} />
+        {loading && (
+          <View style={styles.card}>
+            <ActivityIndicator size="large" color="#143373" />
+            <Text style={{ textAlign: 'center', marginTop: 10, color: '#777' }}>
+              Loading payments...
+            </Text>
+          </View>
+        )}
+
+        {error && (
+          <View style={styles.card}>
+            <Text style={{ textAlign: 'center', color: '#EF4444' }}>{error}</Text>
+          </View>
+        )}
+
+        {!loading && !error && payments.length === 0 && (
+          <View style={styles.card}>
+            <Text style={{ textAlign: 'center', color: '#777' }}>
+              No payment history available
+            </Text>
+          </View>
+        )}
+
+        {!loading && !error && payments.map((payment) => (
+          <PaymentHistoryItem key={payment.id} payment={payment} />
         ))}
       </ScrollView>
     </SafeAreaView>

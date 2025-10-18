@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, TextInput, Image } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, ScrollView, TouchableOpacity, TextInput, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { 
   MagnifyingGlass,
   CaretUp,
@@ -11,85 +12,87 @@ import {
 } from 'phosphor-react-native';
 import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
+import { useNotificationsStore } from '../../lib/stores/notifications.store';
+import { useAuthStore } from '../../lib/stores/auth.store';
+import { useProfileStore } from '../../lib/stores/profile.store';
+import { ReceiverType } from '../../lib/api/notifications.api';
 
-interface Notification {
-  id: string;
-  sender: string;
-  message: string;
-  time: string;
-  type: 'alert' | 'system' | 'other';
-  isExpanded: boolean;
-}
+// Using store's NotificationDto type; no additional UI type needed
 
 export default function NotificationsScreen() {
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [searchInput, setSearchInput] = useState('');
   const [suggestedSenders, setSuggestedSenders] = useState<string[]>([]);
   const [selectedSender, setSelectedSender] = useState<string | null>(null);
-  const [notifications, setNotifications] = useState<Notification[]>([
-    // System messages (use first card style)
-    {
-      id: '1',
-      sender: 'System',
-      message: 'Your payment for July has been processed successfully.',
-      time: '2 min ago',
-      type: 'system',
-      isExpanded: false
-    },
-    {
-      id: '2',
-      sender: 'System',
-      message: 'A new update is available. Please update your app.',
-      time: '10 min ago',
-      type: 'system',
-      isExpanded: false
-    },
-    // Alerts (use red warning icon)
-    {
-      id: '3',
-      sender: 'School Admin',
-      message: 'School will be closed tomorrow due to weather conditions.',
-      time: '1 hour ago',
-      type: 'alert',
-      isExpanded: false
-    },
-    {
-      id: '4',
-      sender: 'Driver',
-      message: 'Your pickup is delayed due to traffic.',
-      time: '30 min ago',
-      type: 'alert',
-      isExpanded: false
-    },
-    // Other (use profile image)
-    {
-      id: '5',
-      sender: 'Kasun Fernando',
-      message: 'Can you please confirm the pickup location for today?',
-      time: '5 min ago',
-      type: 'other',
-      isExpanded: false
-    },
-    {
-      id: '6',
-      sender: 'Kevin Silva',
-      message: 'Thank you for the safe ride!',
-      time: '15 min ago',
-      type: 'other',
-      isExpanded: false
+  const [refreshing, setRefreshing] = useState(false);
+  const { notifications, loadForTargets, toggleExpanded } = useNotificationsStore();
+  const { accessToken } = useAuthStore();
+  const { activeProfile, customerProfile } = useProfileStore();
+
+  // Fetch notifications function
+  const fetchNotifications = useCallback(async () => {
+    if (!accessToken) return;
+
+    const targets: Array<{ userType: ReceiverType; userId: number }> = [];
+
+    // Always include parent customer notifications if available
+    if (customerProfile?.customer_id) {
+      targets.push({ userType: 'CUSTOMER', userId: customerProfile.customer_id });
     }
-  ]);
+
+    // Add active profile target
+    if (activeProfile) {
+      // IDs are strings like child-12 or staff-34; extract numeric id
+      const match = String(activeProfile.id).match(/(\d+)/);
+      const numericId = match ? parseInt(match[1], 10) : undefined;
+
+      if (activeProfile.type === 'child' && numericId) {
+        targets.push({ userType: 'CHILD', userId: numericId });
+      } else if (activeProfile.type === 'staff' && numericId) {
+        targets.push({ userType: 'STAFF', userId: numericId });
+      }
+    }
+
+    if (targets.length > 0) {
+      await loadForTargets(accessToken, targets);
+    }
+  }, [accessToken, activeProfile, customerProfile?.customer_id, loadForTargets]);
+
+  // Initial load
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  // Auto-refresh when screen is focused (poll every 5 seconds)
+  useFocusEffect(
+    useCallback(() => {
+      let interval: NodeJS.Timeout | null = null;
+      
+      // Immediate fetch when screen comes into focus
+      fetchNotifications();
+      
+      // Polling every 5 seconds
+      interval = setInterval(() => {
+        fetchNotifications();
+      }, 5000);
+      
+      return () => {
+        if (interval) clearInterval(interval);
+      };
+    }, [fetchNotifications])
+  );
+
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchNotifications();
+    setRefreshing(false);
+  }, [fetchNotifications]);
 
 
 
-  const toggleNotification = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, isExpanded: !notification.isExpanded }
-          : notification
-      )
-    );
+  const toggleNotification = (id: string | number) => {
+    toggleExpanded(id);
   };
 
   const getNotificationIcon = (type: string, sender?: string) => {
@@ -98,10 +101,17 @@ export default function NotificationsScreen() {
         return <Gear size={20} color="#8B5CF6" weight="fill" />;
       case 'alert':
         return <Warning size={20} color="#EF4444" weight="fill" />;
+      case 'chat':
+        return (
+          <Image
+            source={require('../../assets/images/chat.png')}
+            style={{ width: 32, height: 32, borderRadius: 16, resizeMode: 'cover' }}
+          />
+        );
       case 'other':
         return (
           <Image
-            source={require('../../assets/images/profile_Picture.png')}
+            source={require('../../assets/images/notificationBell.png')}
             style={{ width: 32, height: 32, borderRadius: 16, resizeMode: 'cover' }}
           />
         );
@@ -116,6 +126,8 @@ export default function NotificationsScreen() {
         return 'bg-red-500'; // errorRed
       case 'system':
         return 'bg-yellow-400'; // softOrange
+      case 'chat':
+        return 'bg-blue-400'; // chat blue
       case 'other':
         return 'bg-gray-300'; // lightGray
       default:
@@ -181,11 +193,11 @@ export default function NotificationsScreen() {
         {/* Filter Options */}
         <Card className="p-4">
           <View className="flex-row justify-between items-center">
-            <View className="flex-row">
+            <View className="flex-row flex-wrap">
               {['All', 'Alerts', 'System', 'Others'].map((filter) => (
                 <TouchableOpacity
                   key={filter}
-                  className={`px-4 py-2 rounded-full ${selectedFilter === filter ? 'bg-brand-deepNavy' : 'bg-brand-lightGray'}${filter !== 'All' ? ' ml-3' : ''}`}
+                  className={`px-4 py-2 rounded-full ${selectedFilter === filter ? 'bg-brand-deepNavy' : 'bg-brand-lightGray'}${filter !== 'All' ? ' ml-3' : ''} mb-2`}
                   onPress={() => setSelectedFilter(filter)}
                 >
                   <Typography
@@ -202,13 +214,22 @@ export default function NotificationsScreen() {
       </View>
 
       {/* Notifications List (scrollable) */}
-      <ScrollView className="flex-1 px-4" contentContainerClassName="space-y-5 pb-6">
+      <ScrollView 
+        className="flex-1 px-4" 
+        contentContainerClassName="space-y-5 pb-6"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
+        }
+      >
         {notifications
           .filter((notification) => {
             if (selectedFilter === 'All') return true;
             if (selectedFilter === 'Alerts') return notification.type === 'alert';
             if (selectedFilter === 'System') return notification.type === 'system';
-            if (selectedFilter === 'Others') return notification.type === 'other';
+            if (selectedFilter === 'Others') return notification.type === 'other' || notification.type === 'chat';
             return true;
           })
           .filter((notification) => {

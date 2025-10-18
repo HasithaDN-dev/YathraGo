@@ -148,8 +148,12 @@ export class DriverController {
       yearOfManufacture: registrationData.yearOfManufacture,
       vehicleColor: registrationData.vehicleColor,
       licensePlate: registrationData.licensePlate,
-      seats: registrationData.seats ? parseInt(registrationData.seats.toString()) : undefined,
-      femaleAssistant: registrationData.femaleAssistant === 'true' || registrationData.femaleAssistant === true,
+      seats: registrationData.seats
+        ? parseInt(registrationData.seats.toString())
+        : undefined,
+      femaleAssistant:
+        registrationData.femaleAssistant === 'true' ||
+        registrationData.femaleAssistant === true,
       // Vehicle images
       vehicleFrontView: vehicleFrontViewUrl ?? undefined,
       vehicleSideView: vehicleSideViewUrl ?? undefined,
@@ -183,13 +187,13 @@ export class DriverController {
   async getDriverTripHistory(@Param('driverId') driverId: string) {
     return this.driverService.getDriverTripHistory(driverId);
   }
-//   // Endpoint to fetch driver details for hardcoded driverId (for frontend welcome message)
-//   @Get('details')
-//   async getDriverDetails() {
-//     // Hardcoded driverId for demo (updated to 2)
-//     const driverId = 2;
-//     return this.driverService.getDriverDetailsById(driverId);
-//   }
+  //   // Endpoint to fetch driver details for hardcoded driverId (for frontend welcome message)
+  //   @Get('details')
+  //   async getDriverDetails() {
+  //     // Hardcoded driverId for demo (updated to 2)
+  //     const driverId = 2;
+  //     return this.driverService.getDriverDetailsById(driverId);
+  //   }
 
   // --- Minimal route optimization endpoint ---
   @Post(':driverId/optimize-route')

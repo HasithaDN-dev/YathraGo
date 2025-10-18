@@ -104,7 +104,7 @@ export default function HistoryScreen() {
   const dateHeaderRefs = useRef<{ [key: string]: number }>({});
   
   // HARDCODED FOR TESTING - Using driver ID 1
-  const driverId = 1;
+  const driverId = 2;
 
   // Fetch trip history
   const fetchTripHistory = async () => {

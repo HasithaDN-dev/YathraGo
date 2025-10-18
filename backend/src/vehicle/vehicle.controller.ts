@@ -118,7 +118,11 @@ export class VehicleController {
     const vehicle_reg = files.vehicle_reg?.[0]?.filename ?? null;
 
     // Clean parsedVehicleDto to remove keys not present on the Prisma model
-    const { startingCity: _start, endingCity: _end, ...rest } = parsedVehicleDto as any;
+    const {
+      startingCity: _start,
+      endingCity: _end,
+      ...rest
+    } = parsedVehicleDto as any;
 
     const vehicleData = {
       ...rest,

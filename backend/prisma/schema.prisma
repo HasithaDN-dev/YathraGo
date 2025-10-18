@@ -149,6 +149,20 @@ model Absence_Child {
   @@index([date])
 }
 
+model Notification {
+  id         Int               @id @default(autoincrement())
+  sender     String
+  message    String
+  type       NotificationTypes
+  receiver   UserTypes
+  receiverId Int?
+  createdAt  DateTime          @default(now())
+  isExpanded Boolean           @default(false)
+
+  @@index([type])
+  @@index([receiver, receiverId])
+}
+
 model MonthlyPayment {
   id          Int      @id @default(autoincrement())
   amount      Float
@@ -475,20 +489,6 @@ model ChildPayment {
   @@index([driverId, paymentYear, paymentMonth])
 }
 
-model Notification {
-  id         Int               @id @default(autoincrement())
-  sender     String
-  message    String
-  type       NotificationTypes
-  receiver   UserTypes
-  receiverId Int?
-  createdAt  DateTime          @default(now())
-  isExpanded Boolean           @default(false)
-
-  @@index([receiver, receiverId])
-  @@index([type])
-}
-
 model StaffRideRequest {
   id              Int             @id @default(autoincrement())
   staffId         Int
@@ -543,6 +543,13 @@ enum MessageStatus {
   SEEN
 }
 
+enum NotificationTypes {
+  System
+  Alert
+  Other
+  Chat
+}
+
 enum WaypointType {
   PICKUP
   DROPOFF
@@ -555,13 +562,6 @@ enum ChildPaymentStatus {
   OVERDUE
   GRACE_PERIOD
   CANCELLED
-}
-
-enum NotificationTypes {
-  System
-  Alert
-  Other
-  Chat
 }
 
 enum RequestStatus {
