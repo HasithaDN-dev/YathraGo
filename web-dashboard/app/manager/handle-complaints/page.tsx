@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { mockComplaints, Complaint as SharedComplaint } from "@/lib/complaints";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,90 +24,7 @@ import {
   Building,
 } from "lucide-react";
 
-interface Complaint {
-  id: string;
-  subject: string;
-  description: string;
-  category: "service" | "safety" | "billing" | "driver" | "vehicle" | "app" | "other";
-  priority: "low" | "medium" | "high" | "critical";
-  status: "open" | "in-progress" | "resolved" | "closed";
-  complainantType: "parent" | "school" | "driver" | "owner";
-  complainantName: string;
-  complainantContact: string;
-  schoolName?: string;
-  vehicleNo?: string;
-  driverName?: string;
-  submissionDate: string;
-  responseDate?: string;
-  resolution?: string;
-  assignedTo?: string;
-  rating?: number;
-  feedback?: string;
-}
-
-const mockComplaints: Complaint[] = [
-  {
-    id: "1",
-    subject: "Driver arrived 15 minutes late consistently",
-    description: "My child's school bus has been arriving 15 minutes late for the past week. This is causing issues with school attendance. Please address this urgently.",
-    category: "service",
-    priority: "high",
-    status: "in-progress",
-    complainantType: "parent",
-    complainantName: "Priya Sharma",
-    complainantContact: "+91-9876543210",
-    schoolName: "Greenwood Elementary",
-    vehicleNo: "KA-01-AB-1234",
-    driverName: "Ramesh Kumar",
-    submissionDate: "2025-07-20",
-    assignedTo: "Manager - South Zone",
-  },
-  {
-    id: "2",
-    subject: "Vehicle cleanliness issues",
-    description: "The bus interior is not being cleaned properly. Seats are dusty and floor has debris. Please ensure daily cleaning is maintained.",
-    category: "vehicle",
-    priority: "medium",
-    status: "resolved",
-    complainantType: "school",
-    complainantName: "Mrs. Sunitha (Principal)",
-    complainantContact: "principal@riverside.edu",
-    schoolName: "Riverside High School",
-    vehicleNo: "KA-02-CD-5678",
-    submissionDate: "2025-07-18",
-    responseDate: "2025-07-19",
-    resolution: "Vehicle cleaning protocol has been updated and additional cleaning supplies provided to the driver. Daily inspection will be conducted.",
-    assignedTo: "Fleet Maintenance Team",
-    rating: 4,
-    feedback: "Quick response and effective solution. Thank you.",
-  },
-  {
-    id: "3",
-    subject: "Payment discrepancy in monthly bill",
-    description: "There's an extra charge of Rs 500 in this month's billing that wasn't explained. Please clarify the billing breakdown.",
-    category: "billing",
-    priority: "medium",
-    status: "open",
-    complainantType: "owner",
-    complainantName: "Mohammed Ali",
-    complainantContact: "+91-9876543212",
-    submissionDate: "2025-07-21",
-  },
-  {
-    id: "4",
-    subject: "App not showing real-time location",
-    description: "The mobile app hasn't been showing real-time bus location for the past 3 days. Parents are unable to track their children's bus.",
-    category: "app",
-    priority: "critical",
-    status: "in-progress",
-    complainantType: "school",
-    complainantName: "IT Admin - Oak Valley",
-    complainantContact: "admin@oakvalley.edu",
-    schoolName: "Oak Valley Middle School",
-    submissionDate: "2025-07-20",
-    assignedTo: "Technical Team",
-  },
-];
+type Complaint = SharedComplaint;
 
 export default function HandleComplaintsPage() {
   const [complaints, setComplaints] = useState<Complaint[]>(mockComplaints);
@@ -119,6 +37,8 @@ export default function HandleComplaintsPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showResolveModal, setShowResolveModal] = useState(false);
   const [resolution, setResolution] = useState("");
+  const [showRedirectModal, setShowRedirectModal] = useState(false);
+  const [redirectTarget, setRedirectTarget] = useState<string>("FINANCE_MANAGER");
 
   const itemsPerPage = 5;
   const filteredComplaints = complaints.filter((complaint) => {
@@ -321,7 +241,7 @@ export default function HandleComplaintsPage() {
                 setCurrentPage(1);
               }}
               variant="outline"
-              className="border-[var(--neutral-gray)] text-[var(--neutral-gray)] hover:bg-gray-50"
+              className="border-[var(--neutral-gray)] text-[var(--neutral-gray)] hover:bg-gray-50 hover:text-[var(--neutral-gray)]"
             >
               Clear Filters
             </Button>
@@ -392,10 +312,44 @@ export default function HandleComplaintsPage() {
 
             <div className="space-y-4">
               <div>
+              <div className="mt-4 flex items-center gap-3">
+                <div className="flex gap-2">
+                  <Button onClick={() => setShowResolveModal(true)} className="bg-[var(--success-green)] hover:bg-green-600 text-white">Respond / Resolve</Button>
+                  <Button onClick={() => setShowRedirectModal(true)} variant="outline" className="border-[var(--neutral-gray)] text-[var(--neutral-gray)] hover:bg-gray-50">Redirect</Button>
+                </div>
+              </div>
                 <h4 className="font-semibold text-[var(--color-deep-navy)] mb-2">{selectedComplaint.subject}</h4>
                 <div className="flex flex-wrap gap-2 mb-3">
                   <Badge className={getPriorityColor(selectedComplaint.priority)}>
                     {selectedComplaint.priority.toUpperCase()} Priority
+
+      {/* Redirect Modal */}
+      {showRedirectModal && selectedComplaint && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold text-[var(--color-deep-navy)] mb-4">Redirect Complaint</h3>
+            <p className="text-sm text-[var(--neutral-gray)] mb-4">Choose target to redirect this complaint to:</p>
+            <div className="space-y-3">
+              <label className="flex items-center space-x-3">
+                <input type="radio" name="redirect" value="FINANCE_MANAGER" checked={redirectTarget === 'FINANCE_MANAGER'} onChange={() => setRedirectTarget('FINANCE_MANAGER')} />
+                <span className="text-sm">Finance Manager</span>
+              </label>
+              <label className="flex items-center space-x-3">
+                <input type="radio" name="redirect" value="DRIVER_COORDINATOR" checked={redirectTarget === 'DRIVER_COORDINATOR'} onChange={() => setRedirectTarget('DRIVER_COORDINATOR')} />
+                <span className="text-sm">Driver Coordinator</span>
+              </label>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <Button variant="outline" onClick={() => setShowRedirectModal(false)}>Cancel</Button>
+              <Button className="bg-[var(--bright-orange)] text-white" onClick={() => {
+                // simulate redirect by assigning and updating status
+                setComplaints(prev => prev.map(c => c.id === selectedComplaint.id ? { ...c, assignedTo: redirectTarget.replace('_',' '), status: 'in-progress' } : c));
+                setShowRedirectModal(false);
+              }}>Redirect</Button>
+            </div>
+          </div>
+        </div>
+      )}
                   </Badge>
                   <Badge variant="outline" className="capitalize">
                     {selectedComplaint.category}

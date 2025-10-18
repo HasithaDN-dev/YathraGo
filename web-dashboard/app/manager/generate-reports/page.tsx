@@ -55,7 +55,7 @@ const reportTypes: ReportType[] = [
     icon: Car,
     category: "operational",
     estimatedTime: "4-6 min",
-    dataPoints: ["Vehicle Approvals", "Fleet Utilization", "Route Coverage", "Service Quality", "Performance Metrics"]
+  dataPoints: ["Fleet Utilization", "Route Coverage", "Service Quality", "Performance Metrics"]
   },
   {
     id: "compliance-audit",

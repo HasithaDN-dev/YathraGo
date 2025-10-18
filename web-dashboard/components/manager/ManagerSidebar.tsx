@@ -5,11 +5,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  UserCheck,
-  Car,
   MessageSquare,
   FileText,
-  DollarSign,
   LogOut,
   Bell,
 } from "lucide-react";
@@ -39,16 +36,7 @@ export default function ManagerSidebar() {
       label: "Dashboard",
       href: "/manager",
     },
-    {
-      icon: UserCheck,
-      label: "Verify Drivers",
-      href: "/manager/verify-drivers",
-    },
-    {
-      icon: Car,
-      label: "Approve Vehicles",
-      href: "/manager/approve-vehicles",
-    },
+    
     {
       icon: MessageSquare,
       label: "Handle Complaints",
@@ -56,18 +44,19 @@ export default function ManagerSidebar() {
     },
     {
       icon: Bell,
-      label: "Publish Notices",
-      href: "/manager/publish-notices",
-    },
-    {
-      icon: DollarSign,
-      label: "Revenue Management",
-      href: "/manager/revenue-management",
+      label: "Manage Notifications",
+      href: "/manager/manage-notifications",
     },
     {
       icon: FileText,
       label: "Generate Reports",
       href: "/manager/generate-reports",
+    },
+    
+    {
+      icon: Bell,
+      label: "Receive Alerts",
+      href: "/manager/receive-alerts",
     },
   ];
 

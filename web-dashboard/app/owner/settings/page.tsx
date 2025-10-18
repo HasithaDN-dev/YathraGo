@@ -84,6 +84,7 @@ export default function SettingsPage() {
         });
       } catch (err) {
         // handle error
+        console.error("Failed to fetch owner profile:", err);
       }
     };
     fetchUserData();
