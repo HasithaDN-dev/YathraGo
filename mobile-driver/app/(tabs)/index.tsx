@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/stores/auth.store';
 import { tokenService } from '@/lib/services/token.service';
 import { routeCitiesService } from '@/lib/services/route-cities.service';
+import SetupRouteCard from '@/components/SetupRouteCard';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function HomeScreen() {
   const [driverName, setDriverName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [hasRouteSetup, setHasRouteSetup] = useState<boolean>(false);
   
   // Route cities state
   const [startCity, setStartCity] = useState<string>('Maharagama Junction');
@@ -54,20 +56,31 @@ export default function HomeScreen() {
         setIsOnline(user?.status === 'ACTIVE');
       }
 
+      // Check if driver has route setup
+      const citiesResponse = await authenticatedFetch(`${API_BASE_URL}/driver/cities`);
+      if (citiesResponse.ok) {
+        const citiesData = await citiesResponse.json();
+        setHasRouteSetup(citiesData.hasRoute || false);
+
+        // If route is setup, fetch route cities with ETA
+        if (citiesData.hasRoute) {
+          const routeData = await routeCitiesService.getRouteCitiesWithETA();
+          if (routeData && routeData.success) {
+            setStartCity(routeData.startPoint);
+            setEndCity(routeData.endPoint);
+            setEtaMinutes(routeData.etaMinutes || null);
+            setDistanceKm(routeData.distanceKm || null);
+          }
+        }
+      } else {
+        setHasRouteSetup(false);
+      }
+
       // Fetch student count
       const studentsResponse = await authenticatedFetch(`${API_BASE_URL}/driver/child-ride-requests`);
       if (studentsResponse.ok) {
         const studentsData = await studentsResponse.json();
         setStudentCount(studentsData.length || 0);
-      }
-
-      // Fetch route cities with ETA (cached)
-      const routeData = await routeCitiesService.getRouteCitiesWithETA();
-      if (routeData && routeData.success) {
-        setStartCity(routeData.startPoint);
-        setEndCity(routeData.endPoint);
-        setEtaMinutes(routeData.etaMinutes || null);
-        setDistanceKm(routeData.distanceKm || null);
       }
     } catch (error) {
       console.error('Error fetching driver data:', error);
@@ -92,11 +105,7 @@ export default function HomeScreen() {
   };
 
   const startTrip = () => {
-    setTripStarted(!tripStarted);
-    setCurrentTripStatus('on-the-way');
-    setIsButtonEnabled(true);
-    console.log('Starting trip...');
-    // Navigate to navigation tab
+    // Navigate to navigation tab where the actual route will be fetched
     router.push('/(tabs)/navigation');
   };
 
@@ -118,6 +127,12 @@ export default function HomeScreen() {
   const viewAllStudents = () => {
     //console.log('Navigating to all students view...');
     router.push('/(tabs)/current-students');
+  };
+
+  const handleRouteSetupComplete = () => {
+    // Refresh the screen to show the trip card
+    setHasRouteSetup(true);
+    fetchDriverData();
   };
 
   return (
@@ -169,8 +184,11 @@ export default function HomeScreen() {
         />
       </View> */}
 
-      {/* Current Trip Section */}
-      <View className="bg-white mx-6 mt-4 rounded-xl p-4 shadow-sm">
+      {/* Setup Route Card or Current Trip Section */}
+      {!hasRouteSetup ? (
+        <SetupRouteCard onRouteSetupComplete={handleRouteSetupComplete} />
+      ) : (
+        <View className="bg-white mx-6 mt-4 rounded-xl p-4 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <Typography variant="headline" weight="semibold" className="text-brand-deepNavy">
             Current Trip
@@ -238,9 +256,11 @@ export default function HomeScreen() {
           />
 
         </View>
-      </View>
+        </View>
+      )}
 
       {/* Assigned Children Summary Section */}
+      {hasRouteSetup && (
       <View className="bg-white mx-6 mt-4 rounded-xl p-4 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <Typography variant="headline" weight="semibold" className="text-brand-deepNavy">
@@ -286,9 +306,11 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
-      </View>
+        </View>
+      )}
 
       {/* Today's Schedule */}
+      {hasRouteSetup && (
       <View className="bg-white mx-6 mt-4 rounded-xl p-4 shadow-sm">
         <Typography variant="headline" weight="semibold" className="text-brand-deepNavy mb-4">
           Today's Schedule
@@ -333,15 +355,17 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
-      </View>
+        </View>
+      )}
 
       {/* Quick Actions */}
+      {hasRouteSetup && (
       <View className="bg-white mx-6 mt-4 rounded-xl p-4 shadow-sm">
         <Typography variant="headline" weight="semibold" className="text-brand-deepNavy mb-4">
           Quick Actions
         </Typography>
 
-        <View className="flex-row gap-3">
+        <View className="flex-row gap-3 mb-3">
           <TouchableOpacity
             className="flex-1 bg-brand-brightOrange p-4 rounded-xl items-center"
             onPress={() => router.push('../(homeLinks)/inform')}
@@ -360,7 +384,19 @@ export default function HomeScreen() {
             </Typography>
           </TouchableOpacity>
         </View>
-      </View>
+        
+        <TouchableOpacity 
+          className="bg-brand-deepNavy p-4 rounded-xl items-center"
+          onPress={() => router.push('/(tabs)/attendance')}
+          activeOpacity={0.8}
+        >
+          <CheckCircle size={24} color="#ffffff" weight="regular" />
+          <Typography variant="caption-1" weight="medium" className="text-white mt-2">
+            Mark Attendance
+          </Typography>
+        </TouchableOpacity>
+        </View>
+      )}
 
       {/* Bottom Spacing */}
       <View className="h-6" />

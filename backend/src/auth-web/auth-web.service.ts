@@ -29,7 +29,7 @@ export class AuthWebService {
       });
 
       // If the user is an owner, create a VehicleOwner record with the same id
-      if (user.role === 'owner') {
+      if (user.role === 'OWNER') {
         await this.prisma.vehicleOwner.create({
           data: {
             id: user.id,

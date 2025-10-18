@@ -213,7 +213,7 @@ export class DriverController {
     }
 
     // 1) Load assigned children with confirmed coordinates
-    const requests = await this.prisma.childRideRequest.findMany({
+    const assignedRequests = await this.prisma.childRideRequest.findMany({
       where: { driverId, status: 'Assigned' },
       include: {
         child: {
@@ -232,6 +232,33 @@ export class DriverController {
       },
     });
 
+    // 2) Filter out absent students for today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const absentToday = await this.prisma.absence_Child.findMany({
+      where: {
+        childId: { in: assignedRequests.map((r) => r.child.child_id) },
+        date: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+      select: {
+        childId: true,
+      },
+    });
+
+    const absentChildIds = new Set(absentToday.map((a) => a.childId));
+
+    // 3) Filter to get only present students
+    const requests = assignedRequests.filter(
+      (r) => !absentChildIds.has(r.child.child_id),
+    );
+
+    // 4) Build stops array from present students only
     const origin =
       body?.latitude != null && body?.longitude != null
         ? { lat: body.latitude, lng: body.longitude }
@@ -245,6 +272,7 @@ export class DriverController {
       address: string;
       childName: string;
     }> = [];
+
     for (const r of requests) {
       const c = r.child;
       const childName =
@@ -272,10 +300,11 @@ export class DriverController {
         });
       }
     }
+
     if (stops.length === 0) {
       return {
         degraded: true,
-        message: 'No assigned stops',
+        message: 'No present students with valid locations',
         stops: [],
         totalDistanceMeters: 0,
         totalDurationSecs: 0,
@@ -283,16 +312,30 @@ export class DriverController {
       };
     }
 
-    // 2) Build Distance Matrix (origins: origin + all stops; destinations: all stops)
+    // If no driver location provided, cannot optimize geographically
+    if (!origin) {
+      return {
+        degraded: true,
+        message: 'Driver location required for route optimization',
+        stops: [],
+        totalDistanceMeters: 0,
+        totalDurationSecs: 0,
+        polyline: null,
+      };
+    }
+
+    // 5) Build Distance Matrix with driver location as origin
     const makeLoc = (p: { lat: number; lng: number }) => `${p.lat},${p.lng}`;
-    const dmOrigins: string[] = [];
     const points = stops.map((s) => ({ lat: s.lat, lng: s.lng }));
-    if (origin) dmOrigins.push(makeLoc(origin));
-    points.forEach((p) => dmOrigins.push(makeLoc(p)));
+
+    // Build distance matrix: driver location + all stops as origins, all stops as destinations
+    const dmOrigins: string[] = [makeLoc(origin)]; // Driver's location first
+    points.forEach((p) => dmOrigins.push(makeLoc(p))); // Then all stops
     const dmDestinations = points.map(makeLoc);
 
     let degraded = false;
     let matrix: { distances: number[][]; durations: number[][] } | null = null;
+
     try {
       const params = new URLSearchParams();
       params.append('origins', dmOrigins.join('|'));
@@ -300,28 +343,47 @@ export class DriverController {
       params.append('key', apiKey);
       const url = `https://maps.googleapis.com/maps/api/distancematrix/json?${params.toString()}`;
       const res = await axios.get(url, { timeout: 15000 });
-      const rows = res.data?.rows || [];
-      const durations: number[][] = rows.map((row: any) =>
-        row.elements.map((e: any) => e?.duration?.value ?? 0),
-      );
-      const distances: number[][] = rows.map((row: any) =>
-        row.elements.map((e: any) => e?.distance?.value ?? 0),
-      );
-      matrix = { durations, distances };
+
+      if (res.data?.status === 'OK') {
+        const rows = res.data?.rows || [];
+        const durations: number[][] = rows.map((row: any) =>
+          row.elements.map((e: any) => e?.duration?.value ?? 0),
+        );
+        const distances: number[][] = rows.map((row: any) =>
+          row.elements.map((e: any) => e?.distance?.value ?? 0),
+        );
+        matrix = { durations, distances };
+      } else {
+        console.error('Google Maps API error:', res.data?.status);
+        degraded = true;
+      }
     } catch (e) {
-      degraded = true; // fallback later
+      console.error('Error fetching distance matrix:', e);
+      degraded = true;
     }
 
-    // 3) Greedy constrained order: pickup before dropoff, optional capacity
+    // If matrix failed, cannot proceed with geographical optimization
+    if (!matrix) {
+      return {
+        degraded: true,
+        message: 'Failed to fetch distance matrix from Google Maps',
+        stops: [],
+        totalDistanceMeters: 0,
+        totalDurationSecs: 0,
+        polyline: null,
+      };
+    }
+
+    // 6) Greedy constrained order: pickup before dropoff, optional capacity
     const driverVehicle = await this.prisma.vehicle.findFirst({
       where: { driverId },
     });
-    const capacity = driverVehicle?.no_of_seats ?? null; // null means ignore
-    type Stop = (typeof stops)[number];
-    const startRowIndex = origin ? 0 : 1;
-    const ordered = computeGreedyOrder(stops, matrix, capacity, startRowIndex);
+    const capacity = driverVehicle?.no_of_seats ?? null; // null means ignore capacity
 
-    // 4) Compute ETAs and cumulative distances
+    // Use greedy algorithm starting from driver's location (index 0 in matrix)
+    const ordered = computeGreedyOrder(stops, matrix, capacity, 0);
+
+    // 7) Compute ETAs and cumulative distances
     let totalDurationSecs = 0;
     let totalDistanceMeters = 0;
     const now = Math.floor(Date.now() / 1000);
@@ -335,19 +397,25 @@ export class DriverController {
       etaSecs: number;
       legDistanceMeters: number;
     }> = [];
-    let prevIndexForMatrix = origin ? 0 : 1 + stops.indexOf(ordered[0]);
+
+    // Start from driver's location (index 0 in matrix)
+    let prevIndexForMatrix = 0;
+
     for (let i = 0; i < ordered.length; i++) {
       const s = ordered[i];
       let legDuration = 0;
       let legDistance = 0;
-      if (matrix) {
-        const destIdx = stops.indexOf(s);
-        legDuration = matrix.durations[prevIndexForMatrix]?.[destIdx] ?? 0;
-        legDistance = matrix.distances[prevIndexForMatrix]?.[destIdx] ?? 0;
-        prevIndexForMatrix = (origin ? 1 : 1) + destIdx;
-      }
+
+      const destIdx = stops.indexOf(s);
+      legDuration = matrix.durations[prevIndexForMatrix]?.[destIdx] ?? 0;
+      legDistance = matrix.distances[prevIndexForMatrix]?.[destIdx] ?? 0;
+
+      // Next origin is this stop (add 1 because driver location is at index 0)
+      prevIndexForMatrix = 1 + destIdx;
+
       totalDurationSecs += legDuration;
       totalDistanceMeters += legDistance;
+
       stopsOut.push({
         ...s,
         etaSecs: now + totalDurationSecs,
@@ -355,27 +423,35 @@ export class DriverController {
       });
     }
 
-    // 5) Fetch Directions polyline for ordered path
+    // 8) Fetch Directions polyline for ordered path
     let polyline: string | null = null;
     try {
-      const originStr = origin
-        ? `${origin.lat},${origin.lng}`
-        : `${ordered[0].lat},${ordered[0].lng}`;
+      const originStr = `${origin.lat},${origin.lng}`;
       const destinationStr = `${ordered[ordered.length - 1].lat},${ordered[ordered.length - 1].lng}`;
-      const waypointStr = ordered
-        .slice(0, ordered.length - 1)
-        .map((s) => `${s.lat},${s.lng}`)
-        .join('|');
+
+      // All stops except the last one are waypoints
+      const waypoints = ordered.slice(0, ordered.length - 1);
+      const waypointStr = waypoints.map((s) => `${s.lat},${s.lng}`).join('|');
+
       const params = new URLSearchParams();
       params.append('origin', originStr);
       params.append('destination', destinationStr);
-      if (ordered.length > 1) params.append('waypoints', waypointStr);
+      if (waypoints.length > 0) {
+        params.append('waypoints', waypointStr);
+      }
       params.append('key', apiKey);
+
       const url = `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`;
       const res = await axios.get(url, { timeout: 15000 });
-      polyline = res.data?.routes?.[0]?.overview_polyline?.points ?? null;
-    } catch (e) {
-      // keep degraded flag
+
+      if (res.data?.routes?.[0]?.overview_polyline?.points) {
+        polyline = res.data.routes[0].overview_polyline.points;
+      } else {
+        console.error('No polyline in directions response');
+        degraded = true;
+      }
+    } catch (_e) {
+      console.error('Error fetching directions polyline:', _e);
       degraded = true;
     }
 
@@ -591,6 +667,7 @@ export class DriverController {
         data: {
           driverId,
           childId: body.childId,
+          date: new Date(), // Add the required date field
           type: body.type,
           latitude: body.latitude,
           longitude: body.longitude,
@@ -629,5 +706,38 @@ export class DriverController {
         error: error.message,
       };
     }
+  }
+
+  // Get driver's assigned cities
+  @Get('cities')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async getDriverCities(@Req() req: AuthenticatedRequest) {
+    const driverId = parseInt(req.user.sub, 10);
+    return this.driverService.getDriverCities(driverId);
+  }
+
+  // Save or update driver's route cities
+  @Post('cities')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async saveDriverCities(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { cityIds: number[] },
+  ) {
+    const driverId = parseInt(req.user.sub, 10);
+
+    if (
+      !body.cityIds ||
+      !Array.isArray(body.cityIds) ||
+      body.cityIds.length < 2
+    ) {
+      return {
+        success: false,
+        message: 'Please provide at least 2 cities (start and destination)',
+      };
+    }
+
+    return this.driverService.saveDriverCities(driverId, body.cityIds);
   }
 }

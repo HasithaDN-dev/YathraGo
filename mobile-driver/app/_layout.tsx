@@ -4,6 +4,8 @@ import React, { useEffect } from 'react';
 import { Stack, SplashScreen } from 'expo-router';
 import { useAuthStore } from '../lib/stores/auth.store';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 import 'react-native-reanimated';
 import '../global.css';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -45,6 +47,20 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [loaded, error, hasHydrated]);
+
+  useEffect(() => {
+    // Setup notification channel for Android
+    if (Platform.OS === 'android') {
+      Notifications.setNotificationChannelAsync('location-tracking', {
+        name: 'Location Tracking',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        sound: 'default',
+        enableVibrate: true,
+        showBadge: true,
+      });
+    }
+  }, []);
 
   // Show splash screen until everything is ready
   if ((!loaded && !error) || !hasHydrated || isLoading) {
