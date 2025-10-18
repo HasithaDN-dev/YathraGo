@@ -28,21 +28,26 @@ export class NotificationsService {
   async sendNotification(dto: SendNotificationDto) {
     try {
       // Create notification in database
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const createData: any = {
+        sender: dto.sender,
+        message: dto.message,
+        type: dto.type,
+        receiver: dto.receiver,
+        receiverId: dto.receiverId ?? null,
+        isExpanded: dto.isExpanded || false,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const notification = await this.prisma.notification.create({
-        data: {
-          sender: dto.sender,
-          message: dto.message,
-          type: dto.type,
-          receiver: dto.receiver,
-          receiverId: dto.receiverId,
-          isExpanded: dto.isExpanded || false,
-        },
+        data: createData as unknown as any,
       });
 
-      // Get FCM token based on user type
-      const fcmToken = await this.getFcmToken(dto.receiver, dto.receiverId);
+      // Get FCM token based on user type (only for specific user notifications)
+      const fcmToken = dto.receiverId
+        ? await this.getFcmToken(dto.receiver, dto.receiverId)
+        : null;
 
-      // Send push notification if FCM token exists
+      // Send push notification if FCM token exists (for personal notifications only)
       if (fcmToken) {
         await this.sendPushNotification({
           token: fcmToken,
@@ -52,7 +57,7 @@ export class NotificationsService {
             notificationId: notification.id.toString(),
             type: dto.type,
             receiverType: dto.receiver,
-            receiverId: dto.receiverId.toString(),
+            receiverId: dto.receiverId ? dto.receiverId.toString() : '',
             conversationId: dto.conversationId?.toString() || '',
           },
         });
@@ -74,15 +79,17 @@ export class NotificationsService {
    */
   async getNotifications(dto: GetNotificationsDto) {
     try {
-      const notifications = await this.prisma.notification.findMany({
-        where: {
-          receiver: dto.userType,
-          receiverId: dto.userId,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
+      // Fetch all notifications for the receiver type, then split into personal
+      // and broadcast on the application side. This avoids Prisma nullable filter
+      // typing edge-cases and keeps the intent clear.
+      const allForType = await this.prisma.notification.findMany({
+        where: { receiver: dto.userType },
+        orderBy: { createdAt: 'desc' },
       });
+
+      const notifications = allForType.filter(
+        (n) => n.receiverId === dto.userId || n.receiverId === null,
+      );
 
       return {
         success: true,
@@ -109,17 +116,21 @@ export class NotificationsService {
    */
   async getUnreadCount(userType: UserTypes, userId: number) {
     try {
-      const count = await this.prisma.notification.count({
-        where: {
-          receiver: userType,
-          receiverId: userId,
-          isExpanded: false,
-        },
+      // Fetch unread notifications for the receiver type and compute personal + broadcasts
+      const unreadForType = await this.prisma.notification.findMany({
+        where: { receiver: userType, isExpanded: false },
       });
+
+      const personalCount = unreadForType.filter(
+        (n) => n.receiverId === userId,
+      ).length;
+      const broadcastCount = unreadForType.filter(
+        (n) => n.receiverId === null,
+      ).length;
 
       return {
         success: true,
-        unreadCount: count,
+        unreadCount: personalCount + broadcastCount,
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -142,10 +153,23 @@ export class NotificationsService {
         throw new NotFoundException('Notification not found');
       }
 
-      if (
-        notification.receiver !== dto.userType ||
-        notification.receiverId !== dto.userId
-      ) {
+      // If the notification is a broadcast (receiverId is null) we cannot update the
+      // shared notification record to mark it as read for a single user. A per-user
+      // seen table is required for that behavior. For now, disallow marking broadcasts
+      // directly and instruct to implement per-user seen tracking if needed.
+      if (notification.receiver !== dto.userType) {
+        throw new ForbiddenException(
+          'You do not have permission to mark this notification as read',
+        );
+      }
+
+      if (notification.receiverId === null) {
+        throw new ForbiddenException(
+          'Cannot mark a broadcast notification as read for a single user. Implement per-user seen tracking.',
+        );
+      }
+
+      if (notification.receiverId !== dto.userId) {
         throw new ForbiddenException(
           'You do not have permission to mark this notification as read',
         );
@@ -212,10 +236,19 @@ export class NotificationsService {
         throw new NotFoundException('Notification not found');
       }
 
-      if (
-        notification.receiver !== userType ||
-        notification.receiverId !== userId
-      ) {
+      // Prevent deleting broadcasts or notifications not owned by the user. Deleting
+      // a broadcast would remove it for everyone.
+      if (notification.receiver !== userType) {
+        throw new ForbiddenException(
+          'You do not have permission to delete this notification',
+        );
+      }
+
+      if (notification.receiverId === null) {
+        throw new ForbiddenException('Cannot delete a broadcast notification');
+      }
+
+      if (notification.receiverId !== userId) {
         throw new ForbiddenException(
           'You do not have permission to delete this notification',
         );

@@ -25,9 +25,10 @@ export class SendNotificationDto {
   @IsNotEmpty()
   receiver!: UserTypes;
 
+  // receiverId is optional now; when omitted it represents a broadcast to the whole user type
+  @IsOptional()
   @IsInt()
-  @IsNotEmpty()
-  receiverId!: number;
+  receiverId?: number;
 
   @IsOptional()
   @IsInt()

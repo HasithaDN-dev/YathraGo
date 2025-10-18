@@ -155,7 +155,7 @@ model Notification {
   message    String
   type       NotificationTypes
   receiver   UserTypes
-  receiverId Int
+  receiverId Int?
   createdAt  DateTime          @default(now())
   isExpanded Boolean           @default(false)
 
