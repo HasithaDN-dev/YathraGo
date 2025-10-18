@@ -10,6 +10,7 @@ import { API_BASE_URL } from '../../../config/api';
 import { useAuth } from '../../../hooks/useAuth';
 import * as FileSystem from 'expo-file-system';
 import { imageCache } from '../../../utils/imageCache';
+import { useProfileStore } from '../../../lib/stores/profile.store';
 
 // Minimal chat message shape for UI bubbles
 interface ChatMessage {
@@ -23,10 +24,11 @@ interface ChatMessage {
 }
 
 export default function ChatRoomScreen() {
-  const { id: idParam, name, phone } = useLocalSearchParams<{ id: string; name: string; phone?: string }>();
+  const { id: idParam, name, phone, avatarUri } = useLocalSearchParams<{ id: string; name: string; phone?: string; avatarUri?: string }>();
   const conversationId = Number(idParam);
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<any[]>([]);
+  const { activeProfile, customerProfile } = useProfileStore();
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<ScrollView>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -35,40 +37,44 @@ export default function ChatRoomScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { user } = useAuth();
+
+  // single source of truth for who is acting in the UI (active profile → child/staff, else customer)
+  const getCurrentActor = useCallback(() => {
+    if (activeProfile) {
+      const m = String(activeProfile.id).match(/(\d+)/);
+      const numericId = m ? parseInt(m[1], 10) : null;
+      if (numericId && activeProfile.type === 'child') return { id: numericId, userType: 'CHILD' };
+      if (numericId && activeProfile.type === 'staff') return { id: numericId, userType: 'STAFF' };
+    }
+    if (customerProfile?.customer_id) return { id: customerProfile.customer_id, userType: 'CUSTOMER' };
+    return { id: Number(user?.id), userType: 'CUSTOMER' };
+  }, [activeProfile, customerProfile, user]);
   const lastMessageIdRef = useRef<number | null>(null);
   const hasLoadedOnceRef = useRef(false);
 
   // Cached image component
   const CachedImage = ({ imageUri, style }: { imageUri: string; style: any }) => {
     const [cachedUri, setCachedUri] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
       const loadImage = async () => {
         try {
-          setIsLoading(true);
-          
           // If it's already a local URI, use it directly
           if (imageUri.startsWith('file://') || imageUri.startsWith('content://')) {
             setCachedUri(imageUri);
-            setIsLoading(false);
             return;
           }
 
           // Try to get from cache first
           let cachedImage = await imageCache.getCachedImage(imageUri);
-          
           if (!cachedImage) {
             // If not in cache, download and cache it
             cachedImage = await imageCache.cacheImage(imageUri);
           }
-          
           setCachedUri(cachedImage || imageUri);
         } catch (error) {
           console.error('Error loading cached image:', error);
           setCachedUri(imageUri);
-        } finally {
-          setIsLoading(false);
         }
       };
 
@@ -206,10 +212,15 @@ export default function ChatRoomScreen() {
         <TouchableOpacity onPress={() => router.back()} className="mr-2" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <ArrowLeft size={22} color="#000" />
         </TouchableOpacity>
-        <Image source={require('../../../assets/images/profile_Picture.png')} style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10 }} />
+        {/* show avatar passed via route params if available */}
+        {avatarUri && avatarUri !== 'null' && avatarUri !== 'undefined' ? (
+          <Image source={{ uri: avatarUri }} style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10 }} />
+        ) : (
+          <Image source={require('../../../assets/images/profile_Picture.png')} style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10 }} />
+        )}
         <View className="flex-1">
           <Typography variant="subhead" className="text-black">{name || 'Driver'}</Typography>
-          <Typography variant="caption-1" className="text-brand-neutralGray">{/* last seen placeholder */} </Typography>
+          <Typography variant="caption-1" className="text-brand-neutralGray">{''}</Typography>
         </View>
         <TouchableOpacity onPress={dial} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Phone size={22} color="#143373" />
@@ -224,13 +235,14 @@ export default function ChatRoomScreen() {
     if (!textToSend || !user || !conversationId) return;
     setDraft('');
     try {
+      const actor = getCurrentActor();
       const res = await fetch(`${API_BASE_URL}/chat/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId,
-          senderId: Number(user.id),
-          senderType: 'CUSTOMER',
+          senderId: actor.id,
+          senderType: actor.userType,
           message: textToSend,
         }),
       });
@@ -297,6 +309,8 @@ export default function ChatRoomScreen() {
       return null;
     }
   };
+      
+
 
   const sendImageMessage = async (imageUri: string) => {
     if (!user || !conversationId) return;
@@ -320,13 +334,14 @@ export default function ChatRoomScreen() {
       
       if (imageUrl) {
         // Send message with uploaded image URL
+        const actor = getCurrentActor();
         const res = await fetch(`${API_BASE_URL}/chat/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             conversationId,
-            senderId: Number(user.id),
-            senderType: 'CUSTOMER',
+            senderId: actor.id,
+            senderType: actor.userType,
             message: null,
             imageUrl: imageUrl,
           }),
@@ -524,9 +539,11 @@ export default function ChatRoomScreen() {
             ) : messages.length === 0 ? (
               <Typography variant="body" className="text-center mt-8">No messages.</Typography>
             ) : messages.map((m) => {
+              const actor = getCurrentActor();
               const bubble: ChatMessage = {
                 id: m.id,
-                mine: m.senderId === Number(user?.id) && m.senderType === 'CUSTOMER',
+                // mark as mine when the message sender matches the current active actor
+                mine: m.senderId === actor.id && m.senderType === actor.userType,
                 text: m.message,
                 imageUri: m.imageUrl ? `${API_BASE_URL}/${m.imageUrl}` : undefined,
                 time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',

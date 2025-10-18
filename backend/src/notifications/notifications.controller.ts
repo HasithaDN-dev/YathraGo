@@ -1,43 +1,75 @@
-import { Body, Controller, Get, Post, Put, Param, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Query,
+  Param,
+  ParseIntPipe,
+  ParseEnumPipe,
+} from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
-import { SendNotificationDto } from './dto/send-notification.dto';
+import {
+  SendNotificationDto,
+  MarkAsReadDto,
+} from './dto/send-notification.dto';
+import { UserTypes } from '@prisma/client';
 
 @Controller('notifications')
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
-  @Post()
-  sendNotification(@Body() dto: SendNotificationDto) {
+  @Post('send')
+  async sendNotification(@Body() dto: SendNotificationDto) {
     return this.notificationsService.sendNotification(dto);
   }
 
   @Get()
-  getNotifications(
-    @Query('receiver')
-    receiver:
-      | 'CUSTOMER'
-      | 'DRIVER'
-      | 'WEBUSER'
-      | 'VEHICLEOWNER'
-      | 'BACKUPDRIVER',
-    @Query('receiverId') receiverId: string,
-    @Query('duration') duration?: string,
+  async getNotifications(
+    @Query('userType', new ParseEnumPipe(UserTypes)) userType: UserTypes,
+    @Query('userId', ParseIntPipe) userId: number,
   ) {
-    return this.notificationsService.getNotifications(
-      receiver,
-      parseInt(receiverId, 10),
-      duration ? parseInt(duration, 10) : undefined,
-    );
+    return this.notificationsService.getNotifications({ userType, userId });
   }
-  // Update FCM token for a customer
-  @Put('fcm-token/:customerId')
+
+  @Get('unread-count')
+  async getUnreadCount(
+    @Query('userType', new ParseEnumPipe(UserTypes)) userType: UserTypes,
+    @Query('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.notificationsService.getUnreadCount(userType, userId);
+  }
+
+  @Patch('mark-as-read')
+  async markAsRead(@Body() dto: MarkAsReadDto) {
+    return this.notificationsService.markAsRead(dto);
+  }
+
+  @Patch('mark-all-as-read')
+  async markAllAsRead(
+    @Body('userType', new ParseEnumPipe(UserTypes)) userType: UserTypes,
+    @Body('userId') userId: number,
+  ) {
+    return this.notificationsService.markAllAsRead(userType, userId);
+  }
+
+  @Delete(':id')
+  async deleteNotification(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('userType', new ParseEnumPipe(UserTypes)) userType: UserTypes,
+    @Query('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.notificationsService.deleteNotification(id, userType, userId);
+  }
+
+  @Patch('fcm-token')
   async updateFcmToken(
-    @Param('customerId') customerId: string,
+    @Body('userType', new ParseEnumPipe(UserTypes)) userType: UserTypes,
+    @Body('userId') userId: number,
     @Body('fcmToken') fcmToken: string,
   ) {
-    return this.notificationsService.updateCustomerFcmToken(
-      parseInt(customerId, 10),
-      fcmToken,
-    );
+    return this.notificationsService.updateFcmToken(userType, userId, fcmToken);
   }
 }
