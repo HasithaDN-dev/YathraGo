@@ -4,6 +4,7 @@ export type Stop = {
   type: 'pickup' | 'dropoff';
   childId: number;
   address: string;
+  childName: string;
 };
 
 export type DistanceMatrix = {
