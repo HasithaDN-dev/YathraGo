@@ -72,3 +72,35 @@ Vehicle Registration → Vehicle Documents → Complete Registration → Success
 ```
 
 All endpoints are now functional and the registration process should work end-to-end.
+
+
+[
+  "638",
+  "960",
+  "1498",
+  "1086",
+  "1417",
+  "903",
+  "2159",
+  "2147"
+]
+
+[
+  "960",
+  "1498",
+  "1086",
+  "1417",
+  "903",
+  "2156",
+  "2158",
+]
+
+
+[
+  "1585",
+  "203",
+  "220",
+  "918",
+  "2156",
+  "2158",
+]
