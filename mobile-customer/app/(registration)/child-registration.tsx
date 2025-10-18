@@ -235,12 +235,12 @@ export default function ChildRegistrationScreen() {
               required
             />
 
-            {/* School Location Picker */}
+            {/* Pickup Location Picker */}
             <LocationInputField
-              label="School Location"
-              placeholder="Tap to select school location on map"
-              value={formData.schoolLocationDetails}
-              onPress={() => setIsSchoolMapVisible(true)}
+              label="Pickup Location"
+              placeholder="Tap to select pickup location on map"
+              value={formData.pickupLocationDetails}
+              onPress={() => setIsPickupMapVisible(true)}
               required
             />
 
@@ -254,12 +254,12 @@ export default function ChildRegistrationScreen() {
               />
             )}
 
-            {/* Pickup Location Picker */}
+            {/* School Location Picker */}
             <LocationInputField
-              label="Pickup Location"
-              placeholder="Tap to select pickup location on map"
-              value={formData.pickupLocationDetails}
-              onPress={() => setIsPickupMapVisible(true)}
+              label="School Location"
+              placeholder="Tap to select school location on map"
+              value={formData.schoolLocationDetails}
+              onPress={() => setIsSchoolMapVisible(true)}
               required
             />
 

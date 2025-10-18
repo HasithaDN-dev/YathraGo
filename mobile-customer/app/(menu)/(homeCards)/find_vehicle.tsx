@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View, ScrollView, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,61 +9,69 @@ import { Star, User } from 'phosphor-react-native';
 import { Colors } from '@/constants/Colors';
 import { router } from 'expo-router';
 import { findVehicleApi, VehicleSearchResult } from '@/lib/api/find-vehicle';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useProfileStore } from '@/lib/stores/profile.store';
 
 export default function FindVehicleScreen() {
   const [selectedVehicleType, setSelectedVehicleType] = useState<string>('');
   const [rating, setRating] = useState(1);
   const [requestedMap, setRequestedMap] = useState<Record<number, boolean>>({});
-  const [vehicles, setVehicles] = useState<VehicleSearchResult[]>([]);
+  const [allVehicles, setAllVehicles] = useState<VehicleSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [customerId, setCustomerId] = useState<number | null>(null);
-  const [profileType, setProfileType] = useState<'child' | 'staff'>('child');
-  const [profileId, setProfileId] = useState<number | null>(null);
+  
+  // Get data from stores
+  const { activeProfile, customerProfile } = useProfileStore();
 
-  // Load customer data on mount
-  useEffect(() => {
-    loadCustomerData();
-  }, []);
+  // Client-side filtering of vehicles
+  const filteredVehicles = useMemo(() => {
+    let filtered = [...allVehicles];
 
-  const loadCustomerData = async () => {
-    try {
-      // Get customer ID from AsyncStorage (adjust key as needed)
-      const storedCustomerId = await AsyncStorage.getItem('customerId');
-      const storedProfileType = await AsyncStorage.getItem('activeProfileType');
-      const storedProfileId = await AsyncStorage.getItem('activeProfileId');
-
-      if (storedCustomerId) {
-        setCustomerId(parseInt(storedCustomerId));
-      }
-      if (storedProfileType === 'child' || storedProfileType === 'staff') {
-        setProfileType(storedProfileType);
-      }
-      if (storedProfileId) {
-        setProfileId(parseInt(storedProfileId));
-      }
-    } catch (error) {
-      console.error('Error loading customer data:', error);
-      Alert.alert('Error', 'Failed to load customer data');
+    // Filter by vehicle type
+    if (selectedVehicleType) {
+      filtered = filtered.filter(v => v.vehicleType === selectedVehicleType);
     }
-  };
+
+    // Filter by minimum rating
+    if (rating > 1) {
+      filtered = filtered.filter(v => v.driverRating >= rating);
+    }
+
+    return filtered;
+  }, [allVehicles, selectedVehicleType, rating]);
 
   const searchVehicles = async () => {
-    if (!customerId || !profileId) {
-      Alert.alert('Error', 'Customer information is missing');
+    if (!customerProfile || !activeProfile) {
+      Alert.alert('Error', 'Profile information is missing. Please select a profile.');
       return;
     }
 
     setLoading(true);
     try {
+      // Extract profileId based on profile type
+      // Profile IDs are prefixed: "child-6" or "staff-4"
+      // We need to extract the numeric part
+      let profileId: number;
+      const profileType = activeProfile.type;
+
+      if (profileType === 'child') {
+        // Remove "child-" prefix and parse the number
+        const idStr = activeProfile.id.replace('child-', '');
+        profileId = parseInt(idStr, 10);
+      } else {
+        // Remove "staff-" prefix and parse the number
+        const idStr = activeProfile.id.replace('staff-', '');
+        profileId = parseInt(idStr, 10);
+      }
+
+      console.log(`Searching vehicles for ${profileType} profile with ID: ${profileId}`);
+
       const results = await findVehicleApi.searchVehicles({
-        customerId,
+        customerId: customerProfile.customer_id,
         profileType,
         profileId,
-        vehicleType: selectedVehicleType || undefined,
-        minRating: rating,
       });
-      setVehicles(results);
+      
+      console.log(`Found ${results.length} vehicles`);
+      setAllVehicles(results);
     } catch (error) {
       console.error('Error searching vehicles:', error);
       Alert.alert('Error', 'Failed to search vehicles. Please try again.');
@@ -72,13 +80,13 @@ export default function FindVehicleScreen() {
     }
   };
 
-  // Search vehicles when filters change
+  // Search vehicles when component mounts or profile changes
   useEffect(() => {
-    if (customerId && profileId) {
+    if (customerProfile && activeProfile) {
       searchVehicles();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customerId, profileId, selectedVehicleType, rating]);
+  }, [customerProfile, activeProfile]);
 
   const handleRequestVehicle = (vehicleId: number) => {
     setRequestedMap(prev => ({ ...prev, [vehicleId]: true }));
@@ -268,7 +276,7 @@ export default function FindVehicleScreen() {
                   Searching for vehicles...
                 </Typography>
               </View>
-            ) : vehicles.length === 0 ? (
+            ) : filteredVehicles.length === 0 ? (
               <View className="items-center justify-center py-10">
                 <Typography variant="body" className="text-gray-500">
                   No vehicles found matching your criteria.
@@ -278,7 +286,7 @@ export default function FindVehicleScreen() {
                 </Typography>
               </View>
             ) : (
-              vehicles.map((vehicle) => (
+              filteredVehicles.map((vehicle) => (
                 <VehicleCard key={vehicle.vehicleId} vehicle={vehicle} />
               ))
             )}

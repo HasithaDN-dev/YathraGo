@@ -4,8 +4,6 @@ export interface VehicleSearchParams {
   customerId: number;
   profileType?: 'child' | 'staff';
   profileId?: number;
-  vehicleType?: string;
-  minRating?: number;
 }
 
 export interface VehicleSearchResult {
@@ -66,12 +64,6 @@ export const findVehicleApi = {
     }
     if (params.profileId) {
       queryParams.append('profileId', params.profileId.toString());
-    }
-    if (params.vehicleType) {
-      queryParams.append('vehicleType', params.vehicleType);
-    }
-    if (params.minRating !== undefined) {
-      queryParams.append('minRating', params.minRating.toString());
     }
 
     const response = await fetch(`${API_BASE_URL}/find-vehicle/search?${queryParams.toString()}`);

@@ -113,8 +113,7 @@ export class FindVehicleService {
   async searchVehicles(
     searchDto: SearchVehicleDto,
   ): Promise<VehicleSearchResponseDto[]> {
-    const { customerId, profileType, profileId, vehicleType, minRating } =
-      searchDto;
+    const { customerId, profileType, profileId } = searchDto;
 
     // 1. Get customer profile and determine pickup/drop coordinates
     const customer = await this.prisma.customer.findUnique({
@@ -284,14 +283,6 @@ export class FindVehicleService {
         continue;
       }
 
-      // Filter by minimum rating if provided
-      // Note: Driver rating is not in the schema, you may need to calculate it from reviews
-      // For now, we'll use a placeholder value of 4.5
-      const driverRating = 4.5; // TODO: Calculate from actual reviews
-      if (minRating && driverRating < minRating) {
-        continue;
-      }
-
       // Get driver's vehicle
       const vehicle = driver.vehicles[0]; // Assuming driver has at least one vehicle
       if (!vehicle) {
@@ -301,17 +292,13 @@ export class FindVehicleService {
         continue;
       }
 
-      // Filter by vehicle type if provided
-      if (vehicleType && vehicle.type !== vehicleType) {
-        console.log(
-          `[FindVehicle] Driver ${driver.driver_id} (${driver.name}): Vehicle type mismatch - Driver: ${vehicle.type}, Required: ${vehicleType}`,
-        );
-        continue;
-      }
-
       console.log(
         `[FindVehicle] ✓ Driver ${driver.driver_id} (${driver.name}) MATCHED!`,
       );
+
+      // Note: Driver rating is not in the schema, you may need to calculate it from reviews
+      // For now, we'll use a placeholder value of 4.5
+      const driverRating = 4.5; // TODO: Calculate from actual reviews
 
       // Get start and end city names
       const startCityId = driverCity.cityIds[0];
