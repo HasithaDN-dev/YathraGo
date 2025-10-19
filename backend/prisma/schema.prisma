@@ -366,13 +366,16 @@ model City {
 }
 
 model DriverCities {
-  id             Int       @id @default(autoincrement())
-  driverId       Int       @unique
-  cityIds        Int[]
-  rideType       Ridetype  @default(Both)
-  usualEndTime   DateTime? @db.Time(6)
-  usualStartTime DateTime? @db.Time(6)
-  driver         Driver    @relation(fields: [driverId], references: [driver_id])
+  id       Int    @id @default(autoincrement())
+  driver   Driver @relation(fields: [driverId], references: [driver_id])
+  driverId Int
+  rideType Ridetype @default(Both)
+  // store an ordered list of city IDs representing the driver's route
+  cityIds  Int[]
+  usualStartTime  DateTime? @db.Time(6)
+  usualEndTime    DateTime? @db.Time(6)
+
+  @@unique([driverId])
 }
 
 model ChildRideRequest {

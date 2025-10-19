@@ -196,21 +196,21 @@ return (
             required
           />
 
-          {/* Work Location with Map */}
-          <LocationInputField
-            label="Work Location"
-            placeholder="Tap to select work location on map"
-            value={workLocationDetails}
-            onPress={() => openLocationPicker('work')}
-            required
-          />
-
           {/* Pickup Location with Map */}
           <LocationInputField
             label="Pickup Location"
             placeholder="Tap to select pickup location on map"
             value={pickupLocationDetails}
             onPress={() => openLocationPicker('pickup')}
+            required
+          />
+
+          {/* Work Location with Map */}
+          <LocationInputField
+            label="Work Location"
+            placeholder="Tap to select work location on map"
+            value={workLocationDetails}
+            onPress={() => openLocationPicker('work')}
             required
           />
         </View>

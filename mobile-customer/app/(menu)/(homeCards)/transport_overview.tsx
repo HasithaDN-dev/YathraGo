@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, ScrollView, Image, TouchableOpacity, Dimensions, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import { View, ScrollView, Image, TouchableOpacity, Dimensions, NativeScrollEvent, NativeSyntheticEvent, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
 import { Car, Star, ChatsCircle, ArrowLeftIcon } from 'phosphor-react-native';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useLocalSearchParams, router } from 'expo-router';
+import { findVehicleApi, VehicleDetails } from '@/lib/api/find-vehicle';
+import { Colors } from '@/constants/Colors';
 
 /**
  * Transport Overview (Home Cards) – (menu)/(homeCards)/transport_overview
@@ -13,11 +15,16 @@ import { useLocalSearchParams, router } from 'expo-router';
  * - Header matches other (menu) pages via ScreenHeader
  */
 export default function TransportOverviewScreen() {
-  const params = useLocalSearchParams<{ tab?: string | string[] }>();
+  const params = useLocalSearchParams<{ tab?: string | string[]; driverId?: string | string[] }>();
   const pageScrollRef = useRef<ScrollView>(null);
   // Y within ScrollView content (for scrollTo)
   const [imagesOffsetY, setImagesOffsetY] = useState(0);
   const imagesBlockRef = useRef<View>(null);
+  
+  // Data state
+  const [vehicleDetails, setVehicleDetails] = useState<VehicleDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   type Tab = 'Vehicle' | 'Driver' | 'Route';
   const tabs: Tab[] = useMemo(() => ['Vehicle', 'Driver', 'Route'], []);
@@ -49,6 +56,34 @@ export default function TransportOverviewScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.tab]);
 
+  // Fetch vehicle details when driverId is available
+  useEffect(() => {
+    const fetchDetails = async () => {
+      const driverIdParam = Array.isArray(params.driverId) ? params.driverId[0] : params.driverId;
+      
+      if (!driverIdParam) {
+        setError('No driver ID provided');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const driverId = parseInt(driverIdParam, 10);
+        const details = await findVehicleApi.getVehicleDetails(driverId);
+        setVehicleDetails(details);
+      } catch (err) {
+        console.error('Error fetching vehicle details:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load vehicle details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDetails();
+  }, [params.driverId]);
+
   // tab change by delta removed (swipe disabled)
 
 
@@ -72,97 +107,129 @@ export default function TransportOverviewScreen() {
     }
   };
 
-  const DriverCard = () => (
-    <Card className="mx-4 mt-4 p-5">
-      <View className="items-center mb-4">
-        <View className="w-28 h-28 rounded-full bg-gray-200 items-center justify-center">
-          <Image source={require('../../../assets/images/profile_Picture.png')} style={{ width: 96, height: 96, borderRadius: 48 }} />
+  const DriverCard = () => {
+    if (!vehicleDetails) return null;
+    
+    return (
+      <Card className="mx-4 mt-4 p-5">
+        <View className="items-center mb-4">
+          <View className="w-28 h-28 rounded-full bg-gray-200 items-center justify-center">
+            {vehicleDetails.driverProfileImage ? (
+              <Image 
+                source={{ uri: vehicleDetails.driverProfileImage }} 
+                style={{ width: 96, height: 96, borderRadius: 48 }} 
+              />
+            ) : (
+              <Image 
+                source={require('../../../assets/images/profile_Picture.png')} 
+                style={{ width: 96, height: 96, borderRadius: 48 }} 
+              />
+            )}
+          </View>
         </View>
-      </View>
-      <View className="space-y-3">
-        <Row label="Full Name" value="Sunil Samarathunga" />
-        <Row label="Contact" value="011 23 456898" />
-        <Row label="Distance" value="20 km" />
-        <Row label="Rating" customValue={<Rating value={4.9} />} />
-  <Row
-          label="Reviews"
-          customValue={
-            <View className="relative w-full">
-              <View className="flex-row items-center">
-                <ChatsCircle size={16} color="#2563eb" />
-                <Typography variant="subhead" className="ml-2 text-brand-deepNavy">6</Typography>
-              </View>
-              <View className="absolute inset-0 items-center justify-center">
-                <ArrowLeftIcon size={16} color="#000000" weight="regular" style={{ transform: [{ rotate: '180deg' }] }} />
-              </View>
-            </View>
-          }
-          labelClassName="text-brand-deepNavy"
-          onPress={() => router.push({ pathname: '/(menu)/(homeCards)/reviews', params: { tab: 'Driver' } })}
-        />
-        <Row label="Completed Rides" value="150" />
-      </View>
-    </Card>
-  );
-
-  const RouteCard = () => (
-    <Card className="mx-4 mt-4 p-5">
-      <View className="space-y-4">
-        <Row label="Start" value="Homagama" />
-        <View className="mb-3">
-          <Typography variant="subhead" className="text-black">
-            Route :
-          </Typography>
-          <Typography variant="subhead" className="text-brand-neutralGray mt-2">
-            Homagama » Kottawa » Pannipitiya » Maharagama » Nugegoda » Kirulapona »
-            Thimbirigasyaya » Thummulla » Royal College
-          </Typography>
-        </View>
-        <Row label="End" value="Royal College, Colombo 7" />
-      </View>
-    </Card>
-  );
-
-  const VehicleCard = () => (
-    <Card className="mx-4 mt-4 p-5">
-      <View className="flex-row justify-between items-start mb-3">
-        <View className="flex-1 mr-3">
-          <Row label="Model" value="Toyota HIACE" />
-          <Row label="Start - Destination" value="Homagama" />
-          <Row label="RegNo" value="ABE 3500" />
-          <Row label="Estimated arrival time" value="10 min" />
-          <Row label="Rating" customValue={<Rating value={4.2} />} />
-    <Row
+        <View className="space-y-3">
+          <Row label="Full Name" value={vehicleDetails.driverName} />
+          <Row label="Contact" value={vehicleDetails.driverPhone} />
+          <Row label="Rating" customValue={<Rating value={vehicleDetails.driverRating} />} />
+          <Row
             label="Reviews"
             customValue={
-              <View className="w-full flex-row items-center justify-between">
+              <View className="relative w-full">
                 <View className="flex-row items-center">
                   <ChatsCircle size={16} color="#2563eb" />
-                <Typography variant="subhead" className="ml-2 text-brand-deepNavy">10</Typography>
+                  <Typography variant="subhead" className="ml-2 text-brand-deepNavy">
+                    {vehicleDetails.driverReviewsCount}
+                  </Typography>
                 </View>
-                <ArrowLeftIcon size={16} color="#000000" weight="regular" style={{ transform: [{ rotate: '180deg' }] }} />
+                <View className="absolute inset-0 items-center justify-center">
+                  <ArrowLeftIcon size={16} color="#000000" weight="regular" style={{ transform: [{ rotate: '180deg' }] }} />
+                </View>
               </View>
             }
-          labelClassName="text-brand-deepNavy"
-            onPress={() => router.push({ pathname: '/(menu)/(homeCards)/reviews', params: { tab: 'Vehicle' } })}
+            labelClassName="text-brand-deepNavy"
+            onPress={() => router.push({ pathname: '/(menu)/(homeCards)/reviews', params: { tab: 'Driver' } })}
           />
-          <View className="mt-2">
-            <Typography variant="subhead" className="text-black">More Details :</Typography>
-            <Typography variant="subhead" className="text-brand-neutralGray mt-1">
-              Semi luxury bus with fans, in good and new condition.
+          <Row label="Completed Rides" value={vehicleDetails.driverCompletedRides.toString()} />
+        </View>
+      </Card>
+    );
+  };
+
+  const RouteCard = () => {
+    if (!vehicleDetails) return null;
+    
+    return (
+      <Card className="mx-4 mt-4 p-5">
+        <View className="space-y-4">
+          <Row label="Start" value={vehicleDetails.startCity} />
+          <View className="mb-3">
+            <Typography variant="subhead" className="text-black">
+              Route :
+            </Typography>
+            <Typography variant="subhead" className="text-brand-neutralGray mt-2">
+              {vehicleDetails.routeCities.join(' » ')}
             </Typography>
           </View>
-          <Row label="Available free seats" value="5" className="mt-2" />
+          <Row label="End" value={vehicleDetails.endCity} />
+          <Row label="Ride Type" value={vehicleDetails.rideType} />
+          {vehicleDetails.usualStartTime && vehicleDetails.usualEndTime && (
+            <Row label="Usual Time" value={`${vehicleDetails.usualStartTime} - ${vehicleDetails.usualEndTime}`} />
+          )}
         </View>
-        <TouchableOpacity accessibilityRole="button" onPress={scrollToPhotos} activeOpacity={0.8}>
-          <View className="w-32 h-32 rounded-full bg-gray-100 items-center justify-center">
-            <Car size={80} color="#143373" weight="fill" />
+      </Card>
+    );
+  };
+
+  const VehicleCard = () => {
+    if (!vehicleDetails) return null;
+    
+    return (
+      <Card className="mx-4 mt-4 p-5">
+        <View className="flex-row justify-between items-start mb-3">
+          <View className="flex-1 mr-3">
+            <Row label="Model" value={`${vehicleDetails.vehicleBrand} ${vehicleDetails.vehicleModel}`} />
+            <Row label="Type" value={vehicleDetails.vehicleType} />
+            <Row label="Reg No" value={vehicleDetails.vehicleRegistrationNumber} />
+            <Row label="Color" value={vehicleDetails.vehicleColor} />
+            <Row label="Air Conditioned" value={vehicleDetails.airConditioned ? 'Yes' : 'No'} />
+            <Row label="Assistant Available" value={vehicleDetails.assistant ? 'Yes' : 'No'} />
+            <Row label="Available Seats" value={vehicleDetails.availableSeats.toString()} />
+            <Row label="Rating" customValue={<Rating value={vehicleDetails.vehicleRating} />} />
+            <Row
+              label="Reviews"
+              customValue={
+                <View className="w-full flex-row items-center justify-between">
+                  <View className="flex-row items-center">
+                    <ChatsCircle size={16} color="#2563eb" />
+                    <Typography variant="subhead" className="ml-2 text-brand-deepNavy">
+                      {vehicleDetails.vehicleReviewsCount}
+                    </Typography>
+                  </View>
+                  <ArrowLeftIcon size={16} color="#000000" weight="regular" style={{ transform: [{ rotate: '180deg' }] }} />
+                </View>
+              }
+              labelClassName="text-brand-deepNavy"
+              onPress={() => router.push({ pathname: '/(menu)/(homeCards)/reviews', params: { tab: 'Vehicle' } })}
+            />
+            {vehicleDetails.vehicleDescription && (
+              <View className="mt-2">
+                <Typography variant="subhead" className="text-black">Description :</Typography>
+                <Typography variant="subhead" className="text-brand-neutralGray mt-1">
+                  {vehicleDetails.vehicleDescription}
+                </Typography>
+              </View>
+            )}
           </View>
-          <Typography variant="footnote" className="text-center mt-2 text-brand-neutralGray">View photos</Typography>
-        </TouchableOpacity>
-      </View>
-    </Card>
-  );
+          <TouchableOpacity accessibilityRole="button" onPress={scrollToPhotos} activeOpacity={0.8}>
+            <View className="w-32 h-32 rounded-full bg-gray-100 items-center justify-center">
+              <Car size={80} color="#143373" weight="fill" />
+            </View>
+            <Typography variant="footnote" className="text-center mt-2 text-brand-neutralGray">View photos</Typography>
+          </TouchableOpacity>
+        </View>
+      </Card>
+    );
+  };
 
   const ImagesCard = () => {
     const screenWidth = Dimensions.get('window').width;
@@ -230,27 +297,58 @@ export default function TransportOverviewScreen() {
           <TabButton label="Route" />
         </View>
 
-        {/* Content */}
-        {activeTab === 'Driver' && <DriverCard />}
-        {activeTab === 'Route' && <RouteCard />}
-        {activeTab === 'Vehicle' && (
-          <>
-            <VehicleCard />
-            {/* Measure the top of the images block to avoid capturing swipes over it */}
-            <View
-              ref={imagesBlockRef}
-              onLayout={(e) => {
-                setImagesOffsetY(e.nativeEvent.layout.y);
-                  // Absolute Y measurement removed (swipe disabled)
-              }}
+        {/* Loading State */}
+        {loading && (
+          <View className="items-center justify-center py-20">
+            <ActivityIndicator size="large" color={Colors.warmYellow} />
+            <Typography variant="body" className="text-gray-500 mt-4">
+              Loading vehicle details...
+            </Typography>
+          </View>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <View className="items-center justify-center py-20 px-4">
+            <Typography variant="body" className="text-red-500 text-center mb-4">
+              {error}
+            </Typography>
+            <TouchableOpacity
+              className="px-6 py-3 bg-brand-deepNavy rounded-lg"
+              onPress={() => router.back()}
+              activeOpacity={0.8}
             >
-              <ImagesCard />
-            </View>
+              <Typography variant="subhead" className="text-white">
+                Go Back
+              </Typography>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Content */}
+        {!loading && !error && vehicleDetails && (
+          <>
+            {activeTab === 'Driver' && <DriverCard />}
+            {activeTab === 'Route' && <RouteCard />}
+            {activeTab === 'Vehicle' && (
+              <>
+                <VehicleCard />
+                {/* Measure the top of the images block to avoid capturing swipes over it */}
+                <View
+                  ref={imagesBlockRef}
+                  onLayout={(e) => {
+                    setImagesOffsetY(e.nativeEvent.layout.y);
+                    // Absolute Y measurement removed (swipe disabled)
+                  }}
+                >
+                  <ImagesCard />
+                </View>
+              </>
+            )}
           </>
         )}
         {/* Bottom spacer */}
         <View className="h-8" />
-
       </ScrollView>
     </SafeAreaView>
   );

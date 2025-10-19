@@ -113,4 +113,12 @@ export class NotificationsController {
     if (!ok) throw new HttpException('Not found', HttpStatus.NOT_FOUND);
     return { success: true };
   }
+
+  // Admin: return all notifications (including personal and broadcasts)
+  // This endpoint is intentionally separate from the user-scoped GET which
+  // validates userType/userId. Use with care (dev/admin only).
+  @Get('all')
+  async findAllAdmin() {
+    return this.notificationsService.findAll();
+  }
 }
