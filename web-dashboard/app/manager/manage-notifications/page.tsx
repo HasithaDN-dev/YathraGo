@@ -20,6 +20,8 @@ export default function PublishNoticesPage() {
   const [suggestions, setSuggestions] = useState<Array<{ id: number; name: string; phone?: string; email?: string }>>([]);
   const searchTimeout = useRef<number | null>(null);
   const [notices, setNotices] = useState<Notice[]>([]);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [rawResponse, setRawResponse] = useState<any>(null);
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'sender' | 'type'>('newest');
@@ -37,21 +39,62 @@ export default function PublishNoticesPage() {
 
   const fetchNotices = useCallback(async () => {
     try {
-      const res = await fetch('/api/notices');
-      if (res.ok) {
-        const raw = await res.json();
-        // backend returns Notification rows: { id, sender, message, createdAt, ... }
-        const data: Notice[] = (raw || []).map((r: BackendNotification) => ({
-          id: String(r.id),
-          title: r.sender ?? '',
-          body: r.message ?? '',
-          publishedAt: r.createdAt ?? new Date().toISOString(),
-          audience: r.receiver,
-        }));
-        setNotices(data);
+      setFetchError(null);
+  const res = await fetch('/api/notices?allTypes=1');
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Failed to fetch /api/notices:', res.status, text);
+        setNotices([]);
+        setFetchError(`Failed to load notices: ${res.status} ${res.statusText}`);
+        return;
       }
+
+  const raw = await res.json();
+  // save raw response for debugging and log
+  setRawResponse(raw);
+  console.debug('fetchNotices raw response:', raw);
+
+      // backend might return an array or a wrapper object like { data: [...] } or { items: [...] }
+      // also handle wrapper formats like { success: true, notifications: [...] } or { notification: {...} }
+      const rows: BackendNotification[] = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.data)
+        ? raw.data
+        : Array.isArray(raw?.items)
+        ? raw.items
+        : Array.isArray(raw?.notifications)
+        ? raw.notifications
+        : Array.isArray(raw?.result)
+        ? raw.result
+        : Array.isArray(raw?.payload)
+        ? raw.payload
+        : raw?.notification && !Array.isArray(raw.notification)
+        ? [raw.notification]
+        : [];
+
+      if (!Array.isArray(raw) && typeof raw === 'object' && raw !== null) {
+        // if it's an object wrapper but doesn't contain common keys we'll warn
+        if (!Array.isArray(raw.data) && !Array.isArray(raw.items) && !Array.isArray(raw.notifications)) {
+          console.warn('fetchNotices: unexpected response shape', raw);
+        }
+      }
+
+      // backend returns Notification rows: { id, sender, message, createdAt, ... }
+      const data: Notice[] = rows.map((r: BackendNotification) => ({
+        id: String(r.id),
+        title: r.sender ?? '',
+        body: r.message ?? '',
+        publishedAt: r.createdAt ?? new Date().toISOString(),
+        audience: r.receiver,
+      }));
+  console.debug('fetchNotices normalized rows:', rows, 'mapped count:', data.length);
+  setNotices(data);
+  // don't treat an empty list as an error — it's a valid state
+  setFetchError(null);
     } catch (error) {
       console.error('Failed to fetch notices', error);
+      setNotices([]);
+      setFetchError(String(error));
     }
   }, []);
 
@@ -132,12 +175,9 @@ export default function PublishNoticesPage() {
 
     if (receiver !== 'ALL') payloadForApp.receiver = receiver;
 
-    // If targeting a specific receiver type (not ALL), require a selection from the name search
-    if (receiver !== 'ALL') {
-      if (!selectedReceiver) {
-        alert('Please select a receiver from the search suggestions when targeting specific users.');
-        return;
-      }
+    // If a specific user was selected, send with receiverId.
+    // If no specific user is selected and receiver !== 'ALL', interpret as "send to all of that type" (backend should handle receiver field).
+    if (selectedReceiver) {
       payloadForApp.receiverId = selectedReceiver.id;
     }
 
@@ -151,6 +191,7 @@ export default function PublishNoticesPage() {
       if (payloadForApp.receiver) backendPayload.receiver = payloadForApp.receiver;
       if (payloadForApp.receiverId !== undefined) backendPayload.receiverId = payloadForApp.receiverId;
 
+      // For WEBUSER and ALL, use the proxied API which will forward to the backend.
       if (receiver === 'WEBUSER' || receiver === 'ALL') {
         await fetch('/api/notices', {
           method: 'POST',
@@ -242,6 +283,7 @@ export default function PublishNoticesPage() {
               {/* receiver search */}
               <div className="mt-2 w-full">
                 <Input placeholder="Search receiver by name" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                <div className="text-xs text-[var(--neutral-gray)] mt-1">Leave empty to send to all users of the selected receiver type.</div>
                 {selectedReceiver && (
                   <div className="mt-1 text-sm">Selected: <span className="font-medium">{selectedReceiver.name}</span></div>
                 )}
@@ -275,6 +317,15 @@ export default function PublishNoticesPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
+            {fetchError && (
+              <div className="text-sm text-[var(--error-red)]">{fetchError}</div>
+            )}
+            {(!fetchError && notices.length === 0 && rawResponse) && (
+              <div className="text-xs text-[var(--neutral-gray)] mt-2">
+                <div className="font-medium">Raw response (debug):</div>
+                <pre className="whitespace-pre-wrap text-[12px] max-h-48 overflow-auto">{JSON.stringify(rawResponse, null, 2)}</pre>
+              </div>
+            )}
             {/* Sorting controls */}
             <div className="flex items-center justify-between mb-2">
               <div>

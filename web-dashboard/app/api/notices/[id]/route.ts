@@ -6,9 +6,8 @@ export async function GET(req: Request, ctx: unknown) {
   const { params } = ctx as { params?: { id?: string } };
   const id = params?.id;
   const res = await fetch(`${BACKEND}/notifications/${id}`);
-  if (!res.ok) return NextResponse.json({ error: 'Not found' }, { status: res.status });
   const data = await res.json();
-  return NextResponse.json(data);
+  return NextResponse.json(data, { status: res.status });
 }
 
 export async function PUT(req: Request, ctx: unknown) {
