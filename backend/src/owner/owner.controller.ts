@@ -26,7 +26,7 @@ export class OwnerController {
   constructor(private ownerService: OwnerService) {}
 
   @UseGuards(JwtGuard, RolesGuard)
-  @Roles('owner')
+  @Roles('OWNER')
   @Get('profile')
   async getProfile(@User() user: any): Promise<OwnerDto | null> {
     // console.log('webuser:', user);
@@ -36,7 +36,7 @@ export class OwnerController {
   }
 
   @UseGuards(JwtGuard, RolesGuard)
-  @Roles('owner')
+  @Roles('OWNER')
   @Put('update-profile')
   async updateProfile(
     @User() user: any,
@@ -48,7 +48,7 @@ export class OwnerController {
   // --- ADD DRIVER ENDPOINT ---
   @UseGuards(JwtGuard, RolesGuard)
   @Post('add-driver')
-  @Roles('owner')
+  @Roles('OWNER')
   @UseInterceptors(
     FileFieldsInterceptor(
       [
@@ -73,21 +73,6 @@ export class OwnerController {
     @User() user: Webuser,
     @Body() driverDto: any,
   ): Promise<any> {
-    // Debug logging
-    console.log('--- Add Driver Debug ---');
-    console.log('User:', user);
-    console.log('Body:', driverDto);
-    console.log(
-      'Files:',
-      Object.keys(files).reduce(
-        (acc, key) => ({
-          ...acc,
-          [key]: files[key]?.map((f) => f.originalname),
-        }),
-        {},
-      ),
-    );
-
     // Parse and convert types
     const parsedDriverDto = {
       ...driverDto,
@@ -146,7 +131,7 @@ export class OwnerController {
 
   // --- GET ALL DRIVERS ENDPOINT ---
   @UseGuards(JwtGuard, RolesGuard)
-  @Roles('owner')
+  @Roles('OWNER')
   @Get('drivers')
   async getDrivers(@User() user: Webuser): Promise<any> {
     return this.ownerService.getAllDrivers();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ interface SignupFormProps {
 }
 
 export default function SignupForm({ onSubmit }: SignupFormProps) {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -108,8 +110,11 @@ export default function SignupForm({ onSubmit }: SignupFormProps) {
       if (onSubmit) {
         onSubmit(formData);
       } else {
-        // Redirect to dashboard or login
-        window.location.href = "/login";
+        try {
+          router.push('/login');
+        } catch {
+          window.location.href = '/login';
+        }
       }
     } catch (error) {
       setErrors({ general: "Network error. Please try again." });

@@ -5,17 +5,21 @@ export class OwnerDto {
   firstName: string;
 
   @IsString()
-  lastName: string;
+  @IsOptional()
+  lastName?: string;
 
+  @IsOptional()
   @IsString()
-  address: string;
+  address?: string;
 
   @IsEmail()
   email: string;
 
+  @IsOptional()
   @IsString()
-  phone: string;
+  phone?: string;
 
+  @IsOptional()
   @IsString()
-  companyName: string;
+  companyName?: string;
 }

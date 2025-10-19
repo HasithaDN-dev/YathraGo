@@ -12,27 +12,26 @@ export class OwnerService {
   constructor(private prisma: PrismaService) {}
 
   async getOwnerProfile(userId: number): Promise<OwnerDto | null> {
-    const owner = await this.prisma.vehicleOwner.findUnique({
+    // Owners are stored in the Webuser table (role = OWNER).
+    const user = await this.prisma.webuser.findUnique({
       where: { id: userId },
       select: {
-        first_name: true,
-        last_name: true,
-        Address: true,
+        username: true,
         email: true,
         phone: true,
-        company: true,
+        address: true,
+        fcmToken: true,
       },
     });
 
-    console.log('Reached');
-    if (!owner) return null;
+    if (!user) return null;
     return {
-      firstName: owner.first_name || '',
-      lastName: owner.last_name || '',
-      address: owner.Address || '',
-      email: owner.email || '',
-      phone: owner.phone || '',
-      companyName: owner.company || '',
+      firstName: user.username || '',
+      lastName: '',
+      address: user.address || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      companyName: '',
     };
   }
 
@@ -40,24 +39,23 @@ export class OwnerService {
     userId: number,
     updateData: any,
   ): Promise<OwnerDto | null> {
-    const updated = await this.prisma.vehicleOwner.update({
+    const updated = await this.prisma.webuser.update({
       where: { id: userId },
       data: {
-        first_name: updateData.firstName,
-        last_name: updateData.lastName,
-        Address: updateData.address,
-        email: updateData.email,
-        phone: updateData.phone,
-        company: updateData.companyName,
+        username: updateData.firstName ?? undefined,
+        email: updateData.email ?? undefined,
+        phone: updateData.phone ?? undefined,
+        address: updateData.address ?? undefined,
       },
     });
+
     return {
-      firstName: updated.first_name || '',
-      lastName: updated.last_name || '',
-      address: updated.Address || '',
+      firstName: updated.username || '',
+      lastName: '',
+      address: updated.address || '',
       email: updated.email || '',
       phone: updated.phone || '',
-      companyName: updated.company || '',
+      companyName: '',
     };
   }
 
@@ -104,13 +102,13 @@ export class OwnerService {
         gender: driverData.gender,
         phone: driverData.phone,
         email: driverData.email || null,
-        second_phone: driverData.second_phone || null,
+        second_phone: driverData.second_phone || '', // Use empty string instead of null
         vehicle_Reg_No: driverData.vehicle_Reg_No || '',
-        profile_picture_url: driverData.profile_picture_url,
-        nic_front_pic_url: driverData.nic_front_pic_url,
-        nice_back_pic_url: driverData.nice_back_pic_url,
-        driver_license_front_url: driverData.driver_license_front_url,
-        driver_license_back_url: driverData.driver_license_back_url,
+        profile_picture_url: driverData.profile_picture_url || '',
+        nic_front_pic_url: driverData.nic_front_pic_url || '',
+        nice_back_pic_url: driverData.nice_back_pic_url || '',
+        driver_license_front_url: driverData.driver_license_front_url || '',
+        driver_license_back_url: driverData.driver_license_back_url || '',
         registrationStatus: RegistrationStatus.ACCOUNT_CREATED,
         status: 'ACTIVE',
       };
