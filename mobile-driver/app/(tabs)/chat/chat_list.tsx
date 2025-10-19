@@ -253,6 +253,7 @@ export default function ChatListScreen() {
                         name: c.name,
                         phone: c.phone,
                         avatarUri: c.avatarUri || '',
+                        childId: c.childId ? String(c.childId) : '',
                       },
                     })
                   }

@@ -19,6 +19,7 @@ import { Typography } from '@/components/Typography';
 import { ArrowLeft, Phone, Paperclip, Camera, PaperPlaneRight } from 'phosphor-react-native';
 import { API_BASE_URL } from '../../../config/api';
 import { useAuthStore } from '../../../lib/stores/auth.store';
+import { usePassengerStore } from '../../../lib/stores/passenger.store';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 
@@ -65,10 +66,11 @@ const imageCache = {
 };
 
 export default function ChatRoomScreen() {
-  const { id: idParam, name, phone, avatarUri } = useLocalSearchParams<{
+  const { id: idParam, name, phone, avatarUri, childId } = useLocalSearchParams<{
     id: string;
     name: string;
     phone?: string;
+    childId?: string;
     avatarUri?: string;
   }>();
   const conversationId = Number(idParam);
@@ -82,6 +84,7 @@ export default function ChatRoomScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { user } = useAuthStore();
+  const passengerStore = usePassengerStore();
 
   const lastMessageIdRef = useRef<number | null>(null);
   const hasLoadedOnceRef = useRef(false);
@@ -230,10 +233,28 @@ export default function ChatRoomScreen() {
   }, []);
 
   const dial = useCallback(() => {
-    const tel = (phone || '').trim();
+    // Prefer phone param; if missing, try to resolve from passenger store using childId
+    let tel = (phone || '').trim();
+    try {
+      if (!tel && childId) {
+        const cid = Number(childId);
+        if (!Number.isNaN(cid)) {
+          const passengers = passengerStore.ids.map((id: number) => passengerStore.byId[id]);
+          const match = passengers.find((p: any) => p?.child?.child_id === cid);
+          if (match) {
+            // customer phone (parent) preferred
+            if (match.customer?.phone) tel = String(match.customer.phone).trim();
+            if (!tel && match.child?.phone) tel = String(match.child.phone).trim();
+          }
+        }
+      }
+    } catch {
+      // ignore lookup errors
+    }
+
     if (!tel) return;
     Linking.openURL(`tel:${tel}`);
-  }, [phone]);
+  }, [phone, childId, passengerStore]);
 
   const Header = useMemo(
     () => (
@@ -661,6 +682,15 @@ export default function ChatRoomScreen() {
                   />
 
                   {/* Send button */}
+                  {/* Thumbs-up quick reaction (customer parity) */}
+                  <TouchableOpacity
+                    onPress={() => send('👍')}
+                    className="mx-2"
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{ fontSize: 22, lineHeight: 24 }}>{'👍'}</Text>
+                  </TouchableOpacity>
+
                   <TouchableOpacity onPress={() => send()} className="ml-2" activeOpacity={0.7}>
                     <PaperPlaneRight size={22} color="#143373" weight="fill" />
                   </TouchableOpacity>
