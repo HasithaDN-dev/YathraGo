@@ -28,7 +28,7 @@ export class VehicleDetailsResponseDto {
   endCity: string;
   routeCities: string[];
   rideType: 'School' | 'Work' | 'Both';
-  
+
   // Time Information (display only)
   usualStartTime?: string;
   usualEndTime?: string;

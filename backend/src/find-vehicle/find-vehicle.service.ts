@@ -404,7 +404,9 @@ export class FindVehicleService {
   }
 
   // Method to get detailed information about a specific driver and their vehicle
-  async getVehicleDetails(driverId: number): Promise<VehicleDetailsResponseDto> {
+  async getVehicleDetails(
+    driverId: number,
+  ): Promise<VehicleDetailsResponseDto> {
     const driver = await this.prisma.driver.findUnique({
       where: { driver_id: driverId },
       include: {

@@ -19,9 +19,7 @@ export class FindVehicleController {
   }
 
   @Get('details/:driverId')
-  async getVehicleDetails(
-    @Param('driverId', ParseIntPipe) driverId: number,
-  ) {
+  async getVehicleDetails(@Param('driverId', ParseIntPipe) driverId: number) {
     return this.findVehicleService.getVehicleDetails(driverId);
   }
 }
