@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Animated, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -75,8 +75,25 @@ export default function VehicleDocScreen() {
   const [progress, setProgress] = useState<{ [key: string]: number }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Sync local state with store data on mount
-  // Documents are saved when user clicks "Complete Registration"
+  // Update store when documents change
+  useEffect(() => {
+    updateVehicleDocuments({
+      revenueLicense,
+      vehicleInsurance,
+      registrationDoc,
+      licenseFront,
+      licenseBack,
+    });
+  }, [revenueLicense, vehicleInsurance, registrationDoc, licenseFront, licenseBack, updateVehicleDocuments]);
+
+  // Sync local state with store data
+  useEffect(() => {
+    setRevenueLicense(vehicleDocuments.revenueLicense);
+    setVehicleInsurance(vehicleDocuments.vehicleInsurance);
+    setRegistrationDoc(vehicleDocuments.registrationDoc);
+    setLicenseFront(vehicleDocuments.licenseFront);
+    setLicenseBack(vehicleDocuments.licenseBack);
+  }, [vehicleDocuments]);
 
   const startProgress = (key: string) => {
     setProgress(prev => ({ ...prev, [key]: 0 }));

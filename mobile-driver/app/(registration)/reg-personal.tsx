@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, Image, TouchableOpacity, ScrollView, Text, Alert } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
@@ -18,8 +18,6 @@ export default function RegisterScreen() {
   const [nic, setNic] = useState(personalInfo.NIC);
   const [gender, setGender] = useState(personalInfo.gender);
   const [profileImage, setProfileImage] = useState<ImagePicker.ImagePickerAsset | null>(personalInfo.profileImage);
-  const [nic, setNic] = useState(personalInfo.nic || '');
-  const [gender, setGender] = useState(personalInfo.gender || 'Male');
   const [isLoading, setIsLoading] = useState(false);
 
   // Sync local state with store data

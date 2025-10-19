@@ -14,8 +14,6 @@ interface PersonalInfo {
   NIC: string;
   gender: string;
   profileImage?: any;
-  nic?: string;
-  gender?: string;
 }
 
 interface IdVerification {
@@ -221,7 +219,7 @@ export const useDriverStore = create<DriverState>((set, get) => ({
         email: !personalInfo.email,
         secondaryPhone: !personalInfo.secondaryPhone,
         city: !personalInfo.city,
-        nic: !personalInfo.nic,
+        nic: !personalInfo.NIC,
         gender: !personalInfo.gender,
       });
     }
