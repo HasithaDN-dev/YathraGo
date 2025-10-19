@@ -227,6 +227,7 @@ model Driver {
   routeWaypoints           RouteWaypoint[]
   StaffRideRequest         StaffRideRequest[]
   vehicles                 Vehicle[]
+  askDriverRequest         askDriverRequest[]
 
   @@index([fcmToken])
 }
@@ -265,6 +266,7 @@ model Customer {
   children           Child[]
   ChildPayment       ChildPayment[]
   staffPassenger     Staff_Passenger?
+  askDriverRequest   askDriverRequest[]
 
   @@index([phone])
   @@index([registrationStatus])
@@ -366,16 +368,13 @@ model City {
 }
 
 model DriverCities {
-  id       Int    @id @default(autoincrement())
-  driver   Driver @relation(fields: [driverId], references: [driver_id])
-  driverId Int
-  rideType Ridetype @default(Both)
-  // store an ordered list of city IDs representing the driver's route
-  cityIds  Int[]
-  usualStartTime  DateTime? @db.Time(6)
-  usualEndTime    DateTime? @db.Time(6)
-
-  @@unique([driverId])
+  id             Int       @id @default(autoincrement())
+  driverId       Int       @unique
+  cityIds        Int[]
+  rideType       Ridetype  @default(Both)
+  usualEndTime   DateTime? @db.Time(6)
+  usualStartTime DateTime? @db.Time(6)
+  driver         Driver    @relation(fields: [driverId], references: [driver_id])
 }
 
 model ChildRideRequest {
@@ -386,10 +385,37 @@ model ChildRideRequest {
   updatedAt    DateTime      @updatedAt
   Amount       Float?
   AssignedDate DateTime?
-  Estimation   Float?
   status       RequestStatus @default(Pending)
   child        Child         @relation(fields: [childId], references: [child_id])
   driver       Driver        @relation(fields: [driverId], references: [driver_id])
+}
+
+model askDriverRequest {
+  id                        Int       @id @default(autoincrement())
+  customerID                Int
+  staffOrChild              String // 'staff' or 'child'
+  staffOrChildID            Int
+  driverId                  Int
+  estimatedDistance         Float // Stored on initial calculation
+  estimatedPrice            Float // Stored on initial calculation (distance * price per km)
+  currentAmount             Float // Current negotiated amount
+  customerNote              String?
+  driverNote                String?
+  status                    askStatus @default(PENDING)
+  nearestPickupCityID       Int
+  nearestWorkOrSchoolCityID Int
+  nearestPickupCityName     String?
+  nearestDropCityName       String?
+  lastModifiedBy            String? // 'customer' or 'driver'
+  negotiationHistory        Json? // Array of {offeredBy, amount, note, timestamp}
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  Driver                    Driver    @relation(fields: [driverId], references: [driver_id])
+  Customer                  Customer  @relation(fields: [customerID], references: [customer_id])
+
+  @@index([customerID])
+  @@index([driverId])
+  @@index([status])
 }
 
 model DriverRoute {
@@ -525,7 +551,6 @@ model StaffRideRequest {
   staffId         Int
   driverId        Int
   status          RequestStatus   @default(Pending)
-  Estimation      Float?
   Amount          Float?
   AssignedDate    DateTime?
   createdAt       DateTime        @default(now())
@@ -534,17 +559,21 @@ model StaffRideRequest {
   Staff_Passenger Staff_Passenger @relation(fields: [staffId], references: [id])
 }
 
-model Complaints {
-  complaint_id Int      @id @default(autoincrement())
-  description  String
-  type         String
-  createdAt    DateTime @default(now())
-}
+model ComplaintsInquiries {
+  id             Int                      @id @default(autoincrement())
+  senderId       Int
+  senderUserType UserTypes
+  type           ComplaintInquiryTypes
+  description    String
+  category       ComplaintInquiryCategory
+  status         ComplaintStatus          @default(PENDING)
+  createdAt      DateTime                 @default(now())
 
-model Inquires {
-  inquiry_id  Int      @id @default(autoincrement())
-  description String
-  createdAt   DateTime @default(now())
+  @@index([category])
+  @@index([senderId])
+  @@index([senderUserType])
+  @@index([status])
+  @@index([type])
 }
 
 enum RegistrationStatus {
@@ -634,4 +663,31 @@ enum Role {
   MANAGER
   FINANCE_MANAGER
   DRIVER_COORDINATOR
+}
+
+enum ComplaintInquiryCategory {
+  SYSTEM
+  DRIVER
+  PAYMENT
+  OTHER
+}
+
+enum ComplaintInquiryTypes {
+  COMPLAINT
+  INQUIRY
+}
+
+enum ComplaintStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum askStatus {
+  PENDING // Initial request sent by customer
+  DRIVER_COUNTER // Driver counter-offered
+  CUSTOMER_COUNTER // Customer counter-offered
+  ACCEPTED // Both parties agreed
+  REJECTED // Request rejected
+  ASSIGNED // Successfully assigned to ChildRideRequest/StaffRideRequest
 }

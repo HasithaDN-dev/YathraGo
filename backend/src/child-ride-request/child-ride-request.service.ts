@@ -62,7 +62,6 @@ export class ChildRideRequestService {
       updatedAt: r.updatedAt,
       Amount: r.Amount ?? null,
       AssignedDate: r.AssignedDate ?? null,
-      Estimation: r.Estimation ?? null,
       status: r.status,
       child: {
         child_id: r.child.child_id,
