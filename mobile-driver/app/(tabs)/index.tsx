@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../../config/api';
-import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image, RefreshControl } from 'react-native';
 import { Typography } from '@/components/Typography';
 import {
   Car, MapPin, Clock, CurrencyDollar, Star, Bell, Play, Pause, CompassIcon, Calendar,
@@ -10,52 +10,103 @@ import {
 } from 'phosphor-react-native';
 import CustomButton from '@/components/ui/CustomButton';
 import { useRouter } from 'expo-router';
+import { useAuthStore } from '@/lib/stores/auth.store';
+import { tokenService } from '@/lib/services/token.service';
+import { routeCitiesService } from '@/lib/services/route-cities.service';
+import SetupRouteCard from '@/components/SetupRouteCard';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [isOnline, setIsOnline] = useState(true);
   const [tripStarted, setTripStarted] = useState(false);
   const [isButtonEnabled, setIsButtonEnabled] = useState(false);
   const [currentTripStatus, setCurrentTripStatus] = useState<'pending' | 'on-the-way' | 'completed'>('pending');
   const [studentCount, setStudentCount] = useState<number>(0);
   const [driverName, setDriverName] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [hasRouteSetup, setHasRouteSetup] = useState<boolean>(false);
+  
+  // Route cities state
+  const [startCity, setStartCity] = useState<string>('Maharagama Junction');
+  const [endCity, setEndCity] = useState<string>('Royal College');
+  const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
 
   useEffect(() => {
-    // Fetch student count
-    fetch(`${API_BASE_URL}/driver/child-ride-requests`)
-      .then(res => res.json())
-      .then(data => setStudentCount(data.length || 0))
-      .catch(() => setStudentCount(0));
-    // Fetch driver name
-    fetch(`${API_BASE_URL}/driver/details`)
-      .then(res => res.json())
-      .then(data => setDriverName(data.name || ''))
-      .catch(() => setDriverName(''));
-
-    //fetch driver status
-    fetch(`${API_BASE_URL}/driver/details`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'ACTIVE') {
-          setIsOnline(true);
-        } else {
-          setIsOnline(false);
-        }
-      })
-      .catch(() => setIsOnline(false));
+    fetchDriverData();
   }, []);
+
+  const fetchDriverData = async () => {
+    try {
+      setLoading(true);
+      const authenticatedFetch = tokenService.createAuthenticatedFetch();
+      
+      // Fetch driver profile using authenticated endpoint
+      const profileResponse = await authenticatedFetch(`${API_BASE_URL}/driver/profile`);
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json();
+        const profile = profileData.profile;
+        setDriverName(profile.name || user?.name || 'Driver');
+        setIsOnline(profile.status === 'ACTIVE');
+      } else {
+        // Fallback to user from store
+        setDriverName(user?.name || 'Driver');
+        setIsOnline(user?.status === 'ACTIVE');
+      }
+
+      // Check if driver has route setup
+      const citiesResponse = await authenticatedFetch(`${API_BASE_URL}/driver/cities`);
+      if (citiesResponse.ok) {
+        const citiesData = await citiesResponse.json();
+        setHasRouteSetup(citiesData.hasRoute || false);
+
+        // If route is setup, fetch route cities with ETA
+        if (citiesData.hasRoute) {
+          const routeData = await routeCitiesService.getRouteCitiesWithETA();
+          if (routeData && routeData.success) {
+            setStartCity(routeData.startPoint);
+            setEndCity(routeData.endPoint);
+            setEtaMinutes(routeData.etaMinutes || null);
+            setDistanceKm(routeData.distanceKm || null);
+          }
+        }
+      } else {
+        setHasRouteSetup(false);
+      }
+
+      // Fetch student count
+      const studentsResponse = await authenticatedFetch(`${API_BASE_URL}/driver/child-ride-requests`);
+      if (studentsResponse.ok) {
+        const studentsData = await studentsResponse.json();
+        setStudentCount(studentsData.length || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching driver data:', error);
+      // Fallback to data from auth store
+      if (user) {
+        setDriverName(user.name || 'Driver');
+        setIsOnline(user.status === 'ACTIVE');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchDriverData();
+    setRefreshing(false);
+  };
 
   const toggleOnlineStatus = () => {
     setIsOnline(!isOnline);
   };
 
   const startTrip = () => {
-    setTripStarted(!tripStarted);
-    setCurrentTripStatus('on-the-way');
-    setIsButtonEnabled(true);
-    console.log('Starting trip...');
-    // Navigate to navigation tab
-    //router.push('/(tabs)/navigation');
+    // Navigate to navigation tab where the actual route will be fetched
+    router.push('/(tabs)/navigation');
   };
 
   // useEffect(() => {
@@ -78,8 +129,19 @@ export default function HomeScreen() {
     router.push('/(tabs)/current-students');
   };
 
+  const handleRouteSetupComplete = () => {
+    // Refresh the screen to show the trip card
+    setHasRouteSetup(true);
+    fetchDriverData();
+  };
+
   return (
-    <ScrollView className="flex-1 bg-gray-50">
+    <ScrollView 
+      className="flex-1 bg-gray-50"
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       {/* Blue Header with rounded bottom corners */}
       <View className="bg-brand-deepNavy px-6 pt-20 pb-8 rounded-b-3xl">
         <View className="flex-row items-center justify-between mb-3">
@@ -122,8 +184,11 @@ export default function HomeScreen() {
         />
       </View> */}
 
-      {/* Current Trip Section */}
-      <View className="bg-white mx-6 mt-4 rounded-xl p-4 shadow-sm">
+      {/* Setup Route Card or Current Trip Section */}
+      {!hasRouteSetup ? (
+        <SetupRouteCard onRouteSetupComplete={handleRouteSetupComplete} />
+      ) : (
+        <View className="bg-white mx-6 mt-4 rounded-xl p-4 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <Typography variant="headline" weight="semibold" className="text-brand-deepNavy">
             Current Trip
@@ -144,8 +209,8 @@ export default function HomeScreen() {
             <Typography variant="caption-1" weight="medium" className="text-brand-deepNavy text-center">
               Start
             </Typography>
-            <Typography variant="caption-2" className="text-brand-neutralGray text-center">
-              Maharagama Junction
+            <Typography variant="caption-2" className="text-brand-neutralGray text-center" numberOfLines={2}>
+              {startCity}
             </Typography>
           </View>
 
@@ -156,8 +221,13 @@ export default function HomeScreen() {
               </Typography>
             </View>
             <Typography variant="caption-2" className="text-brand-neutralGray text-center">
-              ETA 8:20 AM
+              {etaMinutes ? routeCitiesService.formatETA(etaMinutes) : 'Calculating...'}
             </Typography>
+            {distanceKm && (
+              <Typography variant="caption-2" className="text-brand-neutralGray text-center">
+                {distanceKm} km
+              </Typography>
+            )}
           </View>
 
           <View className="flex-1 items-center">
@@ -167,8 +237,8 @@ export default function HomeScreen() {
             <Typography variant="caption-1" weight="medium" className="text-brand-deepNavy text-center">
               Destination
             </Typography>
-            <Typography variant="caption-2" className="text-brand-neutralGray text-center">
-              Royal College
+            <Typography variant="caption-2" className="text-brand-neutralGray text-center" numberOfLines={2}>
+              {endCity}
             </Typography>
           </View>
         </View>
@@ -186,9 +256,11 @@ export default function HomeScreen() {
           />
 
         </View>
-      </View>
+        </View>
+      )}
 
       {/* Assigned Children Summary Section */}
+      {hasRouteSetup && (
       <View className="bg-white mx-6 mt-4 rounded-xl p-4 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <Typography variant="headline" weight="semibold" className="text-brand-deepNavy">
@@ -221,7 +293,7 @@ export default function HomeScreen() {
                 Date
               </Typography>
               <Typography variant="body" className="text-brand-neutralGray">
-                October 15, 2025
+                {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
               </Typography>
             </View>
             <View className="items-end">
@@ -229,14 +301,16 @@ export default function HomeScreen() {
                 Total Distance
               </Typography>
               <Typography variant="body" className="text-brand-neutralGray">
-                12.5 km
+                {distanceKm ? `${distanceKm} km` : 'Calculating...'}
               </Typography>
             </View>
           </View>
         </View>
-      </View>
+        </View>
+      )}
 
       {/* Today's Schedule */}
+      {hasRouteSetup && (
       <View className="bg-white mx-6 mt-4 rounded-xl p-4 shadow-sm">
         <Typography variant="headline" weight="semibold" className="text-brand-deepNavy mb-4">
           Today's Schedule
@@ -244,14 +318,14 @@ export default function HomeScreen() {
 
         <View className="space-y-3">
           <View className="flex-row items-center justify-between p-3 bg-brand-lightGray rounded-lg">
-            <View className="flex-row items-center">
+            <View className="flex-row items-center flex-1">
               <ClockIcon size={20} color="#143373" weight="regular" />
-              <View className="ml-3">
+              <View className="ml-3 flex-1">
                 <Typography variant="body" weight="semibold" className="text-brand-deepNavy">
                   7:30 AM - Pickup
                 </Typography>
-                <Typography variant="caption-1" className="text-brand-neutralGray">
-                  Maharagama Junction → Royal College
+                <Typography variant="caption-1" className="text-brand-neutralGray" numberOfLines={1}>
+                  {startCity} → {endCity}
                 </Typography>
               </View>
             </View>
@@ -263,14 +337,14 @@ export default function HomeScreen() {
           </View>
 
           <View className="flex-row items-center justify-between p-3 bg-white border border-brand-lightGray rounded-lg">
-            <View className="flex-row items-center">
+            <View className="flex-row items-center flex-1">
               <ClockIcon size={20} color="#6b7280" weight="regular" />
-              <View className="ml-3">
+              <View className="ml-3 flex-1">
                 <Typography variant="body" weight="semibold" className="text-brand-deepNavy">
                   2:30 PM - Drop-off
                 </Typography>
-                <Typography variant="caption-1" className="text-brand-neutralGray">
-                  Royal College → Maharagama Junction
+                <Typography variant="caption-1" className="text-brand-neutralGray" numberOfLines={1}>
+                  {endCity} → {startCity}
                 </Typography>
               </View>
             </View>
@@ -281,15 +355,17 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
-      </View>
+        </View>
+      )}
 
       {/* Quick Actions */}
+      {hasRouteSetup && (
       <View className="bg-white mx-6 mt-4 rounded-xl p-4 shadow-sm">
         <Typography variant="headline" weight="semibold" className="text-brand-deepNavy mb-4">
           Quick Actions
         </Typography>
 
-        <View className="flex-row gap-3">
+        <View className="flex-row gap-3 mb-3">
           <TouchableOpacity
             className="flex-1 bg-brand-brightOrange p-4 rounded-xl items-center"
             onPress={() => router.push('../(homeLinks)/inform')}
@@ -308,7 +384,19 @@ export default function HomeScreen() {
             </Typography>
           </TouchableOpacity>
         </View>
-      </View>
+        
+        <TouchableOpacity 
+          className="bg-brand-deepNavy p-4 rounded-xl items-center"
+          onPress={() => router.push('/(tabs)/attendance')}
+          activeOpacity={0.8}
+        >
+          <CheckCircle size={24} color="#ffffff" weight="regular" />
+          <Typography variant="caption-1" weight="medium" className="text-white mt-2">
+            Mark Attendance
+          </Typography>
+        </TouchableOpacity>
+        </View>
+      )}
 
       {/* Bottom Spacing */}
       <View className="h-6" />

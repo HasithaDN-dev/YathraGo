@@ -97,6 +97,9 @@ export default function VerifyOTPScreen() {
           if (registrationStatus === 'ACCOUNT_CREATED') {
             console.log('Customer registration completed, user needs to create profiles');
             setProfileComplete(false);
+          } else if (registrationStatus === 'HAVING_A_PROFILE') {
+            console.log('Having a profile, user needs to navigate to home screen');
+            setProfileComplete(true);
           } else if (registrationStatus === 'OTP_VERIFIED') {
             console.log('Only OTP verified, user needs to complete customer registration');
             setProfileComplete(false);

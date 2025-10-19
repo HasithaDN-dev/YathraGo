@@ -16,6 +16,7 @@ import { DriverRouteModule } from './driver-route/driver-route.module';
 import { CityModule } from './city/city.module';
 import { ChildRideRequestModule } from './child-ride-request/child-ride-request.module';
 import { ChatModule } from './chat/chat.module';
+import { FindVehicleModule } from './find-vehicle/find-vehicle.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SearchModule } from './search/search.module';
 
@@ -38,7 +39,8 @@ import { SearchModule } from './search/search.module';
     DriverRouteModule,
     CityModule,
     ChatModule,
-  SearchModule,
+    FindVehicleModule,
+    SearchModule,
     NotificationsModule,
   ],
   controllers: [AppController],

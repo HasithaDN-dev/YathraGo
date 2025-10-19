@@ -11,7 +11,7 @@ import {
   ParseIntPipe,
   ParseEnumPipe,
   HttpException,
-  HttpStatus
+  HttpStatus,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import {
