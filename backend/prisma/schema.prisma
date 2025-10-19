@@ -40,9 +40,10 @@ model Webuser {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   fcmToken     String?
+  phone        String?
+  address      String?
   role         Role          @default(OWNER)
-  vehicleOwner VehicleOwner?
-
+  
   @@index([fcmToken])
 }
 
@@ -94,7 +95,6 @@ model Vehicle {
   ownerId             Int?
   driverId            Int?
   driver              Driver?       @relation(fields: [driverId], references: [driver_id])
-  owner               VehicleOwner? @relation(fields: [ownerId], references: [id])
 }
 
 model Chat {
@@ -233,18 +233,6 @@ model Driver {
 
 model FoundedBackupDrivers {
   id Int @id @default(autoincrement())
-}
-
-model VehicleOwner {
-  id         Int       @id
-  first_name String?
-  last_name  String?
-  phone      String?
-  email      String?
-  company    String?
-  Address    String?
-  vehicles   Vehicle[]
-  webuser    Webuser   @relation(fields: [id], references: [id])
 }
 
 model Customer {
