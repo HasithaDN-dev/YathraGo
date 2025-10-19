@@ -38,7 +38,7 @@ import { SearchModule } from './search/search.module';
     DriverRouteModule,
     CityModule,
     ChatModule,
-  SearchModule,
+    SearchModule,
     NotificationsModule,
   ],
   controllers: [AppController],

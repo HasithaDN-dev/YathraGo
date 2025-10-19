@@ -37,10 +37,10 @@ model Webuser {
   email        String        @unique
   password     String
   username     String
-  role         Role          @default(OWNER)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   fcmToken     String?
+  role         Role          @default(OWNER)
   vehicleOwner VehicleOwner?
 
   @@index([fcmToken])
@@ -272,23 +272,6 @@ model Customer {
   @@index([fcmToken])
 }
 
-model ComplaintsInquiries {
-  id             Int                     @id @default(autoincrement())
-  senderId       Int
-  senderUserType UserTypes
-  type           ComplaintInquiryTypes
-  description    String
-  category       ComplaintInquiryCategory
-  status         ComplaintStatus         @default(PENDING)
-  createdAt      DateTime                @default(now())
-
-  @@index([senderId])
-  @@index([type])
-  @@index([category])
-  @@index([senderUserType])
-  @@index([status])
-}
-
 model Absence_Staff {
   absent_id Int      @id @default(autoincrement())
   reason    String
@@ -323,8 +306,8 @@ model Child {
   Customer        Customer?          @relation(fields: [customerId], references: [customer_id])
   ChildPayment    ChildPayment[]
   rideRequests    ChildRideRequest[]
-  routeWaypoints  RouteWaypoint[]
   routeStops      RouteStop[]
+  routeWaypoints  RouteWaypoint[]
 
   @@index([customerId])
   @@index([school])
@@ -410,15 +393,15 @@ model DriverRoute {
   id                  Int             @id @default(autoincrement())
   driverId            Int
   date                DateTime        @db.Date
-  routeType           String          @default("MORNING_PICKUP") // MORNING_PICKUP, AFTERNOON_DROPOFF
-  status              String          @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  routeDetails        Json?
+  createdAt           DateTime        @default(now())
+  completedAt         DateTime?
+  optimizedPolyline   String?
+  routeType           String          @default("MORNING_PICKUP")
+  startedAt           DateTime?
+  status              String          @default("PENDING")
   totalDistanceMeters Int?
   totalDurationSecs   Int?
-  optimizedPolyline   String?
-  routeDetails        Json?
-  startedAt           DateTime?
-  completedAt         DateTime?
-  createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
   driver              Driver          @relation(fields: [driverId], references: [driver_id])
   stops               RouteStop[]
@@ -476,9 +459,8 @@ model Attendance {
   id         Int            @id @default(autoincrement())
   driverId   Int
   childId    Int
-  date       DateTime       @db.Date
   waypointId Int?
-  type       String // "pickup" or "dropoff" 
+  type       String
   latitude   Float?
   longitude  Float?
   notes      String?
@@ -487,6 +469,7 @@ model Attendance {
   timestamp  DateTime       @default(now())
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
+  date       DateTime       @db.Date
   child      Child          @relation(fields: [childId], references: [child_id])
   driver     Driver         @relation(fields: [driverId], references: [driver_id])
   waypoint   RouteWaypoint? @relation(fields: [waypointId], references: [id])
@@ -546,6 +529,19 @@ model StaffRideRequest {
   updatedAt       DateTime
   Driver          Driver          @relation(fields: [driverId], references: [driver_id])
   Staff_Passenger Staff_Passenger @relation(fields: [staffId], references: [id])
+}
+
+model Complaints {
+  complaint_id Int      @id @default(autoincrement())
+  description  String
+  type         String
+  createdAt    DateTime @default(now())
+}
+
+model Inquires {
+  inquiry_id  Int      @id @default(autoincrement())
+  description String
+  createdAt   DateTime @default(now())
 }
 
 enum RegistrationStatus {
@@ -622,23 +618,6 @@ enum Ridetype {
   Both
 }
 
-enum ComplaintInquiryCategory {
-  SYSTEM
-  DRIVER
-  PAYMENT
-  OTHER
-}
-
-enum ComplaintInquiryTypes {
-  COMPLAINT
-  INQUIRY
-}
-
-enum ComplaintStatus {
-  PENDING
-  IN_PROGRESS
-  RESOLVED
-}
 enum StopStatus {
   PENDING
   ARRIVED

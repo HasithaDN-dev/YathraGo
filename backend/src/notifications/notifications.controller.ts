@@ -11,7 +11,7 @@ import {
   ParseIntPipe,
   ParseEnumPipe,
   HttpException,
-  HttpStatus
+  HttpStatus,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import {
@@ -77,37 +77,40 @@ export class NotificationsController {
   }
 
   @Get()
-	async findAll() {
-		return this.service.findAll();
-	}
+  async findAll() {
+    return this.notificationsService.findAll();
+  }
 
-	@Get(':id')
-	async findOne(@Param('id', ParseIntPipe) id: number) {
-		const n = await this.service.findOne(id);
-		if (!n) throw new HttpException('Not found', HttpStatus.NOT_FOUND);
-		return n;
-	}
+  @Get(':id')
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    const n = await this.notificationsService.findOne(id);
+    if (!n) throw new HttpException('Not found', HttpStatus.NOT_FOUND);
+    return n;
+  }
 
-	@Post()
-	async create(@Body() body: any) {
-		// expect { sender, message, type, receiver?, receiverId? }
-		if (!body?.sender || !body?.message) {
-			throw new HttpException('Missing sender or message', HttpStatus.BAD_REQUEST);
-		}
-		return this.service.create(body);
-	}
+  @Post()
+  async create(@Body() body: any) {
+    // expect { sender, message, type, receiver?, receiverId? }
+    if (!body?.sender || !body?.message) {
+      throw new HttpException(
+        'Missing sender or message',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return this.notificationsService.create(body);
+  }
 
-	@Put(':id')
-	async update(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
-		const updated = await this.service.update(id, body);
-		if (!updated) throw new HttpException('Not found', HttpStatus.NOT_FOUND);
-		return updated;
-	}
+  @Put(':id')
+  async update(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+    const updated = await this.notificationsService.update(id, body);
+    if (!updated) throw new HttpException('Not found', HttpStatus.NOT_FOUND);
+    return updated;
+  }
 
-	@Delete(':id')
-	async remove(@Param('id', ParseIntPipe) id: number) {
-		const ok = await this.service.remove(id);
-		if (!ok) throw new HttpException('Not found', HttpStatus.NOT_FOUND);
-		return { success: true };
-	}
+  @Delete(':id')
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    const ok = await this.notificationsService.remove(id);
+    if (!ok) throw new HttpException('Not found', HttpStatus.NOT_FOUND);
+    return { success: true };
+  }
 }
