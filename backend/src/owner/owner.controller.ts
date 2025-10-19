@@ -56,6 +56,7 @@ export class OwnerController {
         { name: 'id_back', maxCount: 1 },
         { name: 'license_front', maxCount: 1 },
         { name: 'license_back', maxCount: 1 },
+        { name: 'profile_picture', maxCount: 1 },
       ],
       multerConfigDriver,
     ),
@@ -67,6 +68,7 @@ export class OwnerController {
       id_back?: Express.Multer.File[];
       license_front?: Express.Multer.File[];
       license_back?: Express.Multer.File[];
+      profile_picture?: Express.Multer.File[];
     },
     @User() user: Webuser,
     @Body() driverDto: any,
@@ -105,18 +107,38 @@ export class OwnerController {
     const id_back = files.id_back?.[0]?.filename ?? null;
     const license_front = files.license_front?.[0]?.filename ?? null;
     const license_back = files.license_back?.[0]?.filename ?? null;
-
+    const profile_picture = files.profile_picture?.[0]?.filename ?? null;
+    // Normalize field names to what the service expects
     const driverData = {
-      ...parsedDriverDto,
-      nic_front_pic_url: id_front ? `uploads/driver/${id_front}` : '',
-      nice_back_pic_url: id_back ? `uploads/driver/${id_back}` : '',
+      name: parsedDriverDto.name,
+      NIC: parsedDriverDto.NIC,
+      address: parsedDriverDto.address,
+      date_of_birth:
+        parsedDriverDto.date_of_birth ?? parsedDriverDto.dateOfBirth,
+      gender: parsedDriverDto.gender ?? parsedDriverDto.gender,
+      phone: parsedDriverDto.phoneNumber ?? parsedDriverDto.phone,
+      email: parsedDriverDto.email ?? null,
+      second_phone:
+        parsedDriverDto.secondPhone ?? parsedDriverDto.second_phone ?? null,
+      vehicle_Reg_No:
+        parsedDriverDto.assignedVehicle ??
+        parsedDriverDto.assignedVehicle ??
+        parsedDriverDto.vehicle_Reg_No ??
+        '',
       driver_license_front_url: license_front
         ? `uploads/driver/${license_front}`
         : '',
       driver_license_back_url: license_back
         ? `uploads/driver/${license_back}`
         : '',
-      profile_picture_url: '', // Default empty for owner-created drivers
+      nic_front_pic_url: id_front ? `uploads/driver/${id_front}` : '',
+      nice_back_pic_url: id_back ? `uploads/driver/${id_back}` : '',
+      profile_picture_url: profile_picture
+        ? `uploads/driver/${profile_picture}`
+        : '',
+      // licenseNo removed per user request
+      backgroundVerificationStatus:
+        parsedDriverDto.backgroundVerificationStatus ?? null,
     };
 
     return this.ownerService.addDriver(driverData);

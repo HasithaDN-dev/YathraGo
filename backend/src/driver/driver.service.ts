@@ -174,7 +174,7 @@ export class DriverService {
         registrationData.licensePlate
       ) {
         const manufactureYear = parseInt(registrationData.yearOfManufacture);
-        
+
         // Validate that manufactureYear is a valid number
         if (isNaN(manufactureYear)) {
           throw new BadRequestException('Invalid year of manufacture');
@@ -260,9 +260,9 @@ export class DriverService {
   // Helper method to calculate trip duration in minutes
   private calculateDuration(startTime: Date, endTime: Date): number {
     const diffMs = new Date(endTime).getTime() - new Date(startTime).getTime();
-    return Math.round(diffMs / 60000); 
-  }  
-// Convert to minutes
+    return Math.round(diffMs / 60000);
+  }
+  // Convert to minutes
   // Fetch driver details for a given driverId (for frontend welcome message)
   async getDriverDetailsById(driverId: number) {
     const driver = await this.prisma.driver.findUnique({
@@ -273,12 +273,94 @@ export class DriverService {
         email: true,
         phone: true,
         profile_picture_url: true,
-        status:true,
+        status: true,
       },
     });
     if (!driver) {
       throw new NotFoundException('Driver not found');
     }
     return driver;
+  }
+
+  // Save or update driver cities
+  async saveDriverCities(driverId: number, cityIds: number[]) {
+    // Validate that cities exist
+    const cities = await this.prisma.city.findMany({
+      where: { id: { in: cityIds } },
+    });
+
+    if (cities.length !== cityIds.length) {
+      throw new BadRequestException('Some city IDs are invalid');
+    }
+
+    // Check if driver cities record exists
+    const existingDriverCities = await this.prisma.driverCities.findUnique({
+      where: { driverId },
+    });
+
+    if (existingDriverCities) {
+      // Update existing record
+      const updated = await this.prisma.driverCities.update({
+        where: { driverId },
+        data: { cityIds },
+      });
+      return {
+        success: true,
+        message: 'Driver cities updated successfully',
+        driverCities: updated,
+      };
+    } else {
+      // Create new record
+      const created = await this.prisma.driverCities.create({
+        data: {
+          driverId,
+          cityIds,
+        },
+      });
+      return {
+        success: true,
+        message: 'Driver cities saved successfully',
+        driverCities: created,
+      };
+    }
+  }
+
+  // Get driver cities with details
+  async getDriverCities(driverId: number) {
+    const driverCities = await this.prisma.driverCities.findUnique({
+      where: { driverId },
+    });
+
+    if (
+      !driverCities ||
+      !driverCities.cityIds ||
+      driverCities.cityIds.length === 0
+    ) {
+      return {
+        success: false,
+        hasRoute: false,
+        message: 'No route cities found for driver',
+        cities: [],
+      };
+    }
+
+    // Fetch city details
+    const cities = await this.prisma.city.findMany({
+      where: {
+        id: { in: driverCities.cityIds },
+      },
+    });
+
+    // Sort cities according to the order in cityIds array
+    const sortedCities = driverCities.cityIds
+      .map((cityId) => cities.find((city) => city.id === cityId))
+      .filter(Boolean);
+
+    return {
+      success: true,
+      hasRoute: true,
+      cities: sortedCities,
+      cityIds: driverCities.cityIds,
+    };
   }
 }

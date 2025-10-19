@@ -87,6 +87,12 @@ export default function ConditionalNavigation() {
                     <NavigationMenuLink href="/owner" className="block px-4 py-2 hover:bg-blue-700 hover:text-white w-full text-gray-700 transition-colors">Owner</NavigationMenuLink>
                   </NavigationMenuItem>
                   <NavigationMenuItem className="w-full">
+                    <NavigationMenuLink href="/finance-manager" className="block px-4 py-2 hover:bg-blue-700 hover:text-white w-full text-gray-700 transition-colors">Finance Manager</NavigationMenuLink>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem className="w-full">
+                    <NavigationMenuLink href="/driver-coordinator" className="block px-4 py-2 hover:bg-blue-700 hover:text-white w-full text-gray-700 transition-colors">Driver Coordinator</NavigationMenuLink>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem className="w-full">
                     <NavigationMenuLink href="/manager" className="block px-4 py-2 hover:bg-blue-700 hover:text-white w-full text-gray-700 transition-colors">Manager</NavigationMenuLink>
                   </NavigationMenuItem>
                   <NavigationMenuItem className="w-full">

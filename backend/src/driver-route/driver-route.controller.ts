@@ -1,34 +1,96 @@
-import { Controller, Post, Param, Get, ParseIntPipe } from '@nestjs/common';
+// src/driver-route/driver-route.controller.ts
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Body,
+  Param,
+  ParseIntPipe,
+  UseGuards,
+  Req,
+  HttpCode,
+  HttpStatus,
+  Query,
+} from '@nestjs/common';
 import { DriverRouteService } from './driver-route.service';
-import { Prisma } from '@prisma/client';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Request } from 'express';
+import { UserType } from '@prisma/client';
 
-@Controller('driver-route')
+interface AuthenticatedRequest extends Request {
+  user: {
+    sub: string;
+    phone: string;
+    userType: UserType;
+    isVerified: boolean;
+  };
+}
+
+@Controller('driver/route')
+@UseGuards(JwtAuthGuard)
 export class DriverRouteController {
-  constructor(private readonly service: DriverRouteService) {}
+  constructor(private driverRouteService: DriverRouteService) {}
 
-  @Post('optimize/:driverId')
-  async optimize(@Param('driverId', ParseIntPipe) driverId: number) {
-    return this.service.buildAndSaveOptimizedRoute(driverId);
+  /**
+   * Get today's optimized route for the driver
+   * This is called when the driver clicks "Start Trip"
+   */
+  @Post('today')
+  @HttpCode(HttpStatus.OK)
+  async getTodaysRoute(
+    @Req() req: AuthenticatedRequest,
+    @Body()
+    body: {
+      routeType?: 'MORNING_PICKUP' | 'AFTERNOON_DROPOFF';
+      latitude?: number;
+      longitude?: number;
+    },
+  ) {
+    const driverId = parseInt(req.user.sub, 10);
+    const routeType = body.routeType || 'MORNING_PICKUP';
+
+    return this.driverRouteService.getTodaysRoute(
+      driverId,
+      routeType,
+      body.latitude,
+      body.longitude,
+    );
   }
 
-  @Get(':driverId')
-  async getLatest(@Param('driverId', ParseIntPipe) driverId: number) {
-    return this.service.getLatestRouteForDriver(driverId);
+  /**
+   * Mark a stop as completed (pickup or dropoff done)
+   */
+  @Patch('stop/:stopId/complete')
+  @HttpCode(HttpStatus.OK)
+  async markStopCompleted(
+    @Req() req: AuthenticatedRequest,
+    @Param('stopId', ParseIntPipe) stopId: number,
+    @Body()
+    body: {
+      latitude?: number;
+      longitude?: number;
+      notes?: string;
+    },
+  ) {
+    const driverId = parseInt(req.user.sub, 10);
+
+    return this.driverRouteService.markStopCompleted(
+      stopId,
+      driverId,
+      body.latitude,
+      body.longitude,
+      body.notes,
+    );
   }
 
-  // optional: return a simplified ordered stops array with polyline for quick rendering
-  @Get(':driverId/summary')
-  async getLatestSummary(@Param('driverId', ParseIntPipe) driverId: number) {
-    const route = await this.service.getLatestRouteForDriver(driverId);
-    const details: Prisma.JsonValue | any = route?.routeDetails as any;
-    const overview = details?.routes?.[0]?.overview_polyline?.points ?? null;
-    const legs = details?.routes?.[0]?.legs ?? [];
-    return {
-      id: route?.id,
-      date: route?.date,
-      overviewPolyline: overview,
-      legs,
-      waypoints: route?.waypoints ?? [],
-    };
+  /**
+   * Get current route status
+   */
+  @Get('status')
+  @HttpCode(HttpStatus.OK)
+  async getCurrentRouteStatus(@Req() req: AuthenticatedRequest) {
+    const driverId = parseInt(req.user.sub, 10);
+    return this.driverRouteService.getCurrentRouteStatus(driverId);
   }
 }

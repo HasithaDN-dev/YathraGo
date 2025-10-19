@@ -1,13 +1,13 @@
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from "expo-secure-store";
 
 class TokenService {
-  private tokenKey = 'driver-auth-token';
+  private tokenKey = "driver-auth-token";
 
   async getToken(): Promise<string | null> {
     try {
       return await SecureStore.getItemAsync(this.tokenKey);
     } catch (error) {
-      console.error('Error getting token:', error);
+      console.error("Error getting token:", error);
       return null;
     }
   }
@@ -16,7 +16,7 @@ class TokenService {
     try {
       await SecureStore.setItemAsync(this.tokenKey, token);
     } catch (error) {
-      console.error('Error setting token:', error);
+      console.error("Error setting token:", error);
       throw error;
     }
   }
@@ -25,7 +25,7 @@ class TokenService {
     try {
       await SecureStore.deleteItemAsync(this.tokenKey);
     } catch (error) {
-      console.error('Error removing token:', error);
+      console.error("Error removing token:", error);
       throw error;
     }
   }
@@ -36,28 +36,61 @@ class TokenService {
       if (!token) return false;
 
       // Basic JWT validation (check if token is not expired)
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const payload = JSON.parse(atob(token.split(".")[1]));
       const currentTime = Date.now() / 1000;
-      
+
       return payload.exp > currentTime;
     } catch (error) {
-      console.error('Error validating token:', error);
+      console.error("Error validating token:", error);
       return false;
+    }
+  }
+
+  /**
+   * Decode JWT token and extract driver ID
+   */
+  async getDriverIdFromToken(): Promise<number | null> {
+    try {
+      const token = await this.getToken();
+      if (!token) return null;
+
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      // The 'sub' field contains the driver_id
+      return payload.sub ? parseInt(payload.sub, 10) : null;
+    } catch (error) {
+      console.error("Error extracting driver ID from token:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Decode JWT token and get full payload
+   */
+  async getTokenPayload(): Promise<any | null> {
+    try {
+      const token = await this.getToken();
+      if (!token) return null;
+
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload;
+    } catch (error) {
+      console.error("Error decoding token payload:", error);
+      return null;
     }
   }
 
   createAuthenticatedFetch() {
     return async (url: string, options: RequestInit = {}) => {
       const token = await this.getToken();
-      
+
       if (!token) {
-        throw new Error('No authentication token available');
+        throw new Error("No authentication token available");
       }
 
       const response = await fetch(url, {
         ...options,
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
           ...options.headers,
         },
@@ -72,13 +105,16 @@ class TokenService {
       const token = await this.getToken();
       if (!token) return null;
 
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/driver/refresh-token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/auth/driver/refresh-token`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -89,7 +125,7 @@ class TokenService {
 
       return null;
     } catch (error) {
-      console.error('Error refreshing token:', error);
+      console.error("Error refreshing token:", error);
       return null;
     }
   }

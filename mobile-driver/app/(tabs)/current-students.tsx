@@ -15,11 +15,12 @@ import { Typography } from '@/components/Typography';
 import { StudentCard } from '@/components/StudentCard';
 import { ArrowLeft, Users, Calendar, MagnifyingGlass } from 'phosphor-react-native';
 import { useRouter } from 'expo-router';
+import { tokenService } from '@/lib/services/token.service';
 
 
 export default function CurrentStudentsScreen() {
     const router = useRouter();
-        const [students, setStudents] = useState<Student[]>([]);
+    const [students, setStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -27,19 +28,21 @@ export default function CurrentStudentsScreen() {
         async function fetchStudents() {
             try {
                 setLoading(true);
-                const res = await fetch(`${API_BASE_URL}/driver/child-ride-requests`);
+                const authenticatedFetch = tokenService.createAuthenticatedFetch();
+                const res = await authenticatedFetch(`${API_BASE_URL}/driver/child-ride-requests`);
                 const data = await res.json();
                 // Transform API data to StudentCard format
-                        const mapped: Student[] = data.map((req: any) => ({
-                            id: req.child.child_id,
-                            name: `${req.child.childFirstName} ${req.child.childLastName}`,
-                            profilePic: undefined, // Add if available
-                            pickupLocation: req.child.nearbyCity || '',
-                            distance: '', // Optionally calculate or leave blank
-                            contactNumber: '', // Optionally add if available
-                        }));
+                const mapped: Student[] = data.map((req: any) => ({
+                    id: req.child.child_id,
+                    name: `${req.child.childFirstName} ${req.child.childLastName}`,
+                    profilePic: undefined, // Add if available
+                    pickupLocation: req.child.nearbyCity || '',
+                    distance: '', // Optionally calculate or leave blank
+                    contactNumber: '', // Optionally add if available
+                }));
                 setStudents(mapped);
             } catch (err) {
+                console.error('Error fetching students:', err);
                 setStudents([]);
             } finally {
                 setLoading(false);

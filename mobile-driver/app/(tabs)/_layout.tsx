@@ -70,6 +70,12 @@ export default function TabLayout() {
           href: null, // This hides it from the tab bar
         }}
       />
+      <Tabs.Screen
+        name="attendance"
+        options={{
+          href: null, // This hides it from the tab bar
+        }}
+      />
     </Tabs>
   );
 }

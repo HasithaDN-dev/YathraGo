@@ -11,11 +11,14 @@ import { AuthWebModule } from './auth-web/auth-web.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CustomerModule } from './customer/customer.module';
 import { OwnerModule } from './owner/owner.module';
+import { TransactionsModule } from './transactions/transactions.module';
 import { DriverRouteModule } from './driver-route/driver-route.module';
 import { CityModule } from './city/city.module';
 import { ChildRideRequestModule } from './child-ride-request/child-ride-request.module';
 import { ChatModule } from './chat/chat.module';
 import { FindVehicleModule } from './find-vehicle/find-vehicle.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -31,11 +34,14 @@ import { FindVehicleModule } from './find-vehicle/find-vehicle.module';
     AuthWebModule,
     CustomerModule,
     OwnerModule,
+    TransactionsModule,
     ChildRideRequestModule,
     DriverRouteModule,
     CityModule,
     ChatModule,
     FindVehicleModule,
+    SearchModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
