@@ -11,14 +11,13 @@ import {
   Warning,
   
 } from 'phosphor-react-native';
-import { Typography } from '@/components/Typography';
-import { Card } from '@/components/ui/Card';
+import { Typography } from '../../components/Typography';
+import { Card } from '../../components/ui/Card';
 import { useNotificationsStore } from '../../lib/stores/notifications.store';
-import { NotificationDto } from '../../lib/api/notifications.api';
+import { NotificationDto, ReceiverType } from '../../lib/api/notifications.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
 import { tokenService } from '../../lib/services/token.service';
 import { useProfileStore } from '../../lib/stores/profile.store';
-import { ReceiverType } from '../../lib/api/notifications.api';
 
 // Using store's NotificationDto type; no additional UI type needed
 
@@ -39,11 +38,11 @@ export default function NotificationsScreen() {
     let driverId: number | null = null;
     try {
       driverId = await tokenService.getDriverIdFromToken();
-    } catch (err) {
-      // ignore
+    } catch {
+      // ignore token parsing errors
     }
 
-    const targets: Array<{ userType: ReceiverType; userId: number }> = [];
+  const targets: { userType: ReceiverType; userId: number }[] = [];
 
     // Always include parent customer notifications if available
     if (customerProfile?.customer_id) {
