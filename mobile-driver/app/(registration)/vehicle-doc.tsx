@@ -186,16 +186,41 @@ export default function VehicleDocScreen() {
       // Navigate to success screen
       router.push('/(registration)/success');
 
-    } catch (error) {
-      let errorMsg = 'Failed to complete registration. Please try again.';
-      if (error instanceof Error) {
-        errorMsg = error.message;
-      } else if (typeof error === 'string') {
-        errorMsg = error;
-      }
-      console.error('Registration error:', error);
+  } catch (error) {
+    let errorMsg = 'Failed to complete registration. Please try again.';
+    if (error instanceof Error) {
+      errorMsg = error.message;
+    } else if (typeof error === 'string') {
+      errorMsg = error;
+    }
+    
+    console.error('Registration error:', error);
+
+    // Check for the specific error
+    if (errorMsg.includes('Driver is already fully registered')) {
+      
+      Alert.alert(
+        'Account Exists',
+        'This account is already fully registered. You will be redirected to the login screen.',
+        [
+          { 
+            text: 'OK', 
+            onPress: () => {
+              // Mark their profile as complete in the app
+              setRegistrationStatus('ACCOUNT_CREATED');
+              setProfileComplete(true);
+              // Send them to the login or main app screen
+              router.replace('/(auth)/login' as any ); 
+            } 
+          }
+        ]
+      );
+
+    } else {
+      // It's a different error, so show the generic failure alert
       Alert.alert('Registration Failed', errorMsg);
-    } finally {
+    }
+  } finally {
       setIsSubmitting(false);
     }
   };

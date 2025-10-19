@@ -109,12 +109,7 @@ export class NotificationsService {
   async sendNewMessagePush(params: {
     senderName: string;
     messageText: string;
-    receiverType:
-      | 'CUSTOMER'
-      | 'DRIVER'
-      | 'WEBUSER'
-      | 'VEHICLEOWNER'
-      | 'BACKUPDRIVER';
+    receiverType: UserTypes;
     receiverId: number;
     conversationId: number;
   }): Promise<boolean> {
@@ -164,12 +159,7 @@ export class NotificationsService {
 
   // Helper: get FCM token from respective profile table
   private async getReceiverToken(
-    receiver:
-      | 'CUSTOMER'
-      | 'DRIVER'
-      | 'WEBUSER'
-      | 'VEHICLEOWNER'
-      | 'BACKUPDRIVER',
+    receiver: UserTypes,
     receiverId: number,
   ): Promise<string | null> {
     switch (receiver) {
@@ -208,6 +198,27 @@ export class NotificationsService {
           select: { fcmToken: true },
         });
         return u?.fcmToken ?? null;
+      }
+      case 'CHILD': {
+        // Children don't have FCM tokens, they're managed by customers
+        // You might want to get the parent customer's token instead
+        const child = await this.prisma.child.findUnique({
+          where: { child_id: receiverId },
+          select: { customerId: true },
+        });
+        if (child?.customerId) {
+          const c = await this.prisma.customer.findUnique({
+            where: { customer_id: child.customerId },
+            select: { fcmToken: true },
+          });
+          return c?.fcmToken ?? null;
+        }
+        return null;
+      }
+      case 'STAFF': {
+        // Staff might not have FCM tokens implemented yet
+        // Add implementation when staff model has fcmToken field
+        return null;
       }
       default:
         return null;

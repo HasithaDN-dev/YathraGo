@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, Image, TouchableOpacity, ScrollView, Text, Alert } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
@@ -6,33 +6,37 @@ import * as ImagePicker from 'expo-image-picker';
 import { useDriverStore } from '../../lib/stores/driver.store';
 
 export default function RegisterScreen() {
+  // Debug: verify React and useEffect availability at module init
+  try {
+    console.log('reg-personal loaded -> React:', typeof React, 'useEffect (local):', typeof useEffect, 'React.useEffect:', typeof (React as any).useEffect);
+  } catch (e) {
+    console.warn('reg-personal debug log failed', e);
+  }
   const router = useRouter();
   const { personalInfo, updatePersonalInfo } = useDriverStore();
 
-  const [firstName, setFirstName] = useState(personalInfo.firstName);
-  const [lastName, setLastName] = useState(personalInfo.lastName);
-  const [dob, setDob] = useState(personalInfo.dateOfBirth);
-  const [email, setEmail] = useState(personalInfo.email);
-  const [secondaryPhone, setSecondaryPhone] = useState(personalInfo.secondaryPhone);
-  const [city, setCity] = useState(personalInfo.city);
-  const [nic, setNic] = useState(personalInfo.NIC);
-  const [gender, setGender] = useState(personalInfo.gender);
-  const [profileImage, setProfileImage] = useState<ImagePicker.ImagePickerAsset | null>(personalInfo.profileImage);
-  const [nic, setNic] = useState(personalInfo.nic || '');
+  const [firstName, setFirstName] = useState(personalInfo.firstName || '');
+  const [lastName, setLastName] = useState(personalInfo.lastName || '');
+  const [dob, setDob] = useState(personalInfo.dateOfBirth || '');
+  const [email, setEmail] = useState(personalInfo.email || '');
+  const [secondaryPhone, setSecondaryPhone] = useState(personalInfo.secondaryPhone || '');
+  const [city, setCity] = useState(personalInfo.city || '');
+  const [nic, setNic] = useState(personalInfo.NIC || (personalInfo as any).nic || '');
   const [gender, setGender] = useState(personalInfo.gender || 'Male');
+  const [profileImage, setProfileImage] = useState<ImagePicker.ImagePickerAsset | null>(personalInfo.profileImage || null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Sync local state with store data
   useEffect(() => {
-    setFirstName(personalInfo.firstName);
-    setLastName(personalInfo.lastName);
-    setDob(personalInfo.dateOfBirth);
-    setEmail(personalInfo.email);
-    setSecondaryPhone(personalInfo.secondaryPhone);
-    setCity(personalInfo.city);
-    setNic(personalInfo.NIC);
-    setGender(personalInfo.gender);
-    setProfileImage(personalInfo.profileImage);
+  setFirstName(personalInfo.firstName || '');
+  setLastName(personalInfo.lastName || '');
+  setDob(personalInfo.dateOfBirth || '');
+  setEmail(personalInfo.email || '');
+  setSecondaryPhone(personalInfo.secondaryPhone || '');
+  setCity(personalInfo.city || '');
+  setNic(personalInfo.NIC || (personalInfo as any).nic || '');
+  setGender(personalInfo.gender || 'Male');
+  setProfileImage(personalInfo.profileImage || null);
   }, [personalInfo]);
 
   const handlePickImage = async () => {
@@ -56,26 +60,31 @@ export default function RegisterScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!firstName || !lastName || !dob || !city || !nic || !gender || !profileImage) {
-      Alert.alert('Error', 'Please fill all required fields and select a profile image.');
-      return;
+    setIsLoading(true);
+    try {
+      if (!firstName || !lastName || !dob || !city || !nic || !gender || !profileImage) {
+        Alert.alert('Error', 'Please fill all required fields and select a profile image.');
+        return;
+      }
+
+      // Update store with all personal info including NIC and gender
+      updatePersonalInfo({
+        firstName,
+        lastName,
+        dateOfBirth: dob,
+        email,
+        secondaryPhone,
+        city,
+        NIC: nic,
+        gender,
+        profileImage,
+      });
+
+      // Navigate to next screen
+      router.push('/(registration)/reg-verify');
+    } finally {
+      setIsLoading(false);
     }
-
-    // Update store with all personal info including NIC and gender
-    updatePersonalInfo({
-      firstName,
-      lastName,
-      dateOfBirth: dob,
-      email,
-      secondaryPhone,
-      city,
-      NIC: nic,
-      gender,
-      profileImage,
-    });
-
-    // Navigate to next screen
-    router.push('/(registration)/reg-verify');
   };
   return (
     <ScrollView className="flex-1 bg-white">
