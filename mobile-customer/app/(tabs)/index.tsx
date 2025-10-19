@@ -57,21 +57,19 @@ export default function HomeScreen() {
         contentContainerClassName="px-4 space-y-6 pb-6 mt-3"
         showsVerticalScrollIndicator={false}
       >
-        {/* Find New Vehicle Card - Only show for staff profiles or when no active profile */}
-        {(!activeProfile || activeProfile.type === 'staff') && (
-          <View className="mb-3 rounded-2xl p-2 shadow-sm bg-brand-deepNavy">
-            <TouchableOpacity
-              className="flex-row items-center justify-center py-3"
-              onPress={() => router.push('/(menu)/(homeCards)/find_vehicle')}
-              activeOpacity={0.8}
-            >
-              <MagnifyingGlass size={24} color="#ffffff" weight="bold" />
-              <Typography variant="title-3" weight="semibold" className="text-white ml-3">
-                Find New Vehicle ...
-              </Typography>
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* Find New Vehicle Card - Show for all profiles */}
+        <View className="mb-3 rounded-2xl p-2 shadow-sm bg-brand-deepNavy">
+          <TouchableOpacity
+            className="flex-row items-center justify-center py-3"
+            onPress={() => router.push('/(menu)/(homeCards)/find_vehicle')}
+            activeOpacity={0.8}
+          >
+            <MagnifyingGlass size={24} color="#ffffff" weight="bold" />
+            <Typography variant="title-3" weight="semibold" className="text-white ml-3">
+              Find New Vehicle ...
+            </Typography>
+          </TouchableOpacity>
+        </View>
 
 
 

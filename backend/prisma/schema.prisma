@@ -51,7 +51,7 @@ model Admin {
   email       String   @unique
   password    String
   firstName   String
-  lastName    String
+  lastName    String 
   permissions String[]
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -98,29 +98,29 @@ model Vehicle {
 }
 
 model Chat {
-  id             Int           @id @default(autoincrement())
-  message        String?
-  imageUrl       String?
-  timestamp      DateTime      @default(now())
-  seen           Boolean       @default(false)
-  senderId       Int
-  senderType     UserTypes
-  conversationId Int
-  status         MessageStatus @default(SENT)
-  conversation   Conversation  @relation(fields: [conversationId], references: [id])
+  id              Int        @id @default(autoincrement())
+  message         String?
+  imageUrl        String?
+  timestamp       DateTime   @default(now())
+  seen            Boolean    @default(false)
+  senderId        Int
+  senderType      UserTypes
+  conversationId  Int
+  status          MessageStatus @default(SENT)
+  conversation    Conversation  @relation(fields: [conversationId], references: [id])
 
   @@index([conversationId])
 }
 
 model Conversation {
-  id               Int       @id @default(autoincrement())
+  id              Int        @id @default(autoincrement())
   participantAId   Int
   participantAType UserTypes
   participantBId   Int
   participantBType UserTypes
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  messages         Chat[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  messages        Chat[]
 
   @@unique([participantAId, participantAType, participantBId, participantBType])
 }
@@ -128,7 +128,7 @@ model Conversation {
 model BackupDriver {
   id             Int     @id @default(autoincrement())
   name           String
-  phone          String
+  phone          String 
   vehicle_Reg_No String
   NIC            String
   fcmToken       String?
@@ -257,11 +257,11 @@ model Customer {
   address            String?
   profileImageUrl    String?
   emergencyContact   String?
+  fcmToken           String?  
   status             String             @default("ACTIVE")
   registrationStatus RegistrationStatus @default(OTP_PENDING)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  fcmToken           String?
   children           Child[]
   ChildPayment       ChildPayment[]
   staffPassenger     Staff_Passenger?
