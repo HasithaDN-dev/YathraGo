@@ -383,7 +383,6 @@ model ChildRideRequest {
   updatedAt    DateTime      @updatedAt
   Amount       Float?
   AssignedDate DateTime?
-  Estimation   Float?
   status       RequestStatus @default(Pending)
   child        Child         @relation(fields: [childId], references: [child_id])
   driver       Driver        @relation(fields: [driverId], references: [driver_id])
@@ -539,7 +538,6 @@ model StaffRideRequest {
   staffId         Int
   driverId        Int
   status          RequestStatus   @default(Pending)
-  Estimation      Float?
   Amount          Float?
   AssignedDate    DateTime?
   createdAt       DateTime        @default(now())
