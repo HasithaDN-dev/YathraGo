@@ -1,12 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { mockComplaints } from "@/lib/complaints";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Eye, FileText, Megaphone, MessageSquare } from "lucide-react";
-import { getNotices } from "@/lib/notices";
+import { getNotices, Notice } from "@/lib/notices";
 import Link from "next/link";
 
 interface StatCardProps {
@@ -101,7 +101,67 @@ export default function ManagerDashboard() {
     }
   ];
 
-  const publishedNotices = getNotices();
+  // Client state for live notices from backend (fallback to in-memory mocks)
+  const [publishedNotices, setPublishedNotices] = useState<Notice[]>(() =>
+    // initial: filter mock notices for web audience
+    getNotices().filter(n => {
+      const a = (n.audience || '').toLowerCase();
+      return a === '' || a === 'all' || a === 'web';
+    })
+  );
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        // call the dashboard proxy which forwards to backend
+        const res = await fetch('/api/notices?userType=WEBUSER&userId=0');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const body = await res.json();
+
+        // backend may return wrapper { success,count,notifications } or an array
+  type NoticeLike = Record<string, unknown>;
+  let items: NoticeLike[] = [];
+        if (Array.isArray(body)) items = body;
+        else if (Array.isArray(body.notifications)) items = body.notifications;
+        else if (Array.isArray(body.data)) items = body.data;
+        else if (Array.isArray(body.result)) items = body.result;
+        else if (body.payload && Array.isArray(body.payload.notifications)) items = body.payload.notifications;
+        else if (body.notification && Array.isArray(body.notification)) items = body.notification;
+        else {
+          // try to coerce if single object
+          items = Array.isArray(body) ? body : [];
+        }
+
+        // map to the same shape the mock uses (id,title,publishedAt,audience)
+        const normalized: Notice[] = items.map((it: NoticeLike) => ({
+          id: String((it.id ?? it._id ?? it.noticeId ?? '')),
+          title: String(it.title ?? it.message ?? it.body ?? ''),
+          body: String(it.body ?? it.message ?? ''),
+          publishedAt: String(it.createdAt ?? it.publishedAt ?? it.created_at ?? new Date().toISOString()),
+          audience: String(it.audience ?? it.receiver ?? ''),
+        }));
+
+        // keep only web-relevant notices
+        const webOnly = normalized.filter(n => {
+          const a = (n.audience || '').toLowerCase();
+          return a === '' || a === 'all' || a === 'web';
+        }).sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+
+        if (mounted) {
+          setPublishedNotices(webOnly);
+          setFetchError(null);
+        }
+      } catch (err: unknown) {
+        console.debug('Failed to load notices from backend:', err);
+        if (mounted) setFetchError(String((err as unknown as { message?: unknown })?.message ?? String(err)));
+        // keep mock notices already set as initial state
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   const quickActions = [
     {
@@ -207,6 +267,9 @@ export default function ManagerDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
+                {fetchError ? (
+                  <div className="text-xs text-[var(--error-red)]">Failed to load live notices: {fetchError}</div>
+                ) : null}
                 {publishedNotices.slice(0,3).map((n) => (
                   <div key={n.id} className="text-sm">
                     <div className="font-medium text-[var(--color-deep-navy)]">{n.title}</div>
