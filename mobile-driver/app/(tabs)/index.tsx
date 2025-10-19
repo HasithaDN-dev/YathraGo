@@ -377,7 +377,11 @@ export default function HomeScreen() {
             </Typography>
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-1 bg-white border border-brand-brightOrange p-4 rounded-xl items-center">
+          <TouchableOpacity 
+            className="flex-1 bg-white border border-brand-brightOrange p-4 rounded-xl items-center"
+            onPress={() => router.push('/(tabs)/chat/chat_list')}
+            activeOpacity={0.8}
+          >
             <ChatCircle size={24} color="#fdc334" weight="regular" />
             <Typography variant="caption-1" weight="medium" className="text-brand-brightOrange mt-2">
               Message

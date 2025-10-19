@@ -64,6 +64,20 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* Hide chat screens from top-level tab bar; they remain routable under /(tabs)/chat/* */}
+      <Tabs.Screen
+        name="chat/chat_list"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="chat/chat_room"
+        options={{
+          href: null,
+        }}
+      />
+
       <Tabs.Screen
         name="current-students"
         options={{
