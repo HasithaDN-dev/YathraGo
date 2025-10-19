@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useOwner } from "@/components/owner/OwnerContext";
+import { ownerApi } from "@/lib/api/owner";
 import {
   Upload,
   X,
@@ -26,6 +28,7 @@ interface FormData {
   address?: string;
   dateOfBirth?: string;
   nic?: string;
+  gender?: string;
   assignedVehicle: string;
   vehicle_Reg_No?: string;
   id_front?: File | null;
@@ -54,6 +57,7 @@ interface FormErrors {
 }
 
 export default function AddDriverPage() {
+  const { fetchDrivers } = useOwner();
   const [formData, setFormData] = useState<FormData>({
     name: "",
     phoneNumber: "",
@@ -62,7 +66,7 @@ export default function AddDriverPage() {
     address: "",
     dateOfBirth: "",
     nic: "",
-  // licenseNo removed per request
+    gender: "Male",
     assignedVehicle: "",
     id_front: null,
     id_back: null,
@@ -321,55 +325,44 @@ export default function AddDriverPage() {
     setIsSubmitting(true);
 
     try {
+      // First test authentication by trying to get profile
+      console.log('🧪 Testing authentication before adding driver...');
+      try {
+        const profileData = await ownerApi.getProfile();
+        console.log('✅ Authentication successful. User profile:', profileData);
+      } catch (authError) {
+        console.error('❌ Authentication failed:', authError);
+        setErrorMessage('Authentication failed. Please log in again.');
+        setIsSubmitting(false);
+        return;
+      }
+
       const formDataToSend = new FormData();
+      
+      // Add all form fields with correct field names for backend DTO
       formDataToSend.append("name", formData.name);
-      formDataToSend.append("phoneNumber", formData.phoneNumber);
-      if (formData.secondPhone) formDataToSend.append("secondPhone", formData.secondPhone);
+      formDataToSend.append("phone", formData.phoneNumber); // DTO expects 'phone'
+      if (formData.secondPhone) formDataToSend.append("second_phone", formData.secondPhone);
       if (formData.email) formDataToSend.append("email", formData.email);
       if (formData.address) formDataToSend.append("address", formData.address);
-      if (formData.dateOfBirth) formDataToSend.append("dateOfBirth", formData.dateOfBirth);
+      if (formData.dateOfBirth) formDataToSend.append("date_of_birth", formData.dateOfBirth);
       if (formData.nic) formDataToSend.append("NIC", formData.nic);
-  // also send backend-friendly field names
-  if (formData.dateOfBirth) formDataToSend.append("date_of_birth", formData.dateOfBirth);
-  if (formData.secondPhone) formDataToSend.append("second_phone", formData.secondPhone);
-  // licenseNo removed; not included in payload
-      formDataToSend.append("assignedVehicle", formData.assignedVehicle);
-      // Map assignedVehicle to vehicle_Reg_No if needed by backend
+      formDataToSend.append("gender", formData.gender || "Male"); // Default to Male if not specified
       if (formData.assignedVehicle) formDataToSend.append("vehicle_Reg_No", formData.assignedVehicle);
-      if (formData.profile_picture) formDataToSend.append("profile_picture", formData.profile_picture);
-      formDataToSend.append("backgroundVerificationStatus", formData.backgroundVerificationStatus);
       
   if (formData.id_front) formDataToSend.append("id_front", formData.id_front);
   if (formData.id_back) formDataToSend.append("id_back", formData.id_back);
   if (formData.license_front) formDataToSend.append("license_front", formData.license_front);
   if (formData.license_back) formDataToSend.append("license_back", formData.license_back);
 
-      // API call
-      const token = typeof document !== 'undefined' ? document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1] : undefined;
-      const response = await fetch("http://localhost:3000/owner/add-driver", {
-        method: "POST",
-        body: formDataToSend,
-        credentials: "include",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      
-      if (!response.ok) {
-        let msg = "Failed to add driver";
-        try {
-          const data = await response.json();
-          msg = data.message || JSON.stringify(data);
-        } catch {
-          // fallback to text
-          try {
-            msg = await response.text();
-          } catch {}
-        }
-        setErrorMessage(msg);
-        throw new Error(msg);
-      }
+      // Use the API service for adding driver
+      await ownerApi.addDriverWithFiles(formDataToSend);
       
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 5000);
+      
+      // Refresh drivers list in context
+      await fetchDrivers();
       
       // Reset form
       try { if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl); } catch {}
@@ -383,7 +376,7 @@ export default function AddDriverPage() {
         address: "",
         dateOfBirth: "",
         nic: "",
-        // licenseNo removed
+        gender: "Male",
         assignedVehicle: "",
         id_front: null,
         id_back: null,
@@ -392,8 +385,10 @@ export default function AddDriverPage() {
         profile_picture: null,
         backgroundVerificationStatus: "not-started",
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error adding driver:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to add driver. Please try again.";
+      setErrorMessage(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

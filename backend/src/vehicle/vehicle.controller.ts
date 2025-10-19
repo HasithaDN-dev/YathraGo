@@ -31,7 +31,7 @@ export class VehicleController {
 
   //fetching vehicles by owner id
   @UseGuards(JwtGuard, RolesGuard)
-  @Roles('owner')
+  @Roles('OWNER')
   @Get('vehicles')
   async getVehicles(@User() user: Webuser): Promise<VehicleResponseDto[]> {
     //console.log(user);
@@ -41,7 +41,7 @@ export class VehicleController {
   //adding vehciles of a paticular owner
   @UseGuards(JwtGuard, RolesGuard)
   @Post('owner/add-vehicle')
-  @Roles('owner')
+  @Roles('OWNER')
   @UseInterceptors(
     FileFieldsInterceptor(
       [
@@ -151,7 +151,7 @@ export class VehicleController {
   //update vehicle details of the owner
   @UseGuards(JwtGuard, RolesGuard)
   @Patch('owner/update-vehicle/:id')
-  @Roles('owner')
+  @Roles('OWNER')
   async updateVehicle(
     @Param('id', ParseIntPipe) id: number,
     @Body() vehicleDto: any,
@@ -163,7 +163,7 @@ export class VehicleController {
   //delete vehicle of the owner
   @UseGuards(JwtGuard, RolesGuard)
   @Delete('owner/delete-vehicle/:id')
-  @Roles('owner')
+  @Roles('OWNER')
   async deleteVehicle(@Param('id', ParseIntPipe) id: number): Promise<any> {
     return this.vehicleService.deleteVehicle(id);
   }
