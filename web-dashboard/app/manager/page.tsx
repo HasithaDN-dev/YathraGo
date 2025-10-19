@@ -1,22 +1,12 @@
 "use client";
 
 import React from "react";
+import { mockComplaints } from "@/lib/complaints";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Users, 
-  DollarSign, 
-  AlertTriangle, 
-  Eye,
-  UserCheck,
-  Car,
-  FileText,
-  Megaphone,
-  MessageSquare,
-  TrendingUp,
-  Clock
-} from "lucide-react";
+import { AlertTriangle, Eye, FileText, Megaphone, MessageSquare } from "lucide-react";
+import { getNotices } from "@/lib/notices";
 import Link from "next/link";
 
 interface StatCardProps {
@@ -81,44 +71,19 @@ const ActivityItem: React.FC<{ activity: ActivityEntry }> = ({ activity }) => (
 );
 
 export default function ManagerDashboard() {
+  const openCount = mockComplaints.filter(c => c.status === "open").length;
+
   const stats = [
     {
-      title: "Pending Vehicle Approvals",
-      value: "12",
-      icon: <Car className="w-4 h-4" />,
-      bgColor: "bg-[var(--bright-orange)]"
-    },
-    {
-      title: "Driver Verifications",
-      value: "8",
-      icon: <Users className="w-4 h-4" />,
-      bgColor: "bg-[var(--color-deep-navy)]"
-    },
-    {
-      title: "Monthly Revenue",
-      value: "Rs 2,45,000",
-      icon: <DollarSign className="w-4 h-4" />,
-      bgColor: "bg-[var(--success-green)]"
-    },
-    {
       title: "Open Complaints",
-      value: "5",
+      value: openCount,
       icon: <AlertTriangle className="w-4 h-4" />,
       bgColor: "bg-[var(--error-red)]"
     }
   ];
 
   const recentActivities: ActivityEntry[] = [
-    {
-      description: "Approved vehicle registration for ABC-456",
-      status: "Approved",
-      timestamp: "2 hours ago"
-    },
-    {
-      description: "Verified driver license for John Doe",
-      status: "Verified",
-      timestamp: "4 hours ago"
-    },
+    
     {
       description: "Published safety notice for all drivers",
       status: "Published",
@@ -130,33 +95,28 @@ export default function ManagerDashboard() {
       timestamp: "1 day ago"
     },
     {
-      description: "Vehicle DEF-789 approval pending documentation",
+      description: "Open complaint: delayed pick-up at Oak St.",
       status: "Pending",
       timestamp: "2 days ago"
     }
   ];
 
+  const publishedNotices = getNotices();
+
   const quickActions = [
     {
-      title: "Approve Vehicles",
-      description: "Review and approve new vehicle registrations",
-      href: "/manager/approve-vehicles",
-      icon: <Car className="w-5 h-5" />,
-      color: "border-[var(--bright-orange)] text-[var(--bright-orange)]"
+      title: "Handle Complaints",
+      description: "Review and resolve customer complaints",
+      href: "/manager/handle-complaints",
+      icon: <MessageSquare className="w-5 h-5" />,
+      color: "border-[var(--error-red)] text-[var(--error-red)]"
     },
     {
-      title: "Verify Drivers",
-      description: "Verify driver credentials and background checks",
-      href: "/manager/verify-drivers",
-      icon: <UserCheck className="w-5 h-5" />,
-      color: "border-[var(--color-deep-navy)] text-[var(--color-deep-navy)]"
-    },
-    {
-      title: "Revenue Management",
-      description: "Monitor and manage fleet revenue streams",
-      href: "/manager/revenue-management",
-      icon: <TrendingUp className="w-5 h-5" />,
-      color: "border-[var(--success-green)] text-[var(--success-green)]"
+      title: "Manage Notifications",
+      description: "Send important notifications to users or broadcast to a group",
+      href: "/manager/manage-notifications",
+      icon: <Megaphone className="w-5 h-5" />,
+      color: "border-[var(--warm-yellow)] text-[var(--warning-amber)]"
     },
     {
       title: "Generate Reports",
@@ -166,18 +126,11 @@ export default function ManagerDashboard() {
       color: "border-[var(--neutral-gray)] text-[var(--neutral-gray)]"
     },
     {
-      title: "Publish Notices",
-      description: "Send important notices to drivers and owners",
-      href: "/manager/publish-notices",
-      icon: <Megaphone className="w-5 h-5" />,
-      color: "border-[var(--warm-yellow)] text-[var(--warning-amber)]"
-    },
-    {
-      title: "Handle Complaints",
-      description: "Review and resolve customer complaints",
-      href: "/manager/handle-complaints",
-      icon: <MessageSquare className="w-5 h-5" />,
-      color: "border-[var(--error-red)] text-[var(--error-red)]"
+      title: "Receive Alerts",
+      description: "View and acknowledge incoming system alerts",
+      href: "/manager/receive-alerts",
+      icon: <AlertTriangle className="w-5 h-5" />,
+      color: "border-[var(--success-green)] text-[var(--success-green)]"
     }
   ];
 
@@ -189,7 +142,7 @@ export default function ManagerDashboard() {
           Manager Dashboard
         </h1>
         <p className="text-[var(--neutral-gray)] mt-2">
-          Oversee fleet operations, approvals, and manage system-wide activities
+          Oversee fleet operations and manage system-wide activities
         </p>
       </div>
 
@@ -243,8 +196,26 @@ export default function ManagerDashboard() {
           </Card>
         </div>
 
-        {/* Recent Activities */}
+        {/* Right column: Notices then Recent Activities */}
         <div className="space-y-6">
+          <Card className="shadow-sm border border-[var(--neutral-gray)]">
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold text-[var(--color-deep-navy)]">Published Notices</CardTitle>
+              <Link href="/manager/manage-notifications">
+                <Button variant="outline" size="sm" className="border-[var(--neutral-gray)] text-[var(--neutral-gray)] hover:bg-gray-50">New</Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {publishedNotices.slice(0,3).map((n) => (
+                  <div key={n.id} className="text-sm">
+                    <div className="font-medium text-[var(--color-deep-navy)]">{n.title}</div>
+                    <div className="text-xs text-[var(--neutral-gray)]">{new Date(n.publishedAt).toLocaleString()}</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
           <Card className="shadow-sm border border-[var(--neutral-gray)]">
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle className="text-lg font-semibold text-[var(--color-deep-navy)]">
@@ -253,7 +224,7 @@ export default function ManagerDashboard() {
               <Button
                 variant="outline"
                 size="sm"
-                className="border-[var(--neutral-gray)] text-[var(--neutral-gray)] hover:bg-gray-50"
+                className="border-[var(--neutral-gray)] text-[var(--neutral-gray)] hover:bg-gray-50 hover:text-[var(--neutral-gray)]"
               >
                 <Eye className="w-4 h-4 mr-1" />
                 View All
@@ -264,43 +235,6 @@ export default function ManagerDashboard() {
                 {recentActivities.map((activity, index) => (
                   <ActivityItem key={index} activity={activity} />
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pending Tasks Summary */}
-          <Card className="shadow-sm border border-[var(--warning-amber)]">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-[var(--color-deep-navy)] flex items-center gap-2">
-                <Clock className="w-5 h-5 text-[var(--warning-amber)]" />
-                Pending Tasks
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--neutral-gray)]">Vehicle Approvals</span>
-                  <Badge variant="secondary" className="bg-[var(--warm-yellow)]/20 text-[var(--warning-amber)]">
-                    12 Pending
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--neutral-gray)]">Driver Verifications</span>
-                  <Badge variant="secondary" className="bg-[var(--warm-yellow)]/20 text-[var(--warning-amber)]">
-                    8 Pending
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-[var(--neutral-gray)]">Open Complaints</span>
-                  <Badge variant="secondary" className="bg-[var(--error-bg)] text-[var(--error-red)]">
-                    5 Open
-                  </Badge>
-                </div>
-                <div className="pt-2">
-                  <Button className="w-full bg-[var(--bright-orange)] hover:bg-[var(--warm-yellow)] text-white">
-                    View All Tasks
-                  </Button>
-                </div>
               </div>
             </CardContent>
           </Card>

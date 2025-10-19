@@ -6,9 +6,18 @@ export class ChildRideRequestService {
   constructor(private prisma: PrismaService) {}
 
   async getRequestsForDriver(driverId: number) {
-    // Fetch ChildRideRequests for the driver, include child details
-    return this.prisma.childRideRequest.findMany({
-      where: { driverId },
+    // Get today's date (start and end of day for comparison)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Fetch ChildRideRequests for the driver with status 'Assigned'
+    const assignedRequests = await this.prisma.childRideRequest.findMany({
+      where: {
+        driverId,
+        status: 'Assigned',
+      },
       include: {
         child: {
           select: {
@@ -20,5 +29,30 @@ export class ChildRideRequestService {
         },
       },
     });
+
+    // Get list of absent children for today
+    const absentChildren = await this.prisma.absence_Child.findMany({
+      where: {
+        date: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+      select: {
+        childId: true,
+      },
+    });
+
+    // Create a Set of absent child IDs for quick lookup
+    const absentChildIds = new Set(
+      absentChildren.map((absence) => absence.childId),
+    );
+
+    // Filter out absent children from assigned requests
+    const presentChildren = assignedRequests.filter(
+      (request) => !absentChildIds.has(request.child.child_id),
+    );
+
+    return presentChildren;
   }
 }

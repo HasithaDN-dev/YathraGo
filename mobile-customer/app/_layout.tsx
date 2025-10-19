@@ -80,6 +80,11 @@ export default function RootLayout() {
           <Stack.Screen name="(main)" options={{ headerShown: false }} />
         </Stack.Protected>
 
+        {/* Registration routes - accessible when authenticated but not created account yet */}
+        <Stack.Protected guard={isLoggedIn && !isProfileComplete}>
+          <Stack.Screen name="customer-register" options={{ headerShown: false }} />
+        </Stack.Protected>
+
         {/* Registration routes - accessible when authenticated (for adding more profiles) */}
         <Stack.Protected guard={isLoggedIn}>
           <Stack.Screen name="(registration)" options={{ headerShown: false }} />
