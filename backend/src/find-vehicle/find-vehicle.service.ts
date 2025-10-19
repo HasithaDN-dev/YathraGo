@@ -244,16 +244,17 @@ export class FindVehicleService {
       }
 
       // Check if driver has any cities in route
-      if (!driverCity.cityIds || driverCity.cityIds.length < 2) {
+      const cityIds = driverCity.cityIds as number[];
+      if (!cityIds || cityIds.length < 2) {
         console.log(
-          `[FindVehicle] Driver ${driver.driver_id} (${driver.name}): Insufficient cities (${driverCity.cityIds?.length || 0})`,
+          `[FindVehicle] Driver ${driver.driver_id} (${driver.name}): Insufficient cities (${cityIds?.length || 0})`,
         );
         continue; // Need at least 2 cities to form a route
       }
 
       // Build route coordinates from city IDs
       const routeCoordinates: [number, number][] = [];
-      for (const cityId of driverCity.cityIds) {
+      for (const cityId of cityIds) {
         const city = cityMap.get(cityId);
         if (city) {
           // Turf.js uses [longitude, latitude] format
@@ -306,22 +307,22 @@ export class FindVehicleService {
       const driverRating = 4.5; // TODO: Calculate from actual reviews
 
       // Get start and end city names
-      const startCityId = driverCity.cityIds[0];
-      const endCityId = driverCity.cityIds[driverCity.cityIds.length - 1];
+      const startCityId = cityIds[0];
+      const endCityId = cityIds[cityIds.length - 1];
       const startCity = cityMap.get(startCityId)?.name || 'Unknown';
       const endCity = cityMap.get(endCityId)?.name || 'Unknown';
 
       // Get all route city names
-      const routeCities = driverCity.cityIds
+      const routeCities = cityIds
         .map((id) => cityMap.get(id)?.name)
         .filter((name): name is string => name !== undefined);
 
       // Format times (handle null values) - TIME fields for display only
       const estimatedPickupTime = driverCity.usualStartTime
-        ? this.formatTime(driverCity.usualStartTime)
+        ? this.formatTime(driverCity.usualStartTime as Date)
         : undefined;
       const estimatedDropTime = driverCity.usualEndTime
-        ? this.formatTime(driverCity.usualEndTime)
+        ? this.formatTime(driverCity.usualEndTime as Date)
         : undefined;
 
       // Create response object
@@ -404,7 +405,9 @@ export class FindVehicleService {
   }
 
   // Method to get detailed information about a specific driver and their vehicle
-  async getVehicleDetails(driverId: number): Promise<VehicleDetailsResponseDto> {
+  async getVehicleDetails(
+    driverId: number,
+  ): Promise<VehicleDetailsResponseDto> {
     const driver = await this.prisma.driver.findUnique({
       where: { driver_id: driverId },
       include: {
@@ -430,29 +433,32 @@ export class FindVehicleService {
     // Get driver cities/route information (DriverCities is singular optional relation)
     const driverCity = driver.driverCities;
     if (!driverCity) {
-      throw new NotFoundException('Route information not found for this driver');
+      throw new NotFoundException(
+        'Route information not found for this driver',
+      );
     }
 
     // Get all cities to map cityIds to names
     const cities = await this.prisma.city.findMany();
     const cityMap = new Map(cities.map((city) => [city.id, city]));
 
+    // Type assertion for cityIds
+    const cityIds = driverCity.cityIds as number[];
+
     // Get route city names
-    const routeCities = driverCity.cityIds
+    const routeCities = cityIds
       .map((id) => cityMap.get(id)?.name)
       .filter((name): name is string => name !== undefined);
 
-    const startCity = cityMap.get(driverCity.cityIds[0])?.name || 'Unknown';
-    const endCity =
-      cityMap.get(driverCity.cityIds[driverCity.cityIds.length - 1])?.name ||
-      'Unknown';
+    const startCity = cityMap.get(cityIds[0])?.name || 'Unknown';
+    const endCity = cityMap.get(cityIds[cityIds.length - 1])?.name || 'Unknown';
 
     // Format times (handle null values) - TIME fields for display only
     const usualStartTime = driverCity.usualStartTime
-      ? this.formatTime(driverCity.usualStartTime)
+      ? this.formatTime(driverCity.usualStartTime as Date)
       : undefined;
     const usualEndTime = driverCity.usualEndTime
-      ? this.formatTime(driverCity.usualEndTime)
+      ? this.formatTime(driverCity.usualEndTime as Date)
       : undefined;
 
     // TODO: Calculate actual ratings and reviews from reviews table when implemented
@@ -493,7 +499,7 @@ export class FindVehicleService {
       startCity,
       endCity,
       routeCities,
-      rideType: driverCity.rideType,
+      rideType: driverCity.rideType as 'School' | 'Work' | 'Both',
 
       // Time Information
       usualStartTime,

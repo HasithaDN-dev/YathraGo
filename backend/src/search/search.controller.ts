@@ -19,7 +19,12 @@ export class SearchController {
         select: { driver_id: true, name: true, phone: true, email: true },
         take,
       });
-      return rows.map((r) => ({ id: r.driver_id, name: r.name, phone: r.phone, email: r.email }));
+      return rows.map((r) => ({
+        id: r.driver_id,
+        name: r.name,
+        phone: r.phone,
+        email: r.email,
+      }));
     }
 
     if (type === 'CUSTOMER') {
@@ -31,10 +36,19 @@ export class SearchController {
             { phone: { contains: term } },
           ],
         },
-        select: { customer_id: true, firstName: true, lastName: true, phone: true },
+        select: {
+          customer_id: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+        },
         take,
       });
-      return rows.map((r) => ({ id: r.customer_id, name: `${r.firstName} ${r.lastName}`.trim(), phone: r.phone }));
+      return rows.map((r) => ({
+        id: r.customer_id,
+        name: `${r.firstName} ${r.lastName}`.trim(),
+        phone: r.phone,
+      }));
     }
 
     if (type === 'WEBUSER') {
