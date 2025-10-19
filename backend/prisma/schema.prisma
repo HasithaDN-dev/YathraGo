@@ -37,10 +37,10 @@ model Webuser {
   email        String        @unique
   password     String
   username     String
-  role         Role          @default(OWNER)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   fcmToken     String?
+  role         Role          @default(OWNER)
   vehicleOwner VehicleOwner?
 
   @@index([fcmToken])
@@ -51,7 +51,7 @@ model Admin {
   email       String   @unique
   password    String
   firstName   String
-  lastName    String 
+  lastName    String
   permissions String[]
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -98,29 +98,29 @@ model Vehicle {
 }
 
 model Chat {
-  id              Int        @id @default(autoincrement())
-  message         String?
-  imageUrl        String?
-  timestamp       DateTime   @default(now())
-  seen            Boolean    @default(false)
-  senderId        Int
-  senderType      UserTypes
-  conversationId  Int
-  status          MessageStatus @default(SENT)
-  conversation    Conversation  @relation(fields: [conversationId], references: [id])
+  id             Int           @id @default(autoincrement())
+  message        String?
+  imageUrl       String?
+  timestamp      DateTime      @default(now())
+  seen           Boolean       @default(false)
+  senderId       Int
+  senderType     UserTypes
+  conversationId Int
+  status         MessageStatus @default(SENT)
+  conversation   Conversation  @relation(fields: [conversationId], references: [id])
 
   @@index([conversationId])
 }
 
 model Conversation {
-  id              Int        @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
   participantAId   Int
   participantAType UserTypes
   participantBId   Int
   participantBType UserTypes
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  messages        Chat[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  messages         Chat[]
 
   @@unique([participantAId, participantAType, participantBId, participantBType])
 }
@@ -128,7 +128,7 @@ model Conversation {
 model BackupDriver {
   id             Int     @id @default(autoincrement())
   name           String
-  phone          String 
+  phone          String
   vehicle_Reg_No String
   NIC            String
   fcmToken       String?
@@ -257,11 +257,11 @@ model Customer {
   address            String?
   profileImageUrl    String?
   emergencyContact   String?
-  fcmToken           String?  
   status             String             @default("ACTIVE")
   registrationStatus RegistrationStatus @default(OTP_PENDING)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+  fcmToken           String?
   children           Child[]
   ChildPayment       ChildPayment[]
   staffPassenger     Staff_Passenger?
@@ -319,8 +319,8 @@ model Child {
   Customer        Customer?          @relation(fields: [customerId], references: [customer_id])
   ChildPayment    ChildPayment[]
   rideRequests    ChildRideRequest[]
-  routeWaypoints  RouteWaypoint[]
   routeStops      RouteStop[]
+  routeWaypoints  RouteWaypoint[]
 
   @@index([customerId])
   @@index([school])
@@ -379,13 +379,16 @@ model City {
 }
 
 model DriverCities {
-  id             Int       @id @default(autoincrement())
-  driverId       Int       @unique
-  cityIds        Int[]
-  rideType       Ridetype  @default(Both)
-  usualEndTime   DateTime? @db.Time(6)
-  usualStartTime DateTime? @db.Time(6)
-  driver         Driver    @relation(fields: [driverId], references: [driver_id])
+  id       Int    @id @default(autoincrement())
+  driver   Driver @relation(fields: [driverId], references: [driver_id])
+  driverId Int
+  rideType Ridetype @default(Both)
+  // store an ordered list of city IDs representing the driver's route
+  cityIds  Int[]
+  usualStartTime  DateTime? @db.Time(6)
+  usualEndTime    DateTime? @db.Time(6)
+
+  @@unique([driverId])
 }
 
 model ChildRideRequest {
@@ -406,15 +409,15 @@ model DriverRoute {
   id                  Int             @id @default(autoincrement())
   driverId            Int
   date                DateTime        @db.Date
-  routeType           String          @default("MORNING_PICKUP") // MORNING_PICKUP, AFTERNOON_DROPOFF
-  status              String          @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  routeDetails        Json?
+  createdAt           DateTime        @default(now())
+  completedAt         DateTime?
+  optimizedPolyline   String?
+  routeType           String          @default("MORNING_PICKUP")
+  startedAt           DateTime?
+  status              String          @default("PENDING")
   totalDistanceMeters Int?
   totalDurationSecs   Int?
-  optimizedPolyline   String?
-  routeDetails        Json?
-  startedAt           DateTime?
-  completedAt         DateTime?
-  createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
   driver              Driver          @relation(fields: [driverId], references: [driver_id])
   stops               RouteStop[]
@@ -472,9 +475,8 @@ model Attendance {
   id         Int            @id @default(autoincrement())
   driverId   Int
   childId    Int
-  date       DateTime       @db.Date
   waypointId Int?
-  type       String // "pickup" or "dropoff" 
+  type       String
   latitude   Float?
   longitude  Float?
   notes      String?
@@ -483,6 +485,7 @@ model Attendance {
   timestamp  DateTime       @default(now())
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
+  date       DateTime       @db.Date
   child      Child          @relation(fields: [childId], references: [child_id])
   driver     Driver         @relation(fields: [driverId], references: [driver_id])
   waypoint   RouteWaypoint? @relation(fields: [waypointId], references: [id])
