@@ -272,19 +272,6 @@ model Customer {
   @@index([fcmToken])
 }
 
-model Complaints {
-  complaint_id Int      @id @default(autoincrement())
-  description  String
-  type         String
-  createdAt    DateTime @default(now())
-}
-
-model Inquires {
-  inquiry_id  Int      @id @default(autoincrement())
-  description String
-  createdAt   DateTime @default(now())
-}
-
 model Absence_Staff {
   absent_id Int      @id @default(autoincrement())
   reason    String
@@ -545,6 +532,19 @@ model StaffRideRequest {
   updatedAt       DateTime
   Driver          Driver          @relation(fields: [driverId], references: [driver_id])
   Staff_Passenger Staff_Passenger @relation(fields: [staffId], references: [id])
+}
+
+model Complaints {
+  complaint_id Int      @id @default(autoincrement())
+  description  String
+  type         String
+  createdAt    DateTime @default(now())
+}
+
+model Inquires {
+  inquiry_id  Int      @id @default(autoincrement())
+  description String
+  createdAt   DateTime @default(now())
 }
 
 enum RegistrationStatus {
