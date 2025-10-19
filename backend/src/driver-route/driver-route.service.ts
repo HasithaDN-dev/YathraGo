@@ -46,6 +46,49 @@ export class DriverRouteService {
   constructor(private prisma: PrismaService) {}
 
   /**
+   * Determine if an existing route should be reused based on location and status
+   */
+  private shouldReuseExistingRoute(
+    existingRoute: any,
+    driverLatitude?: number,
+    driverLongitude?: number,
+    routeType: 'MORNING_PICKUP' | 'AFTERNOON_DROPOFF' = 'MORNING_PICKUP',
+  ): boolean {
+    // If no existing route, generate new one
+    if (!existingRoute) {
+      return false;
+    }
+
+    // If route is completed, don't reuse it
+    if (existingRoute.status === 'COMPLETED') {
+      return false;
+    }
+
+    // If no driver location provided, reuse existing route
+    if (!driverLatitude || !driverLongitude) {
+      return true;
+    }
+
+    // Check if driver location has changed significantly (more than 100 meters)
+    const locationThreshold = 0.001; // Approximately 100 meters in degrees
+    const latDiff = Math.abs(existingRoute.driverLatitude - driverLatitude);
+    const lngDiff = Math.abs(existingRoute.driverLongitude - driverLongitude);
+
+    if (latDiff > locationThreshold || lngDiff > locationThreshold) {
+      return false; // Location changed significantly, generate new route
+    }
+
+    // For evening routes, check if morning route was completed
+    if (routeType === 'AFTERNOON_DROPOFF') {
+      // Check if morning route exists and is completed
+      // This will be handled in the route generation logic
+      return false; // Always generate fresh evening route
+    }
+
+    return true; // Reuse existing route
+  }
+
+  /**
    * Get today's route for the driver
    * This is the main endpoint the driver app calls when starting a ride
    */
@@ -84,8 +127,16 @@ export class DriverRouteService {
       },
     });
 
-    // If route exists and is not completed, return it
-    if (existingRoute && existingRoute.status !== 'COMPLETED') {
+    // Check if we should reuse existing route or generate new one
+    const shouldReuseRoute = this.shouldReuseExistingRoute(
+      existingRoute,
+      driverLatitude,
+      driverLongitude,
+      routeType,
+    );
+
+    // If route exists and should be reused, return it
+    if (existingRoute && shouldReuseRoute) {
       return {
         success: true,
         route: existingRoute,
@@ -105,6 +156,13 @@ export class DriverRouteService {
           order: stop.order,
         })),
       };
+    }
+
+    // If existing route should not be reused, delete it to generate fresh one
+    if (existingRoute) {
+      await this.prisma.driverRoute.delete({
+        where: { id: existingRoute.id },
+      });
     }
 
     // Step 2: Get all assigned children for this driver
@@ -128,7 +186,26 @@ export class DriverRouteService {
       );
     }
 
-    // Step 4: Generate stops based on route type
+    // Step 4: For evening routes, check if morning route was completed
+    if (routeType === 'AFTERNOON_DROPOFF') {
+      const morningRoute = await this.prisma.driverRoute.findUnique({
+        where: {
+          driverId_date_routeType: {
+            driverId,
+            date: today,
+            routeType: 'MORNING_PICKUP',
+          },
+        },
+      });
+
+      if (!morningRoute || morningRoute.status !== 'COMPLETED') {
+        throw new BadRequestException(
+          'Morning route must be completed before starting evening route.',
+        );
+      }
+    }
+
+    // Step 5: Generate stops based on route type
     const stops = this.generateStops(presentChildren, routeType);
 
     if (stops.length === 0) {
@@ -150,6 +227,8 @@ export class DriverRouteService {
       today,
       routeType,
       optimizedRoute,
+      driverLatitude,
+      driverLongitude,
     );
 
     return {
@@ -247,6 +326,7 @@ export class DriverRouteService {
   private generateStops(
     children: ChildLocation[],
     routeType: 'MORNING_PICKUP' | 'AFTERNOON_DROPOFF',
+    morningRouteStops?: any[], // For evening routes, we need the morning route order
   ): Stop[] {
     const stops: Stop[] = [];
 
@@ -285,14 +365,14 @@ export class DriverRouteService {
         }
       }
     } else {
-      // Afternoon: Pick up from school, then drop off at each home
+      // Evening: Pick up from school, then drop off at each home in REVERSE order
       const firstChild = children[0];
       if (
         firstChild &&
         firstChild.schoolLatitude != null &&
         firstChild.schoolLongitude != null
       ) {
-        // Add school pickup (common starting point)
+        // Add school pickup (common starting point) - same order as morning
         for (const child of children) {
           stops.push({
             childId: child.childId,
@@ -305,8 +385,10 @@ export class DriverRouteService {
         }
       }
 
-      // Add home dropoffs
-      for (const child of children) {
+      // Add home dropoffs in REVERSE order of morning pickup
+      // This ensures the last child picked up in the morning is dropped off first in the evening
+      const childrenInReverseOrder = [...children].reverse();
+      for (const child of childrenInReverseOrder) {
         if (child.pickupLatitude != null && child.pickupLongitude != null) {
           stops.push({
             childId: child.childId,
@@ -640,6 +722,8 @@ export class DriverRouteService {
     date: Date,
     routeType: 'MORNING_PICKUP' | 'AFTERNOON_DROPOFF',
     optimizedRoute: RouteOptimizationResult,
+    driverLatitude?: number,
+    driverLongitude?: number,
   ) {
     // Create or update the driver route
     const driverRoute = await this.prisma.driverRoute.upsert({
@@ -658,12 +742,16 @@ export class DriverRouteService {
         totalDistanceMeters: optimizedRoute.totalDistanceMeters,
         totalDurationSecs: optimizedRoute.totalDurationSecs,
         optimizedPolyline: optimizedRoute.polyline,
+        driverLatitude,
+        driverLongitude,
       },
       update: {
         totalDistanceMeters: optimizedRoute.totalDistanceMeters,
         totalDurationSecs: optimizedRoute.totalDurationSecs,
         optimizedPolyline: optimizedRoute.polyline,
         status: 'PENDING',
+        driverLatitude,
+        driverLongitude,
       },
     });
 

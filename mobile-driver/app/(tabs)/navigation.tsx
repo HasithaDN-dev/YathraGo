@@ -39,6 +39,7 @@ export default function NavigationScreen() {
     const [showEmergencyDrawer, setShowEmergencyDrawer] = useState(false);
     const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
     const [routeData, setRouteData] = useState<DailyRoute | null>(null);
+    const [routeType, setRouteType] = useState<'MORNING_PICKUP' | 'AFTERNOON_DROPOFF'>('MORNING_PICKUP');
 
     // Get current location
     const getCurrentLocation = async () => {
@@ -67,6 +68,11 @@ export default function NavigationScreen() {
         loadRouteStatus();
     }, []);
 
+    // Reload route status when route type changes
+    useEffect(() => {
+        loadRouteStatus();
+    }, [routeType]);
+
     // Check if there's an existing route for today
     const loadRouteStatus = async () => {
         try {
@@ -74,8 +80,10 @@ export default function NavigationScreen() {
             const status = await routeApi.getCurrentRouteStatus();
             
             if (status.routes && status.routes.length > 0) {
+                // Find active route for the selected route type
                 const activeRoute = status.routes.find(r => 
-                    r.status === 'IN_PROGRESS' || r.status === 'PENDING'
+                    r.routeType === routeType && 
+                    (r.status === 'IN_PROGRESS' || r.status === 'PENDING')
                 );
                 
                 if (activeRoute && activeRoute.stops) {
@@ -91,6 +99,12 @@ export default function NavigationScreen() {
                         setCurrentStopIndex(firstIncompleteIndex);
                         setIsRideActive(activeRoute.status === 'IN_PROGRESS');
                     }
+                } else {
+                    // No active route for this type, reset state
+                    setRouteData(null);
+                    setStopList([]);
+                    setCurrentStopIndex(0);
+                    setIsRideActive(false);
                 }
             }
         } catch (error) {
@@ -117,7 +131,7 @@ export default function NavigationScreen() {
             
             // Fetch today's optimized route from backend
             const routeData = await routeApi.getTodaysRoute(
-                'MORNING_PICKUP',
+                routeType,
                 location.latitude,
                 location.longitude
             );
@@ -341,8 +355,57 @@ export default function NavigationScreen() {
                                 </Typography>
             </View>
 
+                                {/* Route Type Selector */}
+                                <View className="mb-6">
+                                    <Typography variant="subhead" weight="medium" className="text-brand-deepNavy mb-3">
+                                        Select Route Type
+                                    </Typography>
+                                    <View className="flex-row space-x-3">
+                                        <TouchableOpacity
+                                            className={`flex-1 py-3 px-4 rounded-lg border-2 ${
+                                                routeType === 'MORNING_PICKUP' 
+                                                    ? 'border-brand-brightOrange bg-brand-brightOrange bg-opacity-10' 
+                                                    : 'border-gray-200 bg-white'
+                                            }`}
+                                            onPress={() => setRouteType('MORNING_PICKUP')}
+                                        >
+                                            <Typography 
+                                                variant="body" 
+                                                weight="medium" 
+                                                className={`text-center ${
+                                                    routeType === 'MORNING_PICKUP' 
+                                                        ? 'text-brand-brightOrange' 
+                                                        : 'text-brand-neutralGray'
+                                                }`}
+                                            >
+                                                Morning Pickup
+                                            </Typography>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            className={`flex-1 py-3 px-4 rounded-lg border-2 ${
+                                                routeType === 'AFTERNOON_DROPOFF' 
+                                                    ? 'border-brand-brightOrange bg-brand-brightOrange bg-opacity-10' 
+                                                    : 'border-gray-200 bg-white'
+                                            }`}
+                                            onPress={() => setRouteType('AFTERNOON_DROPOFF')}
+                                        >
+                                            <Typography 
+                                                variant="body" 
+                                                weight="medium" 
+                                                className={`text-center ${
+                                                    routeType === 'AFTERNOON_DROPOFF' 
+                                                        ? 'text-brand-brightOrange' 
+                                                        : 'text-brand-neutralGray'
+                                                }`}
+                                            >
+                                                Evening Dropoff
+                                            </Typography>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+
                                 <CustomButton
-                                title="Start Ride"
+                                title={`Start ${routeType === 'MORNING_PICKUP' ? 'Morning' : 'Evening'} Route`}
                                 onPress={handleStartRide}
                                 size="large"
                                     bgVariant="success"

@@ -227,6 +227,7 @@ model Driver {
   routeWaypoints           RouteWaypoint[]
   StaffRideRequest         StaffRideRequest[]
   vehicles                 Vehicle[]
+  askDriverRequest         askDriverRequest[]
 
   @@index([fcmToken])
 }
@@ -265,6 +266,7 @@ model Customer {
   children           Child[]
   ChildPayment       ChildPayment[]
   staffPassenger     Staff_Passenger?
+  askDriverRequest   askDriverRequest[]
 
   @@index([phone])
   @@index([registrationStatus])
@@ -388,6 +390,34 @@ model ChildRideRequest {
   driver       Driver        @relation(fields: [driverId], references: [driver_id])
 }
 
+model askDriverRequest {
+  id                        Int       @id @default(autoincrement())
+  customerID                Int
+  staffOrChild              String // 'staff' or 'child'
+  staffOrChildID            Int
+  driverId                  Int
+  estimatedDistance         Float // Stored on initial calculation
+  estimatedPrice            Float // Stored on initial calculation (distance * price per km)
+  currentAmount             Float // Current negotiated amount
+  customerNote              String?
+  driverNote                String?
+  status                    askStatus @default(PENDING)
+  nearestPickupCityID       Int
+  nearestWorkOrSchoolCityID Int
+  nearestPickupCityName     String?
+  nearestDropCityName       String?
+  lastModifiedBy            String? // 'customer' or 'driver'
+  negotiationHistory        Json? // Array of {offeredBy, amount, note, timestamp}
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  Driver                    Driver    @relation(fields: [driverId], references: [driver_id])
+  Customer                  Customer  @relation(fields: [customerID], references: [customer_id])
+
+  @@index([customerID])
+  @@index([driverId])
+  @@index([status])
+}
+
 model DriverRoute {
   id                  Int             @id @default(autoincrement())
   driverId            Int
@@ -401,6 +431,8 @@ model DriverRoute {
   status              String          @default("PENDING")
   totalDistanceMeters Int?
   totalDurationSecs   Int?
+  driverLatitude      Float? // Driver location when route was generated
+  driverLongitude     Float? // Driver location when route was generated
   updatedAt           DateTime        @updatedAt
   driver              Driver          @relation(fields: [driverId], references: [driver_id])
   stops               RouteStop[]
@@ -651,4 +683,13 @@ enum ComplaintStatus {
   PENDING
   IN_PROGRESS
   RESOLVED
+}
+
+enum askStatus {
+  PENDING // Initial request sent by customer
+  DRIVER_COUNTER // Driver counter-offered
+  CUSTOMER_COUNTER // Customer counter-offered
+  ACCEPTED // Both parties agreed
+  REJECTED // Request rejected
+  ASSIGNED // Successfully assigned to ChildRideRequest/StaffRideRequest
 }
