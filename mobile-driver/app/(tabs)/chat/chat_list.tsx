@@ -9,6 +9,7 @@ import { MagnifyingGlass } from 'phosphor-react-native';
 import { router } from 'expo-router';
 import { API_BASE_URL } from '../../../config/api';
 import { useAuthStore } from '../../../lib/stores/auth.store';
+import { usePassengerStore } from '../../../lib/stores/passenger.store';
 
 interface ConversationItem {
   id: number;
@@ -19,6 +20,7 @@ interface ConversationItem {
   timestamp: string;
   unreadCount: number;
   avatarUri?: string | null;
+  childId?: number;
 }
 
 export default function ChatListScreen() {
@@ -27,12 +29,48 @@ export default function ChatListScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { user } = useAuthStore();
+  const passengerStore = usePassengerStore();
+
+  // Auto-create conversations for all assigned children
+  const ensureConversationsExist = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      // Get all passengers from the store
+      const passengers = passengerStore.ids.map((id: number) => passengerStore.byId[id]);
+      
+      // Create conversations for each child if not exists
+      for (const passenger of passengers) {
+        if (!passenger?.child?.child_id) continue;
+        
+        try {
+          await fetch(`${API_BASE_URL}/chat/conversations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              participantAId: user.id,
+              participantAType: 'DRIVER',
+              participantBId: passenger.child.child_id,
+              participantBType: 'CHILD',
+            }),
+          });
+        } catch (err) {
+          console.error('Failed to create conversation for child:', passenger.child.child_id, err);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to ensure conversations exist:', error);
+    }
+  }, [user, passengerStore]);
 
   // Fetch conversations function - driver only has one profile (DRIVER)
   const fetchConversations = useCallback(async () => {
     if (!user?.id) return;
     
     try {
+      // First ensure all conversations exist
+      await ensureConversationsExist();
+
       const response = await fetch(
         `${API_BASE_URL}/chat/conversations?userId=${user.id}&userType=DRIVER`
       );
@@ -45,6 +83,14 @@ export default function ChatListScreen() {
 
       const data = await response.json();
 
+      // Get passenger data for enrichment
+      const passengers = passengerStore.ids.map((id: number) => passengerStore.byId[id]);
+      const childMap = new Map(
+        passengers
+          .filter((p: any) => p?.child?.child_id)
+          .map((p: any) => [p.child.child_id, p])
+      );
+
       // Transform backend data to UI format
       const transformed: ConversationItem[] = data.map((c: any) => {
         const other = c.otherParticipant || {};
@@ -56,6 +102,19 @@ export default function ChatListScreen() {
           !(msg.senderId === user.id && msg.senderType === 'DRIVER') && !msg.seen
         ).length;
 
+        // Try to get child name from passenger store first, fallback to backend data
+        let displayName = other.name || 'Chat';
+        let childId: number | undefined = undefined;
+        
+        if (other.type === 'CHILD' && other.id) {
+          childId = other.id;
+          const passengerData: any = childMap.get(other.id);
+          if (passengerData?.child) {
+            const child = passengerData.child;
+            displayName = `${child.childFirstName || ''} ${child.childLastName || ''}`.trim() || other.name || 'Student';
+          }
+        }
+
         // Determine avatar URL from common fields (fallback to bundled default image)
         const avatarPath = other.profileImage || other.avatarUrl || other.imageUrl || other.avatar || '';
         const avatarUri = avatarPath
@@ -64,9 +123,21 @@ export default function ChatListScreen() {
             : `${API_BASE_URL}/${avatarPath.replace(/^\//, '')}`
           : null;
 
+        // Use child image from passenger store if available
+        let finalAvatarUri = avatarUri;
+        if (childId) {
+          const passengerData: any = childMap.get(childId);
+          if (passengerData?.child?.childImageUrl) {
+            const childImgPath = passengerData.child.childImageUrl;
+            finalAvatarUri = childImgPath.startsWith('http')
+              ? childImgPath
+              : `${API_BASE_URL}/${childImgPath.replace(/^\//, '')}`;
+          }
+        }
+
         return {
           id: c.id,
-          name: other.name || 'Chat',
+          name: displayName,
           phone: other.phone || '',
           lastMessage: lastMsg?.message || (lastMsg?.imageUrl ? '📷 Image' : ''),
           time: lastMsg?.timestamp 
@@ -74,7 +145,8 @@ export default function ChatListScreen() {
             : '',
           timestamp: lastMsg?.timestamp || c.updatedAt || '',
           unreadCount,
-          avatarUri,
+          avatarUri: finalAvatarUri,
+          childId,
         };
       });
 
@@ -90,7 +162,7 @@ export default function ChatListScreen() {
       console.error('Failed to fetch conversations:', error);
       setConversations([]);
     }
-  }, [user]);
+  }, [user, ensureConversationsExist, passengerStore.byId, passengerStore.ids]);
 
   // Initial load
   useEffect(() => {
