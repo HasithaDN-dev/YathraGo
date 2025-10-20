@@ -124,4 +124,33 @@ export const routeApi = {
 
     return response.json();
   },
+
+  /**
+   * Get session availability (morning and evening)
+   */
+  async getSessionAvailability(): Promise<{
+    success: boolean;
+    morningSession: {
+      available: boolean;
+      status: string;
+      completed: boolean;
+    };
+    eveningSession: {
+      available: boolean;
+      status: string;
+      completed: boolean;
+    };
+  }> {
+    const authenticatedFetch = tokenService.createAuthenticatedFetch();
+
+    const response = await authenticatedFetch(
+      `${API_BASE_URL}/driver/route/session-availability`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch session availability");
+    }
+
+    return response.json();
+  },
 };

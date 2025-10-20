@@ -29,8 +29,15 @@ export class AuthWebService {
         },
       });
 
-      // Owners are represented by the Webuser model (role = OWNER).
-      // Do not create a separate VehicleOwner record.
+      // If the user is an owner, create a VehicleOwner record with the same id
+      // if (user.role === Role.OWNER) {
+      //   await this.prisma.vehicleOwner.create({
+      //     data: {
+      //       id: user.id,
+      //       email: user.email,
+      //     },
+      //   });
+      // }
 
       return this.signToken(user.id, user.email, user.role);
     } catch (error) {

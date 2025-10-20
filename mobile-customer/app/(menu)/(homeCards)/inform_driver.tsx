@@ -1,21 +1,77 @@
 import React, { useState } from 'react';
-import { View, TextInput, ScrollView } from 'react-native';
+import { View, TextInput, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import CustomButton from '@/components/ui/CustomButton';
 import { PaperPlaneRight } from 'phosphor-react-native';
+import { useLocalSearchParams, router } from 'expo-router';
+import { useProfileStore } from '@/lib/stores/profile.store';
+import { API_BASE_URL } from '@/config/api';
 
 export default function InformDriverScreen() {
   const [description, setDescription] = useState('');
+  const { activeProfile, customerProfile } = useProfileStore();
+  const params = useLocalSearchParams<{ driverId?: string }>();
+  const driverIdParam = Array.isArray(params.driverId) ? params.driverId[0] : params.driverId;
 
-  const handleSend = () => {
-    if (description.trim()) {
-      console.log('Sending message:', description);
-      // Here you would typically send the message to the driver
-      // For now, just log it
+  const handleSend = async () => {
+    const text = description.trim();
+    if (!text) return;
+
+    // driverId must be provided via route params
+    if (!driverIdParam) {
+      Alert.alert('No driver selected', 'Cannot inform driver because no driver was specified.');
+      return;
+    }
+
+    // Resolve sender name: prefer active child profile name, fall back to customer
+    let senderName = 'Passenger';
+    try {
+      if (activeProfile && (activeProfile as any).type === 'child') {
+        const m = String((activeProfile as any).id).match(/(\d+)/);
+        const cid = m ? parseInt(m[1], 10) : null;
+        if (cid) {
+          const childFirst = (activeProfile as any).childFirstName || (activeProfile as any).firstName || '';
+          const childLast = (activeProfile as any).childLastName || '';
+          senderName = `${childFirst} ${childLast}`.trim() || senderName;
+        }
+      } else if (customerProfile) {
+        senderName = `${customerProfile.firstName || ''} ${customerProfile.lastName || ''}`.trim() || senderName;
+      }
+    } catch {
+      // fallback handled by defaults
+    }
+
+    const payload = {
+      sender: senderName,
+      message: text,
+      type: 'ALERT',
+      receiver: 'DRIVER',
+      receiverId: Number(driverIdParam),
+    };
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/notifications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error('Failed to send notification:', res.status, txt);
+        Alert.alert('Error', 'Failed to send notification to driver.');
+        return;
+      }
+      // Success
       setDescription('');
+      Alert.alert('Sent', 'Notification sent to driver');
+      // optional: navigate back
+      router.back();
+    } catch (err) {
+      console.error('Error sending notification:', err);
+      Alert.alert('Error', 'Network error while sending notification');
     }
   };
 

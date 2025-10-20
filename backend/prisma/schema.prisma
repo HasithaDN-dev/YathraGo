@@ -33,16 +33,18 @@ model OtpCode {
 }
 
 model Webuser {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  username  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  fcmToken  String?
-  role      Role     @default(OWNER)
-  address   String?
-  phone     String?
+  id           Int            @id @default(autoincrement())
+  email        String         @unique
+  password     String
+  username     String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  fcmToken     String?
+  phone        String?
+  address      String?
+  role         Role           @default(OWNER)
+  vehicles     Vehicle[]
+  VehicleOwner VehicleOwner[]
 
   @@index([fcmToken])
 }
@@ -73,7 +75,7 @@ model Manager {
 }
 
 model Vehicle {
-  id                  Int      @id @default(autoincrement())
+  id                  Int           @id @default(autoincrement())
   type                String
   brand               String
   model               String
@@ -82,8 +84,8 @@ model Vehicle {
   color               String
   route               String[]
   no_of_seats         Int
-  air_conditioned     Boolean  @default(false)
-  assistant           Boolean  @default(false)
+  air_conditioned     Boolean       @default(false)
+  assistant           Boolean       @default(false)
   rear_picture_url    String
   front_picture_url   String
   side_picture_url    String
@@ -94,7 +96,11 @@ model Vehicle {
   vehicle_reg_url     String?
   ownerId             Int?
   driverId            Int?
-  driver              Driver?  @relation(fields: [driverId], references: [driver_id])
+  webuserId           Int?
+  driver              Driver?       @relation(fields: [driverId], references: [driver_id])
+  owner               VehicleOwner? @relation(fields: [ownerId], references: [id])
+  Webuser             Webuser?      @relation(fields: [webuserId], references: [id])
+  webuserId           Int?
 }
 
 model Chat {
@@ -496,7 +502,7 @@ model Attendance {
   driverId   Int
   childId    Int
   waypointId Int?
-  type       String
+  type       AttendanceType
   latitude   Float?
   longitude  Float?
   notes      String?
@@ -618,6 +624,13 @@ enum WaypointType {
   DROPOFF
 }
 
+enum AttendanceType {
+  MORNING_PICKUP
+  MORNING_DROPOFF
+  EVENING_PICKUP
+  EVENING_DROPOFF
+}
+
 enum NotificationTypes {
   System
   Alert
@@ -628,6 +641,7 @@ enum NotificationTypes {
 enum ChildPaymentStatus {
   NOT_DUE
   PENDING
+  AWAITING_CONFIRMATION
   PAID
   OVERDUE
   GRACE_PERIOD

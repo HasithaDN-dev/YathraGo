@@ -92,17 +92,28 @@ export default function ChatRoomScreen() {
 
   // Fetch messages function
   const fetchMessages = useCallback(async () => {
-    if (!conversationId) return;
+    if (!conversationId) {
+      console.warn('[chat_room] fetchMessages called with invalid conversationId:', conversationId, 'idParam:', idParam);
+      return;
+    }
     try {
+      console.log('[chat_room] fetching messages for conversationId:', conversationId);
       const res = await fetch(`${API_BASE_URL}/chat/conversations/${conversationId}/messages`);
+      console.log('[chat_room] fetch messages status:', res.status);
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error('[chat_room] fetch messages failed:', res.status, txt);
+        return;
+      }
       const data = await res.json();
+      console.log('[chat_room] fetched messages count:', Array.isArray(data) ? data.length : 'non-array', data && data.slice ? data.slice(0,3) : data);
       
       // Check if there are new messages
       const hasNewMessages = data.length > 0 && 
         lastMessageIdRef.current !== null && 
         data[data.length - 1].id !== lastMessageIdRef.current;
       
-      setMessages(data);
+  setMessages(Array.isArray(data) ? data : []);
       
       // Update last message ID
       if (data.length > 0) {

@@ -83,15 +83,33 @@ export default function ChatListScreen() {
 
       const mergedConversations = Array.from(convMap.values());
 
+      // Decide which actor is "me" for unread calculations (active child/staff profile if selected, otherwise the customer)
+      let actorId: number = Number(user.id);
+      let actorType = 'CUSTOMER';
+      if (activeProfile) {
+        const m = String(activeProfile.id).match(/(\d+)/);
+        const numericId = m ? parseInt(m[1], 10) : null;
+        if (numericId && activeProfile.type === 'child') {
+          actorId = numericId;
+          actorType = 'CHILD';
+        } else if (numericId && activeProfile.type === 'staff') {
+          actorId = numericId;
+          actorType = 'STAFF';
+        }
+      } else if (customerProfile?.customer_id) {
+        actorId = Number(customerProfile.customer_id);
+        actorType = 'CUSTOMER';
+      }
+
       // Transform and calculate unread counts
       const transformed: ConversationItem[] = mergedConversations.map((c: any) => {
         const other = c.otherParticipant || {};
         const messages = c.messages || [];
         const lastMsg = messages[0] || null; // Messages come in DESC order from backend
 
-        // Count unread messages (messages not sent by me and not seen)
+        // Count unread messages: those NOT sent by the current actor and not yet seen
         const unreadCount = messages.filter((msg: any) =>
-          msg.senderId !== Number(user.id) && msg.senderType !== 'CUSTOMER' && msg.seen === false,
+          !(msg.senderId === actorId && String(msg.senderType).toUpperCase() === actorType) && !msg.seen
         ).length;
 
         // Determine avatar URL from common fields (fallback to bundled default image)
