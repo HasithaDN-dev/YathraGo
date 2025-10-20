@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useOwner } from "@/components/owner/OwnerContext";
 
 export default function OwnerHeader() {
-  const { firstName, lastName, role } = useOwner();
+  const { username, role } = useOwner();
 
   return (
     <header className="bg-white border-b border-[var(--neutral-gray)] px-6 py-4">
@@ -39,7 +39,7 @@ export default function OwnerHeader() {
               <User className="w-4 h-4 text-[var(--black)]" />
             </div>
             <div className="hidden md:block">
-              <p className="text-sm font-medium text-[var(--color-deep-navy)]">{firstName || "Owner"} {lastName}</p>
+              <p className="text-sm font-medium text-[var(--color-deep-navy)]">{username || "Owner"}</p>
               <p className="text-xs text-[var(--neutral-gray)]">{(role) || "Owner"}</p>
             </div>
           </div>

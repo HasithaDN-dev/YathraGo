@@ -18,7 +18,6 @@ export class RideRequestPassengerDto {
   updatedAt!: Date;
   Amount?: number | null;
   AssignedDate?: Date | null;
-  Estimation?: number | null;
   status!: RequestStatus;
   child!: ChildDto;
   customer?: CustomerMiniDto;

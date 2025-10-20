@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import usePassengerStore from '@/lib/stores/passenger.store';
+import { API_BASE_URL } from '@/config/api';
 import { View, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { Typography } from '@/components/Typography';
 import { ArrowLeft, Megaphone, PaperPlaneTilt, X } from 'phosphor-react-native';
@@ -32,12 +34,36 @@ export default function InformScreen() {
         setIsSubmitting(true);
 
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Get all child IDs from passenger store
+            const passengers = usePassengerStore.getState().byId;
+            const childIds = Object.values(passengers).map((p: any) => p.child.child_id);
+            console.log('Sending notifications to child IDs:', childIds);
+
+            // Send notification to each child
+            await Promise.all(childIds.map(async (childId) => {
+                console.log('Sending notification to childId:', childId);
+                try {
+                    const response = await fetch(`${API_BASE_URL}/notifications/send`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            sender: 'Driver',
+                            message: message,
+                            type: 'Alert',
+                            receiver: 'CHILD',
+                            receiverId: childId
+                        })
+                    });
+                    const result = await response.json();
+                    console.log('Notification response for childId', childId, ':', result);
+                } catch (err) {
+                    console.error('Error sending notification to childId', childId, err);
+                }
+            }));
 
             Alert.alert(
                 'Success',
-                'Your message has been sent successfully.',
+                'Your message has been sent to all passengers.',
                 [
                     {
                         text: 'OK',
@@ -73,6 +99,17 @@ export default function InformScreen() {
             router.back();
         }
     };
+
+    // Log child IDs on mount for debugging
+    useEffect(() => {
+        try {
+            const passengers = usePassengerStore.getState().byId;
+            const childIds = Object.values(passengers).map((p: any) => p.child?.child_id).filter(Boolean);
+            console.log('[Inform] passenger store child IDs on mount:', childIds);
+        } catch (err) {
+            console.error('[Inform] error reading passenger store on mount', err);
+        }
+    }, []);
 
     return (
         <View className="flex-1 bg-gray-50">

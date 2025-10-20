@@ -13,6 +13,7 @@ import {
   List,
 } from "lucide-react";
 import { useRouter } from 'next/navigation';
+import { logoutAndRedirectHome } from '@/lib/auth';
 
 interface MenuItem {
   icon: React.ElementType;
@@ -26,10 +27,7 @@ export default function OwnerSidebar() {
   const router = useRouter();
 
   const handleLogout = () => {
-    // Remove access_token cookie
-    document.cookie = 'access_token=; Max-Age=0; path=/;';
-    // Optionally clear other cookies or localStorage if used
-    router.push('/login');
+    logoutAndRedirectHome(router);
   };
 
   const menuItems: MenuItem[] = [

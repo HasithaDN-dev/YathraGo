@@ -20,9 +20,7 @@ export class VehicleService {
       },
     });
 
-    if (vehicleList.length === 0) {
-      throw new NotFoundException('No vehicle found');
-    }
+    // Return empty array if no vehicles found instead of throwing error
     return vehicleList;
   }
 
