@@ -808,7 +808,7 @@ export class TransactionsService {
     });
 
     // Format the response
-    return payments.map((payment: any) => {
+    return payments.map((payment) => {
       const driverName = payment.Driver?.name || null;
 
       return {

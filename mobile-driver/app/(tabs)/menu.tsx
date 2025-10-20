@@ -27,6 +27,7 @@ export default function MenuScreen() {
 
       <View style={{ marginTop: 24 }}>
         <ProfileMenuItem icon="User" text="Personal Details" onPress={() => router.push('../profile/(personal)/personal')} />
+        <ProfileMenuItem icon="Money" text="Payment Management" onPress={() => router.push('../profile/payment-management')} />
         <ProfileMenuItem icon="Receipt" text="Transactions" onPress={() => router.push('/profile/earnings')} />
         <ProfileMenuItem icon="ChartLineUp" text="Trip Statistics" onPress={() => router.push('/profile/rides')} />
         <ProfileMenuItem icon="Car" text="Manage Vehicles" onPress={() => router.push('/profile/vehicle-details')} />
