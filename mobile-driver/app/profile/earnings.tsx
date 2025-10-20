@@ -83,8 +83,15 @@ export default function EarningsScreen() {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [currentDate, setCurrentDate] = useState('');
 
   useEffect(() => {
+    // Set current date
+    const today = new Date();
+    const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    setCurrentDate(formattedDate);
+
     const fetchPayments = async () => {
       if (!driverId) {
         setError('Driver ID not found. Please log in again.');
@@ -95,11 +102,34 @@ export default function EarningsScreen() {
       try {
         setLoading(true);
         const response = await getDriverPayments(driverId);
-        setPayments(response.items);
+        setPayments(response.items || []);
+        
+        // Calculate total earnings from PAID payments
+        const earnings = (response.items || [])
+          .filter((p: any) => p.paymentStatus === 'PAID')
+          .reduce((sum: number, p: any) => sum + (p.paymentAmount || 0), 0);
+        setTotalEarnings(earnings);
+        
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to fetch payments:', err);
-        setError('Failed to load payment history');
+        
+        // Check if it's a network error or server error
+        const errorMessage = err?.message || '';
+        if (errorMessage.includes('Failed to fetch') || errorMessage.includes('Network')) {
+          setError('Failed to load payment history. Please check your connection.');
+        } else if (errorMessage.includes('404')) {
+          // 404 means no data found, not an error
+          console.log('No payment records found for this driver');
+          setPayments([]);
+          setTotalEarnings(0);
+          setError(null); // Don't show error for no data
+        } else {
+          setError('Failed to load payment history');
+        }
+        
+        setPayments([]);
+        setTotalEarnings(0);
       } finally {
         setLoading(false);
       }
@@ -121,9 +151,11 @@ export default function EarningsScreen() {
         </View>
 
         <View style={styles.earningsSection}>
-          <Text style={styles.earningsLabel}>Earnings</Text>
-          <Text style={styles.earningsDate}>2025-06-21</Text>
-          <Text style={styles.earningsAmount}>80,000 LKR</Text>
+          <Text style={styles.earningsLabel}>Total Earnings</Text>
+          <Text style={styles.earningsDate}>{currentDate || 'Loading...'}</Text>
+          <Text style={styles.earningsAmount}>
+            {loading ? 'Loading...' : `${totalEarnings.toFixed(2)} LKR`}
+          </Text>
         </View>
       </View>
 

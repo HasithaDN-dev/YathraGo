@@ -15,7 +15,23 @@ export const getDriverProfileApi = async (token: string): Promise<Driver> => {
   }
   
   const data = await response.json();
-  return data.profile;
+  const profile = data.profile;
+  
+  // Transform backend profile to match frontend Driver interface
+  // Backend returns driver_id, frontend expects id
+  return {
+    id: profile.driver_id || profile.id,
+    name: profile.name,
+    phone: profile.phone,
+    email: profile.email,
+    address: profile.address,
+    profileImageUrl: profile.profile_picture_url,
+    emergencyContact: profile.second_phone,
+    status: profile.status,
+    registrationStatus: profile.registrationStatus,
+    createdAt: profile.createdAt,
+    updatedAt: profile.updatedAt,
+  };
 };
 
 /**
@@ -40,7 +56,7 @@ export const updateDriverProfileApi = async (
       const err = await response.json();
       if (err && err.message) errorMsg = err.message;
       console.error('Profile update error:', err);
-    } catch (e) {
+    } catch {
       // ignore JSON parse error
     }
     throw new Error(errorMsg);
@@ -176,7 +192,7 @@ export const completeDriverRegistrationApi = async (
       const err = await response.json();
       if (err && err.message) errorMsg = err.message;
       console.error('Driver registration error:', err);
-    } catch (e) {
+    } catch {
       // ignore JSON parse error
     }
     throw new Error(errorMsg);

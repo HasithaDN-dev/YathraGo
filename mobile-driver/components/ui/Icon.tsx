@@ -19,6 +19,7 @@ import {
   UsersFour,
   Wind,
   CarProfile,
+  Money,
 } from 'phosphor-react-native';
 
 const iconMap = {
@@ -41,6 +42,7 @@ const iconMap = {
   UsersFour,
   Wind,
   CarProfile,
+  Money,
 };
 
 export type IconName = keyof typeof iconMap;
