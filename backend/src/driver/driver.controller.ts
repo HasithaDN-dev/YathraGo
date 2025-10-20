@@ -735,7 +735,12 @@ export class DriverController {
   @HttpCode(HttpStatus.OK)
   async saveDriverCities(
     @Req() req: AuthenticatedRequest,
-    @Body() body: { cityIds: number[] },
+    @Body() body: { 
+      cityIds: number[];
+      rideType?: 'School' | 'Work' | 'Both';
+      usualStartTime?: string;
+      usualEndTime?: string;
+    },
   ) {
     const driverId = parseInt(req.user.sub, 10);
 
@@ -750,6 +755,12 @@ export class DriverController {
       };
     }
 
-    return this.driverService.saveDriverCities(driverId, body.cityIds);
+    return this.driverService.saveDriverCities(
+      driverId,
+      body.cityIds,
+      body.rideType,
+      body.usualStartTime,
+      body.usualEndTime
+    );
   }
 }

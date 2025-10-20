@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, ActivityIndicator, ScrollView, TextInput } from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator, ScrollView, TextInput, Modal, Platform } from 'react-native';
 import { Typography } from '@/components/Typography';
 import CustomButton from '@/components/ui/CustomButton';
-import { MapPin, Plus, X, CheckCircle, MagnifyingGlass } from 'phosphor-react-native';
+import { MapPin, X, CheckCircle, MagnifyingGlass, Clock, CaretDown } from 'phosphor-react-native';
 import { API_BASE_URL } from '../config/api';
 import { tokenService } from '@/lib/services/token.service';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 interface City {
   id: number;
@@ -17,9 +18,16 @@ interface SetupRouteCardProps {
   onRouteSetupComplete: () => void;
 }
 
+type RideType = 'School' | 'Work' | 'Both';
+
 export default function SetupRouteCard({ onRouteSetupComplete }: SetupRouteCardProps) {
   const [selectedCities, setSelectedCities] = useState<City[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [rideType, setRideType] = useState<RideType>('Both');
+  const [startTime, setStartTime] = useState<Date>(new Date(new Date().setHours(7, 0, 0, 0)));
+  const [endTime, setEndTime] = useState<Date>(new Date(new Date().setHours(17, 0, 0, 0)));
+  const [showRideTypeModal, setShowRideTypeModal] = useState(false);
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showCitySearch, setShowCitySearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,6 +78,13 @@ export default function SetupRouteCard({ onRouteSetupComplete }: SetupRouteCardP
     setSelectedCities(selectedCities.filter(c => c.id !== cityId));
   };
 
+  const formatTimeForBackend = (date: Date): string => {
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = '00';
+    return `${hours}:${minutes}:${seconds}`;
+  };
+
   const handleSaveRoute = async () => {
     if (selectedCities.length < 2) {
       setError('Please select at least 2 cities (start and destination)');
@@ -88,7 +103,12 @@ export default function SetupRouteCard({ onRouteSetupComplete }: SetupRouteCardP
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ cityIds }),
+        body: JSON.stringify({ 
+          cityIds,
+          rideType,
+          usualStartTime: formatTimeForBackend(startTime),
+          usualEndTime: formatTimeForBackend(endTime),
+        }),
       });
 
       if (response.ok) {
@@ -138,6 +158,68 @@ export default function SetupRouteCard({ onRouteSetupComplete }: SetupRouteCardP
         </Typography>
         <Typography variant="caption-1" className="text-brand-neutralGray">
           Add cities in the order you'll travel from start to destination
+        </Typography>
+      </View>
+
+      {/* Ride Type Selection */}
+      <View className="mb-4">
+        <Typography variant="body" weight="semibold" className="text-brand-deepNavy mb-2">
+          Ride Type
+        </Typography>
+        <TouchableOpacity
+          onPress={() => setShowRideTypeModal(true)}
+          className="flex-row items-center justify-between bg-white border border-brand-lightGray rounded-lg p-3"
+          activeOpacity={0.7}
+        >
+          <Typography variant="body" className="text-brand-deepNavy">
+            {rideType}
+          </Typography>
+          <CaretDown size={20} color="#143373" weight="bold" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Time Slots */}
+      <View className="mb-4">
+        <Typography variant="body" weight="semibold" className="text-brand-deepNavy mb-2">
+          Usual Trip Times
+        </Typography>
+        <View className="flex-row space-x-3">
+          {/* Start Time */}
+          <View className="flex-1">
+            <Typography variant="caption-1" className="text-brand-neutralGray mb-1">
+              Start Time
+            </Typography>
+            <TouchableOpacity
+              onPress={() => setShowStartTimePicker(true)}
+              className="flex-row items-center bg-white border border-brand-lightGray rounded-lg p-3"
+              activeOpacity={0.7}
+            >
+              <Clock size={20} color="#143373" weight="regular" />
+              <Typography variant="body" className="text-brand-deepNavy ml-2">
+                {startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+              </Typography>
+            </TouchableOpacity>
+          </View>
+
+          {/* End Time */}
+          <View className="flex-1">
+            <Typography variant="caption-1" className="text-brand-neutralGray mb-1">
+              End Time
+            </Typography>
+            <TouchableOpacity
+              onPress={() => setShowEndTimePicker(true)}
+              className="flex-row items-center bg-white border border-brand-lightGray rounded-lg p-3"
+              activeOpacity={0.7}
+            >
+              <Clock size={20} color="#143373" weight="regular" />
+              <Typography variant="body" className="text-brand-deepNavy ml-2">
+                {endTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+              </Typography>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <Typography variant="caption-2" className="text-brand-neutralGray mt-1">
+          Morning pickup start and evening dropoff completion times
         </Typography>
       </View>
 
@@ -310,6 +392,82 @@ export default function SetupRouteCard({ onRouteSetupComplete }: SetupRouteCardP
         <Typography variant="caption-2" className="text-brand-neutralGray text-center mt-2">
           Add at least {2 - selectedCities.length} more {2 - selectedCities.length === 1 ? 'city' : 'cities'} to save
         </Typography>
+      )}
+
+      {/* Ride Type Modal */}
+      <Modal
+        visible={showRideTypeModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowRideTypeModal(false)}
+      >
+        <TouchableOpacity
+          className="flex-1 bg-black/50 justify-center items-center"
+          activeOpacity={1}
+          onPress={() => setShowRideTypeModal(false)}
+        >
+          <TouchableOpacity activeOpacity={1} className="bg-white rounded-xl p-4 mx-6 w-[80%]">
+            <Typography variant="headline" weight="semibold" className="text-brand-deepNavy mb-4">
+              Select Ride Type
+            </Typography>
+            {(['School', 'Work', 'Both'] as RideType[]).map((type) => (
+              <TouchableOpacity
+                key={type}
+                onPress={() => {
+                  setRideType(type);
+                  setShowRideTypeModal(false);
+                }}
+                className={`p-4 rounded-lg mb-2 ${rideType === type ? 'bg-brand-deepNavy' : 'bg-brand-lightGray'}`}
+                activeOpacity={0.7}
+              >
+                <View className="flex-row items-center justify-between">
+                  <Typography 
+                    variant="body" 
+                    weight="semibold"
+                    className={rideType === type ? 'text-white' : 'text-brand-deepNavy'}
+                  >
+                    {type}
+                  </Typography>
+                  {rideType === type && (
+                    <CheckCircle size={20} color="#ffffff" weight="fill" />
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Start Time Picker */}
+      {showStartTimePicker && (
+        <DateTimePicker
+          value={startTime}
+          mode="time"
+          is24Hour={false}
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(_event: any, selectedDate?: Date) => {
+            setShowStartTimePicker(Platform.OS === 'ios');
+            if (selectedDate) {
+              setStartTime(selectedDate);
+            }
+          }}
+        />
+      )}
+
+      {/* End Time Picker */}
+      {showEndTimePicker && (
+        <DateTimePicker
+          value={endTime}
+          mode="time"
+          is24Hour={false}
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(_event: any, selectedDate?: Date) => {
+            setShowEndTimePicker(Platform.OS === 'ios');
+            if (selectedDate) {
+              setEndTime(selectedDate);
+            }
+          }}
+        />
       )}
     </View>
   );

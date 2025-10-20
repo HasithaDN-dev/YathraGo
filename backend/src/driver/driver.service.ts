@@ -283,7 +283,13 @@ export class DriverService {
   }
 
   // Save or update driver cities
-  async saveDriverCities(driverId: number, cityIds: number[]) {
+  async saveDriverCities(
+    driverId: number, 
+    cityIds: number[],
+    rideType?: 'School' | 'Work' | 'Both',
+    usualStartTime?: string,
+    usualEndTime?: string
+  ) {
     // Validate that cities exist
     const cities = await this.prisma.city.findMany({
       where: { id: { in: cityIds } },
@@ -291,6 +297,28 @@ export class DriverService {
 
     if (cities.length !== cityIds.length) {
       throw new BadRequestException('Some city IDs are invalid');
+    }
+
+    // Prepare update data
+    const updateData: any = { cityIds };
+    
+    // Add optional fields if provided
+    if (rideType) {
+      updateData.rideType = rideType;
+    }
+    if (usualStartTime) {
+      // Parse time string (HH:MM:SS) and create a Date object with time only
+      const [hours, minutes, seconds] = usualStartTime.split(':').map(Number);
+      const timeDate = new Date();
+      timeDate.setHours(hours, minutes, seconds || 0, 0);
+      updateData.usualStartTime = timeDate;
+    }
+    if (usualEndTime) {
+      // Parse time string (HH:MM:SS) and create a Date object with time only
+      const [hours, minutes, seconds] = usualEndTime.split(':').map(Number);
+      const timeDate = new Date();
+      timeDate.setHours(hours, minutes, seconds || 0, 0);
+      updateData.usualEndTime = timeDate;
     }
 
     // Check if driver cities record exists
@@ -302,7 +330,7 @@ export class DriverService {
       // Update existing record
       const updated = await this.prisma.driverCities.update({
         where: { driverId },
-        data: { cityIds },
+        data: updateData,
       });
       return {
         success: true,
@@ -314,7 +342,7 @@ export class DriverService {
       const created = await this.prisma.driverCities.create({
         data: {
           driverId,
-          cityIds,
+          ...updateData,
         },
       });
       return {
