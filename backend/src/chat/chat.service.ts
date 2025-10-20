@@ -107,10 +107,16 @@ export class ChatService {
         // determine avatar path depending on type
         let avatarPath: string | null = null;
         if (otherType === 'CUSTOMER') {
-          const rec = await this.prisma.customer.findUnique({ where: { customer_id: otherId }, select: { profileImageUrl: true } });
+          const rec = await this.prisma.customer.findUnique({
+            where: { customer_id: otherId },
+            select: { profileImageUrl: true },
+          });
           if (rec?.profileImageUrl) avatarPath = rec.profileImageUrl;
         } else if (otherType === 'DRIVER') {
-          const rec = await this.prisma.driver.findUnique({ where: { driver_id: otherId }, select: { profile_picture_url: true } });
+          const rec = await this.prisma.driver.findUnique({
+            where: { driver_id: otherId },
+            select: { profile_picture_url: true },
+          });
           if (rec?.profile_picture_url) avatarPath = rec.profile_picture_url;
         }
 
@@ -126,7 +132,13 @@ export class ChatService {
 
         return {
           ...c,
-          otherParticipant: { id: otherId, type: otherType, name, phone, avatarUrl },
+          otherParticipant: {
+            id: otherId,
+            type: otherType,
+            name,
+            phone,
+            avatarUrl,
+          },
           lastMessage: c.messages?.[0] ?? null,
         };
       }),
@@ -180,6 +192,15 @@ export class ChatService {
     const receiverId = isA ? convo.participantBId : convo.participantAId;
     const receiverType = isA ? convo.participantBType : convo.participantAType;
 
+    // Also detect if this conversation involves a CHILD participant so we can
+    // show the child's name to drivers when notifying them.
+    const childParticipantId =
+      convo.participantAType === 'CHILD'
+        ? convo.participantAId
+        : convo.participantBType === 'CHILD'
+        ? convo.participantBId
+        : null;
+
     // Resolve sender's display name
     let senderName = 'User';
     if (params.senderType === 'CUSTOMER') {
@@ -194,6 +215,14 @@ export class ChatService {
         select: { name: true },
       });
       if (d?.name) senderName = d.name;
+    } else if (params.senderType === 'CHILD') {
+      // If a child sent the message, use the child's name for sender display (helps driver notifications)
+      const ch = await this.prisma.child.findUnique({
+        where: { child_id: params.senderId },
+        select: { childFirstName: true, childLastName: true },
+      });
+      if (ch)
+        senderName = `${ch.childFirstName || ''} ${ch.childLastName || ''}`.trim() || 'User';
     } else if (params.senderType === 'WEBUSER') {
       const w = await this.prisma.webuser.findUnique({
         where: { id: params.senderId },
@@ -202,9 +231,78 @@ export class ChatService {
       if (w) senderName = w.username ?? w.email ?? 'User';
     }
 
+    // Build a more descriptive notification sender label depending on the
+    // receiver: drivers should see the passenger label, children should see
+    // the driver label.
+    let notificationSenderName = senderName;
+
+    // Resolve participant ids for convenience
+    const driverParticipantId =
+      convo.participantAType === 'DRIVER'
+        ? convo.participantAId
+        : convo.participantBType === 'DRIVER'
+        ? convo.participantBId
+        : null;
+
+    const customerParticipantId =
+      convo.participantAType === 'CUSTOMER'
+        ? convo.participantAId
+        : convo.participantBType === 'CUSTOMER'
+        ? convo.participantBId
+        : null;
+
+    // Try to get passenger name (prefer child name when available)
+    let passengerName: string | null = null;
+    if (childParticipantId) {
+      try {
+        const ch = await this.prisma.child.findUnique({
+          where: { child_id: childParticipantId },
+          select: { childFirstName: true, childLastName: true },
+        });
+        if (ch)
+          passengerName =
+            `${ch.childFirstName || ''} ${ch.childLastName || ''}`.trim();
+      } catch {
+        // ignore
+      }
+    }
+    if (!passengerName && customerParticipantId) {
+      try {
+        const cust = await this.prisma.customer.findUnique({
+          where: { customer_id: customerParticipantId },
+          select: { firstName: true, lastName: true },
+        });
+        if (cust)
+          passengerName =
+            `${cust.firstName || ''} ${cust.lastName || ''}`.trim();
+      } catch {
+        // ignore
+      }
+    }
+
+    // Try to get driver name if needed
+    let driverName: string | null = null;
+    if (driverParticipantId) {
+      try {
+        const drv = await this.prisma.driver.findUnique({
+          where: { driver_id: driverParticipantId },
+          select: { name: true },
+        });
+        if (drv?.name) driverName = drv.name;
+      } catch {
+        // ignore
+      }
+    }
+
+    if (receiverType === 'DRIVER' && passengerName) {
+      notificationSenderName = `Passenger : ${passengerName}`;
+    } else if (receiverType === 'CHILD' && driverName) {
+      notificationSenderName = `Driver : ${driverName}`;
+    }
+
     // Fire push + store notification as Others
     await this.notifications.sendNewMessagePush({
-      senderName,
+      senderName: notificationSenderName,
       messageText:
         params.message ??
         (params.imageUrl ? '📷 Sent an image' : 'New message'),

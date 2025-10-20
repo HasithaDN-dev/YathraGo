@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -21,8 +21,11 @@ interface MenuItem {
   isActive?: boolean;
 }
 
+import { logoutAndRedirectHome } from '@/lib/auth';
+
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const menuItems: MenuItem[] = [
     {
@@ -93,8 +96,8 @@ export default function AdminSidebar() {
         <button
           className="flex items-center w-full px-2 py-3 text-sm font-medium text-white hover:bg-blue-800 rounded-lg transition-colors duration-200"
           onClick={() => {
-            // Handle logout
-            console.log("Logout clicked");
+            // Use centralized logout
+            try { logoutAndRedirectHome(router); } catch { console.log("Logout clicked") }
           }}
         >
           <LogOut className="w-5 h-5 mr-3" />

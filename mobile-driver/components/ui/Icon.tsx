@@ -3,6 +3,10 @@ import {
   ArrowLeft,
   Camera,
   User,
+  Minus,
+  Plus,
+  Check,
+  PlusCircle,
   Receipt,
   ChartLineUp,
   Car,
@@ -21,6 +25,10 @@ const iconMap = {
   ArrowLeft,
   Camera,
   User,
+  Minus,
+  Plus,
+  Check,
+  PlusCircle,
   Receipt,
   ChartLineUp,
   Car,
@@ -42,9 +50,9 @@ interface IconProps {
   size?: number;
   color?: string;
   weight?: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
+  style?: any;
 }
-
-export function Icon({ name, size = 24, color = 'black', weight = 'regular' }: IconProps) {
+export function Icon({ name, size = 24, color = 'black', weight = 'regular', style }: IconProps) {
   // @ts-ignore
   const IconComponent = iconMap[name];
 
@@ -53,5 +61,5 @@ export function Icon({ name, size = 24, color = 'black', weight = 'regular' }: I
   }
 
   // @ts-ignore
-  return <IconComponent size={size} color={color} weight={weight} />;
+  return <IconComponent size={size} color={color} weight={weight} style={style} />;
 }

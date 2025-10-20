@@ -3,6 +3,7 @@ import { useFonts } from 'expo-font';
 import React, { useEffect } from 'react';
 import { Stack, SplashScreen } from 'expo-router';
 import { useAuthStore } from '../lib/stores/auth.store';
+import { usePassengerStore } from '../lib/stores/passenger.store';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -22,6 +23,7 @@ export default function RootLayout() {
     registrationStatus,
     hasHydrated,
     isLoading,
+    accessToken,
   } = useAuthStore();
   
   // Optimize font loading - load only essential fonts first
@@ -62,6 +64,21 @@ export default function RootLayout() {
     }
   }, []);
 
+  // Load assigned passengers when auth has hydrated and driver is logged in
+  useEffect(() => {
+    if (hasHydrated && isLoggedIn && accessToken) {
+      console.log('[RootLayout] loading assigned passengers...');
+      (async () => {
+        try {
+          await usePassengerStore.getState().fetchForDriver(String(accessToken));
+          console.log('[RootLayout] fetchForDriver completed');
+        } catch (err) {
+          console.error('[RootLayout] fetchForDriver error', err);
+        }
+      })();
+    }
+  }, [hasHydrated, isLoggedIn, accessToken]);
+
   // Show splash screen until everything is ready
   if ((!loaded && !error) || !hasHydrated || isLoading) {
     return null;
@@ -77,6 +94,7 @@ export default function RootLayout() {
           <Stack.Screen name="vehicle-list" options={{ headerShown: false }} />
           <Stack.Screen name="(homeLinks)" options={{ headerShown: false }} />
           <Stack.Screen name="profile" options={{ headerShown: false }} />
+          <Stack.Screen name="requests" options={{ headerShown: false }} />
         </Stack.Protected>
 
         {/* Registration routes - accessible when authenticated but not account  created yet */}

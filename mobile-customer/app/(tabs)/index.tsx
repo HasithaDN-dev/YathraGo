@@ -57,22 +57,6 @@ export default function HomeScreen() {
         contentContainerClassName="px-4 space-y-6 pb-6 mt-3"
         showsVerticalScrollIndicator={false}
       >
-        {/* Find New Vehicle Card - Show for all profiles */}
-        <View className="mb-3 rounded-2xl p-2 shadow-sm bg-brand-deepNavy">
-          <TouchableOpacity
-            className="flex-row items-center justify-center py-3"
-            onPress={() => router.push('/(menu)/(homeCards)/find_vehicle')}
-            activeOpacity={0.8}
-          >
-            <MagnifyingGlass size={24} color="#ffffff" weight="bold" />
-            <Typography variant="title-3" weight="semibold" className="text-white ml-3">
-              Find New Vehicle ...
-            </Typography>
-          </TouchableOpacity>
-        </View>
-
-
-
         {/* Current Ride Section */}
         <Card className="mb-3">
           <View className="flex-row items-center justify-between mb-4">
@@ -170,6 +154,35 @@ export default function HomeScreen() {
             onHistoryPress={() => router.push('/(menu)/(homeCards)/payment_history')}
           />
         </Card>
+
+        {/* Quick Action Cards */}
+        <View className="flex-row gap-3">
+          {/* Find New Vehicle */}
+          <TouchableOpacity
+            className="flex-1 bg-brand-deepNavy rounded-2xl p-6 items-center justify-center shadow-sm"
+            style={{ aspectRatio: 1 }}
+            onPress={() => router.push('/(menu)/(homeCards)/find_vehicle')}
+            activeOpacity={0.8}
+          >
+            <MagnifyingGlass size={32} color="#ffffff" weight="bold" />
+            <Typography variant="subhead" weight="semibold" className="text-white text-center mt-3">
+              Find New{'\n'}Vehicle
+            </Typography>
+          </TouchableOpacity>
+
+          {/* View Sent Requests */}
+          <TouchableOpacity
+            className="flex-1 bg-blue-600 rounded-2xl p-6 items-center justify-center shadow-sm"
+            style={{ aspectRatio: 1 }}
+            onPress={() => router.push('/(menu)/find-driver/request-list')}
+            activeOpacity={0.8}
+          >
+            <ChatCircle size={32} color="#ffffff" weight="bold" />
+            <Typography variant="subhead" weight="semibold" className="text-white text-center mt-3">
+              View Sent{'\n'}Requests
+            </Typography>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
