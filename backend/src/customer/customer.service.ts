@@ -524,12 +524,12 @@ export class CustomerService extends CustomerServiceExtension {
         status: 'Assigned',
       },
       include: {
-        Driver: {
+        driver: {
           include: {
             vehicles: true,
           },
         },
-        Staff_Passenger: true,
+        staffPassenger: true,
       },
       orderBy: {
         AssignedDate: 'desc',
@@ -541,7 +541,7 @@ export class CustomerService extends CustomerServiceExtension {
     }
 
     // Format the response
-    const driver = assignedRide.Driver;
+    const driver = assignedRide.driver;
     const vehicle =
       driver.vehicles && driver.vehicles.length > 0 ? driver.vehicles[0] : null;
 

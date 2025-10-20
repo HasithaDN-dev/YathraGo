@@ -688,6 +688,16 @@ export class DriverController {
         },
       });
 
+      // Update waypoint status if it exists
+      const waypoint = await this.prisma.routeWaypoint.findFirst({
+        where: {
+          driverId,
+          childId: body.childId,
+          type: body.type.toUpperCase() as any,
+        },
+        orderBy: { id: 'desc' },
+      });
+
       if (waypoint) {
         await this.prisma.routeWaypoint.update({
           where: { id: waypoint.id },

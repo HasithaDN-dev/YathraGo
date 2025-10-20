@@ -162,17 +162,17 @@ export class UsersService {
       case 'STAFF': {
         const staff = await this.prisma.staff_Passenger.findMany({
           include: {
-            Customer: true,
+            customer: true,
           },
         });
         users = staff.map((s) => ({
           id: `STP${String(s.id).padStart(3, '0')}`,
-          name: `${s.Customer.firstName} ${s.Customer.lastName}`,
-          email: s.Customer.email || '',
-          mobile: s.Customer.phone,
+          name: `${s.customer.firstName} ${s.customer.lastName}`,
+          email: s.customer.email || '',
+          mobile: s.customer.phone,
           address: s.workAddress || '',
-          status: s.Customer.status === 'ACTIVE' ? 'Active' : 'Inactive',
-          joinDate: s.Customer.createdAt.toISOString().split('T')[0],
+          status: s.customer.status === 'ACTIVE' ? 'Active' : 'Inactive',
+          joinDate: s.customer.createdAt.toISOString().split('T')[0],
           userType: 'STAFF',
           workLocation: s.workLocation,
         }));
