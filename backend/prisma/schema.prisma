@@ -572,18 +572,6 @@ model StaffRideRequest {
   Staff_Passenger Staff_Passenger @relation(fields: [staffId], references: [id])
 }
 
-model VehicleOwner {
-  id         Int       @id
-  first_name String?
-  last_name  String?
-  phone      String?
-  email      String?
-  company    String?
-  Address    String?
-  Vehicle    Vehicle[]
-  Webuser    Webuser   @relation(fields: [id], references: [id])
-}
-
 enum RegistrationStatus {
   OTP_PENDING
   OTP_VERIFIED

@@ -74,18 +74,29 @@ export class CustomerController {
     FileInterceptor('file', {
       storage: diskStorage({
         destination: (req, file, cb) => {
-          cb(null, path.join(__dirname, '../../uploads/customer'));
+          const uploadPath = path.join(process.cwd(), 'uploads', 'customer');
+          console.log('[CUSTOMER UPLOAD] Destination path:', uploadPath);
+          cb(null, uploadPath);
         },
         filename: (req, file, cb) => {
           const ext = path.extname(file.originalname);
-          const base = path.basename(file.originalname, ext);
-          const uniqueName = `${base}_${Date.now()}${ext}`;
+          const uniqueName = `customer-${Date.now()}${ext}`;
+          console.log('[CUSTOMER UPLOAD] Generated filename:', uniqueName);
           cb(null, uniqueName);
         },
       }),
     }),
   )
   uploadProfileImage(@UploadedFile() file: Express.Multer.File) {
+    console.log(
+      '[CUSTOMER UPLOAD] File received:',
+      file ? file.filename : 'No file',
+    );
+    console.log('[CUSTOMER UPLOAD] File path:', file ? file.path : 'No path');
+    // Attach subfolder info for customer images
+    if (file) {
+      file.filename = `customer/${file.filename}`;
+    }
     return this.customerService.handleImageUpload(file);
   }
 

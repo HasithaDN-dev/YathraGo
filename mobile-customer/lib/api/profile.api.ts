@@ -57,6 +57,7 @@ export const getProfilesApi = async (token: string): Promise<ProfileApiResponse>
         id: `staff-${data.profile.staffPassenger.id}`,
         firstName: data.profile.firstName || '',
         lastName: data.profile.lastName || '',
+        profileImageUrl: data.profile.staffPassenger.profileImageUrl || data.profile.profileImageUrl,
         type: 'staff' as const,
       });
     }

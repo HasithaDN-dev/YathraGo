@@ -19,6 +19,7 @@ import { FindVehicleModule } from './find-vehicle/find-vehicle.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SearchModule } from './search/search.module';
 import { DriverRequestModule } from './driver-request/driver-request.module';
+import { ComplaintsInquiriesModule } from './complaints-inquiries/complaints-inquiries.module';
 import { DriverLocationModule } from './driver-location/driver-location.module';
 
 @Module({
@@ -43,6 +44,7 @@ import { DriverLocationModule } from './driver-location/driver-location.module';
     SearchModule,
     NotificationsModule,
     DriverRequestModule,
+    ComplaintsInquiriesModule,
     DriverLocationModule,
   ],
   controllers: [AppController],
