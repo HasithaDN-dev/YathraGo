@@ -40,6 +40,12 @@ export default function NavigationScreen() {
     const [showEmergencyDrawer, setShowEmergencyDrawer] = useState(false);
     const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
     const [routeData, setRouteData] = useState<DailyRoute | null>(null);
+    
+    // Session availability state
+    const [sessionAvailability, setSessionAvailability] = useState<{
+        morningSession: { available: boolean; status: string; completed: boolean };
+        eveningSession: { available: boolean; status: string; completed: boolean };
+    } | null>(null);
 
     // Get current location
     const getCurrentLocation = async () => {
@@ -66,7 +72,18 @@ export default function NavigationScreen() {
     // Load initial data when screen opens
     useEffect(() => {
         loadRouteStatus();
+        loadSessionAvailability();
     }, []);
+
+    // Load session availability
+    const loadSessionAvailability = async () => {
+        try {
+            const availability = await routeApi.getSessionAvailability();
+            setSessionAvailability(availability);
+        } catch (error) {
+            console.error('Error loading session availability:', error);
+        }
+    };
 
     // Check if there's an existing route for today
     const loadRouteStatus = async () => {
@@ -102,7 +119,7 @@ export default function NavigationScreen() {
     };
 
     // Start the ride - Step A from the guide
-    const handleStartRide = async () => {
+    const handleStartRide = async (routeType: 'MORNING_PICKUP' | 'AFTERNOON_DROPOFF') => {
         try {
             setLoading(true);
             setError(null);
@@ -118,7 +135,7 @@ export default function NavigationScreen() {
             
             // Fetch today's optimized route from backend
             const routeData = await routeApi.getTodaysRoute(
-                'MORNING_PICKUP',
+                routeType,
                 location.latitude,
                 location.longitude
             );
@@ -247,7 +264,10 @@ export default function NavigationScreen() {
                 );
             } else {
                 // This was the last stop!
-                    Alert.alert(
+                // Reload session availability to enable/disable evening button if morning was completed
+                await loadSessionAvailability();
+                
+                Alert.alert(
                     'Ride Complete!',
                     'All stops have been completed. Great job!',
                     [
@@ -368,19 +388,53 @@ export default function NavigationScreen() {
                                     Ready to Start Your Route?
                                 </Typography>
                                 <Typography variant="body" className="text-brand-neutralGray text-center">
-                                    Tap the button below to fetch today's optimized route based on student attendance
+                                    Select a session to fetch today's optimized route
                                 </Typography>
-            </View>
+                            </View>
 
+                            {/* Morning Session Button */}
+                            <View className="mb-3">
                                 <CustomButton
-                                title="Start Ride"
-                                onPress={handleStartRide}
-                                size="large"
-                                    bgVariant="success"
-                                fullWidth
-                                disabled={loading}
+                                    title="Start Morning Route"
+                                    onPress={() => handleStartRide('MORNING_PICKUP')}
+                                    size="large"
+                                    bgVariant="primary"
+                                    fullWidth
+                                    disabled={loading || (sessionAvailability?.morningSession.completed ?? false)}
                                 />
-                </View>
+                                {sessionAvailability?.morningSession.completed && (
+                                    <Typography variant="caption-1" className="text-green-600 text-center mt-1">
+                                        ✓ Morning session completed
+                                    </Typography>
+                                )}
+                            </View>
+
+                            {/* Evening Session Button */}
+                            <View>
+                                <CustomButton
+                                    title="Start Evening Route"
+                                    onPress={() => handleStartRide('AFTERNOON_DROPOFF')}
+                                    size="large"
+                                    bgVariant="success"
+                                    fullWidth
+                                    disabled={
+                                        loading || 
+                                        !(sessionAvailability?.eveningSession.available ?? false) ||
+                                        (sessionAvailability?.eveningSession.completed ?? false)
+                                    }
+                                />
+                                {!(sessionAvailability?.eveningSession.available ?? false) && (
+                                    <Typography variant="caption-1" className="text-orange-600 text-center mt-1">
+                                        Complete morning session first
+                                    </Typography>
+                                )}
+                                {sessionAvailability?.eveningSession.completed && (
+                                    <Typography variant="caption-1" className="text-green-600 text-center mt-1">
+                                        ✓ Evening session completed
+                                    </Typography>
+                                )}
+                            </View>
+                        </View>
 
                         {error && (
                             <View className="bg-red-50 border border-red-200 rounded-xl p-4">

@@ -809,12 +809,23 @@ export class DriverRouteService {
     });
 
     // Create attendance record
+    // Determine session-aware attendance type based on route type and stop type
+    let attendanceType: 'MORNING_PICKUP' | 'MORNING_DROPOFF' | 'EVENING_PICKUP' | 'EVENING_DROPOFF';
+    if (stop.driverRoute.routeType === 'MORNING_PICKUP') {
+      attendanceType = stop.type === 'PICKUP' ? 'MORNING_PICKUP' : 'MORNING_DROPOFF';
+    } else if (stop.driverRoute.routeType === 'AFTERNOON_DROPOFF') {
+      attendanceType = stop.type === 'PICKUP' ? 'EVENING_PICKUP' : 'EVENING_DROPOFF';
+    } else {
+      // Fallback for any other route types - default to morning pickup
+      attendanceType = 'MORNING_PICKUP';
+    }
+
     await this.prisma.attendance.create({
       data: {
         driverId,
         childId: stop.childId,
         date: stop.driverRoute.date,
-        type: stop.type.toLowerCase(),
+        type: attendanceType,
         latitude,
         longitude,
         notes: notes || `${stop.type} completed`,
@@ -890,6 +901,54 @@ export class DriverRouteService {
     return {
       success: true,
       routes,
+    };
+  }
+
+  /**
+   * Check session availability for morning and evening routes
+   * Returns whether morning and evening sessions can be started
+   */
+  async getSessionAvailability(driverId: number) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Check morning route status
+    const morningRoute = await this.prisma.driverRoute.findUnique({
+      where: {
+        driverId_date_routeType: {
+          driverId,
+          date: today,
+          routeType: 'MORNING_PICKUP',
+        },
+      },
+    });
+
+    // Check evening route status
+    const eveningRoute = await this.prisma.driverRoute.findUnique({
+      where: {
+        driverId_date_routeType: {
+          driverId,
+          date: today,
+          routeType: 'AFTERNOON_DROPOFF',
+        },
+      },
+    });
+
+    const morningCompleted = morningRoute?.status === 'COMPLETED';
+    const eveningCompleted = eveningRoute?.status === 'COMPLETED';
+
+    return {
+      success: true,
+      morningSession: {
+        available: true, // Morning always available
+        status: morningRoute?.status || 'NOT_STARTED',
+        completed: morningCompleted,
+      },
+      eveningSession: {
+        available: morningCompleted, // Evening only available after morning completion
+        status: eveningRoute?.status || 'NOT_STARTED',
+        completed: eveningCompleted,
+      },
     };
   }
 }

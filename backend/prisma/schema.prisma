@@ -408,9 +408,9 @@ model DriverRoute {
   status              String          @default("PENDING")
   totalDistanceMeters Int?
   totalDurationSecs   Int?
+  updatedAt           DateTime        @updatedAt
   driverLatitude      Float?
   driverLongitude     Float?
-  updatedAt           DateTime        @updatedAt
   driver              Driver          @relation(fields: [driverId], references: [driver_id])
   stops               RouteStop[]
   waypoints           RouteWaypoint[]
@@ -485,7 +485,7 @@ model Attendance {
   driverId   Int
   childId    Int
   waypointId Int?
-  type       String
+  type       AttendanceType
   latitude   Float?
   longitude  Float?
   notes      String?
@@ -583,6 +583,83 @@ model askDriverRequest {
   @@index([status])
 }
 
+model AuditLog {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  userType    UserTypes
+  action      String
+  entity      String
+  entityId    Int?
+  changes     Json?
+  ipAddress   String?
+  userAgent   String?
+  timestamp   DateTime  @default(now())
+  description String?
+
+  @@index([entity, entityId])
+  @@index([timestamp])
+  @@index([userId, userType])
+}
+
+model PaymentRefund {
+  id              Int          @id @default(autoincrement())
+  paymentId       Int
+  childId         Int
+  customerId      Int
+  driverId        Int
+  refundAmount    Float
+  refundReason    String
+  refundType      RefundType
+  status          RefundStatus @default(PENDING)
+  requestedBy     Int
+  requestedByType UserTypes
+  approvedBy      Int?
+  approvedByType  UserTypes?
+  rejectedBy      Int?
+  rejectionReason String?
+  refundMethod    String?
+  transactionRef  String?
+  requestedAt     DateTime     @default(now())
+  processedAt     DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime
+
+  @@index([customerId])
+  @@index([driverId])
+  @@index([paymentId])
+  @@index([status])
+}
+
+model VehicleAlert {
+  id                    Int              @id @default(autoincrement())
+  vehicleId             Int
+  driverId              Int
+  alertType             VehicleAlertType
+  severity              AlertSeverity    @default(MEDIUM)
+  description           String
+  location              String?
+  latitude              Float?
+  longitude             Float?
+  status                AlertStatus      @default(ACTIVE)
+  reportedAt            DateTime         @default(now())
+  acknowledgedAt        DateTime?
+  resolvedAt            DateTime?
+  assignedBackupVehicle String?
+  assignedBackupDriver  String?
+  affectedRoutes        String[]
+  affectedChildrenCount Int              @default(0)
+  estimatedDowntime     String?
+  resolutionNotes       String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime
+
+  @@index([alertType])
+  @@index([driverId])
+  @@index([reportedAt])
+  @@index([status])
+  @@index([vehicleId])
+}
+
 enum RegistrationStatus {
   OTP_PENDING
   OTP_VERIFIED
@@ -633,6 +710,13 @@ enum MessageStatus {
 enum WaypointType {
   PICKUP
   DROPOFF
+}
+
+enum AttendanceType {
+  MORNING_PICKUP
+  MORNING_DROPOFF
+  EVENING_PICKUP
+  EVENING_DROPOFF
 }
 
 enum NotificationTypes {
@@ -698,4 +782,46 @@ enum askStatus {
   ACCEPTED
   REJECTED
   ASSIGNED
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  IN_PROGRESS
+  RESOLVED
+  CANCELLED
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum RefundType {
+  FULL
+  PARTIAL
+  OVERPAYMENT
+  CANCELLATION
+  SERVICE_ISSUE
+}
+
+enum VehicleAlertType {
+  BREAKDOWN
+  ACCIDENT
+  MAINTENANCE
+  EMERGENCY
+  INSPECTION_DUE
+  INSURANCE_EXPIRY
+  LICENSE_EXPIRY
 }
