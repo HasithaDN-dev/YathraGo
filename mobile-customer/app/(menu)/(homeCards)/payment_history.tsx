@@ -1,110 +1,164 @@
-import React, { useMemo, useState } from 'react';
-import { View, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { MagnifyingGlass, Download } from 'phosphor-react-native';
+import { getPaymentHistoryApi, PaymentHistoryItem } from '@/lib/api/payments.api';
+import { useProfileStore } from '@/lib/stores/profile.store';
 
-interface Transaction {
-  id: string;
-  date: string;
-  time: string;
-  amount: string;
-  paymentMethod: 'Card' | 'Cash';
-}
+// Month names for display
+const MONTH_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+];
+
+// Format status for display
+const formatStatus = (status: string): string => {
+  switch (status.toUpperCase()) {
+    case 'GRACE_PERIOD':
+      return 'Grace Period';
+    case 'AWAITING_CONFIRMATION':
+      return 'Awaiting';
+    case 'NOT_DUE':
+      return 'Not Due';
+    default:
+      return status.charAt(0) + status.slice(1).toLowerCase();
+  }
+};
+
+// Get status color
+const getStatusColor = (status: string): string => {
+  switch (status.toUpperCase()) {
+    case 'PAID':
+      return 'text-success';
+    case 'OVERDUE':
+      return 'text-danger';
+    case 'GRACE_PERIOD':
+      return 'text-warning';
+    case 'CANCELLED':
+      return 'text-gray-500';
+    case 'AWAITING_CONFIRMATION':
+      return 'text-brand-brightOrange';
+    default:
+      return 'text-brand-deepNavy';
+  }
+};
 
 export default function PaymentHistoryScreen() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [payments, setPayments] = useState<PaymentHistoryItem[]>([]);
   
-  const transactions: Transaction[] = useMemo(() => {
-    // Helpers scoped to memo
-    const pad2 = (n: number) => n.toString().padStart(2, '0');
-    const formatDateStr = (d: Date) => `${d.getFullYear()} - ${pad2(d.getMonth() + 1)} - ${pad2(d.getDate())}`;
-    const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-    const randomTime = (): string => {
-      const hour24 = randomInt(0, 23);
-      const minutes = pad2(randomInt(0, 59));
-      const suffix = hour24 < 12 ? 'a.m' : 'p.m';
-      let hour12 = hour24 % 12;
-      if (hour12 === 0) hour12 = 12;
-      return `${pad2(hour12)}:${minutes} ${suffix}`;
-    };
-    const randomAmount = (): string => {
-      const amount = randomInt(5000, 15000);
-      return `Rs. ${amount.toFixed(2)}`;
-    };
-    const randomMethod = (): 'Card' | 'Cash' => (Math.random() < 0.5 ? 'Card' : 'Cash');
+  const { activeProfile } = useProfileStore();
+  
+  // Extract child ID from profile
+  const childId = activeProfile?.id ? 
+    parseInt(activeProfile.id.replace('child-', '')) : null;
 
-    const start = new Date(2025, 0, 1).getTime(); // Jan 1, 2025
-    const end = new Date(2025, 11, 31).getTime(); // Dec 31, 2025
-    return Array.from({ length: 20 }, (_, i) => {
-      const ts = start + Math.random() * (end - start);
-      const date = new Date(ts);
-      return {
-        id: String(i + 1),
-        date: formatDateStr(date),
-        time: randomTime(),
-        amount: randomAmount(),
-        paymentMethod: randomMethod(),
-      } as Transaction;
+  // Fetch payment history function
+  const fetchPaymentHistory = useCallback(async () => {
+    if (!childId) {
+      Alert.alert('Error', 'Please select a child profile');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = await getPaymentHistoryApi(childId);
+      setPayments(data);
+    } catch (error: any) {
+      console.error('Failed to fetch payment history:', error);
+      Alert.alert('Error', error.message || 'Failed to load payment history');
+    } finally {
+      setLoading(false);
+    }
+  }, [childId]);
+
+  // Fetch payment history on mount
+  useEffect(() => {
+    if (childId) {
+      fetchPaymentHistory();
+    }
+  }, [childId, fetchPaymentHistory]);
+
+  // Filter by search query (month-year or status)
+  const filteredPayments = payments.filter((payment) => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const monthYear = `${MONTH_NAMES[payment.month - 1]} ${payment.year}`.toLowerCase();
+    const status = formatStatus(payment.status).toLowerCase();
+    
+    return monthYear.includes(query) || status.includes(query);
+  });
+
+  const handleDownload = (paymentId: number) => {
+    console.log('Downloading payment receipt:', paymentId);
+    Alert.alert('Download', 'Receipt download feature coming soon!');
+  };
+
+  const TransactionCard = ({ payment }: { payment: PaymentHistoryItem }) => {
+    const paymentDate = new Date(payment.paymentDate);
+    const formattedDate = `${paymentDate.getFullYear()} - ${String(paymentDate.getMonth() + 1).padStart(2, '0')} - ${String(paymentDate.getDate()).padStart(2, '0')}`;
+    const formattedTime = paymentDate.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
     });
-  }, []);
 
-  // Optional: filter by date input
-  const filtered = useMemo(
-    () => transactions.filter((t) => t.date.includes(searchQuery.trim())),
-    [transactions, searchQuery]
-  );
+    return (
+      <Card className="mb-3 p-4">
+        {/* Month-Year and Status */}
+        <View className="flex-row justify-between items-center mb-2">
+          <Typography variant="subhead" weight="semibold" className="text-black">
+            {MONTH_NAMES[payment.month - 1]} {payment.year}
+          </Typography>
+          <Typography variant="caption-1" weight="medium" className={getStatusColor(payment.status)}>
+            {formatStatus(payment.status)}
+          </Typography>
+        </View>
 
-  // Format input as YYYY - MM - DD while typing
-  const formatDateInput = (text: string) => {
-    const digits = text.replace(/[^0-9]/g, '').slice(0, 8); // limit to YYYYMMDD
-    const y = digits.slice(0, 4);
-    const m = digits.slice(4, 6);
-    const d = digits.slice(6, 8);
-    let out = y;
-    if (m.length) out += ` - ${m}`;
-    if (d.length) out += ` - ${d}`;
-    return out;
+        {/* Date and Time */}
+        <View className="flex-row justify-between items-center mb-2">
+          <Typography variant="caption-1" className="text-brand-neutralGray">
+            {formattedDate}
+          </Typography>
+          <Typography variant="caption-1" className="text-brand-neutralGray">
+            {formattedTime}
+          </Typography>
+        </View>
+
+        {/* Amount */}
+        <Typography variant="title-3" weight="semibold" className="text-black mb-2">
+          Rs. {payment.amount.toFixed(2)}
+        </Typography>
+
+        {/* Payment Method, Driver Name, and Download */}
+        <View className="flex-row justify-between items-center">
+          <View>
+            {payment.paymentMethod && (
+              <Typography variant="caption-1" className="text-brand-neutralGray mb-1">
+                {payment.paymentMethod === 'PHYSICAL' ? 'Cash' : 'Card'}
+              </Typography>
+            )}
+            {payment.driverName && (
+              <Typography variant="caption-2" className="text-gray-500">
+                Driver: {payment.driverName}
+              </Typography>
+            )}
+          </View>
+          <TouchableOpacity
+            onPress={() => handleDownload(payment.id)}
+            activeOpacity={0.7}
+          >
+            <Download size={20} color="#6b7280" />
+          </TouchableOpacity>
+        </View>
+      </Card>
+    );
   };
-
-  const handleDownload = (transactionId: string) => {
-    console.log('Downloading transaction:', transactionId);
-    // Handle download logic here
-  };
-
-  const TransactionCard = ({ transaction }: { transaction: Transaction }) => (
-    <Card className="mb-3 p-4">
-      {/* Date and Time Row */}
-      <View className="flex-row justify-between items-center mb-2">
-        <Typography variant="caption-1" className="text-brand-neutralGray">
-          {transaction.date}
-        </Typography>
-        <Typography variant="caption-1" className="text-brand-neutralGray">
-          {transaction.time}
-        </Typography>
-      </View>
-
-      {/* Amount */}
-      <Typography variant="subhead" weight="semibold" className="text-black mb-1">
-        {transaction.amount}
-      </Typography>
-
-      {/* Payment Method + Download (last row) */}
-      <View className="flex-row justify-between items-center">
-        <Typography variant="caption-1" className="text-brand-neutralGray">
-          {transaction.paymentMethod}
-        </Typography>
-        <TouchableOpacity
-          onPress={() => handleDownload(transaction.id)}
-          activeOpacity={0.7}
-        >
-          <Download size={20} color="#6b7280" />
-        </TouchableOpacity>
-      </View>
-    </Card>
-  );
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -118,13 +172,11 @@ export default function PaymentHistoryScreen() {
             <MagnifyingGlass size={18} color="#6b7280" />
             <TextInput
               value={searchQuery}
-              onChangeText={(t) => setSearchQuery(formatDateInput(t))}
-              placeholder="YYYY - MM - DD"
+              onChangeText={setSearchQuery}
+              placeholder="Search by month or status"
               placeholderTextColor="#9CA3AF"
               className="flex-1 ml-2 text-black"
               autoCapitalize="none"
-              keyboardType="numeric"
-              maxLength={14}
             />
           </View>
         </View>
@@ -132,9 +184,24 @@ export default function PaymentHistoryScreen() {
         {/* Transaction List (scrollable) */}
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className="px-4 pb-6">
-            {(filtered.length ? filtered : transactions).map((transaction) => (
-              <TransactionCard key={transaction.id} transaction={transaction} />
-            ))}
+            {loading ? (
+              <View className="flex-1 items-center justify-center py-10">
+                <ActivityIndicator size="large" color="#FF6B35" />
+                <Typography variant="caption-1" className="text-brand-neutralGray mt-2">
+                  Loading payment history...
+                </Typography>
+              </View>
+            ) : filteredPayments.length === 0 ? (
+              <View className="flex-1 items-center justify-center py-10">
+                <Typography variant="subhead" className="text-brand-neutralGray">
+                  {searchQuery ? 'No payments found' : 'No payment history yet'}
+                </Typography>
+              </View>
+            ) : (
+              filteredPayments.map((payment) => (
+                <TransactionCard key={payment.id} payment={payment} />
+              ))
+            )}
           </View>
         </ScrollView>
       </View>

@@ -20,6 +20,15 @@ const cards = [
 export default function PaymentMethodScreen() {
   const [selectedMethod, setSelectedMethod] = useState('cash');
 
+  const handleMethodSelect = (method: string) => {
+    setSelectedMethod(method);
+    // Navigate to payment screen with the selected payment type
+    router.push({
+      pathname: '/(menu)/(homeCards)/payment',
+      params: { paymentType: method === 'cash' ? 'physical' : 'card' }
+    });
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -33,7 +42,7 @@ export default function PaymentMethodScreen() {
               key={method.id}
               className="flex-row items-center mb-4"
               activeOpacity={0.8}
-              onPress={() => setSelectedMethod(method.id)}
+              onPress={() => handleMethodSelect(method.id)}
             >
               <View
                 className={`w-6 h-6 rounded-full border-2 ${selectedMethod === method.id ? 'border-brand-deepNavy' : 'border-gray-400'} items-center justify-center mr-4 bg-white`}
