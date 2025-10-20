@@ -249,4 +249,24 @@ export class CustomerController {
   ) {
     return this.updateCustomerProfile(profileData, req);
   }
+
+  // Get assigned child ride
+  @Get('assigned-ride/child/:childId')
+  @UseGuards(JwtAuthGuard)
+  async getAssignedChildRide(
+    @Param('childId', ParseIntPipe) childId: number,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.customerService.getAssignedChildRide(
+      childId,
+      Number(req.user.sub),
+    );
+  }
+
+  // Get assigned staff ride
+  @Get('assigned-ride/staff')
+  @UseGuards(JwtAuthGuard)
+  async getAssignedStaffRide(@Request() req: AuthenticatedRequest) {
+    return this.customerService.getAssignedStaffRide(Number(req.user.sub));
+  }
 }

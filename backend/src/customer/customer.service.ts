@@ -423,4 +423,158 @@ export class CustomerService extends CustomerServiceExtension {
       };
     }
   }
+
+  /**
+   * Get assigned child ride for a specific child profile
+   * @param childId The child's ID
+   * @param customerId The customer ID (for authorization)
+   * @returns Child ride request with driver and vehicle info, or null if not assigned
+   */
+  async getAssignedChildRide(childId: number, customerId: number) {
+    // Verify the child belongs to this customer
+    const child = await this.prisma.child.findFirst({
+      where: {
+        child_id: childId,
+        customerId: customerId,
+      },
+    });
+
+    if (!child) {
+      throw new BadRequestException('Child not found or unauthorized');
+    }
+
+    // Get the assigned ride request
+    const assignedRide = await this.prisma.childRideRequest.findFirst({
+      where: {
+        childId: childId,
+        status: 'Assigned',
+      },
+      include: {
+        driver: {
+          include: {
+            vehicles: true,
+          },
+        },
+        child: true,
+      },
+      orderBy: {
+        AssignedDate: 'desc',
+      },
+    });
+
+    if (!assignedRide) {
+      return null;
+    }
+
+    // Format the response
+    const driver = assignedRide.driver;
+    const vehicle =
+      driver.vehicles && driver.vehicles.length > 0
+        ? driver.vehicles[0]
+        : null;
+
+    return {
+      rideRequestId: assignedRide.id,
+      childId: assignedRide.childId,
+      driverId: assignedRide.driverId,
+      amount: assignedRide.Amount,
+      assignedDate: assignedRide.AssignedDate,
+      status: assignedRide.status,
+      driver: {
+        id: driver.driver_id,
+        name: driver.name,
+        phone: driver.phone,
+        profilePictureUrl: driver.profile_picture_url,
+        rating: 4.9, // TODO: Calculate from reviews when implemented
+      },
+      vehicle: vehicle
+        ? {
+            id: vehicle.id,
+            registrationNumber: vehicle.registrationNumber,
+            brand: vehicle.brand,
+            model: vehicle.model,
+            type: vehicle.type,
+            color: vehicle.color,
+            seats: vehicle.no_of_seats,
+            airConditioned: vehicle.air_conditioned,
+          }
+        : null,
+    };
+  }
+
+  /**
+   * Get assigned staff ride for the customer's staff profile
+   * @param customerId The customer ID
+   * @returns Staff ride request with driver and vehicle info, or null if not assigned
+   */
+  async getAssignedStaffRide(customerId: number) {
+    // Get the staff passenger profile
+    const staffProfile = await this.prisma.staff_Passenger.findFirst({
+      where: {
+        customerId: customerId,
+      },
+    });
+
+    if (!staffProfile) {
+      return null;
+    }
+
+    // Get the assigned ride request
+    const assignedRide = await this.prisma.staffRideRequest.findFirst({
+      where: {
+        staffId: staffProfile.id,
+        status: 'Assigned',
+      },
+      include: {
+        Driver: {
+          include: {
+            vehicles: true,
+          },
+        },
+        Staff_Passenger: true,
+      },
+      orderBy: {
+        AssignedDate: 'desc',
+      },
+    });
+
+    if (!assignedRide) {
+      return null;
+    }
+
+    // Format the response
+    const driver = assignedRide.Driver;
+    const vehicle =
+      driver.vehicles && driver.vehicles.length > 0
+        ? driver.vehicles[0]
+        : null;
+
+    return {
+      rideRequestId: assignedRide.id,
+      staffId: assignedRide.staffId,
+      driverId: assignedRide.driverId,
+      amount: assignedRide.Amount,
+      assignedDate: assignedRide.AssignedDate,
+      status: assignedRide.status,
+      driver: {
+        id: driver.driver_id,
+        name: driver.name,
+        phone: driver.phone,
+        profilePictureUrl: driver.profile_picture_url,
+        rating: 4.9, // TODO: Calculate from reviews when implemented
+      },
+      vehicle: vehicle
+        ? {
+            id: vehicle.id,
+            registrationNumber: vehicle.registrationNumber,
+            brand: vehicle.brand,
+            model: vehicle.model,
+            type: vehicle.type,
+            color: vehicle.color,
+            seats: vehicle.no_of_seats,
+            airConditioned: vehicle.air_conditioned,
+          }
+        : null,
+    };
+  }
 }

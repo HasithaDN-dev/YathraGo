@@ -7,6 +7,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useLocalSearchParams, router } from 'expo-router';
 import { driverRequestApi, RequestDetails } from '@/lib/api/driver-request.api';
 import { useProfileStore } from '@/lib/stores/profile.store';
+import { useAssignedRideStore } from '@/lib/stores/assigned-ride.store';
 import { MapPin, Clock, User, Check, X } from 'phosphor-react-native';
 import { Colors } from '@/constants/Colors';
 
@@ -17,7 +18,8 @@ export default function RequestDetailScreen() {
   const [counterNote, setCounterNote] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const { customerProfile } = useProfileStore();
+  const { customerProfile, activeProfile } = useProfileStore();
+  const { loadAssignedRide } = useAssignedRideStore();
 
   const loadRequest = async () => {
     try {
@@ -77,7 +79,15 @@ export default function RequestDetailScreen() {
             try {
               setActionLoading(true);
               await driverRequestApi.acceptOffer(request.id, customerProfile.customer_id);
-              Alert.alert('Success', 'Request accepted!', [
+              
+              // Reload assigned ride for the active profile
+              if (activeProfile) {
+                const profileIdStr = activeProfile.id.split('-')[1];
+                const profileId = parseInt(profileIdStr, 10);
+                await loadAssignedRide(activeProfile.type, profileId);
+              }
+              
+              Alert.alert('Success', 'Driver assigned successfully!', [
                 { text: 'OK', onPress: () => router.back() }
               ]);
             } catch (error) {
