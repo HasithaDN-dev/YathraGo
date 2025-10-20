@@ -469,9 +469,7 @@ export class CustomerService extends CustomerServiceExtension {
     // Format the response
     const driver = assignedRide.driver;
     const vehicle =
-      driver.vehicles && driver.vehicles.length > 0
-        ? driver.vehicles[0]
-        : null;
+      driver.vehicles && driver.vehicles.length > 0 ? driver.vehicles[0] : null;
 
     return {
       rideRequestId: assignedRide.id,
@@ -545,9 +543,7 @@ export class CustomerService extends CustomerServiceExtension {
     // Format the response
     const driver = assignedRide.Driver;
     const vehicle =
-      driver.vehicles && driver.vehicles.length > 0
-        ? driver.vehicles[0]
-        : null;
+      driver.vehicles && driver.vehicles.length > 0 ? driver.vehicles[0] : null;
 
     return {
       rideRequestId: assignedRide.id,
