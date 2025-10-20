@@ -131,6 +131,7 @@ export class DriverRequestService {
         nearestDropCityName: distanceInfo.nearestDropCityName,
         lastModifiedBy: 'customer',
         negotiationHistory: negotiationHistory as any,
+        updatedAt: new Date(),
       },
     });
 

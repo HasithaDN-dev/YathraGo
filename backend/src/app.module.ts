@@ -19,6 +19,9 @@ import { ChatModule } from './chat/chat.module';
 import { FindVehicleModule } from './find-vehicle/find-vehicle.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SearchModule } from './search/search.module';
+import { ComplaintsModule } from './complaints/complaints.module';
+import { PaymentsModule } from './payments/payments.module';
+import { DriverCoordinatorModule } from './driver-coordinator/driver-coordinator.module';
 
 @Module({
   imports: [
@@ -42,6 +45,9 @@ import { SearchModule } from './search/search.module';
     FindVehicleModule,
     SearchModule,
     NotificationsModule,
+    ComplaintsModule,
+    PaymentsModule,
+    DriverCoordinatorModule,
   ],
   controllers: [AppController],
   providers: [AppService],

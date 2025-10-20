@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { mockComplaints } from "@/lib/complaints";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Eye, FileText, Megaphone, MessageSquare } from "lucide-react";
 import { getNotices, Notice } from "@/lib/notices";
 import Link from "next/link";
+import { api } from "@/lib/api";
 
 interface StatCardProps {
   title: string;
@@ -71,12 +71,33 @@ const ActivityItem: React.FC<{ activity: ActivityEntry }> = ({ activity }) => (
 );
 
 export default function ManagerDashboard() {
-  const openCount = mockComplaints.filter(c => c.status === "open").length;
+  const [complaintsStats, setComplaintsStats] = useState({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    resolved: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const stats = await api.complaints.getStatistics();
+        setComplaintsStats(stats.overview);
+      } catch (error) {
+        console.error("Failed to fetch complaints statistics:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const stats = [
     {
       title: "Open Complaints",
-      value: openCount,
+      value: loading ? "..." : complaintsStats.pending,
       icon: <AlertTriangle className="w-4 h-4" />,
       bgColor: "bg-[var(--error-red)]"
     }

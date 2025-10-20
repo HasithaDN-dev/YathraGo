@@ -103,7 +103,13 @@ export default function FinanceStatisticsPage() {
     percentage: string;
   }
 
-  const mapPaymentStatusData = React.useCallback((data: PaymentStatusItem[]): PaymentStatusData[] => {
+  const mapPaymentStatusData = React.useCallback((data: PaymentStatusItem[] | unknown): PaymentStatusData[] => {
+    // Handle if data is not an array
+    if (!Array.isArray(data)) {
+      console.warn('Payment status data is not an array:', data);
+      return [];
+    }
+
     const colorMap: Record<string, string> = {
       PAID: 'bg-green-500',
       PENDING: 'bg-yellow-500',
@@ -116,9 +122,9 @@ export default function FinanceStatisticsPage() {
 
     return data.map(item => ({
       status: item.status,
-      count: item.count,
-      amount: item.amount,
-      percentage: item.percentage,
+      count: item.count || 0,
+      amount: item.amount || 0,
+      percentage: item.percentage || '0%',
       color: colorMap[item.status] || 'bg-gray-500',
     }));
   }, []);
@@ -126,21 +132,35 @@ export default function FinanceStatisticsPage() {
   const fetchAllData = React.useCallback(async () => {
     setLoading(true);
     try {
+      const fetchWithErrorHandling = async (url: string) => {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            console.warn(`API error for ${url}: ${response.status}`);
+            return null;
+          }
+          return await response.json();
+        } catch (err) {
+          console.warn(`Failed to fetch ${url}:`, err);
+          return null;
+        }
+      };
+
       const [stats, statusDist, topCust, recentPay, riskInd, insights] = await Promise.all([
-        fetch(`${API_BASE_URL}/finance-statistics/overview?timeRange=${timeRange}`).then(r => r.json()),
-        fetch(`${API_BASE_URL}/finance-statistics/payment-status-distribution`).then(r => r.json()),
-        fetch(`${API_BASE_URL}/finance-statistics/top-customers?limit=5`).then(r => r.json()),
-        fetch(`${API_BASE_URL}/finance-statistics/recent-payments?limit=5`).then(r => r.json()),
-        fetch(`${API_BASE_URL}/finance-statistics/risk-indicators`).then(r => r.json()),
-        fetch(`${API_BASE_URL}/finance-statistics/quick-insights`).then(r => r.json()),
+        fetchWithErrorHandling(`${API_BASE_URL}/finance-statistics/overview?timeRange=${timeRange}`),
+        fetchWithErrorHandling(`${API_BASE_URL}/finance-statistics/payment-status-distribution`),
+        fetchWithErrorHandling(`${API_BASE_URL}/finance-statistics/top-customers?limit=5`),
+        fetchWithErrorHandling(`${API_BASE_URL}/finance-statistics/recent-payments?limit=5`),
+        fetchWithErrorHandling(`${API_BASE_URL}/finance-statistics/risk-indicators`),
+        fetchWithErrorHandling(`${API_BASE_URL}/finance-statistics/quick-insights`),
       ]);
 
-      setStatistics(stats);
-      setPaymentStatusData(mapPaymentStatusData(statusDist));
-      setTopCustomers(topCust);
-      setRecentPayments(recentPay);
-      setRiskIndicators(riskInd);
-      setQuickInsights(insights);
+      setStatistics(stats || null);
+      setPaymentStatusData(statusDist ? mapPaymentStatusData(statusDist) : []);
+      setTopCustomers(Array.isArray(topCust) ? topCust : []);
+      setRecentPayments(Array.isArray(recentPay) ? recentPay : []);
+      setRiskIndicators(riskInd || null);
+      setQuickInsights(insights || null);
     } catch (error) {
       console.error('Error fetching statistics:', error);
     } finally {

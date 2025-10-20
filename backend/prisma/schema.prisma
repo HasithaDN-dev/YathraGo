@@ -583,6 +583,83 @@ model askDriverRequest {
   @@index([status])
 }
 
+model VehicleAlert {
+  id                    Int             @id @default(autoincrement())
+  vehicleId             Int
+  driverId              Int
+  alertType             VehicleAlertType
+  severity              AlertSeverity   @default(MEDIUM)
+  description           String
+  location              String?
+  latitude              Float?
+  longitude             Float?
+  status                AlertStatus     @default(ACTIVE)
+  reportedAt            DateTime        @default(now())
+  acknowledgedAt        DateTime?
+  resolvedAt            DateTime?
+  assignedBackupVehicle String?
+  assignedBackupDriver  String?
+  affectedRoutes        String[]
+  affectedChildrenCount Int             @default(0)
+  estimatedDowntime     String?
+  resolutionNotes       String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([status])
+  @@index([alertType])
+  @@index([reportedAt])
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  userType    UserTypes
+  action      String
+  entity      String
+  entityId    Int?
+  changes     Json?
+  ipAddress   String?
+  userAgent   String?
+  timestamp   DateTime @default(now())
+  description String?
+
+  @@index([userId, userType])
+  @@index([entity, entityId])
+  @@index([timestamp])
+}
+
+model PaymentRefund {
+  id                Int              @id @default(autoincrement())
+  paymentId         Int
+  childId           Int
+  customerId        Int
+  driverId          Int
+  refundAmount      Float
+  refundReason      String
+  refundType        RefundType
+  status            RefundStatus     @default(PENDING)
+  requestedBy       Int
+  requestedByType   UserTypes
+  approvedBy        Int?
+  approvedByType    UserTypes?
+  rejectedBy        Int?
+  rejectionReason   String?
+  refundMethod      String?
+  transactionRef    String?
+  requestedAt       DateTime         @default(now())
+  processedAt       DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([paymentId])
+  @@index([status])
+  @@index([customerId])
+  @@index([driverId])
+}
+
 enum RegistrationStatus {
   OTP_PENDING
   OTP_VERIFIED
@@ -645,6 +722,7 @@ enum NotificationTypes {
 enum ChildPaymentStatus {
   NOT_DUE
   PENDING
+  AWAITING_CONFIRMATION
   PAID
   OVERDUE
   GRACE_PERIOD
@@ -697,4 +775,46 @@ enum askStatus {
   ACCEPTED
   REJECTED
   ASSIGNED
+}
+
+enum VehicleAlertType {
+  BREAKDOWN
+  ACCIDENT
+  MAINTENANCE
+  EMERGENCY
+  INSPECTION_DUE
+  INSURANCE_EXPIRY
+  LICENSE_EXPIRY
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  IN_PROGRESS
+  RESOLVED
+  CANCELLED
+}
+
+enum RefundType {
+  FULL
+  PARTIAL
+  OVERPAYMENT
+  CANCELLATION
+  SERVICE_ISSUE
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSING
+  COMPLETED
+  FAILED
 }
