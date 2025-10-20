@@ -1,6 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateRequestDto, CounterOfferDto, RespondRequestDto, RequestResponseDto, NegotiationHistoryItem } from './dto';
+import {
+  CreateRequestDto,
+  CounterOfferDto,
+  RespondRequestDto,
+  RequestResponseDto,
+  NegotiationHistoryItem,
+} from './dto';
 import { askStatus } from '@prisma/client';
 import * as turf from '@turf/turf';
 
@@ -77,7 +87,7 @@ export class DriverRequestService {
     }
 
     // Calculate estimated distance and get city names
-    const cityIds = driver.driverCities.cityIds as number[];
+    const cityIds = driver.driverCities.cityIds;
     const distanceInfo = await this.calculateEstimatedDistance(
       pickupLat,
       pickupLon,
@@ -124,13 +134,23 @@ export class DriverRequestService {
       },
     });
 
-    return this.formatResponse(request, customer, profile, driver, dto.profileType, profileName);
+    return this.formatResponse(
+      request,
+      customer,
+      profile,
+      driver,
+      dto.profileType,
+      profileName,
+    );
   }
 
   /**
    * Get all requests for a customer
    */
-  async getCustomerRequests(customerId: number, status?: askStatus): Promise<RequestResponseDto[]> {
+  async getCustomerRequests(
+    customerId: number,
+    status?: askStatus,
+  ): Promise<RequestResponseDto[]> {
     const whereClause: any = { customerID: customerId };
     if (status) {
       whereClause.status = status;
@@ -152,15 +172,26 @@ export class DriverRequestService {
         });
         const profile =
           request.staffOrChild === 'child'
-            ? await this.prisma.child.findUnique({ where: { child_id: request.staffOrChildID } })
-            : await this.prisma.staff_Passenger.findUnique({ where: { id: request.staffOrChildID } });
+            ? await this.prisma.child.findUnique({
+                where: { child_id: request.staffOrChildID },
+              })
+            : await this.prisma.staff_Passenger.findUnique({
+                where: { id: request.staffOrChildID },
+              });
 
         const profileName =
           request.staffOrChild === 'child'
             ? `${(profile as any).childFirstName} ${(profile as any).childLastName}`
             : 'Staff Passenger';
 
-        return this.formatResponse(request, customer!, profile, driver!, request.staffOrChild as 'child' | 'staff', profileName);
+        return this.formatResponse(
+          request,
+          customer!,
+          profile,
+          driver!,
+          request.staffOrChild as 'child' | 'staff',
+          profileName,
+        );
       }),
     );
   }
@@ -168,7 +199,10 @@ export class DriverRequestService {
   /**
    * Get all requests for a driver
    */
-  async getDriverRequests(driverId: number, status?: askStatus): Promise<RequestResponseDto[]> {
+  async getDriverRequests(
+    driverId: number,
+    status?: askStatus,
+  ): Promise<RequestResponseDto[]> {
     const whereClause: any = { driverId: driverId };
     if (status) {
       whereClause.status = status;
@@ -190,15 +224,26 @@ export class DriverRequestService {
         });
         const profile =
           request.staffOrChild === 'child'
-            ? await this.prisma.child.findUnique({ where: { child_id: request.staffOrChildID } })
-            : await this.prisma.staff_Passenger.findUnique({ where: { id: request.staffOrChildID } });
+            ? await this.prisma.child.findUnique({
+                where: { child_id: request.staffOrChildID },
+              })
+            : await this.prisma.staff_Passenger.findUnique({
+                where: { id: request.staffOrChildID },
+              });
 
         const profileName =
           request.staffOrChild === 'child'
             ? `${(profile as any).childFirstName} ${(profile as any).childLastName}`
             : 'Staff Passenger';
 
-        return this.formatResponse(request, customer!, profile, driver!, request.staffOrChild as 'child' | 'staff', profileName);
+        return this.formatResponse(
+          request,
+          customer!,
+          profile,
+          driver!,
+          request.staffOrChild as 'child' | 'staff',
+          profileName,
+        );
       }),
     );
   }
@@ -206,7 +251,11 @@ export class DriverRequestService {
   /**
    * Customer counter offer
    */
-  async customerCounterOffer(requestId: number, dto: CounterOfferDto, customerId: number): Promise<RequestResponseDto> {
+  async customerCounterOffer(
+    requestId: number,
+    dto: CounterOfferDto,
+    customerId: number,
+  ): Promise<RequestResponseDto> {
     const request = await this.prisma.askDriverRequest.findUnique({
       where: { id: requestId },
     });
@@ -216,15 +265,22 @@ export class DriverRequestService {
     }
 
     if (request.customerID !== customerId) {
-      throw new BadRequestException('You are not authorized to modify this request');
+      throw new BadRequestException(
+        'You are not authorized to modify this request',
+      );
     }
 
-    if (request.status === askStatus.ACCEPTED || request.status === askStatus.REJECTED || request.status === askStatus.ASSIGNED) {
+    if (
+      request.status === askStatus.ACCEPTED ||
+      request.status === askStatus.REJECTED ||
+      request.status === askStatus.ASSIGNED
+    ) {
       throw new BadRequestException('Cannot counter offer on a closed request');
     }
 
     // Add to negotiation history
-    const history = ((request.negotiationHistory as unknown) as NegotiationHistoryItem[]) || [];
+    const history =
+      (request.negotiationHistory as unknown as NegotiationHistoryItem[]) || [];
     history.push({
       offeredBy: 'customer',
       amount: dto.amount,
@@ -253,21 +309,36 @@ export class DriverRequestService {
     });
     const profile =
       updated.staffOrChild === 'child'
-        ? await this.prisma.child.findUnique({ where: { child_id: updated.staffOrChildID } })
-        : await this.prisma.staff_Passenger.findUnique({ where: { id: updated.staffOrChildID } });
+        ? await this.prisma.child.findUnique({
+            where: { child_id: updated.staffOrChildID },
+          })
+        : await this.prisma.staff_Passenger.findUnique({
+            where: { id: updated.staffOrChildID },
+          });
 
     const profileName =
       updated.staffOrChild === 'child'
         ? `${(profile as any).childFirstName} ${(profile as any).childLastName}`
         : 'Staff Passenger';
 
-    return this.formatResponse(updated, customer!, profile, driver!, updated.staffOrChild as 'child' | 'staff', profileName);
+    return this.formatResponse(
+      updated,
+      customer!,
+      profile,
+      driver!,
+      updated.staffOrChild as 'child' | 'staff',
+      profileName,
+    );
   }
 
   /**
    * Driver respond to request
    */
-  async driverRespond(requestId: number, dto: RespondRequestDto, driverId: number): Promise<RequestResponseDto> {
+  async driverRespond(
+    requestId: number,
+    dto: RespondRequestDto,
+    driverId: number,
+  ): Promise<RequestResponseDto> {
     const request = await this.prisma.askDriverRequest.findUnique({
       where: { id: requestId },
     });
@@ -277,14 +348,21 @@ export class DriverRequestService {
     }
 
     if (request.driverId !== driverId) {
-      throw new BadRequestException('You are not authorized to respond to this request');
+      throw new BadRequestException(
+        'You are not authorized to respond to this request',
+      );
     }
 
-    if (request.status === askStatus.ACCEPTED || request.status === askStatus.REJECTED || request.status === askStatus.ASSIGNED) {
+    if (
+      request.status === askStatus.ACCEPTED ||
+      request.status === askStatus.REJECTED ||
+      request.status === askStatus.ASSIGNED
+    ) {
       throw new BadRequestException('Cannot respond to a closed request');
     }
 
-    const history = ((request.negotiationHistory as unknown) as NegotiationHistoryItem[]) || [];
+    const history =
+      (request.negotiationHistory as unknown as NegotiationHistoryItem[]) || [];
 
     let newStatus: askStatus;
     let currentAmount = request.currentAmount;
@@ -334,6 +412,11 @@ export class DriverRequestService {
       },
     });
 
+    // If driver accepted, automatically assign to ride table
+    if (dto.action === 'ACCEPT') {
+      await this.assignRequest(requestId);
+    }
+
     const customer = await this.prisma.customer.findUnique({
       where: { customer_id: updated.customerID },
     });
@@ -343,21 +426,36 @@ export class DriverRequestService {
     });
     const profile =
       updated.staffOrChild === 'child'
-        ? await this.prisma.child.findUnique({ where: { child_id: updated.staffOrChildID } })
-        : await this.prisma.staff_Passenger.findUnique({ where: { id: updated.staffOrChildID } });
+        ? await this.prisma.child.findUnique({
+            where: { child_id: updated.staffOrChildID },
+          })
+        : await this.prisma.staff_Passenger.findUnique({
+            where: { id: updated.staffOrChildID },
+          });
 
     const profileName =
       updated.staffOrChild === 'child'
         ? `${(profile as any).childFirstName} ${(profile as any).childLastName}`
         : 'Staff Passenger';
 
-    return this.formatResponse(updated, customer!, profile, driver!, updated.staffOrChild as 'child' | 'staff', profileName);
+    return this.formatResponse(
+      updated,
+      customer!,
+      profile,
+      driver!,
+      updated.staffOrChild as 'child' | 'staff',
+      profileName,
+    );
   }
 
   /**
    * Accept the current offer (can be called by either party)
    */
-  async acceptRequest(requestId: number, userId: number, userType: 'customer' | 'driver'): Promise<RequestResponseDto> {
+  async acceptRequest(
+    requestId: number,
+    userId: number,
+    userType: 'customer' | 'driver',
+  ): Promise<RequestResponseDto> {
     const request = await this.prisma.askDriverRequest.findUnique({
       where: { id: requestId },
     });
@@ -368,17 +466,26 @@ export class DriverRequestService {
 
     // Verify authorization
     if (userType === 'customer' && request.customerID !== userId) {
-      throw new BadRequestException('You are not authorized to accept this request');
+      throw new BadRequestException(
+        'You are not authorized to accept this request',
+      );
     }
     if (userType === 'driver' && request.driverId !== userId) {
-      throw new BadRequestException('You are not authorized to accept this request');
+      throw new BadRequestException(
+        'You are not authorized to accept this request',
+      );
     }
 
-    if (request.status === askStatus.ACCEPTED || request.status === askStatus.REJECTED || request.status === askStatus.ASSIGNED) {
+    if (
+      request.status === askStatus.ACCEPTED ||
+      request.status === askStatus.REJECTED ||
+      request.status === askStatus.ASSIGNED
+    ) {
       throw new BadRequestException('Request is already closed');
     }
 
-    const history = ((request.negotiationHistory as unknown) as NegotiationHistoryItem[]) || [];
+    const history =
+      (request.negotiationHistory as unknown as NegotiationHistoryItem[]) || [];
     history.push({
       offeredBy: userType,
       amount: request.currentAmount,
@@ -405,21 +512,40 @@ export class DriverRequestService {
     });
     const profile =
       updated.staffOrChild === 'child'
-        ? await this.prisma.child.findUnique({ where: { child_id: updated.staffOrChildID } })
-        : await this.prisma.staff_Passenger.findUnique({ where: { id: updated.staffOrChildID } });
+        ? await this.prisma.child.findUnique({
+            where: { child_id: updated.staffOrChildID },
+          })
+        : await this.prisma.staff_Passenger.findUnique({
+            where: { id: updated.staffOrChildID },
+          });
 
     const profileName =
       updated.staffOrChild === 'child'
         ? `${(profile as any).childFirstName} ${(profile as any).childLastName}`
         : 'Staff Passenger';
 
-    return this.formatResponse(updated, customer!, profile, driver!, updated.staffOrChild as 'child' | 'staff', profileName);
+    // Automatically assign to ChildRideRequest or StaffRideRequest
+    await this.assignRequest(requestId);
+
+    return this.formatResponse(
+      updated,
+      customer!,
+      profile,
+      driver!,
+      updated.staffOrChild as 'child' | 'staff',
+      profileName,
+    );
   }
 
   /**
    * Reject request
    */
-  async rejectRequest(requestId: number, userId: number, userType: 'customer' | 'driver', reason?: string): Promise<void> {
+  async rejectRequest(
+    requestId: number,
+    userId: number,
+    userType: 'customer' | 'driver',
+    reason?: string,
+  ): Promise<void> {
     const request = await this.prisma.askDriverRequest.findUnique({
       where: { id: requestId },
     });
@@ -430,17 +556,26 @@ export class DriverRequestService {
 
     // Verify authorization
     if (userType === 'customer' && request.customerID !== userId) {
-      throw new BadRequestException('You are not authorized to reject this request');
+      throw new BadRequestException(
+        'You are not authorized to reject this request',
+      );
     }
     if (userType === 'driver' && request.driverId !== userId) {
-      throw new BadRequestException('You are not authorized to reject this request');
+      throw new BadRequestException(
+        'You are not authorized to reject this request',
+      );
     }
 
-    if (request.status === askStatus.ACCEPTED || request.status === askStatus.REJECTED || request.status === askStatus.ASSIGNED) {
+    if (
+      request.status === askStatus.ACCEPTED ||
+      request.status === askStatus.REJECTED ||
+      request.status === askStatus.ASSIGNED
+    ) {
       throw new BadRequestException('Request is already closed');
     }
 
-    const history = ((request.negotiationHistory as unknown) as NegotiationHistoryItem[]) || [];
+    const history =
+      (request.negotiationHistory as unknown as NegotiationHistoryItem[]) || [];
     history.push({
       offeredBy: userType,
       amount: request.currentAmount,
@@ -472,7 +607,9 @@ export class DriverRequestService {
     }
 
     if (request.status !== askStatus.ACCEPTED) {
-      throw new BadRequestException('Request must be accepted before assignment');
+      throw new BadRequestException(
+        'Request must be accepted before assignment',
+      );
     }
 
     if (request.staffOrChild === 'child') {
@@ -481,7 +618,8 @@ export class DriverRequestService {
           childId: request.staffOrChildID,
           driverId: request.driverId,
           Amount: request.currentAmount,
-          status: 'Pending' as any,
+          status: 'Assigned',
+          AssignedDate: new Date(),
         },
       });
     } else {
@@ -490,8 +628,9 @@ export class DriverRequestService {
           staffId: request.staffOrChildID,
           driverId: request.driverId,
           Amount: request.currentAmount,
+          status: 'Assigned',
+          AssignedDate: new Date(),
           updatedAt: new Date(),
-          status: 'Pending' as any,
         },
       });
     }
@@ -540,7 +679,9 @@ export class DriverRequestService {
 
     for (const city of cities) {
       const cityPoint = turf.point([city.longitude, city.latitude]);
-      const distance = turf.distance(pickupPoint, cityPoint, { units: 'kilometers' });
+      const distance = turf.distance(pickupPoint, cityPoint, {
+        units: 'kilometers',
+      });
       if (distance < minPickupDistance) {
         minPickupDistance = distance;
         nearestPickupCity = city;
@@ -557,7 +698,9 @@ export class DriverRequestService {
 
     for (const city of cities) {
       const cityPoint = turf.point([city.longitude, city.latitude]);
-      const distance = turf.distance(dropPoint, cityPoint, { units: 'kilometers' });
+      const distance = turf.distance(dropPoint, cityPoint, {
+        units: 'kilometers',
+      });
       if (distance < minDropDistance) {
         minDropDistance = distance;
         nearestDropCity = city;
@@ -565,12 +708,23 @@ export class DriverRequestService {
     }
 
     // Calculate distance between the two nearest cities
-    const nearestPickupCityPoint = turf.point([nearestPickupCity.longitude, nearestPickupCity.latitude]);
-    const nearestDropCityPoint = turf.point([nearestDropCity.longitude, nearestDropCity.latitude]);
-    const betweenCitiesDistance = turf.distance(nearestPickupCityPoint, nearestDropCityPoint, { units: 'kilometers' });
+    const nearestPickupCityPoint = turf.point([
+      nearestPickupCity.longitude,
+      nearestPickupCity.latitude,
+    ]);
+    const nearestDropCityPoint = turf.point([
+      nearestDropCity.longitude,
+      nearestDropCity.latitude,
+    ]);
+    const betweenCitiesDistance = turf.distance(
+      nearestPickupCityPoint,
+      nearestDropCityPoint,
+      { units: 'kilometers' },
+    );
 
     // Total distance = pickup to nearest city + between cities + nearest city to drop
-    const totalDistance = minPickupDistance + betweenCitiesDistance + minDropDistance;
+    const totalDistance =
+      minPickupDistance + betweenCitiesDistance + minDropDistance;
 
     return {
       totalDistance: Math.round(totalDistance * 100) / 100, // Round to 2 decimal places
@@ -585,15 +739,27 @@ export class DriverRequestService {
    * Calculate monthly price based on distance
    */
   private calculatePrice(distanceKm: number): number {
-    return Math.round(distanceKm * PRICE_PER_KM_PER_DAY * AVERAGE_WORKING_DAYS_PER_MONTH);
+    return Math.round(
+      distanceKm * PRICE_PER_KM_PER_DAY * AVERAGE_WORKING_DAYS_PER_MONTH,
+    );
   }
 
   /**
    * Format response DTO
    */
-  private formatResponse(request: any, customer: any, profile: any, driver: any, profileType: 'child' | 'staff', profileName: string): RequestResponseDto {
-    const vehicle = driver.vehicles && driver.vehicles.length > 0 ? driver.vehicles[0] : null;
-    const vehicleInfo = vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.registrationNumber})` : 'Unknown Vehicle';
+  private formatResponse(
+    request: any,
+    customer: any,
+    profile: any,
+    driver: any,
+    profileType: 'child' | 'staff',
+    profileName: string,
+  ): RequestResponseDto {
+    const vehicle =
+      driver.vehicles && driver.vehicles.length > 0 ? driver.vehicles[0] : null;
+    const vehicleInfo = vehicle
+      ? `${vehicle.brand} ${vehicle.model} (${vehicle.registrationNumber})`
+      : 'Unknown Vehicle';
 
     return {
       id: request.id,
@@ -614,7 +780,9 @@ export class DriverRequestService {
       lastModifiedBy: request.lastModifiedBy,
       nearestPickupCityName: request.nearestPickupCityName,
       nearestDropCityName: request.nearestDropCityName,
-      negotiationHistory: ((request.negotiationHistory as unknown) as NegotiationHistoryItem[]) || [],
+      negotiationHistory:
+        (request.negotiationHistory as unknown as NegotiationHistoryItem[]) ||
+        [],
       createdAt: request.createdAt,
       updatedAt: request.updatedAt,
     };

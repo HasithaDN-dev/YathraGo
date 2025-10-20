@@ -14,7 +14,7 @@ export default function RequestListScreen() {
   const [requests, setRequests] = useState<RequestDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const { customerProfile } = useProfileStore();
+  const { customerProfile, activeProfile } = useProfileStore();
 
   const loadRequests = async () => {
     try {
@@ -23,7 +23,18 @@ export default function RequestListScreen() {
         return;
       }
       const data = await driverRequestApi.getCustomerRequests(customerProfile.customer_id);
-      setRequests(data);
+      
+      // Filter requests by active profile
+      const filteredData = activeProfile 
+        ? data.filter(request => {
+            // Parse the profileId from the id string (format: "child-123" or "staff-456")
+            const profileIdStr = activeProfile.id.split('-')[1];
+            const profileId = parseInt(profileIdStr, 10);
+            return request.profileType === activeProfile.type && request.profileId === profileId;
+          })
+        : data;
+      
+      setRequests(filteredData);
     } catch (error) {
       console.error('Load requests error:', error);
       Alert.alert('Error', 'Failed to load requests');
@@ -36,7 +47,7 @@ export default function RequestListScreen() {
   useEffect(() => {
     loadRequests();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [activeProfile]);
 
   const onRefresh = () => {
     setRefreshing(true);

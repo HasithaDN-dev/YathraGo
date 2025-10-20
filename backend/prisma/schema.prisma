@@ -41,6 +41,9 @@ model Webuser {
   updatedAt    DateTime      @updatedAt
   fcmToken     String?
   role         Role          @default(OWNER)
+  address      String?
+  phone        String?
+  Vehicle      Vehicle[]
   vehicleOwner VehicleOwner?
 
   @@index([fcmToken])
@@ -93,19 +96,21 @@ model Vehicle {
   vehicle_reg_url     String?
   ownerId             Int?
   driverId            Int?
+  webuserId           Int?
   driver              Driver?       @relation(fields: [driverId], references: [driver_id])
   owner               VehicleOwner? @relation(fields: [ownerId], references: [id])
+  Webuser             Webuser?      @relation(fields: [webuserId], references: [id])
 }
 
 model Chat {
   id             Int           @id @default(autoincrement())
   message        String?
-  imageUrl       String?
   timestamp      DateTime      @default(now())
   seen           Boolean       @default(false)
+  conversationId Int
+  imageUrl       String?
   senderId       Int
   senderType     UserTypes
-  conversationId Int
   status         MessageStatus @default(SENT)
   conversation   Conversation  @relation(fields: [conversationId], references: [id])
 
@@ -250,9 +255,6 @@ model VehicleOwner {
 
 model Customer {
   customer_id        Int                @id @default(autoincrement())
-  firstName          String
-  lastName           String
-  gender             Gender             @default(Unspecified)
   phone              String             @unique
   email              String?
   address            String?
@@ -263,6 +265,9 @@ model Customer {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   fcmToken           String?
+  firstName          String
+  gender             Gender             @default(Unspecified)
+  lastName           String
   children           Child[]
   ChildPayment       ChildPayment[]
   staffPassenger     Staff_Passenger?
@@ -293,16 +298,16 @@ model Child {
   nearbyCity      String
   schoolLocation  String
   school          String
+  childImageUrl   String?
+  pickUpAddress   String
+  customerId      Int?
   childFirstName  String
   childLastName   String
   gender          Gender             @default(Unspecified)
-  childImageUrl   String?
-  pickUpAddress   String
-  schoolLatitude  Float?
-  schoolLongitude Float?
   pickupLatitude  Float?
   pickupLongitude Float?
-  customerId      Int?
+  schoolLatitude  Float?
+  schoolLongitude Float?
   Absence_Child   Absence_Child[]
   attendance      Attendance[]
   Customer        Customer?          @relation(fields: [customerId], references: [customer_id])
@@ -335,12 +340,12 @@ model Staff_Passenger {
   nearbyCity       String
   workLocation     String
   workAddress      String
-  workLatitude     Float?
-  workLongitude    Float?
   pickUpLocation   String
   pickupAddress    String
   pickupLatitude   Float?
   pickupLongitude  Float?
+  workLatitude     Float?
+  workLongitude    Float?
   StaffRideRequest StaffRideRequest[]
   Customer         Customer           @relation(fields: [customerId], references: [customer_id])
 
@@ -393,12 +398,12 @@ model ChildRideRequest {
 model askDriverRequest {
   id                        Int       @id @default(autoincrement())
   customerID                Int
-  staffOrChild              String // 'staff' or 'child'
+  staffOrChild              String
   staffOrChildID            Int
   driverId                  Int
-  estimatedDistance         Float // Stored on initial calculation
-  estimatedPrice            Float // Stored on initial calculation (distance * price per km)
-  currentAmount             Float // Current negotiated amount
+  estimatedDistance         Float
+  estimatedPrice            Float
+  currentAmount             Float
   customerNote              String?
   driverNote                String?
   status                    askStatus @default(PENDING)
@@ -406,12 +411,12 @@ model askDriverRequest {
   nearestWorkOrSchoolCityID Int
   nearestPickupCityName     String?
   nearestDropCityName       String?
-  lastModifiedBy            String? // 'customer' or 'driver'
-  negotiationHistory        Json? // Array of {offeredBy, amount, note, timestamp}
+  lastModifiedBy            String?
+  negotiationHistory        Json?
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @updatedAt
-  Driver                    Driver    @relation(fields: [driverId], references: [driver_id])
   Customer                  Customer  @relation(fields: [customerID], references: [customer_id])
+  Driver                    Driver    @relation(fields: [driverId], references: [driver_id])
 
   @@index([customerID])
   @@index([driverId])
@@ -432,6 +437,8 @@ model DriverRoute {
   totalDistanceMeters Int?
   totalDurationSecs   Int?
   updatedAt           DateTime        @updatedAt
+  driverLatitude      Float?
+  driverLongitude     Float?
   driver              Driver          @relation(fields: [driverId], references: [driver_id])
   stops               RouteStop[]
   waypoints           RouteWaypoint[]
@@ -642,6 +649,7 @@ enum ChildPaymentStatus {
   OVERDUE
   GRACE_PERIOD
   CANCELLED
+  AWAITING_CONFIRMATION
 }
 
 enum Ridetype {
@@ -684,10 +692,10 @@ enum ComplaintStatus {
 }
 
 enum askStatus {
-  PENDING // Initial request sent by customer
-  DRIVER_COUNTER // Driver counter-offered
-  CUSTOMER_COUNTER // Customer counter-offered
-  ACCEPTED // Both parties agreed
-  REJECTED // Request rejected
-  ASSIGNED // Successfully assigned to ChildRideRequest/StaffRideRequest
+  PENDING
+  DRIVER_COUNTER
+  CUSTOMER_COUNTER
+  ACCEPTED
+  REJECTED
+  ASSIGNED
 }
