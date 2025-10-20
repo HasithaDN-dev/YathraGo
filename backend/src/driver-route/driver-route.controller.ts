@@ -11,7 +11,6 @@ import {
   Req,
   HttpCode,
   HttpStatus,
-  Query,
 } from '@nestjs/common';
 import { DriverRouteService } from './driver-route.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -92,5 +91,15 @@ export class DriverRouteController {
   async getCurrentRouteStatus(@Req() req: AuthenticatedRequest) {
     const driverId = parseInt(req.user.sub, 10);
     return this.driverRouteService.getCurrentRouteStatus(driverId);
+  }
+
+  /**
+   * Get session availability for morning and evening routes
+   */
+  @Get('session-availability')
+  @HttpCode(HttpStatus.OK)
+  async getSessionAvailability(@Req() req: AuthenticatedRequest) {
+    const driverId = parseInt(req.user.sub, 10);
+    return this.driverRouteService.getSessionAvailability(driverId);
   }
 }

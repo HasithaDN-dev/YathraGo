@@ -64,15 +64,28 @@ export const getDriverPayments = async (
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
     const queryString = params.toString();
-    const url = `${API_BASE_URL}/transactions/driver/${driverId}/payments${queryString ? `?${queryString}` : ''}`;
+    // NOTE: backend exposes GET /transactions/driver/:driverId (no trailing /payments)
+    const url = `${API_BASE_URL}/transactions/driver/${driverId}${queryString ? `?${queryString}` : ''}`;
 
     const response = await fetch(url);
-    
+
     if (!response.ok) {
-      throw new Error(`Failed to fetch payments: ${response.statusText}`);
+      throw new Error(`Failed to fetch payments: ${response.status} ${response.statusText}`);
     }
 
-    return await response.json();
+    // backend returns an array of DTOs for payments; normalize into PaymentsResponse
+    const raw = await response.json();
+
+    const items = Array.isArray(raw) ? raw : [];
+    const total = items.length;
+
+    return {
+      items: items as any,
+      total,
+      page: 1,
+      limit: total || 0,
+      totalPages: 1,
+    } as PaymentsResponse;
   } catch (error) {
     console.error('Error fetching driver payments:', error);
     throw error;

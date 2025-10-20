@@ -10,7 +10,6 @@ import { VehicleModule } from './vehicle/vehicle.module';
 import { AuthWebModule } from './auth-web/auth-web.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CustomerModule } from './customer/customer.module';
-import { OwnerModule } from './owner/owner.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { DriverRouteModule } from './driver-route/driver-route.module';
 import { CityModule } from './city/city.module';
@@ -35,7 +34,6 @@ import { DriverLocationModule } from './driver-location/driver-location.module';
     VehicleModule,
     AuthWebModule,
     CustomerModule,
-    OwnerModule,
     TransactionsModule,
     ChildRideRequestModule,
     DriverRouteModule,

@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@googlemaps/google-maps-services-js": "^3.4.2",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
@@ -38,6 +39,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "firebase-admin": "^13.5.0",
+    "javascript-lp-solver": "^0.4.24",
     "js-cookie": "^3.0.5",
     "multer": "^2.0.1",
     "passport": "^0.7.0",

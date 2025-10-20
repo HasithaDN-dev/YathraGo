@@ -33,18 +33,18 @@ model OtpCode {
 }
 
 model Webuser {
-  id           Int           @id @default(autoincrement())
-  email        String        @unique
+  id           Int            @id @default(autoincrement())
+  email        String         @unique
   password     String
   username     String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
   fcmToken     String?
-  role         Role          @default(OWNER)
-  address      String?
   phone        String?
-  Vehicle      Vehicle[]
-  VehicleOwner VehicleOwner?
+  address      String?
+  role         Role           @default(OWNER)
+  vehicles     Vehicle[]
+  VehicleOwner VehicleOwner[]
 
   @@index([fcmToken])
 }
@@ -98,8 +98,9 @@ model Vehicle {
   driverId            Int?
   webuserId           Int?
   driver              Driver?       @relation(fields: [driverId], references: [driver_id])
-  VehicleOwner        VehicleOwner? @relation(fields: [ownerId], references: [id])
+  owner               VehicleOwner? @relation(fields: [ownerId], references: [id])
   Webuser             Webuser?      @relation(fields: [webuserId], references: [id])
+  webuserId           Int?
 }
 
 model Chat {
@@ -501,7 +502,7 @@ model Attendance {
   driverId   Int
   childId    Int
   waypointId Int?
-  type       String
+  type       AttendanceType
   latitude   Float?
   longitude  Float?
   notes      String?
@@ -635,6 +636,13 @@ enum WaypointType {
   DROPOFF
 }
 
+enum AttendanceType {
+  MORNING_PICKUP
+  MORNING_DROPOFF
+  EVENING_PICKUP
+  EVENING_DROPOFF
+}
+
 enum NotificationTypes {
   System
   Alert
@@ -645,6 +653,7 @@ enum NotificationTypes {
 enum ChildPaymentStatus {
   NOT_DUE
   PENDING
+  AWAITING_CONFIRMATION
   PAID
   OVERDUE
   GRACE_PERIOD

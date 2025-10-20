@@ -653,6 +653,7 @@ export class DriverController {
     body: {
       childId: number;
       type: 'pickup' | 'dropoff';
+      routeType?: 'MORNING_PICKUP' | 'AFTERNOON_DROPOFF';
       latitude?: number;
       longitude?: number;
       notes?: string;
@@ -662,13 +663,24 @@ export class DriverController {
     try {
       const driverId = parseInt(req.user.sub, 10);
 
+      // Determine session-aware attendance type
+      // Default to morning session if routeType not provided (backward compatibility)
+      const routeType = body.routeType || 'MORNING_PICKUP';
+      let attendanceType: 'MORNING_PICKUP' | 'MORNING_DROPOFF' | 'EVENING_PICKUP' | 'EVENING_DROPOFF';
+      
+      if (routeType === 'MORNING_PICKUP') {
+        attendanceType = body.type === 'pickup' ? 'MORNING_PICKUP' : 'MORNING_DROPOFF';
+      } else {
+        attendanceType = body.type === 'pickup' ? 'EVENING_PICKUP' : 'EVENING_DROPOFF';
+      }
+
       // Create attendance record
       const attendance = await this.prisma.attendance.create({
         data: {
           driverId,
           childId: body.childId,
           date: new Date(), // Add the required date field
-          type: body.type,
+          type: attendanceType,
           latitude: body.latitude,
           longitude: body.longitude,
           notes: body.notes || `${body.type} completed`,

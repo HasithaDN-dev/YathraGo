@@ -17,10 +17,13 @@ export interface StudentDestination {
 // Configure notification handler
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
+    // NotificationBehavior requires these properties depending on SDK/TS definitions
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
-  }),
+    shouldShowBanner: true,
+    shouldShowList: true,
+  } as any),
 });
 
 // Haversine formula to calculate distance between two coordinates
@@ -52,7 +55,8 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
   }
 
   if (data) {
-    const { locations } = data as { locations: Location.LocationObject[] };
+  // TaskManager provides a data object with a locations array; avoid relying on exact expo-location types here
+  const { locations } = data as { locations: any[] };
     const location = locations[0];
 
     if (!location) return;
