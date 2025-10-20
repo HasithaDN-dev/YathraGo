@@ -8,13 +8,379 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model User {
+model Absence_Child {
+  absent_id Int      @id @default(autoincrement())
+  reason    String
+  createdAt DateTime @default(now())
+  childId   Int
+  date      DateTime @default(now()) @db.Date
+  Child     Child    @relation(fields: [childId], references: [child_id])
+
+  @@unique([childId, date])
+  @@index([childId])
+  @@index([date])
+}
+
+model Absence_Staff {
+  absent_id Int      @id @default(autoincrement())
+  reason    String
+  createdAt DateTime @default(now())
+}
+
+model Admin {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  permissions String[]
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Attendance {
+  id            Int            @id @default(autoincrement())
+  driverId      Int
+  childId       Int
+  waypointId    Int?
+  latitude      Float?
+  longitude     Float?
+  notes         String?
+  tripId        Int?
+  status        String         @default("completed")
+  timestamp     DateTime       @default(now())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  date          DateTime       @db.Date
+  type          AttendanceType
+  Child         Child          @relation(fields: [childId], references: [child_id])
+  Driver        Driver         @relation(fields: [driverId], references: [driver_id])
+  RouteWaypoint RouteWaypoint? @relation(fields: [waypointId], references: [id])
+
+  @@unique([driverId, childId, date, type])
+  @@index([childId])
+  @@index([date])
+  @@index([driverId])
+  @@index([timestamp])
+  @@index([waypointId])
+}
+
+model AuditLog {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  userType    UserTypes
+  action      String
+  entity      String
+  entityId    Int?
+  changes     Json?
+  ipAddress   String?
+  userAgent   String?
+  timestamp   DateTime  @default(now())
+  description String?
+
+  @@index([entity, entityId])
+  @@index([timestamp])
+  @@index([userId, userType])
+}
+
+model BackupDriver {
+  id             Int     @id @default(autoincrement())
+  name           String
+  phone          String
+  vehicle_Reg_No String
+  NIC            String
+  fcmToken       String?
+
+  @@index([fcmToken])
+}
+
+model Chat {
+  id             Int           @id @default(autoincrement())
+  message        String?
+  timestamp      DateTime      @default(now())
+  seen           Boolean       @default(false)
+  conversationId Int
+  imageUrl       String?
+  senderId       Int
+  senderType     UserTypes
+  status         MessageStatus @default(SENT)
+  conversation   Conversation  @relation("messages", fields: [conversationId], references: [id])
+
+  @@index([conversationId])
+}
+
+model Child {
+  child_id         Int                @id @default(autoincrement())
+  relationship     String
+  nearbyCity       String
+  schoolLocation   String
+  school           String
+  childImageUrl    String?
+  pickUpAddress    String
+  customerId       Int?
+  childFirstName   String
+  childLastName    String
+  gender           Gender             @default(Unspecified)
+  pickupLatitude   Float?
+  pickupLongitude  Float?
+  schoolLatitude   Float?
+  schoolLongitude  Float?
+  Absence_Child    Absence_Child[]
+  Attendance       Attendance[]
+  Customer         Customer?          @relation("CustomerChildren", fields: [customerId], references: [customer_id])
+  ChildPayment     ChildPayment[]
+  ChildRideRequest ChildRideRequest[]
+  RouteStop        RouteStop[]
+  RouteWaypoint    RouteWaypoint[]
+
+  @@index([customerId])
+  @@index([nearbyCity])
+  @@index([school])
+}
+
+model ChildEmergency {
+  id             Int      @id @default(autoincrement())
+  type           String
+  description    String
+  OccurrenceDate DateTime
+}
+
+model ChildPayment {
+  id                 Int                @id @default(autoincrement())
+  rideRequestId      Int?
+  childId            Int
+  driverId           Int
+  customerId         Int
+  paymentMonth       Int
+  paymentYear        Int
+  baseMonthlyPrice   Float
+  isAdjusted         Boolean            @default(false)
+  adjustmentPercent  Float?
+  adjustedPrice      Float?
+  adjustmentReason   String?
+  adjustmentDate     DateTime?
+  finalPrice         Float
+  amountPaid         Float              @default(0)
+  paymentStatus      ChildPaymentStatus @default(NOT_DUE)
+  paymentEvents      Json?
+  dueDate            DateTime?
+  gracePeriodEndDate DateTime?
+  isPrepaid          Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  paymentMethod      String?
+  transactionRef     String?
+  carryForwardDue    Float              @default(0)
+  Child              Child              @relation(fields: [childId], references: [child_id])
+  Customer           Customer           @relation(fields: [customerId], references: [customer_id])
+  Driver             Driver             @relation(fields: [driverId], references: [driver_id])
+
+  @@unique([childId, paymentYear, paymentMonth])
+  @@index([customerId])
+  @@index([driverId, paymentYear, paymentMonth])
+}
+
+model ChildRideRequest {
+  id           Int           @id @default(autoincrement())
+  childId      Int
+  driverId     Int
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  Amount       Float?
+  AssignedDate DateTime?
+  status       RequestStatus @default(Pending)
+  child        Child         @relation(fields: [childId], references: [child_id])
+  driver       Driver        @relation(fields: [driverId], references: [driver_id])
+}
+
+model Child_Trip {
+  childTrip_id Int      @id @default(autoincrement())
+  date         DateTime @default(now())
+  pickUp       String
+  dropOff      String
+  startTime    DateTime
+  endTime      DateTime
+  driverId     Int?
+  Driver       Driver?  @relation(fields: [driverId], references: [driver_id])
+
+  @@index([driverId])
+}
+
+model City {
   id        Int      @id @default(autoincrement())
-  email     String?  @unique
-  name      String?
+  name      String   @unique
+  latitude  Float
+  longitude Float
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  phone     String   @unique
+}
+
+model ComplaintsInquiries {
+  id             Int                      @id @default(autoincrement())
+  senderId       Int
+  senderUserType UserTypes
+  type           ComplaintInquiryTypes
+  description    String
+  category       ComplaintInquiryCategory
+  status         ComplaintStatus          @default(PENDING)
+  createdAt      DateTime                 @default(now())
+
+  @@index([category])
+  @@index([senderId])
+  @@index([senderUserType])
+  @@index([status])
+  @@index([type])
+}
+
+model Conversation {
+  id               Int       @id @default(autoincrement())
+  participantAId   Int
+  participantAType UserTypes
+  participantBId   Int
+  participantBType UserTypes
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  messages         Chat[]    @relation("messages")
+
+  @@unique([participantAId, participantAType, participantBId, participantBType])
+}
+
+model Customer {
+  customer_id        Int                @id @default(autoincrement())
+  phone              String             @unique
+  email              String?
+  address            String?
+  profileImageUrl    String?
+  emergencyContact   String?
+  status             String             @default("ACTIVE")
+  registrationStatus RegistrationStatus @default(OTP_PENDING)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  fcmToken           String?
+  firstName          String
+  gender             Gender             @default(Unspecified)
+  lastName           String
+  children           Child[]            @relation("CustomerChildren")
+  ChildPayment       ChildPayment[]
+  staffPassenger     Staff_Passenger?   @relation("CustomerStaffPassenger")
+  askDriverRequest   askDriverRequest[]
+
+  @@index([fcmToken])
+  @@index([phone])
+  @@index([registrationStatus])
+  @@index([status])
+}
+
+model Driver {
+  driver_id                Int                @id @default(autoincrement())
+  NIC                      String
+  address                  String
+  date_of_birth            DateTime
+  date_of_joining          DateTime           @default(now())
+  driver_license_back_url  String
+  driver_license_front_url String
+  name                     String
+  gender                   String
+  nic_front_pic_url        String
+  nice_back_pic_url        String
+  phone                    String
+  profile_picture_url      String
+  second_phone             String
+  vehicle_Reg_No           String
+  email                    String?
+  status                   String             @default("ACTIVE")
+  registrationStatus       RegistrationStatus @default(OTP_PENDING)
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  fcmToken                 String?
+  Attendance               Attendance[]
+  ChildPayment             ChildPayment[]
+  ChildRideRequest         ChildRideRequest[]
+  Child_Trip               Child_Trip[]
+  driverCities             DriverCities?      @relation("DriverCities")
+  DriverRoute              DriverRoute[]
+  RouteWaypoint            RouteWaypoint[]
+  StaffRideRequest         StaffRideRequest[]
+  vehicles                 Vehicle[]          @relation("DriverVehicles")
+  askDriverRequest         askDriverRequest[]
+
+  @@index([fcmToken])
+}
+
+model DriverCities {
+  id             Int       @id @default(autoincrement())
+  driverId       Int       @unique
+  cityIds        Int[]
+  rideType       Ridetype  @default(Both)
+  usualEndTime   DateTime? @db.Time(6)
+  usualStartTime DateTime? @db.Time(6)
+  driver         Driver    @relation("DriverCities", fields: [driverId], references: [driver_id])
+}
+
+model DriverRoute {
+  id                  Int             @id @default(autoincrement())
+  driverId            Int
+  date                DateTime        @db.Date
+  routeDetails        Json?
+  createdAt           DateTime        @default(now())
+  completedAt         DateTime?
+  optimizedPolyline   String?
+  routeType           String          @default("MORNING_PICKUP")
+  startedAt           DateTime?
+  status              String          @default("PENDING")
+  totalDistanceMeters Int?
+  totalDurationSecs   Int?
+  updatedAt           DateTime        @updatedAt
+  driverLatitude      Float?
+  driverLongitude     Float?
+  driver              Driver          @relation(fields: [driverId], references: [driver_id])
+  stops               RouteStop[]     @relation("DriverRouteStops")
+  RouteWaypoint       RouteWaypoint[]
+
+  @@unique([driverId, date, routeType])
+  @@index([driverId, date])
+  @@index([status])
+}
+
+model FoundedBackupDrivers {
+  id Int @id @default(autoincrement())
+}
+
+model Manager {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  password   String
+  firstName  String
+  lastName   String
+  department String?
+  level      String   @default("JUNIOR")
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model MonthlyPayment {
+  id          Int      @id @default(autoincrement())
+  amount      Float
+  paid        Boolean  @default(false)
+  paymentDate DateTime @default(now())
+  month       String
+  Status      String   @default("Pending")
+}
+
+model Notification {
+  id         Int               @id @default(autoincrement())
+  sender     String
+  message    String
+  type       NotificationTypes
+  receiver   UserTypes
+  receiverId Int?
+  createdAt  DateTime          @default(now())
+  isExpanded Boolean           @default(false)
+
+  @@index([receiver, receiverId])
+  @@index([type])
 }
 
 model OtpCode {
@@ -32,46 +398,151 @@ model OtpCode {
   @@index([phone, userType, purpose])
 }
 
-model Webuser {
-  id           Int           @id @default(autoincrement())
-  email        String        @unique
-  password     String
-  username     String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  fcmToken     String?
-  role         Role          @default(OWNER)
-  address      String?
-  phone        String?
-  Vehicle      Vehicle[]
-  VehicleOwner VehicleOwner?
-
-  @@index([fcmToken])
-}
-
-model Admin {
+model PaymentBalance {
   id          Int      @id @default(autoincrement())
-  email       String   @unique
-  password    String
-  firstName   String
-  lastName    String
-  permissions String[]
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  month       String
+  amountDue   Float
+  balance     Float
+  date        DateTime @default(now())
+  description String
+  type        String
 }
 
-model Manager {
-  id         Int      @id @default(autoincrement())
-  email      String   @unique
-  password   String
-  firstName  String
-  lastName   String
-  department String?
-  level      String   @default("JUNIOR")
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+model PaymentRefund {
+  id              Int          @id @default(autoincrement())
+  paymentId       Int
+  childId         Int
+  customerId      Int
+  driverId        Int
+  refundAmount    Float
+  refundReason    String
+  refundType      RefundType
+  status          RefundStatus @default(PENDING)
+  requestedBy     Int
+  requestedByType UserTypes
+  approvedBy      Int?
+  approvedByType  UserTypes?
+  rejectedBy      Int?
+  rejectionReason String?
+  refundMethod    String?
+  transactionRef  String?
+  requestedAt     DateTime     @default(now())
+  processedAt     DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([customerId])
+  @@index([driverId])
+  @@index([paymentId])
+  @@index([status])
+}
+
+model Ratings_and_Reviews {
+  review_id Int      @id @default(autoincrement())
+  review    String
+  ratings   Int
+  createdAt DateTime @default(now())
+}
+
+model RouteStop {
+  id                       Int          @id @default(autoincrement())
+  driverRouteId            Int
+  childId                  Int
+  order                    Int
+  type                     WaypointType
+  address                  String
+  latitude                 Float
+  longitude                Float
+  etaSecs                  Int?
+  cumulativeDistanceMeters Int?
+  legDistanceMeters        Int?
+  status                   StopStatus   @default(PENDING)
+  arrivedAt                DateTime?
+  completedAt              DateTime?
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime     @updatedAt
+  child                    Child        @relation(fields: [childId], references: [child_id])
+  driverRoute              DriverRoute  @relation("DriverRouteStops", fields: [driverRouteId], references: [id], onDelete: Cascade)
+
+  @@index([driverRouteId, order])
+  @@index([status])
+}
+
+model RouteWaypoint {
+  id                       Int          @id @default(autoincrement())
+  driverRouteId            Int
+  childId                  Int
+  driverId                 Int
+  order                    Int
+  address                  String?
+  cumulativeDistanceMeters Int?
+  eta                      DateTime?
+  latitude                 Float?
+  longitude                Float?
+  status                   String       @default("PENDING")
+  type                     WaypointType
+  Attendance               Attendance[]
+  Child                    Child        @relation(fields: [childId], references: [child_id])
+  Driver                   Driver       @relation(fields: [driverId], references: [driver_id])
+  DriverRoute              DriverRoute  @relation(fields: [driverRouteId], references: [id])
+}
+
+model StaffEmergency {
+  id             Int      @id @default(autoincrement())
+  type           String
+  description    String
+  OccurrenceDate DateTime
+}
+
+model StaffRideRequest {
+  id             Int             @id @default(autoincrement())
+  staffId        Int
+  driverId       Int
+  status         RequestStatus   @default(Pending)
+  Amount         Float?
+  AssignedDate   DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  driver         Driver          @relation(fields: [driverId], references: [driver_id])
+  staffPassenger Staff_Passenger @relation(fields: [staffId], references: [id])
+}
+
+model Staff_Passenger {
+  id               Int                @id @default(autoincrement())
+  customerId       Int                @unique
+  nearbyCity       String
+  workLocation     String
+  workAddress      String
+  pickUpLocation   String
+  pickupAddress    String
+  pickupLatitude   Float?
+  pickupLongitude  Float?
+  workLatitude     Float?
+  workLongitude    Float?
+  StaffRideRequest StaffRideRequest[]
+  customer         Customer           @relation("CustomerStaffPassenger", fields: [customerId], references: [customer_id])
+
+  @@index([customerId])
+  @@index([nearbyCity])
+  @@index([workLocation])
+}
+
+model Staff_Trip {
+  staffTrip_id    Int      @id @default(autoincrement())
+  pickUpLocation  String
+  dropOffLocation String
+  startTime       DateTime
+  endTime         DateTime
+  date            DateTime @default(now())
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String?  @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  phone     String   @unique
 }
 
 model Vehicle {
@@ -97,290 +568,68 @@ model Vehicle {
   ownerId             Int?
   driverId            Int?
   webuserId           Int?
-  driver              Driver?       @relation(fields: [driverId], references: [driver_id])
+  driver              Driver?       @relation("DriverVehicles", fields: [driverId], references: [driver_id])
   VehicleOwner        VehicleOwner? @relation(fields: [ownerId], references: [id])
   Webuser             Webuser?      @relation(fields: [webuserId], references: [id])
 }
 
-model Chat {
-  id             Int           @id @default(autoincrement())
-  message        String?
-  timestamp      DateTime      @default(now())
-  seen           Boolean       @default(false)
-  conversationId Int
-  imageUrl       String?
-  senderId       Int
-  senderType     UserTypes
-  status         MessageStatus @default(SENT)
-  conversation   Conversation  @relation(fields: [conversationId], references: [id])
+model VehicleAlert {
+  id                    Int              @id @default(autoincrement())
+  vehicleId             Int
+  driverId              Int
+  alertType             VehicleAlertType
+  severity              AlertSeverity    @default(MEDIUM)
+  description           String
+  location              String?
+  latitude              Float?
+  longitude             Float?
+  status                AlertStatus      @default(ACTIVE)
+  reportedAt            DateTime         @default(now())
+  acknowledgedAt        DateTime?
+  resolvedAt            DateTime?
+  assignedBackupVehicle String?
+  assignedBackupDriver  String?
+  affectedRoutes        String[]
+  affectedChildrenCount Int              @default(0)
+  estimatedDowntime     String?
+  resolutionNotes       String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
-  @@index([conversationId])
-}
-
-model Conversation {
-  id               Int       @id @default(autoincrement())
-  participantAId   Int
-  participantAType UserTypes
-  participantBId   Int
-  participantBType UserTypes
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  messages         Chat[]
-
-  @@unique([participantAId, participantAType, participantBId, participantBType])
-}
-
-model BackupDriver {
-  id             Int     @id @default(autoincrement())
-  name           String
-  phone          String
-  vehicle_Reg_No String
-  NIC            String
-  fcmToken       String?
-
-  @@index([fcmToken])
-}
-
-model Absence_Child {
-  absent_id Int      @id @default(autoincrement())
-  reason    String
-  createdAt DateTime @default(now())
-  childId   Int
-  date      DateTime @default(now()) @db.Date
-  Child     Child    @relation(fields: [childId], references: [child_id])
-
-  @@unique([childId, date])
-  @@index([childId])
-  @@index([date])
-}
-
-model Notification {
-  id         Int               @id @default(autoincrement())
-  sender     String
-  message    String
-  type       NotificationTypes
-  receiver   UserTypes
-  receiverId Int?
-  createdAt  DateTime          @default(now())
-  isExpanded Boolean           @default(false)
-
-  @@index([type])
-  @@index([receiver, receiverId])
-}
-
-model MonthlyPayment {
-  id          Int      @id @default(autoincrement())
-  amount      Float
-  paid        Boolean  @default(false)
-  paymentDate DateTime @default(now())
-  month       String
-  Status      String   @default("Pending")
-}
-
-model PaymentBalance {
-  id          Int      @id @default(autoincrement())
-  month       String
-  amountDue   Float
-  balance     Float
-  date        DateTime @default(now())
-  description String
-  type        String
-}
-
-model StaffEmergency {
-  id             Int      @id @default(autoincrement())
-  type           String
-  description    String
-  OccurrenceDate DateTime
-}
-
-model ChildEmergency {
-  id             Int      @id @default(autoincrement())
-  type           String
-  description    String
-  OccurrenceDate DateTime
-}
-
-model Driver {
-  driver_id                Int                @id @default(autoincrement())
-  NIC                      String
-  address                  String
-  date_of_birth            DateTime
-  date_of_joining          DateTime           @default(now())
-  driver_license_back_url  String
-  driver_license_front_url String
-  name                     String
-  gender                   String
-  nic_front_pic_url        String
-  nice_back_pic_url        String
-  phone                    String
-  profile_picture_url      String
-  second_phone             String
-  vehicle_Reg_No           String
-  email                    String?
-  status                   String             @default("ACTIVE")
-  registrationStatus       RegistrationStatus @default(OTP_PENDING)
-  createdAt                DateTime           @default(now())
-  updatedAt                DateTime           @updatedAt
-  fcmToken                 String?
-  attendance               Attendance[]
-  ChildPayment             ChildPayment[]
-  childRideRequests        ChildRideRequest[]
-  childTrips               Child_Trip[]
-  driverCities             DriverCities?
-  driverRoutes             DriverRoute[]
-  routeWaypoints           RouteWaypoint[]
-  StaffRideRequest         StaffRideRequest[]
-  vehicles                 Vehicle[]
-  askDriverRequest         askDriverRequest[]
-
-  @@index([fcmToken])
-}
-
-model FoundedBackupDrivers {
-  id Int @id @default(autoincrement())
-}
-
-model Customer {
-  customer_id        Int                @id @default(autoincrement())
-  phone              String             @unique
-  email              String?
-  address            String?
-  profileImageUrl    String?
-  emergencyContact   String?
-  status             String             @default("ACTIVE")
-  registrationStatus RegistrationStatus @default(OTP_PENDING)
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  fcmToken           String?
-  firstName          String
-  gender             Gender             @default(Unspecified)
-  lastName           String
-  children           Child[]
-  ChildPayment       ChildPayment[]
-  staffPassenger     Staff_Passenger?
-  askDriverRequest   askDriverRequest[]
-
-  @@index([phone])
-  @@index([registrationStatus])
-  @@index([status])
-  @@index([fcmToken])
-}
-
-model Absence_Staff {
-  absent_id Int      @id @default(autoincrement())
-  reason    String
-  createdAt DateTime @default(now())
-}
-
-model Ratings_and_Reviews {
-  review_id Int      @id @default(autoincrement())
-  review    String
-  ratings   Int
-  createdAt DateTime @default(now())
-}
-
-model Child {
-  child_id        Int                @id @default(autoincrement())
-  relationship    String
-  nearbyCity      String
-  schoolLocation  String
-  school          String
-  childImageUrl   String?
-  pickUpAddress   String
-  customerId      Int?
-  childFirstName  String
-  childLastName   String
-  gender          Gender             @default(Unspecified)
-  pickupLatitude  Float?
-  pickupLongitude Float?
-  schoolLatitude  Float?
-  schoolLongitude Float?
-  Absence_Child   Absence_Child[]
-  attendance      Attendance[]
-  Customer        Customer?          @relation(fields: [customerId], references: [customer_id])
-  ChildPayment    ChildPayment[]
-  rideRequests    ChildRideRequest[]
-  routeStops      RouteStop[]
-  routeWaypoints  RouteWaypoint[]
-
-  @@index([customerId])
-  @@index([school])
-  @@index([nearbyCity])
-}
-
-model Child_Trip {
-  childTrip_id Int      @id @default(autoincrement())
-  date         DateTime @default(now())
-  pickUp       String
-  dropOff      String
-  startTime    DateTime
-  endTime      DateTime
-  driverId     Int?
-  driver       Driver?  @relation(fields: [driverId], references: [driver_id])
-
+  @@index([alertType])
   @@index([driverId])
+  @@index([reportedAt])
+  @@index([status])
+  @@index([vehicleId])
 }
 
-model Staff_Passenger {
-  id               Int                @id @default(autoincrement())
-  customerId       Int                @unique
-  nearbyCity       String
-  workLocation     String
-  workAddress      String
-  pickUpLocation   String
-  pickupAddress    String
-  pickupLatitude   Float?
-  pickupLongitude  Float?
-  workLatitude     Float?
-  workLongitude    Float?
-  StaffRideRequest StaffRideRequest[]
-  Customer         Customer           @relation(fields: [customerId], references: [customer_id])
-
-  @@index([customerId])
-  @@index([workLocation])
-  @@index([nearbyCity])
+model VehicleOwner {
+  id         Int       @id
+  first_name String?
+  last_name  String?
+  phone      String?
+  email      String?
+  company    String?
+  Address    String?
+  Vehicle    Vehicle[]
+  Webuser    Webuser   @relation(fields: [id], references: [id])
 }
 
-model Staff_Trip {
-  staffTrip_id    Int      @id @default(autoincrement())
-  pickUpLocation  String
-  dropOffLocation String
-  startTime       DateTime
-  endTime         DateTime
-  date            DateTime @default(now())
-}
-
-model City {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  latitude  Float
-  longitude Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model DriverCities {
-  id             Int       @id @default(autoincrement())
-  driverId       Int       @unique
-  cityIds        Int[]
-  rideType       Ridetype  @default(Both)
-  usualEndTime   DateTime? @db.Time(6)
-  usualStartTime DateTime? @db.Time(6)
-  driver         Driver    @relation(fields: [driverId], references: [driver_id])
-}
-
-model ChildRideRequest {
+model Webuser {
   id           Int           @id @default(autoincrement())
-  childId      Int
-  driverId     Int
+  email        String        @unique
+  password     String
+  username     String
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  Amount       Float?
-  AssignedDate DateTime?
-  status       RequestStatus @default(Pending)
-  child        Child         @relation(fields: [childId], references: [child_id])
-  driver       Driver        @relation(fields: [driverId], references: [driver_id])
+  fcmToken     String?
+  role         Role          @default(OWNER)
+  address      String?
+  phone        String?
+  Vehicle      Vehicle[]
+  VehicleOwner VehicleOwner?
+
+  @@index([fcmToken])
 }
 
 model askDriverRequest {
@@ -411,333 +660,19 @@ model askDriverRequest {
   @@index([status])
 }
 
-model DriverRoute {
-  id                  Int             @id @default(autoincrement())
-  driverId            Int
-  date                DateTime        @db.Date
-  routeDetails        Json?
-  createdAt           DateTime        @default(now())
-  completedAt         DateTime?
-  optimizedPolyline   String?
-  routeType           String          @default("MORNING_PICKUP")
-  startedAt           DateTime?
-  status              String          @default("PENDING")
-  totalDistanceMeters Int?
-  totalDurationSecs   Int?
-  updatedAt           DateTime        @updatedAt
-  driverLatitude      Float?
-  driverLongitude     Float?
-  driver              Driver          @relation(fields: [driverId], references: [driver_id])
-  stops               RouteStop[]
-  waypoints           RouteWaypoint[]
-
-  @@unique([driverId, date, routeType])
-  @@index([driverId, date])
-  @@index([status])
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }
 
-model RouteStop {
-  id                       Int          @id @default(autoincrement())
-  driverRouteId            Int
-  childId                  Int
-  order                    Int
-  type                     WaypointType
-  address                  String
-  latitude                 Float
-  longitude                Float
-  etaSecs                  Int?
-  cumulativeDistanceMeters Int?
-  legDistanceMeters        Int?
-  status                   StopStatus   @default(PENDING)
-  arrivedAt                DateTime?
-  completedAt              DateTime?
-  createdAt                DateTime     @default(now())
-  updatedAt                DateTime     @updatedAt
-  child                    Child        @relation(fields: [childId], references: [child_id])
-  driverRoute              DriverRoute  @relation(fields: [driverRouteId], references: [id], onDelete: Cascade)
-
-  @@index([driverRouteId, order])
-  @@index([status])
-}
-
-model RouteWaypoint {
-  id                       Int          @id @default(autoincrement())
-  driverRouteId            Int
-  childId                  Int
-  driverId                 Int
-  order                    Int
-  address                  String?
-  cumulativeDistanceMeters Int?
-  eta                      DateTime?
-  latitude                 Float?
-  longitude                Float?
-  status                   String       @default("PENDING")
-  type                     WaypointType
-  attendance               Attendance[]
-  child                    Child        @relation(fields: [childId], references: [child_id])
-  driver                   Driver       @relation(fields: [driverId], references: [driver_id])
-  driverRoute              DriverRoute  @relation(fields: [driverRouteId], references: [id])
-}
-
-model ComplaintsInquiries {
-  id             Int                      @id @default(autoincrement())
-  senderId       Int
-  senderUserType UserTypes
-  type           ComplaintInquiryTypes
-  description    String
-  category       ComplaintInquiryCategory
-  status         ComplaintStatus          @default(PENDING)
-  createdAt      DateTime                 @default(now())
-
-  @@index([senderId])
-  @@index([type])
-  @@index([category])
-  @@index([senderUserType])
-  @@index([status])
-}
-
-model Attendance {
-  id         Int            @id @default(autoincrement())
-  driverId   Int
-  childId    Int
-  waypointId Int?
-  latitude   Float?
-  longitude  Float?
-  notes      String?
-  tripId     Int?
-  status     String         @default("completed")
-  timestamp  DateTime       @default(now())
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  date       DateTime       @db.Date
-  type       AttendanceType
-  child      Child          @relation(fields: [childId], references: [child_id])
-  driver     Driver         @relation(fields: [driverId], references: [driver_id])
-  waypoint   RouteWaypoint? @relation(fields: [waypointId], references: [id])
-
-  @@unique([driverId, childId, date, type])
-  @@index([driverId])
-  @@index([childId])
-  @@index([waypointId])
-  @@index([timestamp])
-  @@index([date])
-}
-
-model ChildPayment {
-  id                 Int                @id @default(autoincrement())
-  rideRequestId      Int?
-  childId            Int
-  driverId           Int
-  customerId         Int
-  paymentMonth       Int
-  paymentYear        Int
-  baseMonthlyPrice   Float
-  isAdjusted         Boolean            @default(false)
-  adjustmentPercent  Float?
-  adjustedPrice      Float?
-  adjustmentReason   String?
-  adjustmentDate     DateTime?
-  finalPrice         Float
-  amountPaid         Float              @default(0)
-  paymentStatus      ChildPaymentStatus @default(NOT_DUE)
-  paymentEvents      Json?
-  dueDate            DateTime?
-  gracePeriodEndDate DateTime?
-  isPrepaid          Boolean            @default(false)
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime
-  paymentMethod      String?
-  transactionRef     String?
-  carryForwardDue    Float              @default(0)
-  Child              Child              @relation(fields: [childId], references: [child_id])
-  Customer           Customer           @relation(fields: [customerId], references: [customer_id])
-  Driver             Driver             @relation(fields: [driverId], references: [driver_id])
-
-  @@unique([childId, paymentYear, paymentMonth])
-  @@index([customerId])
-  @@index([driverId, paymentYear, paymentMonth])
-}
-
-model StaffRideRequest {
-  id              Int             @id @default(autoincrement())
-  staffId         Int
-  driverId        Int
-  status          RequestStatus   @default(Pending)
-  Amount          Float?
-  AssignedDate    DateTime?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime
-  Driver          Driver          @relation(fields: [driverId], references: [driver_id])
-  Staff_Passenger Staff_Passenger @relation(fields: [staffId], references: [id])
-}
-
-model VehicleOwner {
-  id         Int       @id
-  first_name String?
-  last_name  String?
-  phone      String?
-  email      String?
-  company    String?
-  Address    String?
-  Vehicle    Vehicle[]
-  Webuser    Webuser   @relation(fields: [id], references: [id])
-}
-
-model askDriverRequest {
-  id                        Int       @id @default(autoincrement())
-  customerID                Int
-  staffOrChild              String
-  staffOrChildID            Int
-  driverId                  Int
-  estimatedDistance         Float
-  estimatedPrice            Float
-  currentAmount             Float
-  customerNote              String?
-  driverNote                String?
-  status                    askStatus @default(PENDING)
-  nearestPickupCityID       Int
-  nearestWorkOrSchoolCityID Int
-  nearestPickupCityName     String?
-  nearestDropCityName       String?
-  lastModifiedBy            String?
-  negotiationHistory        Json?
-  createdAt                 DateTime  @default(now())
-  updatedAt                 DateTime
-  Customer                  Customer  @relation(fields: [customerID], references: [customer_id])
-  Driver                    Driver    @relation(fields: [driverId], references: [driver_id])
-
-  @@index([customerID])
-  @@index([driverId])
-  @@index([status])
-}
-
-model VehicleAlert {
-  id                    Int              @id @default(autoincrement())
-  vehicleId             Int
-  driverId              Int
-  alertType             VehicleAlertType
-  severity              AlertSeverity    @default(MEDIUM)
-  description           String
-  location              String?
-  latitude              Float?
-  longitude             Float?
-  status                AlertStatus      @default(ACTIVE)
-  reportedAt            DateTime         @default(now())
-  acknowledgedAt        DateTime?
-  resolvedAt            DateTime?
-  assignedBackupVehicle String?
-  assignedBackupDriver  String?
-  affectedRoutes        String[]
-  affectedChildrenCount Int              @default(0)
-  estimatedDowntime     String?
-  resolutionNotes       String?
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
-
-  @@index([vehicleId])
-  @@index([driverId])
-  @@index([status])
-  @@index([alertType])
-  @@index([reportedAt])
-}
-
-model AuditLog {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  userType    UserTypes
-  action      String
-  entity      String
-  entityId    Int?
-  changes     Json?
-  ipAddress   String?
-  userAgent   String?
-  timestamp   DateTime  @default(now())
-  description String?
-
-  @@index([userId, userType])
-  @@index([entity, entityId])
-  @@index([timestamp])
-}
-
-model PaymentRefund {
-  id              Int          @id @default(autoincrement())
-  paymentId       Int
-  childId         Int
-  customerId      Int
-  driverId        Int
-  refundAmount    Float
-  refundReason    String
-  refundType      RefundType
-  status          RefundStatus @default(PENDING)
-  requestedBy     Int
-  requestedByType UserTypes
-  approvedBy      Int?
-  approvedByType  UserTypes?
-  rejectedBy      Int?
-  rejectionReason String?
-  refundMethod    String?
-  transactionRef  String?
-  requestedAt     DateTime     @default(now())
-  processedAt     DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  @@index([paymentId])
-  @@index([status])
-  @@index([customerId])
-  @@index([driverId])
-}
-
-enum RegistrationStatus {
-  OTP_PENDING
-  OTP_VERIFIED
-  ACCOUNT_CREATED
-  HAVING_A_PROFILE
-}
-
-enum OtpPurpose {
-  PHONE_VERIFICATION
-  PASSWORD_RESET
-  LOGIN
-}
-
-enum UserType {
-  CUSTOMER
-  DRIVER
-}
-
-enum Gender {
-  Male
-  Female
-  Unspecified
-}
-
-enum RequestStatus {
-  Pending
-  Assigned
-  Unassigned
-  Rejected
-}
-
-enum UserTypes {
-  CUSTOMER
-  WEBUSER
-  BACKUPDRIVER
-  DRIVER
-  VEHICLEOWNER
-  CHILD
-  STAFF
-}
-
-enum MessageStatus {
-  SENT
-  DELIVERED
-  SEEN
-}
-
-enum WaypointType {
-  PICKUP
-  DROPOFF
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  IN_PROGRESS
+  RESOLVED
+  CANCELLED
 }
 
 enum AttendanceType {
@@ -747,43 +682,14 @@ enum AttendanceType {
   EVENING_DROPOFF
 }
 
-enum NotificationTypes {
-  System
-  Alert
-  Other
-  Chat
-}
-
 enum ChildPaymentStatus {
   NOT_DUE
   PENDING
-  AWAITING_CONFIRMATION
   PAID
   OVERDUE
   GRACE_PERIOD
   CANCELLED
   AWAITING_CONFIRMATION
-}
-
-enum Ridetype {
-  School
-  Work
-  Both
-}
-
-enum StopStatus {
-  PENDING
-  ARRIVED
-  COMPLETED
-  SKIPPED
-}
-
-enum Role {
-  OWNER
-  ADMIN
-  MANAGER
-  FINANCE_MANAGER
-  DRIVER_COORDINATOR
 }
 
 enum ComplaintInquiryCategory {
@@ -804,13 +710,96 @@ enum ComplaintStatus {
   RESOLVED
 }
 
-enum askStatus {
+enum Gender {
+  Male
+  Female
+  Unspecified
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  SEEN
+}
+
+enum NotificationTypes {
+  System
+  Alert
+  Other
+  Chat
+}
+
+enum OtpPurpose {
+  PHONE_VERIFICATION
+  PASSWORD_RESET
+  LOGIN
+}
+
+enum RefundStatus {
   PENDING
-  DRIVER_COUNTER
-  CUSTOMER_COUNTER
-  ACCEPTED
+  APPROVED
   REJECTED
-  ASSIGNED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum RefundType {
+  FULL
+  PARTIAL
+  OVERPAYMENT
+  CANCELLATION
+  SERVICE_ISSUE
+}
+
+enum RegistrationStatus {
+  OTP_PENDING
+  OTP_VERIFIED
+  ACCOUNT_CREATED
+  HAVING_A_PROFILE
+}
+
+enum RequestStatus {
+  Pending
+  Assigned
+  Unassigned
+  Rejected
+}
+
+enum Ridetype {
+  School
+  Work
+  Both
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MANAGER
+  FINANCE_MANAGER
+  DRIVER_COORDINATOR
+}
+
+enum StopStatus {
+  PENDING
+  ARRIVED
+  COMPLETED
+  SKIPPED
+}
+
+enum UserType {
+  CUSTOMER
+  DRIVER
+}
+
+enum UserTypes {
+  CUSTOMER
+  WEBUSER
+  BACKUPDRIVER
+  DRIVER
+  VEHICLEOWNER
+  CHILD
+  STAFF
 }
 
 enum VehicleAlertType {
@@ -823,54 +812,35 @@ enum VehicleAlertType {
   LICENSE_EXPIRY
 }
 
-enum AlertSeverity {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
+enum WaypointType {
+  PICKUP
+  DROPOFF
 }
 
-enum AlertStatus {
-  ACTIVE
-  ACKNOWLEDGED
-  IN_PROGRESS
-  RESOLVED
-  CANCELLED
-}
-
-enum RefundType {
-  FULL
-  PARTIAL
-  OVERPAYMENT
-  CANCELLATION
-  SERVICE_ISSUE
-}
-
-enum RefundStatus {
+enum askStatus {
   PENDING
-  APPROVED
+  DRIVER_COUNTER
+  CUSTOMER_COUNTER
+  ACCEPTED
   REJECTED
-  PROCESSING
-  COMPLETED
-  FAILED
+  ASSIGNED
 }
-
 
 // ============================================
 // ADMIN SUPPORT MODELS (Added for Admin Features)
 // ============================================
 
 model SystemSettings {
-  id             Int              @id @default(autoincrement())
-  key            String           @unique
-  value          String
-  category       SettingsCategory
-  description    String?
-  isEditable     Boolean          @default(true)
-  modifiedBy     Int?
-  modifiedAt     DateTime?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id          Int              @id @default(autoincrement())
+  key         String           @unique
+  value       String
+  category    SettingsCategory
+  description String?
+  isEditable  Boolean          @default(true)
+  modifiedBy  Int?
+  modifiedAt  DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   @@index([category])
   @@index([key])
@@ -889,7 +859,7 @@ model BackupHistory {
   failureReason String?
   metadata      Json?
   createdAt     DateTime     @default(now())
-  
+
   @@index([status])
   @@index([backupType])
   @@index([startedAt])
@@ -906,7 +876,7 @@ model AdminSession {
   lastActivity DateTime @default(now())
   expiresAt    DateTime
   createdAt    DateTime @default(now())
-  
+
   @@index([adminId])
   @@index([token])
   @@index([isActive])
@@ -923,7 +893,7 @@ model AdminActivity {
   success      Boolean  @default(true)
   errorMessage String?
   createdAt    DateTime @default(now())
-  
+
   @@index([adminId])
   @@index([action])
   @@index([module])
@@ -938,7 +908,7 @@ model ComplaintResponse {
   isInternal  Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   @@index([complaintId])
   @@index([adminId])
   @@index([createdAt])
@@ -953,7 +923,7 @@ model UserStatusHistory {
   reason    String?
   changedBy Int
   changedAt DateTime  @default(now())
-  
+
   @@index([userId, userType])
   @@index([changedBy])
   @@index([changedAt])
@@ -967,7 +937,7 @@ model AdminPermissionLog {
   newPermissions String[]
   reason         String?
   createdAt      DateTime @default(now())
-  
+
   @@index([adminId])
   @@index([changedBy])
   @@index([createdAt])
@@ -999,11 +969,4 @@ enum SettingsCategory {
   BACKUP
   SECURITY
   GENERAL
-}
-
-enum AttendanceType {
-  MORNING_PICKUP
-  MORNING_DROPOFF
-  EVENING_PICKUP
-  EVENING_DROPOFF
 }

@@ -808,30 +808,19 @@ export class DriverRouteService {
       },
     });
 
-    // Determine attendance type based on route type and stop type
-    const getAttendanceType = (
-      routeType: string,
-      stopType: string,
-    ): 'MORNING_PICKUP' | 'MORNING_DROPOFF' | 'EVENING_PICKUP' | 'EVENING_DROPOFF' => {
-      if (routeType === 'MORNING_PICKUP') {
-        return stopType === 'PICKUP' ? 'MORNING_PICKUP' : 'MORNING_DROPOFF';
-      } else {
-        return stopType === 'PICKUP' ? 'EVENING_PICKUP' : 'EVENING_DROPOFF';
-      }
-    };
-
-    const attendanceType = getAttendanceType(
-      stop.driverRoute.routeType,
-      stop.type,
-    );
-
     // Create attendance record
     // Determine session-aware attendance type based on route type and stop type
-    let attendanceType: 'MORNING_PICKUP' | 'MORNING_DROPOFF' | 'EVENING_PICKUP' | 'EVENING_DROPOFF';
+    let attendanceType:
+      | 'MORNING_PICKUP'
+      | 'MORNING_DROPOFF'
+      | 'EVENING_PICKUP'
+      | 'EVENING_DROPOFF';
     if (stop.driverRoute.routeType === 'MORNING_PICKUP') {
-      attendanceType = stop.type === 'PICKUP' ? 'MORNING_PICKUP' : 'MORNING_DROPOFF';
+      attendanceType =
+        stop.type === 'PICKUP' ? 'MORNING_PICKUP' : 'MORNING_DROPOFF';
     } else if (stop.driverRoute.routeType === 'AFTERNOON_DROPOFF') {
-      attendanceType = stop.type === 'PICKUP' ? 'EVENING_PICKUP' : 'EVENING_DROPOFF';
+      attendanceType =
+        stop.type === 'PICKUP' ? 'EVENING_PICKUP' : 'EVENING_DROPOFF';
     } else {
       // Fallback for any other route types - default to morning pickup
       attendanceType = 'MORNING_PICKUP';
