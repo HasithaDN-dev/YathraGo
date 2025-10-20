@@ -1,4 +1,11 @@
-import { IsInt, IsString, IsOptional, IsEnum, IsNumber, Min } from 'class-validator';
+import {
+  IsInt,
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  Min,
+} from 'class-validator';
 
 export class CreateRequestDto {
   @IsInt()

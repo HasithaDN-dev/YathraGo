@@ -20,6 +20,7 @@ import { FindVehicleModule } from './find-vehicle/find-vehicle.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SearchModule } from './search/search.module';
 import { DriverRequestModule } from './driver-request/driver-request.module';
+import { ComplaintsInquiriesModule } from './complaints-inquiries/complaints-inquiries.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { DriverRequestModule } from './driver-request/driver-request.module';
     SearchModule,
     NotificationsModule,
     DriverRequestModule,
+    ComplaintsInquiriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

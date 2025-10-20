@@ -15,7 +15,7 @@ export class JwtGuard extends AuthGuard('web-jwt') {
     if (err || !user) {
       throw err || new Error('Unauthorized');
     }
-    
+
     return user;
   }
 }

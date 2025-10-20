@@ -36,9 +36,9 @@ export default function MenuScreen() {
     },
     {
       id: '2',
-      title: 'Complains and Inquiries',
+      title: 'Complaints and Inquiries',
       icon: PhoneIcon,
-      action: () => router.push('/(menu)/complain_Inquiries'),
+      action: () => router.push('/(menu)/complaint_Inquiries'),
     },
     {
       id: '3',
