@@ -1,16 +1,16 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import Cookies from "js-cookie";
 import { ownerApi } from "@/lib/api/owner";
+import type { Vehicle, Driver, Payment } from "@/types/api";
 
 interface OwnerState {
   username: string;
   role?: string;
-  vehicles?: any[];
-  drivers?: any[];
-  paymentHistory?: any[];
+  vehicles?: Vehicle[];
+  drivers?: Driver[];
+  paymentHistory?: Payment[];
 }
 
 interface OwnerContextType extends OwnerState {
@@ -20,6 +20,8 @@ interface OwnerContextType extends OwnerState {
   fetchDrivers: () => Promise<void>;
   fetchPaymentHistory: () => Promise<void>;
   loading: boolean;
+  error: string | null;
+  clearError: () => void;
 }
 
 const OwnerContext = createContext<OwnerContextType | undefined>(undefined);
@@ -40,6 +42,8 @@ export const useOwner = () => {
       fetchDrivers: async () => {},
       fetchPaymentHistory: async () => {},
       loading: false,
+      error: null,
+      clearError: () => {},
     } as OwnerContextType;
   }
   return ctx;
@@ -48,23 +52,33 @@ export const useOwner = () => {
 export const OwnerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [username, setUsername] = useState<string>("");
   const [role, setRole] = useState<string | undefined>(undefined);
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [drivers, setDrivers] = useState<any[]>([]);
-  const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<Payment[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
 
   const refreshOwner = useCallback(async () => {
     const token = Cookies.get("access_token");
-    if (!token) return;
+    if (!token) {
+      setError("Authentication required. Please log in again.");
+      return;
+    }
     try {
       setLoading(true);
+      setError(null);
       const data = await ownerApi.getProfile();
       // prefer explicit username fields, fall back to first/last concatenation if available
-      const uname = data.username || data.user_name || (data.firstName || data.first_name ? `${data.firstName || data.first_name}${data.lastName ? ' ' + data.lastName : ''}` : "");
+      const uname = data.username || (data.firstName ? `${data.firstName}${data.lastName ? ' ' + data.lastName : ''}` : "");
       setUsername(uname || "");
       setRole(data.role || data.roleName || undefined);
-    } catch (error) {
-      console.error('Failed to fetch owner profile:', error);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to load profile. Please try again.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -73,10 +87,13 @@ export const OwnerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const fetchVehicles = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await ownerApi.getVehicles();
       setVehicles(Array.isArray(data) ? data : data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch vehicles:', error);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to load vehicles. Please try again.";
+      setError(errorMessage);
+      setVehicles([]);
     } finally {
       setLoading(false);
     }
@@ -85,10 +102,13 @@ export const OwnerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const fetchDrivers = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await ownerApi.getDrivers();
       setDrivers(Array.isArray(data) ? data : data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch drivers:', error);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to load drivers. Please try again.";
+      setError(errorMessage);
+      setDrivers([]);
     } finally {
       setLoading(false);
     }
@@ -97,10 +117,13 @@ export const OwnerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const fetchPaymentHistory = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await ownerApi.getPaymentHistory();
       setPaymentHistory(Array.isArray(data) ? data : data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch payment history:', error);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to load payment history. Please try again.";
+      setError(errorMessage);
+      setPaymentHistory([]);
     } finally {
       setLoading(false);
     }
@@ -131,7 +154,9 @@ export const OwnerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       fetchVehicles,
       fetchDrivers,
       fetchPaymentHistory,
-      loading
+      loading,
+      error,
+      clearError
     }}>
       {children}
     </OwnerContext.Provider>

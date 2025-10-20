@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIn
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Calendar, CreditCard, ArrowLeft, PencilSimple, Bank } from 'phosphor-react-native';
-import { getDriverPayments, ChildPayment } from '../../lib/api/transactions.api';
+import { getDriverPayments } from '../../lib/api/transactions.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
 
 // Format date from ISO string to "2 May, 2025" format
@@ -33,15 +33,17 @@ const getStatusConfig = (status: string): { backgroundColor: string; textColor: 
   }
 };
 
-const PaymentHistoryItem = ({ payment }: { payment: ChildPayment }) => {
+const PaymentHistoryItem = ({ payment }: { payment: any }) => {
   const statusConfig = getStatusConfig(payment.paymentStatus);
-  const displayDate = payment.paymentDate 
-    ? formatDate(payment.paymentDate) 
-    : formatDate(payment.createdAt);
-  const displayMethod = payment.paymentMethod || '-';
-  const displayRef = payment.transactionRef || '-';
-  const isPaid = payment.paymentStatus === 'PAID';
-  const amountColor = isPaid ? '#143373' : '#EF4444'; // Warning color for unpaid
+    const displayDate = payment.paymentDate
+      ? formatDate(payment.paymentDate)
+      : payment.createdAt
+      ? formatDate(payment.createdAt)
+      : '-';
+    const displayMethod = payment.paymentMethod || '-';
+    const displayRef = payment.transactionRef || '-';
+    const isPaid = payment.paymentStatus === 'PAID';
+    const amountColor = isPaid ? '#143373' : '#EF4444'; // Warning color for unpaid
 
   return (
     <View style={styles.card}>
@@ -66,7 +68,7 @@ const PaymentHistoryItem = ({ payment }: { payment: ChildPayment }) => {
         <View style={styles.paymentDetailsRight}>
           <CreditCard size={20} color={amountColor} />
           <Text style={[styles.amount, { color: amountColor }]}>
-            {payment.amountPaid.toFixed(2)} LKR
+            {typeof payment.paymentAmount === 'number' ? payment.paymentAmount.toFixed(2) : `${payment.paymentAmount} `} LKR
           </Text>
         </View>
       </View>
@@ -78,7 +80,7 @@ export default function EarningsScreen() {
   const user = useAuthStore((state) => state.user);
   const driverId = user?.id;
   
-  const [payments, setPayments] = useState<ChildPayment[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -180,7 +182,7 @@ export default function EarningsScreen() {
         )}
 
         {!loading && !error && payments.map((payment) => (
-          <PaymentHistoryItem key={payment.id} payment={payment} />
+          <PaymentHistoryItem key={payment.transactionRef ?? `${payment.childId}-${payment.paymentDate}-${payment.paymentAmount}`} payment={payment as any} />
         ))}
       </ScrollView>
     </SafeAreaView>

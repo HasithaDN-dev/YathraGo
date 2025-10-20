@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, ScrollView, Image, TouchableOpacity, Dimensions, NativeScrollEvent, NativeSyntheticEvent, ActivityIndicator } from 'react-native';
+import { View, ScrollView, Image, TouchableOpacity, Dimensions, NativeScrollEvent, NativeSyntheticEvent, ActivityIndicator, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
@@ -8,6 +8,8 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useLocalSearchParams, router } from 'expo-router';
 import { findVehicleApi, VehicleDetails } from '@/lib/api/find-vehicle';
 import { Colors } from '@/constants/Colors';
+import { driverRequestApi } from '@/lib/api/driver-request.api';
+import { useProfileStore } from '@/lib/stores/profile.store';
 
 /**
  * Transport Overview (Home Cards) – (menu)/(homeCards)/transport_overview
@@ -15,7 +17,7 @@ import { Colors } from '@/constants/Colors';
  * - Header matches other (menu) pages via ScreenHeader
  */
 export default function TransportOverviewScreen() {
-  const params = useLocalSearchParams<{ tab?: string | string[]; driverId?: string | string[] }>();
+  const params = useLocalSearchParams<{ tab?: string | string[]; driverId?: string | string[]; vehicleId?: string | string[] }>();
   const pageScrollRef = useRef<ScrollView>(null);
   // Y within ScrollView content (for scrollTo)
   const [imagesOffsetY, setImagesOffsetY] = useState(0);
@@ -25,6 +27,27 @@ export default function TransportOverviewScreen() {
   const [vehicleDetails, setVehicleDetails] = useState<VehicleDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Request state
+  const [offeredAmount, setOfferedAmount] = useState<string>('');
+  const [customerNote, setCustomerNote] = useState<string>('');
+  const [isSending, setIsSending] = useState(false);
+  const { customerProfile, activeProfile } = useProfileStore();
+
+  // Calculate estimated distance and price
+  const estimatedDistance = useMemo(() => {
+    if (!vehicleDetails?.distanceFromPickup || !vehicleDetails?.distanceFromDrop) {
+      return 0;
+    }
+    // Total distance = pickup distance + drop distance (round trip)
+    return vehicleDetails.distanceFromPickup + vehicleDetails.distanceFromDrop;
+  }, [vehicleDetails]);
+
+  const estimatedPrice = useMemo(() => {
+    if (estimatedDistance === 0) return 0;
+    // Rs. 15 per km per day × 26 working days
+    return estimatedDistance * 15 * 26;
+  }, [estimatedDistance]);
 
   type Tab = 'Vehicle' | 'Driver' | 'Route';
   const tabs: Tab[] = useMemo(() => ['Vehicle', 'Driver', 'Route'], []);
@@ -83,6 +106,53 @@ export default function TransportOverviewScreen() {
 
     fetchDetails();
   }, [params.driverId]);
+
+  const handleSendRequest = async () => {
+    try {
+      if (!customerProfile || !activeProfile) {
+        Alert.alert('Error', 'Profile not found');
+        return;
+      }
+
+      if (!vehicleDetails) {
+        Alert.alert('Error', 'Vehicle details not loaded');
+        return;
+      }
+
+      const driverIdParam = Array.isArray(params.driverId) ? params.driverId[0] : params.driverId;
+      const vehicleIdParam = Array.isArray(params.vehicleId) ? params.vehicleId[0] : params.vehicleId;
+      
+      if (!driverIdParam || !vehicleIdParam) {
+        Alert.alert('Error', 'Missing driver or vehicle information');
+        return;
+      }
+
+      setIsSending(true);
+
+      const profileType = activeProfile.type as 'child' | 'staff';
+      const profileIdStr = activeProfile.id.replace(`${profileType}-`, '');
+      const profileId = parseInt(profileIdStr, 10);
+
+      await driverRequestApi.createRequest({
+        customerId: customerProfile.customer_id,
+        profileType,
+        profileId,
+        driverId: parseInt(driverIdParam, 10),
+        vehicleId: parseInt(vehicleIdParam, 10),
+        offeredAmount: offeredAmount ? parseFloat(offeredAmount) : undefined,
+        customerNote: customerNote || undefined,
+      });
+
+      Alert.alert('Success', 'Ride request sent to driver!', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send request');
+      console.error(error);
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   // tab change by delta removed (swipe disabled)
 
@@ -345,6 +415,85 @@ export default function TransportOverviewScreen() {
                 </View>
               </>
             )}
+
+            {/* Send Request Section */}
+            <Card className="mx-4 mt-4 p-5">
+              <Typography variant="headline" weight="semibold" className="text-brand-deepNavy mb-4">
+                Send Ride Request
+              </Typography>
+              
+              {/* Show estimates if available */}
+              {estimatedDistance > 0 && estimatedPrice > 0 ? (
+                <View className="mb-4 bg-blue-50 p-4 rounded-lg">
+                  <View className="flex-row justify-between mb-2">
+                    <Typography variant="subhead" className="text-gray-700">
+                      Estimated Distance:
+                    </Typography>
+                    <Typography variant="subhead" weight="semibold" className="text-black">
+                      {estimatedDistance.toFixed(2)} km
+                    </Typography>
+                  </View>
+                  
+                  <View className="flex-row justify-between">
+                    <Typography variant="subhead" className="text-gray-700">
+                      Estimated Monthly Price:
+                    </Typography>
+                    <Typography variant="title-3" weight="semibold" className="text-blue-600">
+                      Rs. {estimatedPrice.toLocaleString()}
+                    </Typography>
+                  </View>
+                </View>
+              ) : (
+                <View className="mb-4 bg-yellow-50 p-3 rounded-lg">
+                  <Typography variant="footnote" className="text-gray-600 text-center">
+                    ℹ️ Distance and price will be calculated based on your location
+                  </Typography>
+                </View>
+              )}
+              
+              <View className="mb-4">
+                <Typography variant="subhead" className="text-black mb-2">
+                  Your Offer (Rs.):
+                </Typography>
+                <TextInput
+                  className="border border-gray-300 rounded-lg px-4 py-3"
+                  style={{ backgroundColor: '#f9fafb' }}
+                  placeholder="Enter your offer amount (optional)"
+                  value={offeredAmount}
+                  onChangeText={setOfferedAmount}
+                  keyboardType="numeric"
+                />
+                <Typography variant="caption-1" className="text-gray-500 mt-1">
+                  Leave empty to use the system-calculated estimate
+                </Typography>
+              </View>
+              
+              <View className="mb-4">
+                <Typography variant="subhead" className="text-black mb-2">
+                  Note for Driver (Optional):
+                </Typography>
+                <TextInput
+                  className="border border-gray-300 rounded-lg px-4 py-3"
+                  style={{ backgroundColor: '#f9fafb', minHeight: 80, textAlignVertical: 'top' }}
+                  placeholder="Add any special requests..."
+                  value={customerNote}
+                  onChangeText={setCustomerNote}
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+              
+              <TouchableOpacity
+                className={`py-4 rounded-lg ${isSending ? 'bg-gray-400' : 'bg-brand-deepNavy'}`}
+                onPress={handleSendRequest}
+                disabled={isSending}
+                activeOpacity={0.8}
+              >
+                <Typography variant="subhead" weight="semibold" className="text-white text-center">
+                  {isSending ? 'Sending...' : 'Send Request'}
+                </Typography>
+              </TouchableOpacity>
+            </Card>
           </>
         )}
         {/* Bottom spacer */}

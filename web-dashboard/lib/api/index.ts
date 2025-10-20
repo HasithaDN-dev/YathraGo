@@ -1,4 +1,23 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import type {
+  Complaint,
+  ComplaintQueryParams,
+  ComplaintStatistics,
+  Payment,
+  PaymentQueryParams,
+  PaymentStatistics,
+  Payout,
+  PayoutCalculation,
+  PayoutApprovalData,
+  Refund,
+  RefundRequestData,
+  RefundQueryParams,
+  RefundStatistics,
+  DriverCoordinatorStatistics,
+  Driver,
+  Vehicle,
+  PaginatedResponse,
+} from '@/types/api';
+
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -43,8 +62,6 @@ async function apiCall<T>(
       return {} as T;
     }
   } catch (error) {
-    console.error(`API call failed for ${endpoint}:`, error);
-    
     // Re-throw with more context
     if (error instanceof Error) {
       throw error;
@@ -55,13 +72,7 @@ async function apiCall<T>(
 
 // Complaints API
 export const complaintsApi = {
-  getAll: (params?: {
-    status?: string;
-    type?: string;
-    category?: string;
-    page?: number;
-    limit?: number;
-  }) => {
+  getAll: (params?: ComplaintQueryParams) => {
     const queryString = new URLSearchParams(
       Object.entries(params || {}).reduce((acc, [key, value]) => {
         if (value !== undefined && value !== null) {
@@ -71,41 +82,27 @@ export const complaintsApi = {
       }, {} as Record<string, string>)
     ).toString();
 
-    return apiCall<{
-      data: any[];
-      meta: { total: number; page: number; limit: number; totalPages: number };
-    }>(`/complaints?${queryString}`);
+    return apiCall<PaginatedResponse<Complaint>>(`/complaints?${queryString}`);
   },
 
-  getStatistics: () =>
-    apiCall<{
-      overview: {
-        total: number;
-        pending: number;
-        inProgress: number;
-        resolved: number;
-      };
-      byCategory: Array<{ category: string; count: number }>;
-      byType: Array<{ type: string; count: number }>;
-      recent: any[];
-    }>('/complaints/statistics'),
+  getStatistics: () => apiCall<ComplaintStatistics>('/complaints/statistics'),
 
-  getById: (id: number) => apiCall<any>(`/complaints/${id}`),
+  getById: (id: number) => apiCall<Complaint>(`/complaints/${id}`),
 
-  create: (data: any) =>
-    apiCall<any>('/complaints', {
+  create: (data: Partial<Complaint>) =>
+    apiCall<Complaint>('/complaints', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  update: (id: number, data: any) =>
-    apiCall<any>(`/complaints/${id}`, {
+  update: (id: number, data: Partial<Complaint>) =>
+    apiCall<Complaint>(`/complaints/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
 
   updateStatus: (id: number, status: string) =>
-    apiCall<any>(`/complaints/${id}/status`, {
+    apiCall<Complaint>(`/complaints/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }),
@@ -118,16 +115,7 @@ export const complaintsApi = {
 
 // Payments API
 export const paymentsApi = {
-  getAll: (params?: {
-    driverId?: number;
-    customerId?: number;
-    childId?: number;
-    status?: string;
-    paymentMonth?: number;
-    paymentYear?: number;
-    page?: number;
-    limit?: number;
-  }) => {
+  getAll: (params?: PaymentQueryParams) => {
     const queryString = new URLSearchParams(
       Object.entries(params || {}).reduce((acc, [key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
@@ -137,42 +125,27 @@ export const paymentsApi = {
       }, {} as Record<string, string>)
     ).toString();
 
-    return apiCall<{
-      data: any[];
-      meta: { total: number; page: number; limit: number; totalPages: number };
-    }>(`/payments?${queryString}`);
+    return apiCall<PaginatedResponse<Payment>>(`/payments?${queryString}`);
   },
 
-  getStatistics: () =>
-    apiCall<{
-      overview: {
-        total: number;
-        pending: number;
-        paid: number;
-        overdue: number;
-      };
-      revenue: {
-        today: number;
-        thisMonth: number;
-      };
-    }>('/payments/statistics'),
+  getStatistics: () => apiCall<PaymentStatistics>('/payments/statistics'),
 
-  getById: (id: number) => apiCall<any>(`/payments/${id}`),
+  getById: (id: number) => apiCall<Payment>(`/payments/${id}`),
 
-  create: (data: any) =>
-    apiCall<any>('/payments', {
+  create: (data: Partial<Payment>) =>
+    apiCall<Payment>('/payments', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   verify: (id: number, verifiedBy: number) =>
-    apiCall<any>(`/payments/${id}/verify`, {
+    apiCall<Payment>(`/payments/${id}/verify`, {
       method: 'PATCH',
       body: JSON.stringify({ verifiedBy }),
     }),
 
   markAsPaid: (id: number, amount: number, transactionRef?: string) =>
-    apiCall<any>(`/payments/${id}/mark-paid`, {
+    apiCall<Payment>(`/payments/${id}/mark-paid`, {
       method: 'PATCH',
       body: JSON.stringify({ amount, transactionRef }),
     }),
@@ -180,38 +153,21 @@ export const paymentsApi = {
 
 // Payouts API
 export const payoutsApi = {
-  getPending: () => apiCall<any[]>('/payments/payouts/pending'),
+  getPending: () => apiCall<Payout[]>('/payments/payouts/pending'),
 
   getDriverHistory: (driverId: number, limit?: number) => {
     const query = limit ? `?limit=${limit}` : '';
-    return apiCall<any[]>(`/payments/payouts/driver/${driverId}${query}`);
+    return apiCall<Payout[]>(`/payments/payouts/driver/${driverId}${query}`);
   },
 
   calculate: (driverId: number, month: number, year: number) =>
-    apiCall<{
-      driverId: number;
-      month: number;
-      year: number;
-      totalTrips: number;
-      totalRevenue: number;
-      platformFee: number;
-      driverEarnings: number;
-      payments: any[];
-    }>('/payments/payouts/calculate', {
+    apiCall<PayoutCalculation>('/payments/payouts/calculate', {
       method: 'POST',
       body: JSON.stringify({ driverId, month, year }),
     }),
 
-  approve: (data: {
-    driverId: number;
-    paymentMonth: number;
-    paymentYear: number;
-    payoutAmount: number;
-    bankAccount?: string;
-    paymentMethod?: string;
-    notes?: string;
-  }) =>
-    apiCall<any>('/payments/payouts/approve', {
+  approve: (data: PayoutApprovalData) =>
+    apiCall<Payout>('/payments/payouts/approve', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -219,7 +175,7 @@ export const payoutsApi = {
 
 // Refunds API
 export const refundsApi = {
-  getAll: (params?: { page?: number; limit?: number; status?: string }) => {
+  getAll: (params?: RefundQueryParams) => {
     const queryString = new URLSearchParams(
       Object.entries(params || {}).reduce((acc, [key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
@@ -229,37 +185,15 @@ export const refundsApi = {
       }, {} as Record<string, string>)
     ).toString();
 
-    return apiCall<{
-      data: any[];
-      meta: { total: number; page: number; limit: number; totalPages: number };
-    }>(`/payments/refunds?${queryString}`);
+    return apiCall<PaginatedResponse<Refund>>(`/payments/refunds?${queryString}`);
   },
 
-  getStatistics: () =>
-    apiCall<{
-      overview: {
-        total: number;
-        pending: number;
-        approved: number;
-        rejected: number;
-      };
-      totalRefundAmount: number;
-    }>('/payments/refunds/statistics'),
+  getStatistics: () => apiCall<RefundStatistics>('/payments/refunds/statistics'),
 
-  getById: (id: number) => apiCall<any>(`/payments/refunds/${id}`),
+  getById: (id: number) => apiCall<Refund>(`/payments/refunds/${id}`),
 
-  request: (data: {
-    paymentId: number;
-    childId: number;
-    customerId: number;
-    driverId: number;
-    refundAmount: number;
-    refundReason: string;
-    refundType: string;
-    requestedBy: number;
-    requestedByType: string;
-  }) =>
-    apiCall<any>('/payments/refunds', {
+  request: (data: RefundRequestData) =>
+    apiCall<Refund>('/payments/refunds', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -271,7 +205,7 @@ export const refundsApi = {
     refundMethod?: string,
     transactionRef?: string
   ) =>
-    apiCall<any>(`/payments/refunds/${id}/approve`, {
+    apiCall<Refund>(`/payments/refunds/${id}/approve`, {
       method: 'PATCH',
       body: JSON.stringify({
         approverId,
@@ -282,7 +216,7 @@ export const refundsApi = {
     }),
 
   reject: (id: number, rejectorId: number, rejectionReason: string) =>
-    apiCall<any>(`/payments/refunds/${id}/reject`, {
+    apiCall<Refund>(`/payments/refunds/${id}/reject`, {
       method: 'PATCH',
       body: JSON.stringify({ rejectorId, rejectionReason }),
     }),
@@ -290,53 +224,78 @@ export const refundsApi = {
 
 // Driver Coordinator API
 export const driverCoordinatorApi = {
-  getStatistics: () =>
-    apiCall<{
-      overview: {
-        pendingVerifications: number;
-        activeDrivers: number;
-        safetyAlerts: number;
-        pendingVehicleApprovals: number;
-        totalDrivers: number;
-        inactiveDrivers: number;
-        driversThisMonth: number;
-      };
-      metrics: {
-        verificationRate: string;
-        alertsPerDriver: string;
-      };
-    }>('/driver-coordinator/statistics'),
+  getStatistics: () => apiCall<DriverCoordinatorStatistics>('/driver-coordinator/statistics'),
 
   getPendingVerifications: (page = 1, limit = 10) =>
-    apiCall<{
-      data: any[];
-      meta: { total: number; page: number; limit: number; totalPages: number };
-    }>(`/driver-coordinator/pending-verifications?page=${page}&limit=${limit}`),
+    apiCall<PaginatedResponse<Driver>>(`/driver-coordinator/pending-verifications?page=${page}&limit=${limit}`),
 
   getActiveDrivers: (page = 1, limit = 10) =>
-    apiCall<{
-      data: any[];
-      meta: { total: number; page: number; limit: number; totalPages: number };
-    }>(`/driver-coordinator/active-drivers?page=${page}&limit=${limit}`),
+    apiCall<PaginatedResponse<Driver>>(`/driver-coordinator/active-drivers?page=${page}&limit=${limit}`),
 
   getSafetyAlerts: (page = 1, limit = 10) =>
-    apiCall<{
-      data: any[];
-      meta: { total: number; page: number; limit: number; totalPages: number };
-    }>(`/driver-coordinator/safety-alerts?page=${page}&limit=${limit}`),
+    apiCall<PaginatedResponse<Driver>>(`/driver-coordinator/safety-alerts?page=${page}&limit=${limit}`),
 
   approveDriver: (driverId: number) =>
-    apiCall<{ success: boolean; message: string; driver: any }>(
+    apiCall<{ success: boolean; message: string; driver: Driver }>(
       `/driver-coordinator/drivers/${driverId}/approve`,
       { method: 'POST' }
     ),
 
   rejectDriver: (driverId: number, reason: string) =>
-    apiCall<{ success: boolean; message: string; driver: any }>(
+    apiCall<{ success: boolean; message: string; driver: Driver }>(
       `/driver-coordinator/drivers/${driverId}/reject`,
       {
         method: 'POST',
         body: JSON.stringify({ reason }),
+      }
+    ),
+
+  getPendingVehicles: (page = 1, limit = 10) =>
+    apiCall<{ success: boolean; data: Vehicle[]; pagination: { page: number; limit: number; total: number; totalPages: number } }>(
+      `/driver-coordinator/pending-vehicles?page=${page}&limit=${limit}`
+    ),
+
+  approveVehicle: (vehicleId: number) =>
+    apiCall<{ success: boolean; message: string; vehicle: Vehicle }>(
+      `/driver-coordinator/vehicles/${vehicleId}/approve`,
+      { method: 'POST' }
+    ),
+
+  rejectVehicle: (vehicleId: number, reason: string) =>
+    apiCall<{ success: boolean; message: string; vehicle: Vehicle; reason: string }>(
+      `/driver-coordinator/vehicles/${vehicleId}/reject`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      }
+    ),
+
+  // Inquiries
+  getInquiries: (page = 1, limit = 10, status?: string, category?: string) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (status) params.append('status', status);
+    if (category) params.append('category', category);
+    return apiCall<{
+      success: boolean;
+      data: Array<Complaint & { driverInfo: { driver_id: number; name: string; phone: string; email: string; vehicle_Reg_No: string } }>;
+      pagination: { page: number; limit: number; total: number; totalPages: number };
+    }>(`/driver-coordinator/inquiries?${params.toString()}`);
+  },
+
+  getInquiryStatistics: () =>
+    apiCall<{
+      success: boolean;
+      overview: { total: number; pending: number; inProgress: number; resolved: number };
+      byCategory: Array<{ category: string; count: number }>;
+      byType: Array<{ type: string; count: number }>;
+    }>('/driver-coordinator/inquiries/statistics'),
+
+  updateInquiryStatus: (id: number, status: string) =>
+    apiCall<{ success: boolean; message: string; data: Complaint }>(
+      `/driver-coordinator/inquiries/${id}/status`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
       }
     ),
 };

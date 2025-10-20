@@ -4,10 +4,11 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Eye, FileText, Megaphone, MessageSquare } from "lucide-react";
+import { AlertTriangle, Eye, FileText, Megaphone, MessageSquare, Users, Car, Bell } from "lucide-react";
 import { getNotices, Notice } from "@/lib/notices";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { managerApi, type ManagerStatisticsResponse } from "@/lib/api/manager";
+import { ErrorAlert } from "@/components/ui/ErrorAlert";
 
 interface StatCardProps {
   title: string;
@@ -71,35 +72,56 @@ const ActivityItem: React.FC<{ activity: ActivityEntry }> = ({ activity }) => (
 );
 
 export default function ManagerDashboard() {
-  const [complaintsStats, setComplaintsStats] = useState({
-    total: 0,
-    pending: 0,
-    inProgress: 0,
-    resolved: 0,
-  });
+  const [statistics, setStatistics] = useState<ManagerStatisticsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const stats = await api.complaints.getStatistics();
-        setComplaintsStats(stats.overview);
-      } catch (error) {
-        console.error("Failed to fetch complaints statistics:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
+    fetchStatistics();
   }, []);
+
+  const fetchStatistics = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await managerApi.getStatistics();
+      setStatistics(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load statistics');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    fetchStatistics();
+  };
 
   const stats = [
     {
       title: "Open Complaints",
-      value: loading ? "..." : complaintsStats.pending,
+      value: loading ? "..." : statistics?.overview.openComplaints || 0,
       icon: <AlertTriangle className="w-4 h-4" />,
       bgColor: "bg-[var(--error-red)]"
+    },
+    {
+      title: "Active Drivers",
+      value: loading ? "..." : statistics?.overview.activeDrivers || 0,
+      icon: <Users className="w-4 h-4" />,
+      bgColor: "bg-[var(--success-green)]"
+    },
+    {
+      title: "Total Vehicles",
+      value: loading ? "..." : statistics?.overview.totalVehicles || 0,
+      icon: <Car className="w-4 h-4" />,
+      bgColor: "bg-[var(--primary-blue)]"
+    },
+    {
+      title: "Recent Notices",
+      value: loading ? "..." : statistics?.overview.recentNotices || 0,
+      icon: <Bell className="w-4 h-4" />,
+      bgColor: "bg-[var(--warm-yellow)]"
     }
   ];
 
@@ -175,7 +197,7 @@ export default function ManagerDashboard() {
           setFetchError(null);
         }
       } catch (err: unknown) {
-        console.debug('Failed to load notices from backend:', err);
+        
         if (mounted) setFetchError(String((err as unknown as { message?: unknown })?.message ?? String(err)));
         // keep mock notices already set as initial state
       }
@@ -226,6 +248,22 @@ export default function ManagerDashboard() {
           Oversee fleet operations and manage system-wide activities
         </p>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="mb-6">
+          <ErrorAlert 
+            message={error} 
+            type="error" 
+            onDismiss={() => setError(null)}
+          />
+          <div className="mt-3">
+            <Button onClick={handleRetry} variant="outline">
+              Try Again
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -28,7 +28,7 @@ export class NotificationsService {
   async sendNotification(dto: SendNotificationDto) {
     try {
       // Create notification in database
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
       const createData: any = {
         sender: dto.sender,
         message: dto.message,
@@ -37,7 +37,7 @@ export class NotificationsService {
         receiverId: dto.receiverId ?? null,
         isExpanded: dto.isExpanded || false,
       };
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       const notification = await this.prisma.notification.create({
         data: createData as unknown as any,
       });

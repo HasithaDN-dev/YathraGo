@@ -47,7 +47,6 @@ export default function LatestNotices() {
 
 				if (mounted) setNotices(webOnly.slice(0, 5));
 			} catch (err) {
-				console.debug('LatestNotices: failed to load remote notices', err);
 				// keep initial mocks
 			}
 		};

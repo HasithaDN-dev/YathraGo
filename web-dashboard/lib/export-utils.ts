@@ -1,11 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Export Utilities for Reports
  * Supports CSV, Excel, and PDF exports
  */
 
 // Export to CSV
-export function exportToCSV(data: any[], filename: string) {
+/**
+ * Export data to CSV format
+ * @param data - Array of objects to export
+ * @param filename - Name of the file to download
+ */
+export function exportToCSV<T extends Record<string, unknown>>(data: T[], filename: string) {
   if (!data || data.length === 0) {
     throw new Error('No data to export');
   }
@@ -34,7 +38,13 @@ export function exportToCSV(data: any[], filename: string) {
 }
 
 // Export to Excel (using CSV format with .xlsx extension)
-export function exportToExcel(data: any[], filename: string, sheetName = 'Sheet1') {
+/**
+ * Export data to Excel format
+ * @param data - Array of objects to export
+ * @param filename - Name of the file to download
+ * @param sheetName - Name of the Excel sheet
+ */
+export function exportToExcel<T extends Record<string, unknown>>(data: T[], filename: string, sheetName = 'Sheet1') {
   if (!data || data.length === 0) {
     throw new Error('No data to export');
   }
@@ -54,7 +64,13 @@ export function exportToExcel(data: any[], filename: string, sheetName = 'Sheet1
 }
 
 // Export to JSON
-export function exportToJSON(data: any[], filename: string, pretty = true) {
+/**
+ * Export data to JSON format
+ * @param data - Array of objects to export
+ * @param filename - Name of the file to download
+ * @param pretty - Whether to format JSON with indentation
+ */
+export function exportToJSON<T>(data: T[], filename: string, pretty = true) {
   if (!data || data.length === 0) {
     throw new Error('No data to export');
   }
@@ -68,7 +84,13 @@ export function exportToJSON(data: any[], filename: string, pretty = true) {
 }
 
 // Export to PDF (basic text-based PDF)
-export function exportToPDF(data: any[], filename: string, title?: string) {
+/**
+ * Export data to PDF format
+ * @param data - Array of objects to export
+ * @param filename - Name of the file to download
+ * @param title - Optional title for the PDF document
+ */
+export function exportToPDF<T extends Record<string, unknown>>(data: T[], filename: string, title?: string) {
   if (!data || data.length === 0) {
     throw new Error('No data to export');
   }
@@ -133,16 +155,16 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 // Format data for export (remove unwanted fields, format dates, etc.)
-export function formatDataForExport(
-  data: any[],
+export function formatDataForExport<T extends Record<string, unknown>>(
+  data: T[],
   options?: {
     excludeFields?: string[];
     formatDates?: boolean;
-    customFormatters?: Record<string, (value: any) => any>;
+    customFormatters?: Record<string, (value: unknown) => unknown>;
   }
-): any[] {
+): Record<string, unknown>[] {
   return data.map(row => {
-    const formatted: any = {};
+    const formatted: Record<string, unknown> = {};
     
     Object.keys(row).forEach(key => {
       // Skip excluded fields
@@ -173,8 +195,13 @@ export function formatDataForExport(
 }
 
 // Generate report summary
-export function generateReportSummary(data: any[], metrics: string[]): Record<string, any> {
-  const summary: Record<string, any> = {
+/**
+ * Generate a summary report from data
+ * @param data - Array of objects to summarize
+ * @param metrics - Array of metric names to calculate
+ */
+export function generateReportSummary<T extends Record<string, unknown>>(data: T[], metrics: string[]): Record<string, unknown> {
+  const summary: Record<string, unknown> = {
     totalRecords: data.length,
     generatedAt: new Date().toISOString(),
   };
@@ -193,8 +220,8 @@ export function generateReportSummary(data: any[], metrics: string[]): Record<st
 }
 
 // Export with summary
-export function exportWithSummary(
-  data: any[],
+export function exportWithSummary<T extends Record<string, unknown>>(
+  data: T[],
   filename: string,
   format: 'csv' | 'excel' | 'json',
   metrics?: string[]

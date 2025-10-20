@@ -1,5 +1,15 @@
-import { IsNotEmpty, IsString, IsInt, IsEnum, IsOptional } from 'class-validator';
-import { ComplaintInquiryTypes, ComplaintInquiryCategory, UserTypes } from '@prisma/client';
+import {
+  IsNotEmpty,
+  IsString,
+  IsInt,
+  IsEnum,
+  IsOptional,
+} from 'class-validator';
+import {
+  ComplaintInquiryTypes,
+  ComplaintInquiryCategory,
+  UserTypes,
+} from '@prisma/client';
 
 export class CreateComplaintDto {
   @IsInt()

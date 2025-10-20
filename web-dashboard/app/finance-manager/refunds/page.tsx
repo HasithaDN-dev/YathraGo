@@ -91,8 +91,7 @@ export default function RefundsPage() {
       setRefunds(response.data);
       setTotalPages(response.meta.totalPages);
     } catch (error) {
-      console.error('Failed to fetch refunds:', error);
-    } finally {
+      } finally {
       setLoading(false);
     }
   };
@@ -102,8 +101,7 @@ export default function RefundsPage() {
       const stats = await api.refunds.getStatistics();
       setStatistics(stats);
     } catch (error) {
-      console.error('Failed to fetch statistics:', error);
-    }
+      }
   };
 
   const handleApprove = async (refund: RefundItem) => {
@@ -132,7 +130,6 @@ export default function RefundsPage() {
       fetchRefunds();
       fetchStatistics();
     } catch (error) {
-      console.error('Failed to approve refund:', error);
       alert('Failed to approve refund. Please try again.');
     }
   };
@@ -152,7 +149,6 @@ export default function RefundsPage() {
       fetchRefunds();
       fetchStatistics();
     } catch (error) {
-      console.error('Failed to reject refund:', error);
       alert('Failed to reject refund. Please try again.');
     }
   };

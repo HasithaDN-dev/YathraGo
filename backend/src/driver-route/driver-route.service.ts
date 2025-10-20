@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { VRPOptimizerService } from './vrp-optimizer.service';
 import axios from 'axios';
 
 interface ChildLocation {
@@ -43,7 +44,10 @@ interface RouteOptimizationResult {
 
 @Injectable()
 export class DriverRouteService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private vrpOptimizer: VRPOptimizerService,
+  ) {}
 
   /**
    * Get today's route for the driver
@@ -59,7 +63,7 @@ export class DriverRouteService {
     today.setHours(0, 0, 0, 0);
 
     // Step 1: Check if route already exists for today
-    let existingRoute = await this.prisma.driverRoute.findUnique({
+    const existingRoute = await this.prisma.driverRoute.findUnique({
       where: {
         driverId_date_routeType: {
           driverId,
@@ -137,9 +141,10 @@ export class DriverRouteService {
       );
     }
 
-    // Step 5: Optimize the route order using Google Maps
-    const optimizedRoute = await this.optimizeRoute(
-      stops,
+    // Step 5: Optimize the route order using VRP with pickup-delivery constraints
+    const optimizedRoute = await this.optimizeRouteWithVRP(
+      driverId,
+      routeType,
       driverLatitude,
       driverLongitude,
     );
@@ -266,21 +271,19 @@ export class DriverRouteService {
         }
       }
 
-      // Add school dropoff (use first child's school as common destination)
-      const firstChild = children[0];
-      if (
-        firstChild &&
-        firstChild.schoolLatitude != null &&
-        firstChild.schoolLongitude != null
-      ) {
-        for (const child of children) {
+      // Add dropoff stops. Use each child's school coordinates (preserve per-child school info)
+      for (const child of children) {
+        if (
+          child.schoolLatitude != null &&
+          child.schoolLongitude != null
+        ) {
           stops.push({
             childId: child.childId,
             childName: child.childName,
             type: 'DROPOFF',
-            latitude: firstChild.schoolLatitude,
-            longitude: firstChild.schoolLongitude,
-            address: firstChild.schoolAddress,
+            latitude: child.schoolLatitude,
+            longitude: child.schoolLongitude,
+            address: child.schoolAddress,
           });
         }
       }
@@ -324,7 +327,65 @@ export class DriverRouteService {
   }
 
   /**
-   * Optimize route order using Google Maps Distance Matrix and Directions API
+   * Optimize route using VRP with pickup-delivery constraints
+   */
+  private async optimizeRouteWithVRP(
+    driverId: number,
+    routeType: 'MORNING_PICKUP' | 'AFTERNOON_DROPOFF',
+    driverLatitude?: number,
+    driverLongitude?: number,
+  ): Promise<RouteOptimizationResult> {
+    try {
+      let vrpResult;
+      
+      if (routeType === 'MORNING_PICKUP') {
+        vrpResult = await this.vrpOptimizer.optimizeMorningRoute(
+          driverId,
+          driverLatitude,
+          driverLongitude,
+        );
+      } else {
+        vrpResult = await this.vrpOptimizer.optimizeEveningRoute(
+          driverId,
+          driverLatitude,
+          driverLongitude,
+        );
+      }
+
+      // Convert VRP result to RouteOptimizationResult format
+      const optimizedStops: OptimizedStop[] = vrpResult.orderedStops.map((stop, index) => ({
+        childId: stop.childId,
+        childName: '', // Will be filled from database
+        type: stop.type,
+        latitude: stop.lat,
+        longitude: stop.lng,
+        address: stop.address,
+        order: index,
+        etaSecs: stop.eta,
+        cumulativeDistanceMeters: vrpResult.legs[index]?.distance?.value || 0,
+        legDistanceMeters: vrpResult.legs[index]?.distance?.value || 0,
+      }));
+
+      console.log(`VRP Result polyline: ${vrpResult.polyline?.substring(0, 50)}...`);
+
+      return {
+        stops: optimizedStops,
+        totalDistanceMeters: vrpResult.diagnostics.totalDistance,
+        totalDurationSecs: vrpResult.diagnostics.totalTime,
+        polyline: vrpResult.polyline,
+      };
+    } catch (error) {
+      console.error('VRP optimization failed, falling back to legacy method:', error);
+      // Fallback to legacy optimization
+      const assignedChildren = await this.getAssignedChildren(driverId);
+      const presentChildren = await this.filterByAttendance(assignedChildren, new Date());
+      const stops = this.generateStops(presentChildren, routeType);
+      return this.optimizeRoute(stops, driverLatitude, driverLongitude);
+    }
+  }
+
+  /**
+   * Legacy optimize route order using Google Maps Distance Matrix and Directions API
    */
   private async optimizeRoute(
     stops: Stop[],
@@ -747,13 +808,41 @@ export class DriverRouteService {
       },
     });
 
+    // Determine attendance type based on route type and stop type
+    const getAttendanceType = (
+      routeType: string,
+      stopType: string,
+    ): 'MORNING_PICKUP' | 'MORNING_DROPOFF' | 'EVENING_PICKUP' | 'EVENING_DROPOFF' => {
+      if (routeType === 'MORNING_PICKUP') {
+        return stopType === 'PICKUP' ? 'MORNING_PICKUP' : 'MORNING_DROPOFF';
+      } else {
+        return stopType === 'PICKUP' ? 'EVENING_PICKUP' : 'EVENING_DROPOFF';
+      }
+    };
+
+    const attendanceType = getAttendanceType(
+      stop.driverRoute.routeType,
+      stop.type,
+    );
+
     // Create attendance record
+    // Determine session-aware attendance type based on route type and stop type
+    let attendanceType: 'MORNING_PICKUP' | 'MORNING_DROPOFF' | 'EVENING_PICKUP' | 'EVENING_DROPOFF';
+    if (stop.driverRoute.routeType === 'MORNING_PICKUP') {
+      attendanceType = stop.type === 'PICKUP' ? 'MORNING_PICKUP' : 'MORNING_DROPOFF';
+    } else if (stop.driverRoute.routeType === 'AFTERNOON_DROPOFF') {
+      attendanceType = stop.type === 'PICKUP' ? 'EVENING_PICKUP' : 'EVENING_DROPOFF';
+    } else {
+      // Fallback for any other route types - default to morning pickup
+      attendanceType = 'MORNING_PICKUP';
+    }
+
     await this.prisma.attendance.create({
       data: {
         driverId,
         childId: stop.childId,
         date: stop.driverRoute.date,
-        type: stop.type.toLowerCase(),
+        type: attendanceType,
         latitude,
         longitude,
         notes: notes || `${stop.type} completed`,
@@ -829,6 +918,54 @@ export class DriverRouteService {
     return {
       success: true,
       routes,
+    };
+  }
+
+  /**
+   * Check session availability for morning and evening routes
+   * Returns whether morning and evening sessions can be started
+   */
+  async getSessionAvailability(driverId: number) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Check morning route status
+    const morningRoute = await this.prisma.driverRoute.findUnique({
+      where: {
+        driverId_date_routeType: {
+          driverId,
+          date: today,
+          routeType: 'MORNING_PICKUP',
+        },
+      },
+    });
+
+    // Check evening route status
+    const eveningRoute = await this.prisma.driverRoute.findUnique({
+      where: {
+        driverId_date_routeType: {
+          driverId,
+          date: today,
+          routeType: 'AFTERNOON_DROPOFF',
+        },
+      },
+    });
+
+    const morningCompleted = morningRoute?.status === 'COMPLETED';
+    const eveningCompleted = eveningRoute?.status === 'COMPLETED';
+
+    return {
+      success: true,
+      morningSession: {
+        available: true, // Morning always available
+        status: morningRoute?.status || 'NOT_STARTED',
+        completed: morningCompleted,
+      },
+      eveningSession: {
+        available: morningCompleted, // Evening only available after morning completion
+        status: eveningRoute?.status || 'NOT_STARTED',
+        completed: eveningCompleted,
+      },
     };
   }
 }

@@ -14,64 +14,58 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useOwner } from "@/components/owner/OwnerContext";
+import { ErrorAlert } from "@/components/ui/ErrorAlert";
 
 interface Vehicle {
-  id: string;
+  id: string | number;
   registrationNumber: string;
   type: string;
   no_of_seats: number;
-  status: "Active" | "Inactive";
-  assignedDriver: string;
+  status: string;
+  assignedDriver?: string;
+  driver?: {
+    firstName?: string;
+    lastName?: string;
+    fullName?: string;
+  };
 }
-
-const mockVehicles: Vehicle[] = [
-  {
-    id: "1",
-    registrationNumber: "ABC-123",
-    type: "Bus",
-    no_of_seats: 40,
-    status: "Active",
-    assignedDriver: "John Smith",
-  },
-];
 
 export default function VehicleListPage() {
   const router = useRouter();
+  const { vehicles: contextVehicles, fetchVehicles, loading, error, clearError } = useOwner();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRoute, setSelectedRoute] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
+  const [normalizedVehicles, setNormalizedVehicles] = useState<Vehicle[]>([]);
 
   useEffect(() => {
-    const fetchVehicles = async () => {
-      try {
-        const token = typeof document !== 'undefined' ? document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1] : undefined;
-        const res = await fetch('http://localhost:3000/vehicles', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          credentials: 'include',
-        });
-        if (!res.ok) {
-          console.error('Failed to fetch vehicles', res.status);
-          setVehicles(mockVehicles);
-          setFilteredVehicles(mockVehicles);
-          return;
-        }
-        const data = await res.json();
-        const list = Array.isArray(data) ? data : [];
-        setVehicles(list);
-        setFilteredVehicles(list);
-      } catch (err) {
-        console.error('Error fetching vehicles', err);
-        setVehicles(mockVehicles);
-        setFilteredVehicles(mockVehicles);
-      }
-    };
+    // Fetch vehicles on component mount
+    fetchVehicles();
+  }, [fetchVehicles]);
 
-    void fetchVehicles();
-  }, []);
+  useEffect(() => {
+    // Update filtered vehicles when context vehicles change
+    if (contextVehicles) {
+      const normalized = contextVehicles.map((v) => ({
+        id: v.id,
+        registrationNumber: v.registrationNumber || v.registrationNo || v.vehicleNumber || 'N/A',
+        type: v.type || v.vehicleType || 'Unknown',
+        no_of_seats: v.no_of_seats || v.numberOfSeats || v.seats || 0,
+        status: v.status || 'Unknown',
+        assignedDriver: v.assignedDriver || 
+          (v.driver?.fullName || 
+           (v.driver?.firstName && v.driver?.lastName ? `${v.driver.firstName} ${v.driver.lastName}` : 
+            v.driver?.firstName || 'Unassigned')),
+        driver: v.driver,
+      })) as Vehicle[];
+      setNormalizedVehicles(normalized);
+      setFilteredVehicles(normalized);
+    }
+  }, [contextVehicles]);
 
   const itemsPerPage = 5;
   const totalPages = Math.ceil(filteredVehicles.length / itemsPerPage);
@@ -80,22 +74,22 @@ export default function VehicleListPage() {
   const currentVehicles = filteredVehicles.slice(startIndex, endIndex);
 
   const handleFilter = () => {
-    let filtered = vehicles;
+    let filtered = normalizedVehicles;
 
     if (searchTerm) {
       filtered = filtered.filter(
-        (vehicle) =>
+        (vehicle: Vehicle) =>
           (vehicle.registrationNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
           (vehicle.assignedDriver || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     if (selectedStatus) {
-      filtered = filtered.filter((vehicle) => vehicle.status === selectedStatus);
+      filtered = filtered.filter((vehicle: Vehicle) => vehicle.status === selectedStatus);
     }
 
     if (selectedType) {
-      filtered = filtered.filter((vehicle) => vehicle.type === selectedType);
+      filtered = filtered.filter((vehicle: Vehicle) => vehicle.type === selectedType);
     }
 
     setFilteredVehicles(filtered);
@@ -107,7 +101,7 @@ export default function VehicleListPage() {
     setSelectedRoute("");
     setSelectedStatus("");
     setSelectedType("");
-    setFilteredVehicles(vehicles);
+    setFilteredVehicles(normalizedVehicles);
     setCurrentPage(1);
   };
 
@@ -135,6 +129,16 @@ export default function VehicleListPage() {
           Manage and view all your vehicles
         </p>
       </div>
+
+      {/* Error Alert */}
+      {error && (
+        <ErrorAlert 
+          message={error} 
+          type="error" 
+          onDismiss={clearError}
+          className="mb-4"
+        />
+      )}
 
       {/* Search & Filter Bar */}
       <div className="bg-white rounded-lg shadow-sm border border-[var(--neutral-gray)] p-6">
@@ -233,13 +237,26 @@ export default function VehicleListPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-[var(--neutral-gray)]">
-              {currentVehicles.map((vehicle) => (
-                <tr
-                  key={vehicle.id}
-                  className="hover:bg-[var(--light-gray)] transition-colors cursor-pointer"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--color-deep-navy)]">{vehicle.registrationNumber}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">{vehicle.type}</td>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-[var(--neutral-gray)]">
+                    Loading vehicles...
+                  </td>
+                </tr>
+              ) : currentVehicles.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-[var(--neutral-gray)]">
+                    No vehicles found. {searchTerm || selectedStatus || selectedType ? 'Try adjusting your filters.' : 'Add your first vehicle to get started.'}
+                  </td>
+                </tr>
+              ) : (
+                currentVehicles.map((vehicle) => (
+                  <tr
+                    key={vehicle.id}
+                    className="hover:bg-[var(--light-gray)] transition-colors cursor-pointer"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--color-deep-navy)]">{vehicle.registrationNumber}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">{vehicle.type}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">{vehicle.no_of_seats} seats</td>
                   <td className="px-6 py-4 whitespace-nowrap"><StatusBadge status={vehicle.status} /></td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">{vehicle.assignedDriver}</td>
@@ -263,7 +280,8 @@ export default function VehicleListPage() {
                     </div>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>

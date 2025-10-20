@@ -22,7 +22,7 @@ export class PayoutsService {
 
     const totalRevenue = payments.reduce((sum, p) => sum + p.amountPaid, 0);
     const totalTrips = payments.length;
-    
+
     // Calculate commission (85% to driver, 15% platform fee)
     const platformFee = totalRevenue * 0.15;
     const driverEarnings = totalRevenue - platformFee;
@@ -42,7 +42,10 @@ export class PayoutsService {
   async getPendingPayouts() {
     const currentDate = new Date();
     const lastMonth = currentDate.getMonth();
-    const year = lastMonth === 0 ? currentDate.getFullYear() - 1 : currentDate.getFullYear();
+    const year =
+      lastMonth === 0
+        ? currentDate.getFullYear() - 1
+        : currentDate.getFullYear();
     const month = lastMonth === 0 ? 12 : lastMonth;
 
     // Get all drivers with paid payments from last month
@@ -79,7 +82,7 @@ export class PayoutsService {
   async approvePayout(dto: ApprovePayoutDto) {
     // This would integrate with payment gateway in production
     // For now, we just return the payout details
-    
+
     const payoutDetails = await this.calculateDriverPayout(
       dto.driverId,
       dto.paymentMonth,
