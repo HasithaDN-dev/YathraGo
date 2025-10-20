@@ -12,6 +12,17 @@ class TokenService {
     }
   }
 
+  /**
+   * Get a valid token (alias for getToken for consistency with customer app)
+   */
+  async getValidToken(): Promise<string> {
+    const token = await this.getToken();
+    if (!token) {
+      throw new Error('No authentication token available');
+    }
+    return token;
+  }
+
   async setToken(token: string): Promise<void> {
     try {
       await SecureStore.setItemAsync(this.tokenKey, token);

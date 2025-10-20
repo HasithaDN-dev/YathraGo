@@ -77,7 +77,6 @@ export default function RootLayout() {
         {/* Protected routes - only accessible when authenticated and profile complete */}
         <Stack.Protected guard={isLoggedIn && isProfileComplete}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(main)" options={{ headerShown: false }} />
         </Stack.Protected>
 
         {/* Registration routes - accessible when authenticated but not created account yet */}
