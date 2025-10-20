@@ -279,7 +279,7 @@ export default function ConditionalNavigation() {
             <NavigationMenuLink href="/#contact">Contact</NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <NavigationMenuLink href="/about">About</NavigationMenuLink>
+            <NavigationMenuLink href="/#who-we-are">About</NavigationMenuLink>
           </NavigationMenuItem>
         </NavigationMenuList>
 
