@@ -15,6 +15,7 @@ import {
     Building
 } from 'phosphor-react-native';
 import CustomButton from '@/components/ui/CustomButton';
+import { backgroundLocationService } from '@/lib/services/background-location.service';
 import { routeApi, RouteStop, DailyRoute } from '@/lib/api/route.api';
 
 /**
@@ -175,6 +176,19 @@ export default function NavigationScreen() {
             console.error('Error opening Google Maps:', err);
             Alert.alert('Error', 'Cannot open Google Maps');
         });
+        // Start background tracking towards the current stop so proximity notifications work
+        backgroundLocationService.startTracking({
+            childId: currentStop.childId,
+            childName: currentStop.childName,
+            lat: latitude,
+            lng: longitude,
+            type: currentStop.type === 'PICKUP' ? 'pickup' : 'dropoff',
+            address: currentStop.address,
+        }).then((started) => {
+            if (!started) {
+                console.warn('Background tracking could not be started');
+            }
+        });
     };
 
     // Handle "Mark as Picked Up / Dropped Off" button - Step C from the guide
@@ -195,6 +209,23 @@ export default function NavigationScreen() {
                 location?.longitude,
                 `${currentStop.type} completed`
             );
+
+            // Stop or update background tracking depending on next stop
+            const next = getNextStop();
+            if (next) {
+                // Update destination to next stop
+                backgroundLocationService.updateDestination({
+                    childId: next.childId,
+                    childName: next.childName,
+                    lat: next.latitude,
+                    lng: next.longitude,
+                    type: next.type === 'PICKUP' ? 'pickup' : 'dropoff',
+                    address: next.address,
+                }).catch((e) => console.warn('Failed to update destination', e));
+            } else {
+                // No more stops - stop background tracking
+                backgroundLocationService.stopTracking().catch((e) => console.warn('Failed to stop tracking', e));
+            }
 
             // Update local state
             const updatedStops = [...stopList];
@@ -569,3 +600,5 @@ export default function NavigationScreen() {
         </ScrollView>
     );
 }
+
+

@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { VRPOptimizerService } from './vrp-optimizer.service';
 import axios from 'axios';
 
 interface ChildLocation {
@@ -43,7 +44,10 @@ interface RouteOptimizationResult {
 
 @Injectable()
 export class DriverRouteService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private vrpOptimizer: VRPOptimizerService,
+  ) {}
 
   /**
    * Get today's route for the driver
@@ -137,9 +141,10 @@ export class DriverRouteService {
       );
     }
 
-    // Step 5: Optimize the route order using Google Maps
-    const optimizedRoute = await this.optimizeRoute(
-      stops,
+    // Step 5: Optimize the route order using VRP with pickup-delivery constraints
+    const optimizedRoute = await this.optimizeRouteWithVRP(
+      driverId,
+      routeType,
       driverLatitude,
       driverLongitude,
     );
@@ -266,21 +271,19 @@ export class DriverRouteService {
         }
       }
 
-      // Add school dropoff (use first child's school as common destination)
-      const firstChild = children[0];
-      if (
-        firstChild &&
-        firstChild.schoolLatitude != null &&
-        firstChild.schoolLongitude != null
-      ) {
-        for (const child of children) {
+      // Add dropoff stops. Use each child's school coordinates (preserve per-child school info)
+      for (const child of children) {
+        if (
+          child.schoolLatitude != null &&
+          child.schoolLongitude != null
+        ) {
           stops.push({
             childId: child.childId,
             childName: child.childName,
             type: 'DROPOFF',
-            latitude: firstChild.schoolLatitude,
-            longitude: firstChild.schoolLongitude,
-            address: firstChild.schoolAddress,
+            latitude: child.schoolLatitude,
+            longitude: child.schoolLongitude,
+            address: child.schoolAddress,
           });
         }
       }
@@ -324,7 +327,65 @@ export class DriverRouteService {
   }
 
   /**
-   * Optimize route order using Google Maps Distance Matrix and Directions API
+   * Optimize route using VRP with pickup-delivery constraints
+   */
+  private async optimizeRouteWithVRP(
+    driverId: number,
+    routeType: 'MORNING_PICKUP' | 'AFTERNOON_DROPOFF',
+    driverLatitude?: number,
+    driverLongitude?: number,
+  ): Promise<RouteOptimizationResult> {
+    try {
+      let vrpResult;
+      
+      if (routeType === 'MORNING_PICKUP') {
+        vrpResult = await this.vrpOptimizer.optimizeMorningRoute(
+          driverId,
+          driverLatitude,
+          driverLongitude,
+        );
+      } else {
+        vrpResult = await this.vrpOptimizer.optimizeEveningRoute(
+          driverId,
+          driverLatitude,
+          driverLongitude,
+        );
+      }
+
+      // Convert VRP result to RouteOptimizationResult format
+      const optimizedStops: OptimizedStop[] = vrpResult.orderedStops.map((stop, index) => ({
+        childId: stop.childId,
+        childName: '', // Will be filled from database
+        type: stop.type,
+        latitude: stop.lat,
+        longitude: stop.lng,
+        address: stop.address,
+        order: index,
+        etaSecs: stop.eta,
+        cumulativeDistanceMeters: vrpResult.legs[index]?.distance?.value || 0,
+        legDistanceMeters: vrpResult.legs[index]?.distance?.value || 0,
+      }));
+
+      console.log(`VRP Result polyline: ${vrpResult.polyline?.substring(0, 50)}...`);
+
+      return {
+        stops: optimizedStops,
+        totalDistanceMeters: vrpResult.diagnostics.totalDistance,
+        totalDurationSecs: vrpResult.diagnostics.totalTime,
+        polyline: vrpResult.polyline,
+      };
+    } catch (error) {
+      console.error('VRP optimization failed, falling back to legacy method:', error);
+      // Fallback to legacy optimization
+      const assignedChildren = await this.getAssignedChildren(driverId);
+      const presentChildren = await this.filterByAttendance(assignedChildren, new Date());
+      const stops = this.generateStops(presentChildren, routeType);
+      return this.optimizeRoute(stops, driverLatitude, driverLongitude);
+    }
+  }
+
+  /**
+   * Legacy optimize route order using Google Maps Distance Matrix and Directions API
    */
   private async optimizeRoute(
     stops: Stop[],
