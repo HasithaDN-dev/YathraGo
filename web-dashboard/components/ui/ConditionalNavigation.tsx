@@ -238,11 +238,6 @@ export default function ConditionalNavigation() {
           <NavigationMenuItem>
             <NavigationMenuLink href="/">Home</NavigationMenuLink>
           </NavigationMenuItem>
-          {userName && (
-            <NavigationMenuItem>
-              <NavigationMenuLink href="/role-test">Role Test</NavigationMenuLink>
-            </NavigationMenuItem>
-          )}
           <NavigationMenuItem
             onClick={handleClick}
             className="relative roles-dropdown"

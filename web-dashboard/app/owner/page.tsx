@@ -13,7 +13,6 @@ import {
   Plus,
   Eye,
   UserPlus,
-  Loader2
 } from "lucide-react";
 import Link from "next/link";
 

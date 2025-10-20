@@ -18,6 +18,10 @@ import { ChatModule } from './chat/chat.module';
 import { FindVehicleModule } from './find-vehicle/find-vehicle.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SearchModule } from './search/search.module';
+import { ComplaintsModule } from './complaints/complaints.module';
+import { PaymentsModule } from './payments/payments.module';
+import { DriverCoordinatorModule } from './driver-coordinator/driver-coordinator.module';
+import { ManagerModule } from './manager/manager.module';
 import { DriverRequestModule } from './driver-request/driver-request.module';
 import { ComplaintsInquiriesModule } from './complaints-inquiries/complaints-inquiries.module';
 import { DriverLocationModule } from './driver-location/driver-location.module';
@@ -43,6 +47,10 @@ import { DriverLocationModule } from './driver-location/driver-location.module';
     FindVehicleModule,
     SearchModule,
     NotificationsModule,
+    ComplaintsModule,
+    PaymentsModule,
+    DriverCoordinatorModule,
+    ManagerModule,
     DriverRequestModule,
     ComplaintsInquiriesModule,
     DriverLocationModule,

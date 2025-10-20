@@ -59,8 +59,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchUserData = async () => {
       const token = Cookies.get("access_token");
-      //console.log(token);
-      //if (!token) return;
+      ////if (!token) return;
       try {
         const response = await fetch("http://localhost:3000/owner/profile", {
           headers: {
@@ -69,8 +68,6 @@ export default function SettingsPage() {
         });
         if (!response.ok) return;
         const data = await response.json();
-        console.log(data);
-
         // prefer username; fall back to first/last if available
         const usernameFromResponse = data.username || data.user_name || data.username || (data.firstName || data.first_name ? `${data.firstName || data.first_name}${data.lastName ? ' ' + data.lastName : ''}` : "");
 
@@ -82,8 +79,7 @@ export default function SettingsPage() {
         });
       } catch (err) {
         // handle error
-        console.error("Failed to fetch owner profile:", err);
-      }
+        }
     };
     fetchUserData();
   }, []);
@@ -215,8 +211,7 @@ export default function SettingsPage() {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      console.error("Error saving profile:", error);
-    }
+      }
   };
 
   const handleSaveSecurity = async () => {
@@ -234,8 +229,7 @@ export default function SettingsPage() {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      console.error("Error updating security settings:", error);
-    }
+      }
   };
 
   const handleToggleNotification = (key: keyof NotificationSettings) => {

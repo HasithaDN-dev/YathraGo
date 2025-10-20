@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { mockDriverInquiries, DriverInquiry } from '@/lib/drivers';
+import { api } from '@/lib/api';
+import { useError } from '@/hooks/useError';
 import {
   MessageSquare,
   Search,
@@ -19,31 +20,51 @@ import {
   Calendar,
   Phone,
   Send,
-  MessageCircle,
   FileText
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 export default function DriverInquiriesPage() {
-  const [inquiries, setInquiries] = useState<DriverInquiry[]>(mockDriverInquiries);
+  const [inquiries, setInquiries] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
-  const [selectedInquiry, setSelectedInquiry] = useState<DriverInquiry | null>(null);
+  const [selectedInquiry, setSelectedInquiry] = useState<any>(null);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [response, setResponse] = useState('');
   const [selectedTab, setSelectedTab] = useState('pending');
+  const { setError } = useError();
+
+  // Fetch inquiries
+  const fetchInquiries = async () => {
+    try {
+      const response = await api.driverCoordinator.getInquiries(1, 100, filterStatus, filterCategory);
+      setInquiries(response.data);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to fetch inquiries');
+    }
+  };
+
+  const fetchStatistics = async () => {
+    try {
+      await api.driverCoordinator.getInquiryStatistics();
+    } catch (error) {
+      console.error('Failed to fetch statistics:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchInquiries();
+    fetchStatistics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterStatus, filterCategory]);
 
   // Filter inquiries based on tab and search
   const filteredInquiries = inquiries.filter(inquiry => {
     const matchesSearch = 
-      inquiry.driverName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inquiry.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inquiry.driverInfo?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       inquiry.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inquiry.driverPhone.includes(searchTerm);
-
-    const matchesStatus = filterStatus === '' || inquiry.status === filterStatus;
-    const matchesCategory = filterCategory === '' || inquiry.category === filterCategory;
+      inquiry.driverInfo?.phone.includes(searchTerm);
 
     let tabMatch = true;
     switch (selectedTab) {
@@ -58,36 +79,28 @@ export default function DriverInquiriesPage() {
         break;
     }
 
-    return matchesSearch && matchesStatus && matchesCategory && tabMatch;
+    return matchesSearch && tabMatch;
   });
 
-  const handleRespondToInquiry = (inquiryId: string) => {
-    setInquiries(prev => prev.map(inquiry => 
-      inquiry.id === inquiryId 
-        ? { 
-            ...inquiry, 
-            status: 'RESOLVED',
-            response: response,
-            responseDate: new Date().toISOString(),
-            assignedTo: 'Driver Coordinator'
-          }
-        : inquiry
-    ));
-    setShowResponseModal(false);
-    setResponse('');
-    setSelectedInquiry(null);
+  const handleRespondToInquiry = async (inquiryId: number) => {
+    try {
+      await api.driverCoordinator.updateInquiryStatus(inquiryId, 'RESOLVED');
+      setShowResponseModal(false);
+      setResponse('');
+      setSelectedInquiry(null);
+      await fetchInquiries(); // Refresh the list
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to update inquiry status');
+    }
   };
 
-  const handleAssignInquiry = (inquiryId: string) => {
-    setInquiries(prev => prev.map(inquiry => 
-      inquiry.id === inquiryId 
-        ? { 
-            ...inquiry, 
-            status: 'IN_PROGRESS',
-            assignedTo: 'Driver Coordinator'
-          }
-        : inquiry
-    ));
+  const handleAssignInquiry = async (inquiryId: number) => {
+    try {
+      await api.driverCoordinator.updateInquiryStatus(inquiryId, 'IN_PROGRESS');
+      await fetchInquiries(); // Refresh the list
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to assign inquiry');
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -118,62 +131,48 @@ export default function DriverInquiriesPage() {
     );
   };
 
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'CRITICAL':
-        return <Badge className="bg-red-100 text-red-800">Critical</Badge>;
-      case 'HIGH':
-        return <Badge className="bg-orange-100 text-orange-800">High</Badge>;
-      case 'MEDIUM':
-        return <Badge className="bg-yellow-100 text-yellow-800">Medium</Badge>;
-      case 'LOW':
-        return <Badge className="bg-green-100 text-green-800">Low</Badge>;
-      default:
-        return <Badge variant="outline">{priority}</Badge>;
-    }
-  };
-
-  const renderInquiryCard = (inquiry: DriverInquiry) => (
+  const renderInquiryCard = (inquiry: any) => (
     <Card key={inquiry.id} className="p-6">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center space-x-4 mb-4">
             <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-              inquiry.inquiryType === 'COMPLAINT' ? 'bg-red-100' : 'bg-blue-100'
+              inquiry.type === 'COMPLAINT' ? 'bg-red-100' : 'bg-blue-100'
             }`}>
-              {inquiry.inquiryType === 'COMPLAINT' ? 
+              {inquiry.type === 'COMPLAINT' ? 
                 <AlertTriangle className="w-6 h-6 text-red-600" /> :
                 <MessageSquare className="w-6 h-6 text-blue-600" />
               }
             </div>
             <div>
-              <h3 className="text-lg font-semibold">{inquiry.subject}</h3>
-              <p className="text-gray-600">ID: {inquiry.id}</p>
+              <h3 className="text-lg font-semibold">
+                {inquiry.type === 'COMPLAINT' ? 'Complaint' : 'Inquiry'} - {inquiry.category}
+              </h3>
+              <p className="text-gray-600">ID: #{inquiry.id}</p>
             </div>
             <div className="flex items-center space-x-2">
               {getStatusBadge(inquiry.status)}
               {getCategoryBadge(inquiry.category)}
-              {getPriorityBadge(inquiry.priority)}
             </div>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div className="flex items-center space-x-2">
               <User className="w-4 h-4 text-gray-400" />
-              <span className="text-sm">{inquiry.driverName}</span>
+              <span className="text-sm">{inquiry.driverInfo?.name || 'Unknown Driver'}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Phone className="w-4 h-4 text-gray-400" />
-              <span className="text-sm">{inquiry.driverPhone}</span>
+              <span className="text-sm">{inquiry.driverInfo?.phone || 'N/A'}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Calendar className="w-4 h-4 text-gray-400" />
-              <span className="text-sm">{new Date(inquiry.submittedDate).toLocaleDateString()}</span>
+              <span className="text-sm">{new Date(inquiry.createdAt).toLocaleDateString()}</span>
             </div>
-            {inquiry.vehicleRegNo && (
+            {inquiry.driverInfo?.vehicle_Reg_No && (
               <div className="flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-gray-400" />
-                <span className="text-sm">{inquiry.vehicleRegNo}</span>
+                <span className="text-sm">{inquiry.driverInfo.vehicle_Reg_No}</span>
               </div>
             )}
           </div>
@@ -181,34 +180,6 @@ export default function DriverInquiriesPage() {
           <div className="mb-4">
             <p className="text-gray-700">{inquiry.description}</p>
           </div>
-
-          {inquiry.customerName && (
-            <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="flex items-center space-x-2 mb-1">
-                <User className="w-4 h-4 text-gray-600" />
-                <span className="text-sm font-medium text-gray-800">Related Customer:</span>
-              </div>
-              <p className="text-sm text-gray-700">{inquiry.customerName}</p>
-              {inquiry.customerPhone && (
-                <p className="text-sm text-gray-600">{inquiry.customerPhone}</p>
-              )}
-            </div>
-          )}
-
-          {inquiry.response && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center space-x-2 mb-1">
-                <MessageCircle className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-800">Response:</span>
-              </div>
-              <p className="text-sm text-green-700">{inquiry.response}</p>
-              {inquiry.responseDate && (
-                <p className="text-xs text-green-600 mt-1">
-                  Responded on {new Date(inquiry.responseDate).toLocaleDateString()} by {inquiry.assignedTo}
-                </p>
-              )}
-            </div>
-          )}
         </div>
 
         <div className="flex flex-col space-y-2 ml-4">
@@ -432,11 +403,15 @@ export default function DriverInquiriesPage() {
       <Dialog open={showResponseModal} onOpenChange={setShowResponseModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Respond to Inquiry: {selectedInquiry?.subject}</DialogTitle>
+            <DialogTitle>
+              Respond to Inquiry #{selectedInquiry?.id}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">Driver: {selectedInquiry?.driverName}</p>
+              <p className="text-sm text-gray-600 mb-1">
+                Driver: {selectedInquiry?.driverInfo?.name || 'Unknown'}
+              </p>
               <p className="text-sm text-gray-800">{selectedInquiry?.description}</p>
             </div>
             <div>

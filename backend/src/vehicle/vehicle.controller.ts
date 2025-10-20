@@ -122,7 +122,7 @@ export class VehicleController {
       startingCity: _start,
       endingCity: _end,
       ...rest
-    } = parsedVehicleDto as any;
+    } = parsedVehicleDto;
 
     const vehicleData = {
       ...rest,

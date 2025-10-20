@@ -53,8 +53,8 @@ export function computeGreedyOrder(
         // fallback pseudo-distance if no matrix
         const prev =
           ordered.length > 0 ? ordered[ordered.length - 1] : remaining[0];
-        const dx = prev!.lat - s.lat;
-        const dy = prev!.lng - s.lng;
+        const dx = prev.lat - s.lat;
+        const dy = prev.lng - s.lng;
         cost = Math.sqrt(dx * dx + dy * dy);
       }
       if (cost < bestCost) {

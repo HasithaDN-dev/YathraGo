@@ -28,8 +28,6 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
       exceptionFactory: (errors) => {
         return new BadRequestException(
           errors.map((e) => ({

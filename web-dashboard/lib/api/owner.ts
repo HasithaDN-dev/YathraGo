@@ -1,23 +1,16 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import type { OwnerProfile, Vehicle, Driver, Payment, ApiResponse } from '@/types/api';
 
-interface ApiResponse<T> {
-  success?: boolean;
-  data?: T;
-  message?: string;
-}
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 import { checkAuthStatus, redirectToLogin } from '../auth-utils';
 
 class OwnerApiService {
   private getAuthHeaders() {
-    console.log('🔍 Getting auth headers...');
-    
     // Check authentication status before making API calls
     const authStatus = checkAuthStatus();
-    console.log('🔍 Auth status:', authStatus);
     
     if (!authStatus.isAuthenticated) {
-      console.error('❌ Authentication failed:', authStatus.reason);
       
       // Clear any invalid tokens
       if (typeof document !== 'undefined') {
@@ -30,7 +23,6 @@ class OwnerApiService {
     }
 
     const token = authStatus.token;
-    console.log('🔍 Using valid token for request:', token ? token.substring(0, 20) + '...' : 'null');
 
     return {
       'Authorization': `Bearer ${token}`,
@@ -41,7 +33,6 @@ class OwnerApiService {
   private async handleResponse(response: Response, operation: string) {
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`${operation} failed:`, response.status, response.statusText, errorText);
       
       if (response.status === 401) {
         // Token might be expired, let the auth system handle it
@@ -53,15 +44,14 @@ class OwnerApiService {
     return response.json();
   }
 
-  async getProfile() {
-    console.log('Fetching owner profile...');
+  async getProfile(): Promise<OwnerProfile> {
     const response = await fetch(`${API_BASE}/owner/profile`, {
       headers: this.getAuthHeaders(),
     });
     return this.handleResponse(response, 'Profile fetch');
   }
 
-  async updateProfile(data: unknown) {
+  async updateProfile(data: Partial<OwnerProfile>): Promise<OwnerProfile> {
     const response = await fetch(`${API_BASE}/owner/update-profile`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
@@ -70,7 +60,7 @@ class OwnerApiService {
     return this.handleResponse(response, 'Profile update');
   }
 
-  async addDriver(data: unknown) {
+  async addDriver(data: Partial<Driver>): Promise<Driver> {
     const response = await fetch(`${API_BASE}/owner/add-driver`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
@@ -79,13 +69,10 @@ class OwnerApiService {
     return this.handleResponse(response, 'Add driver');
   }
 
-  async addDriverWithFiles(formData: FormData) {
+  async addDriverWithFiles(formData: FormData): Promise<Driver> {
     const authHeaders = this.getAuthHeaders();
     // Remove Content-Type header for FormData, let browser set it
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { 'Content-Type': _, ...headers } = authHeaders;
-    
-    console.log('Sending request to add driver with headers:', headers);
     
     const response = await fetch(`${API_BASE}/owner/add-driver`, {
       method: 'POST',
@@ -93,32 +80,28 @@ class OwnerApiService {
       body: formData,
     });
     
-    console.log('Response status:', response.status);
-    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Failed to add driver' }));
-      console.error('Error response:', errorData);
       throw new Error(errorData.message || `Failed to add driver: ${response.status} ${response.statusText}`);
     }
     return response.json();
   }
 
-  async getDrivers() {
+  async getDrivers(): Promise<Driver[] | ApiResponse<Driver[]>> {
     const response = await fetch(`${API_BASE}/owner/drivers`, {
       headers: this.getAuthHeaders(),
     });
     return this.handleResponse(response, 'Fetch drivers');
   }
 
-  async getVehicles() {
+  async getVehicles(): Promise<Vehicle[] | ApiResponse<Vehicle[]>> {
     const response = await fetch(`${API_BASE}/vehicles`, {
       headers: this.getAuthHeaders(),
     });
     return this.handleResponse(response, 'Fetch vehicles');
   }
 
-  async addVehicle(data: unknown) {
+  async addVehicle(data: Partial<Vehicle>): Promise<Vehicle> {
     const response = await fetch(`${API_BASE}/owner/add-vehicle`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
@@ -127,7 +110,7 @@ class OwnerApiService {
     return this.handleResponse(response, 'Add vehicle');
   }
 
-  async getPaymentHistory() {
+  async getPaymentHistory(): Promise<Payment[] | ApiResponse<Payment[]>> {
     const response = await fetch(`${API_BASE}/transactions`, {
       headers: this.getAuthHeaders(),
     });

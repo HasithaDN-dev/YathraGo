@@ -63,7 +63,7 @@ export class DriverRouteService {
     today.setHours(0, 0, 0, 0);
 
     // Step 1: Check if route already exists for today
-    let existingRoute = await this.prisma.driverRoute.findUnique({
+    const existingRoute = await this.prisma.driverRoute.findUnique({
       where: {
         driverId_date_routeType: {
           driverId,
@@ -807,6 +807,23 @@ export class DriverRouteService {
         completedAt: new Date(),
       },
     });
+
+    // Determine attendance type based on route type and stop type
+    const getAttendanceType = (
+      routeType: string,
+      stopType: string,
+    ): 'MORNING_PICKUP' | 'MORNING_DROPOFF' | 'EVENING_PICKUP' | 'EVENING_DROPOFF' => {
+      if (routeType === 'MORNING_PICKUP') {
+        return stopType === 'PICKUP' ? 'MORNING_PICKUP' : 'MORNING_DROPOFF';
+      } else {
+        return stopType === 'PICKUP' ? 'EVENING_PICKUP' : 'EVENING_DROPOFF';
+      }
+    };
+
+    const attendanceType = getAttendanceType(
+      stop.driverRoute.routeType,
+      stop.type,
+    );
 
     // Create attendance record
     // Determine session-aware attendance type based on route type and stop type

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { managerApi } from "@/lib/api/manager";
 import {
   FileText,
   Download,
@@ -13,13 +14,9 @@ import {
   DollarSign,
   Clock,
   CheckCircle,
-  TrendingUp,
-  Shield,
   AlertTriangle,
   Eye,
   Loader2,
-  BarChart3,
-  Building,
 } from "lucide-react";
 
 interface ReportType {
@@ -41,75 +38,57 @@ interface ReportFilters {
 const reportTypes: ReportType[] = [
   {
     id: "system-revenue",
-    title: "System-wide Revenue Analysis",
-    description: "Comprehensive revenue analysis across all fleet owners and schools",
+    title: "Revenue & Payment Analysis",
+    description: "Payment statistics, revenue trends, and financial overview",
     icon: DollarSign,
     category: "financial",
-    estimatedTime: "3-5 min",
-    dataPoints: ["Total Platform Revenue", "Commission Analysis", "Owner Payments", "Growth Trends", "Revenue Forecasting"]
+    estimatedTime: "2-3 min",
+    dataPoints: ["Total Payments", "Monthly Revenue", "Payment Status", "Outstanding Amounts", "Growth Trends"]
   },
   {
     id: "fleet-oversight",
-    title: "Fleet Operations Oversight",
-    description: "System-wide fleet utilization, performance, and operational metrics",
+    title: "Fleet Operations Overview",
+    description: "Vehicle status, driver assignments, and route operations",
     icon: Car,
     category: "operational",
-    estimatedTime: "4-6 min",
-  dataPoints: ["Fleet Utilization", "Route Coverage", "Service Quality", "Performance Metrics"]
-  },
-  {
-    id: "compliance-audit",
-    title: "Compliance & Regulatory Audit",
-    description: "System compliance status, documentation, and regulatory adherence",
-    icon: Shield,
-    category: "compliance",
-    estimatedTime: "5-7 min",
-    dataPoints: ["License Compliance", "Insurance Status", "Safety Audits", "Documentation Review", "Regulatory Updates"]
+    estimatedTime: "3-4 min",
+    dataPoints: ["Total Vehicles", "Active Routes", "Driver Assignments", "Vehicle Alerts", "Route Performance"]
   },
   {
     id: "driver-management",
-    title: "Driver Management Analysis",
-    description: "Driver verification status, background checks, and management metrics",
+    title: "Driver Management Report",
+    description: "Driver statistics, registration status, and activity metrics",
     icon: Users,
     category: "administrative",
-    estimatedTime: "3-4 min",
-    dataPoints: ["Verification Status", "Background Checks", "Performance Reviews", "Training Records", "Safety Incidents"]
-  },
-  {
-    id: "school-partnership",
-    title: "School Partnership Report",
-    description: "School onboarding, satisfaction, and partnership performance analysis",
-    icon: Building,
-    category: "analytics",
-    estimatedTime: "4-5 min",
-    dataPoints: ["Active Schools", "Partnership Growth", "Service Satisfaction", "Contract Renewals", "Revenue per School"]
-  },
-  {
-    id: "system-performance",
-    title: "System Performance Dashboard",
-    description: "Overall platform performance, user engagement, and system metrics",
-    icon: BarChart3,
-    category: "analytics",
-    estimatedTime: "3-4 min",
-    dataPoints: ["User Activity", "System Uptime", "Performance Metrics", "Growth Analytics", "Platform Usage"]
+    estimatedTime: "2-3 min",
+    dataPoints: ["Total Drivers", "Active Drivers", "Registration Status", "Driver Attendance", "Performance Stats"]
   },
   {
     id: "complaint-resolution",
-    title: "Complaint & Issue Resolution",
-    description: "Customer complaints analysis, resolution times, and satisfaction tracking",
+    title: "Complaints & Inquiries Report",
+    description: "Complaint statistics, resolution status, and category analysis",
     icon: AlertTriangle,
     category: "administrative",
     estimatedTime: "2-3 min",
-    dataPoints: ["Complaint Categories", "Resolution Times", "Customer Satisfaction", "Recurring Issues", "Action Plans"]
+    dataPoints: ["Total Complaints", "By Category", "By Status", "Resolution Times", "Recent Trends"]
   },
   {
-    id: "financial-oversight",
-    title: "Financial Oversight & Control",
-    description: "System-wide financial controls, audit trails, and risk management",
-    icon: TrendingUp,
-    category: "financial",
-    estimatedTime: "5-6 min",
-    dataPoints: ["Financial Controls", "Audit Trails", "Risk Assessment", "Payment Processing", "Fraud Detection"]
+    id: "customer-overview",
+    title: "Customer & Children Report",
+    description: "Customer registrations, children count, and service usage",
+    icon: Users,
+    category: "analytics",
+    estimatedTime: "2-3 min",
+    dataPoints: ["Total Customers", "Active Children", "Registration Trends", "Service Usage", "Customer Growth"]
+  },
+  {
+    id: "attendance-tracking",
+    title: "Attendance & Routes Report",
+    description: "Student attendance, route completion, and tracking metrics",
+    icon: CheckCircle,
+    category: "operational",
+    estimatedTime: "3-4 min",
+    dataPoints: ["Total Attendance", "Route Completion", "Pickup/Dropoff Stats", "Daily Trends", "Performance Metrics"]
   }
 ];
 
@@ -176,25 +155,28 @@ export default function GenerateReportsPage() {
     setGenerationProgress({});
     
     try {
-      // Simulate report generation with progress
+      // Generate each selected report by calling the backend API
       for (const reportId of selectedReports) {
         setGenerationProgress(prev => ({ ...prev, [reportId]: false }));
         
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 2500 + Math.random() * 3000));
+        // Call the backend to generate the report
+        const reportData = await managerApi.generateReport(
+          reportId,
+          filters.dateFrom,
+          filters.dateTo
+        );
+        
+        // Store or process report data as needed
+        console.log(`Generated report ${reportId}:`, reportData);
         
         setGenerationProgress(prev => ({ ...prev, [reportId]: true }));
       }
       
-      // Simulate final compilation
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // In a real application, this would trigger actual file downloads
       alert(`${selectedReports.length} management report(s) generated successfully!`);
       
-    } catch (error) {
-      console.error("Error generating reports:", error);
-      alert("Error generating reports. Please try again.");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      alert(`Error generating reports: ${errorMessage}`);
     } finally {
       setIsGenerating(false);
       setGenerationProgress({});

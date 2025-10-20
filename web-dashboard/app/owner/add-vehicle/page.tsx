@@ -494,8 +494,7 @@ export default function AddVehiclePage() {
         uploadedFiles: [],
       });
     } catch (error) {
-      console.error("Error adding vehicle:", error);
-    } finally {
+      } finally {
       setIsSubmitting(false);
     }
   };

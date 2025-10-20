@@ -10,7 +10,7 @@ import {
   VehicleDetailsResponseDto,
 } from './dto';
 // Use require for turf to avoid typing mismatch for some turf helper names
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+
 const turf = require('@turf/turf');
 
 @Injectable()
@@ -244,7 +244,7 @@ export class FindVehicleService {
       }
 
       // Check if driver has any cities in route
-      const cityIds = driverCity.cityIds as number[];
+      const cityIds = driverCity.cityIds;
       if (!cityIds || cityIds.length < 2) {
         console.log(
           `[FindVehicle] Driver ${driver.driver_id} (${driver.name}): Insufficient cities (${cityIds?.length || 0})`,
@@ -319,10 +319,10 @@ export class FindVehicleService {
 
       // Format times (handle null values) - TIME fields for display only
       const estimatedPickupTime = driverCity.usualStartTime
-        ? this.formatTime(driverCity.usualStartTime as Date)
+        ? this.formatTime(driverCity.usualStartTime)
         : undefined;
       const estimatedDropTime = driverCity.usualEndTime
-        ? this.formatTime(driverCity.usualEndTime as Date)
+        ? this.formatTime(driverCity.usualEndTime)
         : undefined;
 
       // Create response object
@@ -443,7 +443,7 @@ export class FindVehicleService {
     const cityMap = new Map(cities.map((city) => [city.id, city]));
 
     // Type assertion for cityIds
-    const cityIds = driverCity.cityIds as number[];
+    const cityIds = driverCity.cityIds;
 
     // Get route city names
     const routeCities = cityIds
@@ -455,10 +455,10 @@ export class FindVehicleService {
 
     // Format times (handle null values) - TIME fields for display only
     const usualStartTime = driverCity.usualStartTime
-      ? this.formatTime(driverCity.usualStartTime as Date)
+      ? this.formatTime(driverCity.usualStartTime)
       : undefined;
     const usualEndTime = driverCity.usualEndTime
-      ? this.formatTime(driverCity.usualEndTime as Date)
+      ? this.formatTime(driverCity.usualEndTime)
       : undefined;
 
     // TODO: Calculate actual ratings and reviews from reviews table when implemented
