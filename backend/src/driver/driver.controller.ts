@@ -760,7 +760,16 @@ export class DriverController {
       body.cityIds,
       body.rideType,
       body.usualStartTime,
-      body.usualEndTime
+      body.usualEndTime,
     );
+  }
+
+  // Get assigned passengers based on driver type
+  @Get('assigned-passengers')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async getAssignedPassengers(@Req() req: AuthenticatedRequest) {
+    const driverId = parseInt(req.user.sub, 10);
+    return this.driverService.getAssignedPassengers(driverId);
   }
 }
