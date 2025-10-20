@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   TrendingUp,
+  BarChart3,
 } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { logoutAndRedirectHome } from '@/lib/auth';
@@ -50,6 +51,11 @@ export default function FinanceManagerSidebar() {
       icon: RefreshCw,
       label: "Handle Refunds",
       href: "/finance-manager/refunds",
+    },
+    {
+      icon: BarChart3,
+      label: "Statistics",
+      href: "/finance-manager/statistics",
     },
     {
       icon: TrendingUp,
