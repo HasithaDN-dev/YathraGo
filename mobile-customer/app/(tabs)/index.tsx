@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   Broadcast, 
@@ -17,10 +17,13 @@ import CustomButton from '@/components/ui/CustomButton';
 import { router } from 'expo-router';
 import { useProfileStore } from '@/lib/stores/profile.store';
 import { useAuthStore } from '@/lib/stores/auth.store';
+import { useAssignedRideStore } from '@/lib/stores/assigned-ride.store';
+import { Colors } from '@/constants/Colors';
 
 export default function HomeScreen() {
   const { activeProfile, loadProfiles } = useProfileStore();
   const { accessToken } = useAuthStore();
+  const { assignedRide, isLoading, loadAssignedRide } = useAssignedRideStore();
 
   useEffect(() => {
     if (accessToken && !activeProfile) {
@@ -28,8 +31,23 @@ export default function HomeScreen() {
     }
   }, [accessToken, activeProfile, loadProfiles]);
 
+  // Load assigned ride when active profile changes
+  useEffect(() => {
+    if (activeProfile) {
+      const profileIdStr = activeProfile.id.split('-')[1];
+      const profileId = parseInt(profileIdStr, 10);
+      loadAssignedRide(activeProfile.type, profileId);
+    }
+  }, [activeProfile, loadAssignedRide]);
+
   const openOverview = (tab: 'Driver' | 'Vehicle') => {
-    router.push({ pathname: '/(menu)/(homeCards)/transport_overview', params: { tab } });
+    if (!assignedRide) {
+      return; // Don't navigate if no assigned ride
+    }
+    router.push({ 
+      pathname: '/(menu)/(homeCards)/assigned-ride-detail', 
+      params: { tab } 
+    });
   };
 
 
@@ -57,22 +75,6 @@ export default function HomeScreen() {
         contentContainerClassName="px-4 space-y-6 pb-6 mt-3"
         showsVerticalScrollIndicator={false}
       >
-        {/* Find New Vehicle Card - Show for all profiles */}
-        <View className="mb-3 rounded-2xl p-2 shadow-sm bg-brand-deepNavy">
-          <TouchableOpacity
-            className="flex-row items-center justify-center py-3"
-            onPress={() => router.push('/(menu)/(homeCards)/find_vehicle')}
-            activeOpacity={0.8}
-          >
-            <MagnifyingGlass size={24} color="#ffffff" weight="bold" />
-            <Typography variant="title-3" weight="semibold" className="text-white ml-3">
-              Find New Vehicle ...
-            </Typography>
-          </TouchableOpacity>
-        </View>
-
-
-
         {/* Current Ride Section */}
         <Card className="mb-3">
           <View className="flex-row items-center justify-between mb-4">
@@ -107,7 +109,7 @@ export default function HomeScreen() {
             </Typography>
             <TouchableOpacity 
               className="flex-row items-center"
-              onPress={() => console.log('See info pressed')}
+              onPress={() => assignedRide && openOverview('Driver')}
               activeOpacity={0.8}
             >
               <Typography variant="subhead" weight="medium" className="text-brand-deepNavy mr-1">
@@ -117,46 +119,69 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
           
-          {/* Driver and Vehicle Cards */}
-          <View className="flex-row gap-x-6 mb-4">
-            <TouchableOpacity className="flex-1" activeOpacity={0.85} onPress={() => openOverview('Driver')}>
-              <DriverVehicleCard
-                type="driver"
-                name="Hemal Perera"
-                subtitle="Driver"
-                rating={4.9}
+          {/* Loading State */}
+          {isLoading ? (
+            <View className="py-8 items-center justify-center">
+              <ActivityIndicator size="large" color={Colors.warmYellow} />
+              <Typography variant="caption-1" className="text-gray-500 mt-2">
+                Loading driver info...
+              </Typography>
+            </View>
+          ) : assignedRide ? (
+            <>
+              {/* Driver and Vehicle Cards */}
+              <View className="flex-row gap-x-6 mb-4">
+                <TouchableOpacity className="flex-1" activeOpacity={0.85} onPress={() => openOverview('Driver')}>
+                  <DriverVehicleCard
+                    type="driver"
+                    name={assignedRide.driver.name}
+                    subtitle="Driver"
+                    rating={assignedRide.driver.rating}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity className="flex-1" activeOpacity={0.85} onPress={() => openOverview('Vehicle')}>
+                  <DriverVehicleCard
+                    type="vehicle"
+                    name={assignedRide.vehicle?.registrationNumber || 'N/A'}
+                    subtitle={assignedRide.vehicle ? `${assignedRide.vehicle.brand} ${assignedRide.vehicle.model}` : 'No Vehicle'}
+                  />
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <View className="py-6 items-center justify-center">
+              <Typography variant="body" className="text-gray-500 text-center mb-3">
+                No driver assigned yet
+              </Typography>
+              <Typography variant="caption-1" className="text-gray-400 text-center">
+                Find a vehicle to get started
+              </Typography>
+            </View>
+          )}
+
+          {/* Action Buttons - Only show if driver is assigned */}
+          {assignedRide && !isLoading && (
+            <View className="flex-row justify-center items-center mt-2">
+              <CustomButton
+                title="Inform"
+                bgVariant="secondary"
+                textVariant="white"
+                size="medium"
+                IconLeft={Broadcast}
+                className="mx-2 w-[160px]"
+                onPress={() => router.push('/(menu)/(homeCards)/inform_driver')}
               />
-            </TouchableOpacity>
-            <TouchableOpacity className="flex-1" activeOpacity={0.85} onPress={() => openOverview('Vehicle')}>
-              <DriverVehicleCard
-                type="vehicle"
-                name="WP-5562"
-                subtitle="Toyota HIACE"
+              <CustomButton
+                title="Message"
+                bgVariant="outline"
+                textVariant="primary"
+                size="medium"
+                IconLeft={ChatCircle}
+                className="w-[160px]"
+                onPress={() => router.push('/(menu)/(homeCards)/chat_list')}
               />
-            </TouchableOpacity>
-          </View>
-          
-          {/* Action Buttons */}
-          <View className="flex-row justify-center items-center">
-            <CustomButton
-              title="Inform"
-              bgVariant="secondary"
-              textVariant="white"
-              size="medium"
-              IconLeft={Broadcast}
-              className="mx-2 w-[160px]"
-              onPress={() => router.push('/(menu)/(homeCards)/inform_driver')}
-            />
-            <CustomButton
-              title="Message"
-              bgVariant="outline"
-              textVariant="primary"
-              size="medium"
-              IconLeft={ChatCircle}
-              className="w-[160px]"
-              onPress={() => router.push('/(menu)/(homeCards)/chat_list')}
-            />
-          </View>
+            </View>
+          )}
         </Card>
         
         {/* Payment Section - Show different payment info based on profile */}
@@ -166,10 +191,39 @@ export default function HomeScreen() {
             totalPayable={activeProfile?.type === 'child' ? "Rs. 8000.00" : "Rs. 12000.45"}
             dueDate="25 Oct 2025"
             onSummaryPress={() => router.push('/(menu)/(homeCards)/payment_summary')}
-            onPayNowPress={() => console.log('Pay now pressed')}
+            onPayNowPress={() => router.push('/(menu)/(homeCards)/payment')}
             onHistoryPress={() => router.push('/(menu)/(homeCards)/payment_history')}
           />
         </Card>
+
+        {/* Quick Action Cards */}
+        <View className="flex-row gap-3">
+          {/* Find New Vehicle */}
+          <TouchableOpacity
+            className="flex-1 bg-brand-deepNavy rounded-2xl p-6 items-center justify-center shadow-sm"
+            style={{ aspectRatio: 1 }}
+            onPress={() => router.push('/(menu)/(homeCards)/find_vehicle')}
+            activeOpacity={0.8}
+          >
+            <MagnifyingGlass size={32} color="#ffffff" weight="bold" />
+            <Typography variant="subhead" weight="semibold" className="text-white text-center mt-3">
+              Find New{'\n'}Vehicle
+            </Typography>
+          </TouchableOpacity>
+
+          {/* View Sent Requests */}
+          <TouchableOpacity
+            className="flex-1 bg-blue-600 rounded-2xl p-6 items-center justify-center shadow-sm"
+            style={{ aspectRatio: 1 }}
+            onPress={() => router.push('/(menu)/find-driver/request-list')}
+            activeOpacity={0.8}
+          >
+            <ChatCircle size={32} color="#ffffff" weight="bold" />
+            <Typography variant="subhead" weight="semibold" className="text-white text-center mt-3">
+              View Sent{'\n'}Requests
+            </Typography>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

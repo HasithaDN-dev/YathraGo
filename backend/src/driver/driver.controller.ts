@@ -653,6 +653,7 @@ export class DriverController {
     body: {
       childId: number;
       type: 'pickup' | 'dropoff';
+      routeType?: 'MORNING_PICKUP' | 'AFTERNOON_DROPOFF';
       latitude?: number;
       longitude?: number;
       notes?: string;
@@ -662,43 +663,15 @@ export class DriverController {
     try {
       const driverId = parseInt(req.user.sub, 10);
 
-      // Find the waypoint to get route type
-      const waypoint = await this.prisma.routeWaypoint.findFirst({
-        where: {
-          driverId,
-          childId: body.childId,
-          type: body.type.toUpperCase() as any,
-        },
-        include: {
-          driverRoute: {
-            select: { routeType: true }
-          }
-        },
-        orderBy: { id: 'desc' },
-      });
-
-      // Determine attendance type based on route type and waypoint type
+      // Determine session-aware attendance type
+      // Default to morning session if routeType not provided (backward compatibility)
+      const routeType = body.routeType || 'MORNING_PICKUP';
       let attendanceType: 'MORNING_PICKUP' | 'MORNING_DROPOFF' | 'EVENING_PICKUP' | 'EVENING_DROPOFF';
-      if (waypoint) {
-        const routeType = waypoint.driverRoute.routeType;
-        const waypointType = body.type.toUpperCase();
-        
-        if (routeType === 'MORNING_PICKUP') {
-          attendanceType = waypointType === 'PICKUP' ? 'MORNING_PICKUP' : 'MORNING_DROPOFF';
-        } else {
-          attendanceType = waypointType === 'PICKUP' ? 'EVENING_PICKUP' : 'EVENING_DROPOFF';
-        }
+      
+      if (routeType === 'MORNING_PICKUP') {
+        attendanceType = body.type === 'pickup' ? 'MORNING_PICKUP' : 'MORNING_DROPOFF';
       } else {
-        // Default fallback if no waypoint found - use time-based inference
-        const hour = new Date().getHours();
-        const isMorning = hour >= 5 && hour < 13;
-        const waypointType = body.type.toUpperCase();
-        
-        if (isMorning) {
-          attendanceType = waypointType === 'PICKUP' ? 'MORNING_PICKUP' : 'MORNING_DROPOFF';
-        } else {
-          attendanceType = waypointType === 'PICKUP' ? 'EVENING_PICKUP' : 'EVENING_DROPOFF';
-        }
+        attendanceType = body.type === 'pickup' ? 'EVENING_PICKUP' : 'EVENING_DROPOFF';
       }
 
       // Create attendance record

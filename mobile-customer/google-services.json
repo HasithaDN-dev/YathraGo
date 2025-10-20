@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "620723392411",
+    "project_id": "yathragonotifications",
+    "storage_bucket": "yathragonotifications.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:620723392411:android:f4bfc4ac091082c1b2db3e",
+        "android_client_info": {
+          "package_name": "com.anonymous.mobilecustomer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDssQLyGjwjHUorx3U17qE6kdT57SOLdqc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

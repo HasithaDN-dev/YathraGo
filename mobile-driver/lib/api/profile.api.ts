@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../../config/api';
-import { Driver, DriverProfileData, DriverRegistrationData, DocumentUploadData } from '../../types/driver.types';
+import { Driver, DriverProfileData, DriverRegistrationData, DocumentUploadData, DriverProfileComplete } from '../../types/driver.types';
 import { tokenService } from '../services/token.service';
 
 /**

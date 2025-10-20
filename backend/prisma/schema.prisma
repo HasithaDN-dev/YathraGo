@@ -383,6 +383,34 @@ model ChildRideRequest {
   driver       Driver        @relation(fields: [driverId], references: [driver_id])
 }
 
+model askDriverRequest {
+  id                        Int       @id @default(autoincrement())
+  customerID                Int
+  staffOrChild              String
+  staffOrChildID            Int
+  driverId                  Int
+  estimatedDistance         Float
+  estimatedPrice            Float
+  currentAmount             Float
+  customerNote              String?
+  driverNote                String?
+  status                    askStatus @default(PENDING)
+  nearestPickupCityID       Int
+  nearestWorkOrSchoolCityID Int
+  nearestPickupCityName     String?
+  nearestDropCityName       String?
+  lastModifiedBy            String?
+  negotiationHistory        Json?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  Customer                  Customer  @relation(fields: [customerID], references: [customer_id])
+  Driver                    Driver    @relation(fields: [driverId], references: [driver_id])
+
+  @@index([customerID])
+  @@index([driverId])
+  @@index([status])
+}
+
 model DriverRoute {
   id                  Int             @id @default(autoincrement())
   driverId            Int
@@ -712,6 +740,13 @@ enum WaypointType {
   DROPOFF
 }
 
+enum AttendanceType {
+  MORNING_PICKUP
+  MORNING_DROPOFF
+  EVENING_PICKUP
+  EVENING_DROPOFF
+}
+
 enum NotificationTypes {
   System
   Alert
@@ -722,6 +757,7 @@ enum NotificationTypes {
 enum ChildPaymentStatus {
   NOT_DUE
   PENDING
+  AWAITING_CONFIRMATION
   PAID
   OVERDUE
   GRACE_PERIOD
