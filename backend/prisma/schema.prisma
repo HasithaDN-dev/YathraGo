@@ -96,6 +96,7 @@ model Vehicle {
   vehicle_reg_url     String?
   ownerId             Int?
   driverId            Int?
+  webuserId           Int?
   driver              Driver?       @relation(fields: [driverId], references: [driver_id])
   owner               VehicleOwner? @relation(fields: [ownerId], references: [id])
   Webuser             Webuser?      @relation(fields: [webuserId], references: [id])
@@ -501,7 +502,7 @@ model Attendance {
   driverId   Int
   childId    Int
   waypointId Int?
-  type       String
+  type       AttendanceType
   latitude   Float?
   longitude  Float?
   notes      String?
@@ -658,6 +659,13 @@ enum MessageStatus {
 enum WaypointType {
   PICKUP
   DROPOFF
+}
+
+enum AttendanceType {
+  MORNING_PICKUP
+  MORNING_DROPOFF
+  EVENING_PICKUP
+  EVENING_DROPOFF
 }
 
 enum NotificationTypes {
