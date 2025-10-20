@@ -150,7 +150,7 @@ export default function HomeScreen() {
             totalPayable={activeProfile?.type === 'child' ? "Rs. 8000.00" : "Rs. 12000.45"}
             dueDate="25 Oct 2025"
             onSummaryPress={() => router.push('/(menu)/(homeCards)/payment_summary')}
-            onPayNowPress={() => console.log('Pay now pressed')}
+            onPayNowPress={() => router.push('/(menu)/(homeCards)/payment')}
             onHistoryPress={() => router.push('/(menu)/(homeCards)/payment_history')}
           />
         </Card>
