@@ -75,7 +75,7 @@ model Manager {
 }
 
 model Vehicle {
-  id                  Int      @id @default(autoincrement())
+  id                  Int           @id @default(autoincrement())
   type                String
   brand               String
   model               String
@@ -84,8 +84,8 @@ model Vehicle {
   color               String
   route               String[]
   no_of_seats         Int
-  air_conditioned     Boolean  @default(false)
-  assistant           Boolean  @default(false)
+  air_conditioned     Boolean       @default(false)
+  assistant           Boolean       @default(false)
   rear_picture_url    String
   front_picture_url   String
   side_picture_url    String
@@ -572,41 +572,16 @@ model StaffRideRequest {
   Staff_Passenger Staff_Passenger @relation(fields: [staffId], references: [id])
 }
 
-model askDriverRequest {
-  id                        Int       @id @default(autoincrement())
-  customerID                Int
-  staffOrChild              String // 'staff' or 'child'
-  staffOrChildID            Int
-  driverId                  Int
-  estimatedDistance         Float // Stored on initial calculation
-  estimatedPrice            Float // Stored on initial calculation (distance * price per km)
-  currentAmount             Float // Current negotiated amount
-  customerNote              String?
-  driverNote                String?
-  status                    askStatus @default(PENDING)
-  nearestPickupCityID       Int
-  nearestWorkOrSchoolCityID Int
-  nearestPickupCityName     String?
-  nearestDropCityName       String?
-  lastModifiedBy            String? // 'customer' or 'driver'
-  negotiationHistory        Json? // Array of {offeredBy, amount, note, timestamp}
-  createdAt                 DateTime  @default(now())
-  updatedAt                 DateTime  @updatedAt
-  Driver                    Driver    @relation(fields: [driverId], references: [driver_id])
-  Customer                  Customer  @relation(fields: [customerID], references: [customer_id])
-
-  @@index([customerID])
-  @@index([driverId])
-  @@index([status])
-}
-
-enum askStatus {
-  PENDING // Initial request sent by customer
-  DRIVER_COUNTER // Driver counter-offered
-  CUSTOMER_COUNTER // Customer counter-offered
-  ACCEPTED // Both parties agreed
-  REJECTED // Request rejected
-  ASSIGNED // Successfully assigned to ChildRideRequest/StaffRideRequest
+model VehicleOwner {
+  id         Int       @id
+  first_name String?
+  last_name  String?
+  phone      String?
+  email      String?
+  company    String?
+  Address    String?
+  Vehicle    Vehicle[]
+  Webuser    Webuser   @relation(fields: [id], references: [id])
 }
 
 enum RegistrationStatus {

@@ -674,14 +674,12 @@ export class DriverRequestService {
     let minPickupDistance = turf.distance(
       pickupPoint,
       turf.point([nearestPickupCity.longitude, nearestPickupCity.latitude]),
-      { units: 'kilometers' },
+      'kilometers',
     );
 
     for (const city of cities) {
       const cityPoint = turf.point([city.longitude, city.latitude]);
-      const distance = turf.distance(pickupPoint, cityPoint, {
-        units: 'kilometers',
-      });
+      const distance = turf.distance(pickupPoint, cityPoint, 'kilometers');
       if (distance < minPickupDistance) {
         minPickupDistance = distance;
         nearestPickupCity = city;
@@ -693,14 +691,12 @@ export class DriverRequestService {
     let minDropDistance = turf.distance(
       dropPoint,
       turf.point([nearestDropCity.longitude, nearestDropCity.latitude]),
-      { units: 'kilometers' },
+      'kilometers',
     );
 
     for (const city of cities) {
       const cityPoint = turf.point([city.longitude, city.latitude]);
-      const distance = turf.distance(dropPoint, cityPoint, {
-        units: 'kilometers',
-      });
+      const distance = turf.distance(dropPoint, cityPoint, 'kilometers');
       if (distance < minDropDistance) {
         minDropDistance = distance;
         nearestDropCity = city;
@@ -719,7 +715,7 @@ export class DriverRequestService {
     const betweenCitiesDistance = turf.distance(
       nearestPickupCityPoint,
       nearestDropCityPoint,
-      { units: 'kilometers' },
+      'kilometers',
     );
 
     // Total distance = pickup to nearest city + between cities + nearest city to drop

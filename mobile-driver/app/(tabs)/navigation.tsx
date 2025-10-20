@@ -17,6 +17,8 @@ import {
 import CustomButton from '@/components/ui/CustomButton';
 import { backgroundLocationService } from '@/lib/services/background-location.service';
 import { routeApi, RouteStop, DailyRoute } from '@/lib/api/route.api';
+import { driverLocationService } from '@/lib/services/driver-location.service';
+import { useDriverStore } from '@/lib/stores/driver.store';
 
 /**
  * This screen implements the complete driver routing workflow as described in the guide:
@@ -25,9 +27,14 @@ import { routeApi, RouteStop, DailyRoute } from '@/lib/api/route.api';
  * 3. Shows current stop with "Get Directions" and "Mark Complete" buttons
  * 4. Advances to next stop after completing current one
  * 5. Shows next stop preview
+ * 
+ * ENHANCED: Now includes real-time location tracking via WebSocket
  */
 
 export default function NavigationScreen() {
+    // Get driver profile
+    const { profile } = useDriverStore();
+    
     // Core state management as per guide
     const [isRideActive, setIsRideActive] = useState(false);
     const [stopList, setStopList] = useState<RouteStop[]>([]);
@@ -41,6 +48,9 @@ export default function NavigationScreen() {
     const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
     const [routeData, setRouteData] = useState<DailyRoute | null>(null);
     
+    // Location tracking state
+    const [isLocationTracking, setIsLocationTracking] = useState(false);
+    const [locationUpdateCount, setLocationUpdateCount] = useState(0);
     // Session availability state
     const [sessionAvailability, setSessionAvailability] = useState<{
         morningSession: { available: boolean; status: string; completed: boolean };
@@ -151,9 +161,43 @@ export default function NavigationScreen() {
             setCurrentStopIndex(0);
             setIsRideActive(true);
             
+            // START LOCATION TRACKING
+            if (profile?.id && routeData.route?.id) {
+                const trackingStarted = await driverLocationService.startLocationTracking({
+                    driverId: profile.id.toString(),
+                    routeId: routeData.route.id.toString(),
+                    onLocationUpdate: (location) => {
+                        setLocationUpdateCount(prev => prev + 1);
+                        setCurrentLocation({
+                            latitude: location.coords.latitude,
+                            longitude: location.coords.longitude,
+                        });
+                    },
+                    onError: (error) => {
+                        console.error('Location tracking error:', error);
+                        Alert.alert('Tracking Error', error.message);
+                    },
+                    onRideStarted: () => {
+                        setIsLocationTracking(true);
+                        console.log('📍 Location sharing started');
+                    },
+                    onRideEnded: () => {
+                        setIsLocationTracking(false);
+                        console.log('🛑 Location sharing stopped');
+                    },
+                });
+
+                if (!trackingStarted) {
+                    Alert.alert(
+                        'Warning',
+                        'Location tracking could not be started. Your ride will continue without real-time location sharing.'
+                    );
+                }
+            }
+            
             Alert.alert(
                 'Ride Started',
-                `You have ${routeData.stops.length} stops today. Navigate to the first stop to begin.`
+                `You have ${routeData.stops.length} stops today. Your location is now being shared with customers.`
             );
         } catch (error) {
             console.error('Error starting ride:', error);
@@ -263,13 +307,16 @@ export default function NavigationScreen() {
                     [{ text: 'OK' }]
                 );
             } else {
+                // This was the last stop - STOP LOCATION TRACKING
+                await driverLocationService.stopLocationTracking();
+                setIsLocationTracking(false);
                 // This was the last stop!
                 // Reload session availability to enable/disable evening button if morning was completed
                 await loadSessionAvailability();
                 
                 Alert.alert(
                     'Ride Complete!',
-                    'All stops have been completed. Great job!',
+                    'All stops have been completed. Location sharing has been stopped. Great job!',
                     [
                         {
                             text: 'OK',
@@ -277,6 +324,7 @@ export default function NavigationScreen() {
                                 setIsRideActive(false);
                                 setStopList([]);
                                 setCurrentStopIndex(0);
+                                setLocationUpdateCount(0);
                             }
                         }
                     ]
@@ -345,14 +393,24 @@ export default function NavigationScreen() {
             {/* Header */}
             <View className="bg-brand-deepNavy px-6 pt-16 pb-6 rounded-b-3xl">
                 <View className="flex-row items-center justify-between mb-4">
-                    <View>
+                    <View className="flex-1">
                         <Typography variant="title-2" weight="bold" className="text-white">
                             {isRideActive ? 'Ride in Progress' : 'Ready to Start'}
                         </Typography>
-                        <Typography variant="body" className="text-white opacity-80">
-                            {isRideActive ? `Stop ${currentStopIndex + 1} of ${stopList.length}` : 'Start your trip'}
-                        </Typography>
-                </View>
+                        <View className="flex-row items-center mt-1">
+                            <Typography variant="body" className="text-white opacity-80">
+                                {isRideActive ? `Stop ${currentStopIndex + 1} of ${stopList.length}` : 'Start your trip'}
+                            </Typography>
+                            {isLocationTracking && (
+                                <View className="flex-row items-center ml-3">
+                                    <View className="w-2 h-2 rounded-full bg-green-400 mr-1" />
+                                    <Typography variant="caption-1" className="text-green-400">
+                                        Sharing location
+                                    </Typography>
+                                </View>
+                            )}
+                        </View>
+                    </View>
 
                 {/* Emergency Alert Button */}
                     <TouchableOpacity
