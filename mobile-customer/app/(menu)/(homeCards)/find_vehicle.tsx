@@ -14,7 +14,6 @@ import { useProfileStore } from '@/lib/stores/profile.store';
 export default function FindVehicleScreen() {
   const [selectedVehicleType, setSelectedVehicleType] = useState<string>('');
   const [rating, setRating] = useState(1);
-  const [requestedMap, setRequestedMap] = useState<Record<number, boolean>>({});
   const [allVehicles, setAllVehicles] = useState<VehicleSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   
@@ -88,15 +87,6 @@ export default function FindVehicleScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerProfile, activeProfile]);
 
-  const handleRequestVehicle = (vehicleId: number) => {
-    setRequestedMap(prev => ({ ...prev, [vehicleId]: true }));
-    Alert.alert(
-      'Request Sent',
-      'Your vehicle request has been sent to the driver.',
-      [{ text: 'OK' }]
-    );
-  };
-
   const VehicleCard = ({ vehicle }: { vehicle: VehicleSearchResult }) => {
     // Determine vehicle image based on type
     const getVehicleImage = () => {
@@ -136,21 +126,6 @@ export default function FindVehicleScreen() {
                 <Typography variant="title-3" weight="semibold" className="text-white mr-2">
                   {vehicle.vehicleBrand} {vehicle.vehicleModel}
                 </Typography>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={() => handleRequestVehicle(vehicle.vehicleId)}
-                  activeOpacity={0.85}
-                  className="px-3 py-1.5 rounded-full"
-                  style={{ 
-                    backgroundColor: requestedMap[vehicle.vehicleId] 
-                      ? Colors.successGreen 
-                      : Colors.warmYellow 
-                  }}
-                >
-                  <Typography variant="caption-2" weight="semibold" className="text-white">
-                    {requestedMap[vehicle.vehicleId] ? 'Requested' : 'Request'}
-                  </Typography>
-                </TouchableOpacity>
               </View>
 
               <Typography variant="footnote" className="text-white mb-1">

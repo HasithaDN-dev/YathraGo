@@ -9,16 +9,15 @@ import {
   Gear,
   User,
   Warning,
-  Chat,
-  Bell
+  
 } from 'phosphor-react-native';
-import { Typography } from '@/components/Typography';
-import { Card } from '@/components/ui/Card';
+import { Typography } from '../../components/Typography';
+import { Card } from '../../components/ui/Card';
 import { useNotificationsStore } from '../../lib/stores/notifications.store';
-import { NotificationDto } from '../../lib/api/notifications.api';
+import { NotificationDto, ReceiverType } from '../../lib/api/notifications.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
+import { tokenService } from '../../lib/services/token.service';
 import { useProfileStore } from '../../lib/stores/profile.store';
-import { ReceiverType } from '../../lib/api/notifications.api';
 
 // Using store's NotificationDto type; no additional UI type needed
 
@@ -35,12 +34,24 @@ export default function NotificationsScreen() {
   // Fetch notifications function
   const fetchNotifications = useCallback(async () => {
     if (!accessToken) return;
+    // Attempt to extract driverId from token (driver app)
+    let driverId: number | null = null;
+    try {
+      driverId = await tokenService.getDriverIdFromToken();
+    } catch {
+      // ignore token parsing errors
+    }
 
-    const targets: Array<{ userType: ReceiverType; userId: number }> = [];
+  const targets: { userType: ReceiverType; userId: number }[] = [];
 
     // Always include parent customer notifications if available
     if (customerProfile?.customer_id) {
       targets.push({ userType: 'CUSTOMER', userId: customerProfile.customer_id });
+    }
+
+    // Include driver notifications (broadcasts + personal) when driverId available
+    if (driverId) {
+      targets.push({ userType: 'DRIVER', userId: driverId });
     }
 
     // Add active profile target
@@ -105,9 +116,19 @@ export default function NotificationsScreen() {
       case 'alert':
         return <Warning size={20} color="#EF4444" weight="fill" />;
       case 'chat':
-        return <Chat size={20} color="#3B82F6" weight="fill" />;
+        return (
+          <Image
+            source={require('../../assets/images/chat.png')}
+            style={{ width: 32, height: 32, borderRadius: 16, resizeMode: 'cover' }}
+          />
+        );
       case 'other':
-        return <Bell size={20} color="#6B7280" weight="regular" />;
+        return (
+          <Image
+            source={require('../../assets/images/notificationBell.png')}
+            style={{ width: 32, height: 32, borderRadius: 16, resizeMode: 'cover' }}
+          />
+        );
       default:
         return <User size={20} color="#F97316" weight="fill" />;
     }

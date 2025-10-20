@@ -33,18 +33,18 @@ model OtpCode {
 }
 
 model Webuser {
-  id           Int           @id @default(autoincrement())
-  email        String        @unique
+  id           Int            @id @default(autoincrement())
+  email        String         @unique
   password     String
   username     String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
   fcmToken     String?
-  role         Role          @default(OWNER)
-  address      String?
   phone        String?
-  Vehicle      Vehicle[]
-  vehicleOwner VehicleOwner?
+  address      String?
+  role         Role           @default(OWNER)
+  vehicles     Vehicle[]
+  VehicleOwner VehicleOwner[]
 
   @@index([fcmToken])
 }
@@ -75,7 +75,7 @@ model Manager {
 }
 
 model Vehicle {
-  id                  Int           @id @default(autoincrement())
+  id                  Int      @id @default(autoincrement())
   type                String
   brand               String
   model               String
@@ -84,8 +84,8 @@ model Vehicle {
   color               String
   route               String[]
   no_of_seats         Int
-  air_conditioned     Boolean       @default(false)
-  assistant           Boolean       @default(false)
+  air_conditioned     Boolean  @default(false)
+  assistant           Boolean  @default(false)
   rear_picture_url    String
   front_picture_url   String
   side_picture_url    String
@@ -100,6 +100,7 @@ model Vehicle {
   driver              Driver?       @relation(fields: [driverId], references: [driver_id])
   owner               VehicleOwner? @relation(fields: [ownerId], references: [id])
   Webuser             Webuser?      @relation(fields: [webuserId], references: [id])
+  webuserId           Int?
 }
 
 model Chat {
@@ -239,18 +240,6 @@ model Driver {
 
 model FoundedBackupDrivers {
   id Int @id @default(autoincrement())
-}
-
-model VehicleOwner {
-  id         Int       @id
-  first_name String?
-  last_name  String?
-  phone      String?
-  email      String?
-  company    String?
-  Address    String?
-  vehicles   Vehicle[]
-  webuser    Webuser   @relation(fields: [id], references: [id])
 }
 
 model Customer {
@@ -393,6 +382,34 @@ model ChildRideRequest {
   status       RequestStatus @default(Pending)
   child        Child         @relation(fields: [childId], references: [child_id])
   driver       Driver        @relation(fields: [driverId], references: [driver_id])
+}
+
+model askDriverRequest {
+  id                        Int       @id @default(autoincrement())
+  customerID                Int
+  staffOrChild              String
+  staffOrChildID            Int
+  driverId                  Int
+  estimatedDistance         Float
+  estimatedPrice            Float
+  currentAmount             Float
+  customerNote              String?
+  driverNote                String?
+  status                    askStatus @default(PENDING)
+  nearestPickupCityID       Int
+  nearestWorkOrSchoolCityID Int
+  nearestPickupCityName     String?
+  nearestDropCityName       String?
+  lastModifiedBy            String?
+  negotiationHistory        Json?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  Customer                  Customer  @relation(fields: [customerID], references: [customer_id])
+  Driver                    Driver    @relation(fields: [driverId], references: [driver_id])
+
+  @@index([customerID])
+  @@index([driverId])
+  @@index([status])
 }
 
 model DriverRoute {
@@ -558,12 +575,12 @@ model StaffRideRequest {
 model askDriverRequest {
   id                        Int       @id @default(autoincrement())
   customerID                Int
-  staffOrChild              String
+  staffOrChild              String // 'staff' or 'child'
   staffOrChildID            Int
   driverId                  Int
-  estimatedDistance         Float
-  estimatedPrice            Float
-  currentAmount             Float
+  estimatedDistance         Float // Stored on initial calculation
+  estimatedPrice            Float // Stored on initial calculation (distance * price per km)
+  currentAmount             Float // Current negotiated amount
   customerNote              String?
   driverNote                String?
   status                    askStatus @default(PENDING)
@@ -571,93 +588,25 @@ model askDriverRequest {
   nearestWorkOrSchoolCityID Int
   nearestPickupCityName     String?
   nearestDropCityName       String?
-  lastModifiedBy            String?
-  negotiationHistory        Json?
+  lastModifiedBy            String? // 'customer' or 'driver'
+  negotiationHistory        Json? // Array of {offeredBy, amount, note, timestamp}
   createdAt                 DateTime  @default(now())
-  updatedAt                 DateTime
-  Customer                  Customer  @relation(fields: [customerID], references: [customer_id])
+  updatedAt                 DateTime  @updatedAt
   Driver                    Driver    @relation(fields: [driverId], references: [driver_id])
+  Customer                  Customer  @relation(fields: [customerID], references: [customer_id])
 
   @@index([customerID])
   @@index([driverId])
   @@index([status])
 }
 
-model AuditLog {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  userType    UserTypes
-  action      String
-  entity      String
-  entityId    Int?
-  changes     Json?
-  ipAddress   String?
-  userAgent   String?
-  timestamp   DateTime  @default(now())
-  description String?
-
-  @@index([entity, entityId])
-  @@index([timestamp])
-  @@index([userId, userType])
-}
-
-model PaymentRefund {
-  id              Int          @id @default(autoincrement())
-  paymentId       Int
-  childId         Int
-  customerId      Int
-  driverId        Int
-  refundAmount    Float
-  refundReason    String
-  refundType      RefundType
-  status          RefundStatus @default(PENDING)
-  requestedBy     Int
-  requestedByType UserTypes
-  approvedBy      Int?
-  approvedByType  UserTypes?
-  rejectedBy      Int?
-  rejectionReason String?
-  refundMethod    String?
-  transactionRef  String?
-  requestedAt     DateTime     @default(now())
-  processedAt     DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime
-
-  @@index([customerId])
-  @@index([driverId])
-  @@index([paymentId])
-  @@index([status])
-}
-
-model VehicleAlert {
-  id                    Int              @id @default(autoincrement())
-  vehicleId             Int
-  driverId              Int
-  alertType             VehicleAlertType
-  severity              AlertSeverity    @default(MEDIUM)
-  description           String
-  location              String?
-  latitude              Float?
-  longitude             Float?
-  status                AlertStatus      @default(ACTIVE)
-  reportedAt            DateTime         @default(now())
-  acknowledgedAt        DateTime?
-  resolvedAt            DateTime?
-  assignedBackupVehicle String?
-  assignedBackupDriver  String?
-  affectedRoutes        String[]
-  affectedChildrenCount Int              @default(0)
-  estimatedDowntime     String?
-  resolutionNotes       String?
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime
-
-  @@index([alertType])
-  @@index([driverId])
-  @@index([reportedAt])
-  @@index([status])
-  @@index([vehicleId])
+enum askStatus {
+  PENDING // Initial request sent by customer
+  DRIVER_COUNTER // Driver counter-offered
+  CUSTOMER_COUNTER // Customer counter-offered
+  ACCEPTED // Both parties agreed
+  REJECTED // Request rejected
+  ASSIGNED // Successfully assigned to ChildRideRequest/StaffRideRequest
 }
 
 enum RegistrationStatus {
@@ -729,6 +678,7 @@ enum NotificationTypes {
 enum ChildPaymentStatus {
   NOT_DUE
   PENDING
+  AWAITING_CONFIRMATION
   PAID
   OVERDUE
   GRACE_PERIOD
@@ -782,46 +732,4 @@ enum askStatus {
   ACCEPTED
   REJECTED
   ASSIGNED
-}
-
-enum AlertSeverity {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
-enum AlertStatus {
-  ACTIVE
-  ACKNOWLEDGED
-  IN_PROGRESS
-  RESOLVED
-  CANCELLED
-}
-
-enum RefundStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  PROCESSING
-  COMPLETED
-  FAILED
-}
-
-enum RefundType {
-  FULL
-  PARTIAL
-  OVERPAYMENT
-  CANCELLATION
-  SERVICE_ISSUE
-}
-
-enum VehicleAlertType {
-  BREAKDOWN
-  ACCIDENT
-  MAINTENANCE
-  EMERGENCY
-  INSPECTION_DUE
-  INSURANCE_EXPIRY
-  LICENSE_EXPIRY
 }

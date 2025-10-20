@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +44,8 @@ export default function LoginForm({ onSubmit }: LoginFormProps) {
     return Object.keys(newErrors).length === 0;
   };
 
+  const router = useRouter();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -73,19 +76,38 @@ export default function LoginForm({ onSubmit }: LoginFormProps) {
       }
       if (data.access_token) {
         Cookies.set("access_token", data.access_token, { expires: 7 }); // expires in 7 days
+        
+        // Decode JWT token to extract user information
+        try {
+          const payload = data.access_token.split('.')[1];
+          const decodedData = JSON.parse(atob(payload));
+          
+          // Create user object from JWT payload
+          const user = {
+            id: decodedData.sub,
+            email: decodedData.email,
+            role: decodedData.role,
+            username: formData.email.split('@')[0], // fallback username from email
+          };
+          
+          localStorage.setItem("user", JSON.stringify(user));
+        } catch (error) {
+          console.error("Failed to decode JWT token:", error);
+        }
       }
 
       console.log(data.access_token);
 
-
-      if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-      }
       if (onSubmit) {
         onSubmit(formData.email, formData.password);
       } else {
-        // Default behavior - redirect to owner dashboard
-        window.location.href = "/owner";
+        // Default behavior - redirect to website root using Next router
+        try {
+          router.push('/');
+        } catch {
+          // fallback to full reload if router fails
+          window.location.href = '/';
+        }
       }
     } catch (error) {
       console.error("Login error:", error);
