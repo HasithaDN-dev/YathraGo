@@ -43,7 +43,6 @@ export default function PublishNoticesPage() {
   const res = await fetch('/api/notices?allTypes=1');
       if (!res.ok) {
         const text = await res.text();
-        console.error('Failed to fetch /api/notices:', res.status, text);
         setNotices([]);
         setFetchError(`Failed to load notices: ${res.status} ${res.statusText}`);
         return;
@@ -52,9 +51,7 @@ export default function PublishNoticesPage() {
   const raw = await res.json();
   // save raw response for debugging and log
   setRawResponse(raw);
-  console.debug('fetchNotices raw response:', raw);
-
-      // backend might return an array or a wrapper object like { data: [...] } or { items: [...] }
+  // backend might return an array or a wrapper object like { data: [...] } or { items: [...] }
       // also handle wrapper formats like { success: true, notifications: [...] } or { notification: {...} }
       const rows: BackendNotification[] = Array.isArray(raw)
         ? raw
@@ -75,8 +72,7 @@ export default function PublishNoticesPage() {
       if (!Array.isArray(raw) && typeof raw === 'object' && raw !== null) {
         // if it's an object wrapper but doesn't contain common keys we'll warn
         if (!Array.isArray(raw.data) && !Array.isArray(raw.items) && !Array.isArray(raw.notifications)) {
-          console.warn('fetchNotices: unexpected response shape', raw);
-        }
+          }
       }
 
       // backend returns Notification rows: { id, sender, message, createdAt, ... }
@@ -87,12 +83,10 @@ export default function PublishNoticesPage() {
         publishedAt: r.createdAt ?? new Date().toISOString(),
         audience: r.receiver,
       }));
-  console.debug('fetchNotices normalized rows:', rows, 'mapped count:', data.length);
   setNotices(data);
   // don't treat an empty list as an error — it's a valid state
   setFetchError(null);
     } catch (error) {
-      console.error('Failed to fetch notices', error);
       setNotices([]);
       setFetchError(String(error));
     }
@@ -116,8 +110,7 @@ export default function PublishNoticesPage() {
       };
       setSelected(n);
     } catch (error) {
-      console.error('openNotice failed', error);
-    }
+      }
   };
 
   const handleDelete = async (id: string) => {
@@ -126,8 +119,7 @@ export default function PublishNoticesPage() {
       const res = await fetch(`/api/notices/${id}`, { method: 'DELETE' });
       if (res.ok) await fetchNotices();
     } catch (error) {
-      console.error('delete failed', error);
-    }
+      }
   };
 
   const startEdit = (n: Notice) => {
@@ -154,8 +146,7 @@ export default function PublishNoticesPage() {
         await fetchNotices();
       }
     } catch (error) {
-      console.error('saveEdit failed', error);
-    }
+      }
   };
 
   const sendNotification = async () => {
@@ -241,8 +232,7 @@ export default function PublishNoticesPage() {
         const data = await res.json();
         setSuggestions(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error('search error', err);
-      }
+        }
     }, 300);
     return () => {
       if (searchTimeout.current) clearTimeout(searchTimeout.current);

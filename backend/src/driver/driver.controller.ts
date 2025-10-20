@@ -662,28 +662,57 @@ export class DriverController {
     try {
       const driverId = parseInt(req.user.sub, 10);
 
-      // Create attendance record
-      const attendance = await this.prisma.attendance.create({
-        data: {
-          driverId,
-          childId: body.childId,
-          date: new Date(), // Add the required date field
-          type: body.type,
-          latitude: body.latitude,
-          longitude: body.longitude,
-          notes: body.notes || `${body.type} completed`,
-          status: body.status || 'completed',
-        },
-      });
-
-      // Update waypoint status if it exists
+      // Find the waypoint to get route type
       const waypoint = await this.prisma.routeWaypoint.findFirst({
         where: {
           driverId,
           childId: body.childId,
           type: body.type.toUpperCase() as any,
         },
+        include: {
+          driverRoute: {
+            select: { routeType: true }
+          }
+        },
         orderBy: { id: 'desc' },
+      });
+
+      // Determine attendance type based on route type and waypoint type
+      let attendanceType: 'MORNING_PICKUP' | 'MORNING_DROPOFF' | 'EVENING_PICKUP' | 'EVENING_DROPOFF';
+      if (waypoint) {
+        const routeType = waypoint.driverRoute.routeType;
+        const waypointType = body.type.toUpperCase();
+        
+        if (routeType === 'MORNING_PICKUP') {
+          attendanceType = waypointType === 'PICKUP' ? 'MORNING_PICKUP' : 'MORNING_DROPOFF';
+        } else {
+          attendanceType = waypointType === 'PICKUP' ? 'EVENING_PICKUP' : 'EVENING_DROPOFF';
+        }
+      } else {
+        // Default fallback if no waypoint found - use time-based inference
+        const hour = new Date().getHours();
+        const isMorning = hour >= 5 && hour < 13;
+        const waypointType = body.type.toUpperCase();
+        
+        if (isMorning) {
+          attendanceType = waypointType === 'PICKUP' ? 'MORNING_PICKUP' : 'MORNING_DROPOFF';
+        } else {
+          attendanceType = waypointType === 'PICKUP' ? 'EVENING_PICKUP' : 'EVENING_DROPOFF';
+        }
+      }
+
+      // Create attendance record
+      const attendance = await this.prisma.attendance.create({
+        data: {
+          driverId,
+          childId: body.childId,
+          date: new Date(), // Add the required date field
+          type: attendanceType,
+          latitude: body.latitude,
+          longitude: body.longitude,
+          notes: body.notes || `${body.type} completed`,
+          status: body.status || 'completed',
+        },
       });
 
       if (waypoint) {

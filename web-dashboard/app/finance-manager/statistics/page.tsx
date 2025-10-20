@@ -106,7 +106,6 @@ export default function FinanceStatisticsPage() {
   const mapPaymentStatusData = React.useCallback((data: PaymentStatusItem[] | unknown): PaymentStatusData[] => {
     // Handle if data is not an array
     if (!Array.isArray(data)) {
-      console.warn('Payment status data is not an array:', data);
       return [];
     }
 
@@ -136,12 +135,10 @@ export default function FinanceStatisticsPage() {
         try {
           const response = await fetch(url);
           if (!response.ok) {
-            console.warn(`API error for ${url}: ${response.status}`);
             return null;
           }
           return await response.json();
-        } catch (err) {
-          console.warn(`Failed to fetch ${url}:`, err);
+        } catch {
           return null;
         }
       };
@@ -161,8 +158,8 @@ export default function FinanceStatisticsPage() {
       setRecentPayments(Array.isArray(recentPay) ? recentPay : []);
       setRiskIndicators(riskInd || null);
       setQuickInsights(insights || null);
-    } catch (error) {
-      console.error('Error fetching statistics:', error);
+    } catch {
+      // Error fetching statistics
     } finally {
       setLoading(false);
     }

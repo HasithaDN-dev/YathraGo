@@ -18,7 +18,6 @@ export default function ManagerHeader() {
       try {
         const decoded: { username?: string; email?: string; role?: string } = jwtDecode(token);
 
-        console.log(decoded);
         if (decoded && decoded.username) {
           setUsername(decoded.username);
         } else if (decoded && decoded.email) {

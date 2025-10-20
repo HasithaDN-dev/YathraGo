@@ -22,6 +22,7 @@ import { SearchModule } from './search/search.module';
 import { ComplaintsModule } from './complaints/complaints.module';
 import { PaymentsModule } from './payments/payments.module';
 import { DriverCoordinatorModule } from './driver-coordinator/driver-coordinator.module';
+import { ManagerModule } from './manager/manager.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { DriverCoordinatorModule } from './driver-coordinator/driver-coordinator
     ComplaintsModule,
     PaymentsModule,
     DriverCoordinatorModule,
+    ManagerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

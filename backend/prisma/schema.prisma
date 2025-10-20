@@ -105,12 +105,12 @@ model Vehicle {
 model Chat {
   id             Int           @id @default(autoincrement())
   message        String?
-  imageUrl       String?
   timestamp      DateTime      @default(now())
   seen           Boolean       @default(false)
+  conversationId Int
+  imageUrl       String?
   senderId       Int
   senderType     UserTypes
-  conversationId Int
   status         MessageStatus @default(SENT)
   conversation   Conversation  @relation(fields: [conversationId], references: [id])
 
@@ -473,7 +473,6 @@ model Attendance {
   driverId   Int
   childId    Int
   waypointId Int?
-  type       String
   latitude   Float?
   longitude  Float?
   notes      String?
@@ -483,6 +482,7 @@ model Attendance {
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
   date       DateTime       @db.Date
+  type       AttendanceType
   child      Child          @relation(fields: [childId], references: [child_id])
   driver     Driver         @relation(fields: [driverId], references: [driver_id])
   waypoint   RouteWaypoint? @relation(fields: [waypointId], references: [id])
@@ -584,27 +584,27 @@ model askDriverRequest {
 }
 
 model VehicleAlert {
-  id                    Int             @id @default(autoincrement())
+  id                    Int              @id @default(autoincrement())
   vehicleId             Int
   driverId              Int
   alertType             VehicleAlertType
-  severity              AlertSeverity   @default(MEDIUM)
+  severity              AlertSeverity    @default(MEDIUM)
   description           String
   location              String?
   latitude              Float?
   longitude             Float?
-  status                AlertStatus     @default(ACTIVE)
-  reportedAt            DateTime        @default(now())
+  status                AlertStatus      @default(ACTIVE)
+  reportedAt            DateTime         @default(now())
   acknowledgedAt        DateTime?
   resolvedAt            DateTime?
   assignedBackupVehicle String?
   assignedBackupDriver  String?
   affectedRoutes        String[]
-  affectedChildrenCount Int             @default(0)
+  affectedChildrenCount Int              @default(0)
   estimatedDowntime     String?
   resolutionNotes       String?
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
   @@index([vehicleId])
   @@index([driverId])
@@ -614,7 +614,7 @@ model VehicleAlert {
 }
 
 model AuditLog {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   userId      Int
   userType    UserTypes
   action      String
@@ -623,7 +623,7 @@ model AuditLog {
   changes     Json?
   ipAddress   String?
   userAgent   String?
-  timestamp   DateTime @default(now())
+  timestamp   DateTime  @default(now())
   description String?
 
   @@index([userId, userType])
@@ -632,27 +632,27 @@ model AuditLog {
 }
 
 model PaymentRefund {
-  id                Int              @id @default(autoincrement())
-  paymentId         Int
-  childId           Int
-  customerId        Int
-  driverId          Int
-  refundAmount      Float
-  refundReason      String
-  refundType        RefundType
-  status            RefundStatus     @default(PENDING)
-  requestedBy       Int
-  requestedByType   UserTypes
-  approvedBy        Int?
-  approvedByType    UserTypes?
-  rejectedBy        Int?
-  rejectionReason   String?
-  refundMethod      String?
-  transactionRef    String?
-  requestedAt       DateTime         @default(now())
-  processedAt       DateTime?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  id              Int          @id @default(autoincrement())
+  paymentId       Int
+  childId         Int
+  customerId      Int
+  driverId        Int
+  refundAmount    Float
+  refundReason    String
+  refundType      RefundType
+  status          RefundStatus @default(PENDING)
+  requestedBy     Int
+  requestedByType UserTypes
+  approvedBy      Int?
+  approvedByType  UserTypes?
+  rejectedBy      Int?
+  rejectionReason String?
+  refundMethod    String?
+  transactionRef  String?
+  requestedAt     DateTime     @default(now())
+  processedAt     DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@index([paymentId])
   @@index([status])
@@ -722,11 +722,11 @@ enum NotificationTypes {
 enum ChildPaymentStatus {
   NOT_DUE
   PENDING
-  AWAITING_CONFIRMATION
   PAID
   OVERDUE
   GRACE_PERIOD
   CANCELLED
+  AWAITING_CONFIRMATION
 }
 
 enum Ridetype {
@@ -817,4 +817,11 @@ enum RefundStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+enum AttendanceType {
+  MORNING_PICKUP
+  MORNING_DROPOFF
+  EVENING_PICKUP
+  EVENING_DROPOFF
 }

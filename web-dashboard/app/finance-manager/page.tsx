@@ -3,6 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { CreditCard, DollarSign, RefreshCw, FileText } from 'lucide-react';
 import { api } from '@/lib/api';
+import { ErrorAlert } from '@/components/ui/ErrorAlert';
+import { Button } from '@/components/ui/button';
+import type { Payment, Payout } from '@/types/api';
 
 export default function FinanceManagerDashboard() {
   const [statistics, setStatistics] = useState({
@@ -13,40 +16,47 @@ export default function FinanceManagerDashboard() {
     totalRevenue: 0,
     monthlyRevenue: 0,
   });
-  const [recentPayments, setRecentPayments] = useState<Array<Record<string, unknown>>>([]);
-  const [pendingPayouts, setPendingPayouts] = useState<Array<Record<string, unknown>>>([]);
+  const [recentPayments, setRecentPayments] = useState<Payment[]>([]);
+  const [pendingPayouts, setPendingPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch payment statistics
+      const paymentStats = await api.payments.getStatistics();
+      
+      // Fetch recent payments
+      const paymentsResponse = await api.payments.getAll({ limit: 5 });
+      
+      // Fetch pending payouts
+      const payouts = await api.payouts.getPending();
+
+      // Fetch refund statistics
+      const refundStats = await api.refunds.getStatistics();
+
+      setStatistics({
+        totalPayments: paymentStats.overview.total || 0,
+        pendingVerification: paymentStats.overview.pending || 0,
+        pendingPayouts: payouts.length || 0,
+        pendingRefunds: refundStats.overview.pending || 0,
+        totalRevenue: paymentStats.revenue.thisMonth || 0,
+        monthlyRevenue: paymentStats.revenue.thisMonth || 0,
+      });
+
+      setRecentPayments(paymentsResponse.data.slice(0, 3));
+      setPendingPayouts(payouts.slice(0, 2));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load finance data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch payment statistics
-        const paymentStats = await api.payments.getStatistics();
-        
-        // Fetch recent payments
-        const paymentsResponse = await api.payments.getAll({ limit: 5 });
-        
-        // Fetch pending payouts
-        const payouts = await api.payouts.getPending();
-
-        setStatistics({
-          totalPayments: paymentStats.overview.total || 0,
-          pendingVerification: paymentStats.overview.pending || 0,
-          pendingPayouts: payouts.length || 0,
-          pendingRefunds: 0, // TODO: Add refund statistics endpoint
-          totalRevenue: paymentStats.revenue.thisMonth || 0,
-          monthlyRevenue: paymentStats.revenue.thisMonth || 0,
-        });
-
-        setRecentPayments(paymentsResponse.data.slice(0, 3));
-        setPendingPayouts(payouts.slice(0, 2));
-      } catch (error) {
-        console.error('Failed to fetch finance data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
@@ -75,6 +85,22 @@ export default function FinanceManagerDashboard() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Finance Manager Dashboard</h1>
         <p className="text-gray-600">Manage payments, payouts, and refunds for the YathraGo platform</p>
       </div>
+
+      {/* Error Alert */}
+      {error && (
+        <div className="mb-6">
+          <ErrorAlert 
+            message={error} 
+            type="error" 
+            onDismiss={() => setError(null)}
+          />
+          <div className="mt-3">
+            <Button onClick={fetchData} variant="outline">
+              Try Again
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

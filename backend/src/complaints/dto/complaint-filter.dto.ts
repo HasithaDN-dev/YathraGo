@@ -1,5 +1,10 @@
 import { IsOptional, IsEnum, IsInt } from 'class-validator';
-import { ComplaintStatus, ComplaintInquiryTypes, ComplaintInquiryCategory, UserTypes } from '@prisma/client';
+import {
+  ComplaintStatus,
+  ComplaintInquiryTypes,
+  ComplaintInquiryCategory,
+  UserTypes,
+} from '@prisma/client';
 import { Type } from 'class-transformer';
 
 export class ComplaintFilterDto {

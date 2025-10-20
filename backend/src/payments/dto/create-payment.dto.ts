@@ -1,4 +1,11 @@
-import { IsInt, IsNumber, IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
+import {
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsBoolean,
+} from 'class-validator';
 import { ChildPaymentStatus } from '@prisma/client';
 
 export class CreatePaymentDto {

@@ -129,7 +129,9 @@ export class PaymentsController {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to mark payment ${id} as paid: ${errorMessage}`);
+      this.logger.error(
+        `Failed to mark payment ${id} as paid: ${errorMessage}`,
+      );
       throw error instanceof HttpException
         ? error
         : new HttpException(
@@ -245,8 +247,10 @@ export class PaymentsController {
     @Query('status') status?: string,
   ) {
     try {
-      const page = pageStr && pageStr.trim() !== '' ? parseInt(pageStr, 10) : undefined;
-      const limit = limitStr && limitStr.trim() !== '' ? parseInt(limitStr, 10) : undefined;
+      const page =
+        pageStr && pageStr.trim() !== '' ? parseInt(pageStr, 10) : undefined;
+      const limit =
+        limitStr && limitStr.trim() !== '' ? parseInt(limitStr, 10) : undefined;
       return await this.refundsService.findAll(page, limit, status);
     } catch (error) {
       const errorMessage =

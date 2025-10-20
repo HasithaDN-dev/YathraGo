@@ -326,12 +326,10 @@ export default function AddDriverPage() {
 
     try {
       // First test authentication by trying to get profile
-      console.log('🧪 Testing authentication before adding driver...');
       try {
-        const profileData = await ownerApi.getProfile();
-        console.log('✅ Authentication successful. User profile:', profileData);
-      } catch (authError) {
-        console.error('❌ Authentication failed:', authError);
+        await ownerApi.getProfile();
+        // Authentication successful
+      } catch {
         setErrorMessage('Authentication failed. Please log in again.');
         setIsSubmitting(false);
         return;
@@ -386,7 +384,6 @@ export default function AddDriverPage() {
         backgroundVerificationStatus: "not-started",
       });
     } catch (error: unknown) {
-      console.error("Error adding driver:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to add driver. Please try again.";
       setErrorMessage(errorMessage);
     } finally {

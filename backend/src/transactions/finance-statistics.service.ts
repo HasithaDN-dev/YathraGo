@@ -9,7 +9,9 @@ export class FinanceStatisticsService {
   /**
    * Get comprehensive finance statistics
    */
-  async getStatistics(timeRange: 'today' | 'week' | 'month' | 'year' = 'month') {
+  async getStatistics(
+    timeRange: 'today' | 'week' | 'month' | 'year' = 'month',
+  ) {
     const now = new Date();
     const startDate = this.getStartDate(timeRange, now);
 
@@ -82,7 +84,8 @@ export class FinanceStatisticsService {
       count: group._count.id,
       amount: group._sum.finalPrice || 0,
       amountPaid: group._sum.amountPaid || 0,
-      percentage: total > 0 ? ((group._count.id / total) * 100).toFixed(1) : '0',
+      percentage:
+        total > 0 ? ((group._count.id / total) * 100).toFixed(1) : '0',
     }));
   }
 
@@ -121,7 +124,8 @@ export class FinanceStatisticsService {
         const reliability =
           customer._sum.finalPrice && customer._sum.finalPrice > 0
             ? Math.round(
-                ((customer._sum.amountPaid || 0) / customer._sum.finalPrice) * 100,
+                ((customer._sum.amountPaid || 0) / customer._sum.finalPrice) *
+                  100,
               )
             : 0;
 

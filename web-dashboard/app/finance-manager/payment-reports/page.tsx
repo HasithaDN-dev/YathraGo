@@ -96,8 +96,7 @@ export default function PaymentReportsPage() {
       setPayments(response.data);
       prepareChartData(response.data);
     } catch (error) {
-      console.error('Failed to fetch payments:', error);
-    } finally {
+      } finally {
       setLoading(false);
     }
   };
@@ -107,8 +106,7 @@ export default function PaymentReportsPage() {
       const stats = await api.payments.getStatistics();
       setStatistics(stats);
     } catch (error) {
-      console.error('Failed to fetch statistics:', error);
-    }
+      }
   };
 
   const prepareChartData = (paymentsData: Payment[]) => {

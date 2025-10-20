@@ -56,7 +56,6 @@ export function useNotifications(
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
-      console.error('Failed to fetch notifications:', err);
     } finally {
       setLoading(false);
     }
@@ -80,8 +79,8 @@ export function useNotifications(
 
       const data = await response.json();
       setUnreadCount(data.count || 0);
-    } catch (err) {
-      console.error('Failed to fetch unread count:', err);
+    } catch {
+      // Silent fail for unread count
     }
   }, [userType, userId]);
 
@@ -110,7 +109,6 @@ export function useNotifications(
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
-      console.error('Failed to mark as read:', err);
       throw err;
     }
   };
@@ -136,7 +134,6 @@ export function useNotifications(
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (err) {
-      console.error('Failed to mark all as read:', err);
       throw err;
     }
   };
@@ -161,7 +158,6 @@ export function useNotifications(
       setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
       fetchUnreadCount(); // Refresh count
     } catch (err) {
-      console.error('Failed to delete notification:', err);
       throw err;
     }
   };

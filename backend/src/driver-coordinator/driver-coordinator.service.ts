@@ -12,10 +12,7 @@ export class DriverCoordinatorService {
     // Get pending driver verifications
     const pendingVerifications = await this.prisma.driver.count({
       where: {
-        OR: [
-          { status: 'PENDING' },
-          { status: 'OTP_VERIFIED' },
-        ],
+        OR: [{ status: 'PENDING' }, { status: 'OTP_VERIFIED' }],
       },
     });
 
@@ -92,9 +89,7 @@ export class DriverCoordinatorService {
             ? ((activeDrivers / totalDrivers) * 100).toFixed(1)
             : '0',
         alertsPerDriver:
-          activeDrivers > 0
-            ? (safetyAlerts / activeDrivers).toFixed(2)
-            : '0',
+          activeDrivers > 0 ? (safetyAlerts / activeDrivers).toFixed(2) : '0',
       },
     };
   }
@@ -108,10 +103,7 @@ export class DriverCoordinatorService {
     const [drivers, total] = await Promise.all([
       this.prisma.driver.findMany({
         where: {
-          OR: [
-            { status: 'PENDING' },
-            { status: 'OTP_VERIFIED' },
-          ],
+          OR: [{ status: 'PENDING' }, { status: 'OTP_VERIFIED' }],
         },
         select: {
           driver_id: true,
@@ -135,10 +127,7 @@ export class DriverCoordinatorService {
       }),
       this.prisma.driver.count({
         where: {
-          OR: [
-            { status: 'PENDING' },
-            { status: 'OTP_VERIFIED' },
-          ],
+          OR: [{ status: 'PENDING' }, { status: 'OTP_VERIFIED' }],
         },
       }),
     ]);
@@ -310,6 +299,244 @@ export class DriverCoordinatorService {
       success: true,
       message: 'Driver rejected',
       driver,
+    };
+  }
+
+  /**
+   * Get pending vehicles
+   */
+  async getPendingVehicles(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    
+    const [vehicles, total] = await Promise.all([
+      this.prisma.vehicle.findMany({
+        where: {
+          registrationNumber: null,
+        },
+        include: {
+          VehicleOwner: true,
+          driver: true,
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          id: 'desc',
+        },
+      }),
+      this.prisma.vehicle.count({
+        where: {
+          registrationNumber: null,
+        },
+      }),
+    ]);
+
+    return {
+      success: true,
+      data: vehicles,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Approve vehicle
+   */
+  async approveVehicle(vehicleId: number) {
+    // Generate registration number (you might have your own logic)
+    const registrationNumber = `REG-${Date.now()}-${vehicleId}`;
+
+    const vehicle = await this.prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: {
+        registrationNumber,
+      },
+      include: {
+        VehicleOwner: true,
+        driver: true,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Vehicle approved successfully',
+      vehicle,
+    };
+  }
+
+  /**
+   * Reject vehicle
+   */
+  async rejectVehicle(vehicleId: number, reason: string) {
+    // For now, we'll delete the vehicle or mark it somehow
+    // Since there's no status field, we could add a rejection note
+    const vehicle = await this.prisma.vehicle.findUnique({
+      where: { id: vehicleId },
+      include: {
+        VehicleOwner: true,
+        driver: true,
+      },
+    });
+
+    if (!vehicle) {
+      throw new Error('Vehicle not found');
+    }
+
+    // Log the rejection reason (TODO: implement proper rejection handling)
+    // For now, we'll just return the vehicle data with the reason
+    
+    return {
+      success: true,
+      message: 'Vehicle rejected',
+      vehicle,
+      reason,
+    };
+  }
+
+  /**
+   * Get driver inquiries/complaints
+   */
+  async getDriverInquiries(page = 1, limit = 10, status?: string, category?: string) {
+    const skip = (page - 1) * limit;
+    
+    const where: any = {
+      senderUserType: 'DRIVER',
+    };
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (category) {
+      where.category = category;
+    }
+
+    const [inquiries, total] = await Promise.all([
+      this.prisma.complaintsInquiries.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.complaintsInquiries.count({
+        where,
+      }),
+    ]);
+
+    // Fetch driver details for each inquiry
+    const inquiriesWithDriverInfo = await Promise.all(
+      inquiries.map(async (inquiry) => {
+        const driver = await this.prisma.driver.findUnique({
+          where: { driver_id: inquiry.senderId },
+          select: {
+            driver_id: true,
+            name: true,
+            phone: true,
+            email: true,
+            vehicle_Reg_No: true,
+          },
+        });
+
+        return {
+          ...inquiry,
+          driverInfo: driver,
+        };
+      })
+    );
+
+    return {
+      success: true,
+      data: inquiriesWithDriverInfo,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Get inquiry statistics
+   */
+  async getInquiryStatistics() {
+    const [
+      totalInquiries,
+      pendingCount,
+      inProgressCount,
+      resolvedCount,
+      byCategory,
+      byType,
+    ] = await Promise.all([
+      this.prisma.complaintsInquiries.count({
+        where: { senderUserType: 'DRIVER' },
+      }),
+      this.prisma.complaintsInquiries.count({
+        where: { senderUserType: 'DRIVER', status: 'PENDING' },
+      }),
+      this.prisma.complaintsInquiries.count({
+        where: { senderUserType: 'DRIVER', status: 'IN_PROGRESS' },
+      }),
+      this.prisma.complaintsInquiries.count({
+        where: { senderUserType: 'DRIVER', status: 'RESOLVED' },
+      }),
+      this.prisma.complaintsInquiries.groupBy({
+        by: ['category'],
+        where: { senderUserType: 'DRIVER' },
+        _count: { id: true },
+      }),
+      this.prisma.complaintsInquiries.groupBy({
+        by: ['type'],
+        where: { senderUserType: 'DRIVER' },
+        _count: { id: true },
+      }),
+    ]);
+
+    return {
+      success: true,
+      overview: {
+        total: totalInquiries,
+        pending: pendingCount,
+        inProgress: inProgressCount,
+        resolved: resolvedCount,
+      },
+      byCategory: byCategory.map((item) => ({
+        category: item.category,
+        count: item._count.id,
+      })),
+      byType: byType.map((item) => ({
+        type: item.type,
+        count: item._count.id,
+      })),
+    };
+  }
+
+  /**
+   * Update inquiry status
+   */
+  async updateInquiryStatus(id: number, status: string) {
+    const inquiry = await this.prisma.complaintsInquiries.findUnique({
+      where: { id },
+    });
+
+    if (!inquiry) {
+      throw new Error('Inquiry not found');
+    }
+
+    const updated = await this.prisma.complaintsInquiries.update({
+      where: { id },
+      data: { status: status as any },
+    });
+
+    return {
+      success: true,
+      message: 'Inquiry status updated successfully',
+      data: updated,
     };
   }
 }

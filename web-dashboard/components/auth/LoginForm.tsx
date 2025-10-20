@@ -92,11 +92,8 @@ export default function LoginForm({ onSubmit }: LoginFormProps) {
           
           localStorage.setItem("user", JSON.stringify(user));
         } catch (error) {
-          console.error("Failed to decode JWT token:", error);
-        }
+          }
       }
-
-      console.log(data.access_token);
 
       if (onSubmit) {
         onSubmit(formData.email, formData.password);
@@ -110,8 +107,7 @@ export default function LoginForm({ onSubmit }: LoginFormProps) {
         }
       }
     } catch (error) {
-      console.error("Login error:", error);
-    } finally {
+      } finally {
       setIsLoading(false);
     }
   };

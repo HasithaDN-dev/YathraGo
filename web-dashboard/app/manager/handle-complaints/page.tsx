@@ -62,7 +62,6 @@ export default function HandleComplaintsPageNew() {
       setComplaints(response.data);
       setTotalPages(response.meta.totalPages);
     } catch (error) {
-      console.error("Failed to fetch complaints:", error);
       alert("Failed to load complaints. Please try again.");
     } finally {
       setLoading(false);
@@ -74,7 +73,6 @@ export default function HandleComplaintsPageNew() {
       await api.complaints.updateStatus(complaintId, newStatus);
       await fetchComplaints(); // Refresh the list
     } catch (error) {
-      console.error("Failed to update status:", error);
       alert("Failed to update complaint status");
     }
   };
@@ -91,7 +89,6 @@ export default function HandleComplaintsPageNew() {
         setSelectedComplaint(null);
         await fetchComplaints();
       } catch (error) {
-        console.error("Failed to resolve complaint:", error);
         alert("Failed to resolve complaint");
       }
     }

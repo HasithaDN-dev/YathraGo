@@ -118,8 +118,7 @@ export default function SignupForm({ onSubmit }: SignupFormProps) {
       }
     } catch (error) {
       setErrors({ general: "Network error. Please try again." });
-      console.error("Signup error:", error);
-    } finally {
+      } finally {
       setIsLoading(false);
     }
   };

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,95 +16,66 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { useOwner } from "@/components/owner/OwnerContext";
+import { ErrorAlert } from "@/components/ui/ErrorAlert";
 
 interface Payment {
-  id: string;
-  paymentId: string;
+  id: string | number;
+  paymentId?: string;
+  transactionId?: string;
   date: string;
-  schoolName: string;
+  schoolName?: string;
+  customerName?: string;
+  childName?: string;
   amount: number;
-  status: "Paid" | "Failed" | "Pending";
+  status: string;
   invoiceUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-const mockPayments: Payment[] = [
-  {
-    id: "1",
-    paymentId: "PAY-001234",
-    date: "2025-07-15",
-    schoolName: "Greenwood Elementary School",
-    amount: 2450.00,
-    status: "Paid",
-    invoiceUrl: "/invoices/PAY-001234.pdf",
-  },
-  {
-    id: "2",
-    paymentId: "PAY-001235",
-    date: "2025-07-14",
-    schoolName: "Riverside High School",
-    amount: 3200.00,
-    status: "Paid",
-    invoiceUrl: "/invoices/PAY-001235.pdf",
-  },
-  {
-    id: "3",
-    paymentId: "PAY-001236",
-    date: "2025-07-13",
-    schoolName: "Oak Valley Middle School",
-    amount: 1850.00,
-    status: "Pending",
-  },
-  {
-    id: "4",
-    paymentId: "PAY-001237",
-    date: "2025-07-12",
-    schoolName: "Sunset Primary Academy",
-    amount: 2100.00,
-    status: "Failed",
-  },
-  {
-    id: "5",
-    paymentId: "PAY-001238",
-    date: "2025-07-11",
-    schoolName: "Mountain View School",
-    amount: 2750.00,
-    status: "Paid",
-    invoiceUrl: "/invoices/PAY-001238.pdf",
-  },
-  {
-    id: "6",
-    paymentId: "PAY-001239",
-    date: "2025-07-10",
-    schoolName: "Pine Grove Elementary",
-    amount: 1920.00,
-    status: "Pending",
-  },
-  {
-    id: "7",
-    paymentId: "PAY-001240",
-    date: "2025-07-09",
-    schoolName: "Westfield Academy",
-    amount: 3450.00,
-    status: "Paid",
-    invoiceUrl: "/invoices/PAY-001240.pdf",
-  },
-  {
-    id: "8",
-    paymentId: "PAY-001241",
-    date: "2025-07-08",
-    schoolName: "Heritage Middle School",
-    amount: 2650.00,
-    status: "Failed",
-  },
-];
-
 export default function PaymentHistoryPage() {
+  const { paymentHistory: contextPayments, fetchPaymentHistory, loading, error, clearError } = useOwner();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [filteredPayments, setFilteredPayments] = useState(mockPayments);
+  const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
+  const [normalizedPayments, setNormalizedPayments] = useState<Payment[]>([]);
+
+  useEffect(() => {
+    // Fetch payment history on component mount
+    fetchPaymentHistory();
+  }, [fetchPaymentHistory]);
+
+  useEffect(() => {
+    // Normalize payment data when context payments change
+    if (contextPayments) {
+      const normalized = contextPayments.map((p) => ({
+        id: p.id,
+        paymentId: p.paymentId || p.transactionId || `PAY-${p.id}`,
+        transactionId: p.transactionId || p.paymentId,
+        date: p.paidDate || p.createdAt || new Date().toISOString().split('T')[0],
+        schoolName: p.schoolName || 'N/A',
+        customerName: p.customerName ||
+                      (p.customer?.firstName && p.customer?.lastName 
+                        ? `${p.customer.firstName} ${p.customer.lastName}` 
+                        : p.customer?.name) || 'Unknown',
+        childName: p.childName ||
+                   (p.child?.firstName 
+                     ? `${p.child.firstName} ${p.child.lastName || ''}`.trim() 
+                     : p.child?.name) || '',
+        amount: Number(p.amount || 0),
+        status: (p.status || 'Pending').toString(),
+        invoiceUrl: p.transactionRef,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      })) as Payment[];
+      setNormalizedPayments(normalized);
+      setFilteredPayments(normalized);
+    }
+  }, [contextPayments]);
 
   const itemsPerPage = 5;
   const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
@@ -114,40 +85,42 @@ export default function PaymentHistoryPage() {
 
   // Calculate monthly summary
   const totalRevenue = filteredPayments
-    .filter((payment) => payment.status === "Paid")
+    .filter((payment) => payment.status.toLowerCase() === "paid")
     .reduce((sum, payment) => sum + payment.amount, 0);
 
   const pendingDues = filteredPayments
-    .filter((payment) => payment.status === "Pending")
+    .filter((payment) => payment.status.toLowerCase() === "pending")
     .reduce((sum, payment) => sum + payment.amount, 0);
 
   const failedPayments = filteredPayments
-    .filter((payment) => payment.status === "Failed")
+    .filter((payment) => payment.status.toLowerCase() === "failed")
     .reduce((sum, payment) => sum + payment.amount, 0);
 
   const handleFilter = () => {
-    let filtered = mockPayments;
+    let filtered = normalizedPayments;
 
     // Search filter
     if (searchTerm) {
       filtered = filtered.filter(
-        (payment) =>
-          payment.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          payment.paymentId.toLowerCase().includes(searchTerm.toLowerCase())
+        (payment: Payment) =>
+          (payment.schoolName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (payment.paymentId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (payment.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (payment.childName || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Status filter
     if (selectedStatus) {
-      filtered = filtered.filter((payment) => payment.status === selectedStatus);
+      filtered = filtered.filter((payment: Payment) => payment.status.toLowerCase() === selectedStatus.toLowerCase());
     }
 
     // Date range filter
     if (dateFrom) {
-      filtered = filtered.filter((payment) => payment.date >= dateFrom);
+      filtered = filtered.filter((payment: Payment) => payment.date >= dateFrom);
     }
     if (dateTo) {
-      filtered = filtered.filter((payment) => payment.date <= dateTo);
+      filtered = filtered.filter((payment: Payment) => payment.date <= dateTo);
     }
 
     setFilteredPayments(filtered);
@@ -159,14 +132,12 @@ export default function PaymentHistoryPage() {
     setSelectedStatus("");
     setDateFrom("");
     setDateTo("");
-    setFilteredPayments(mockPayments);
+    setFilteredPayments(normalizedPayments);
     setCurrentPage(1);
   };
 
   const handleExport = (format: "csv" | "pdf") => {
     // Simulate export functionality
-    console.log(`Exporting ${format.toUpperCase()}...`);
-    
     if (format === "csv") {
       // Create CSV content
       const headers = ["Payment ID", "Date", "School Name", "Amount", "Status"];
@@ -198,21 +169,28 @@ export default function PaymentHistoryPage() {
   const downloadInvoice = (paymentId: string, invoiceUrl?: string) => {
     if (invoiceUrl) {
       // Simulate invoice download
-      console.log(`Downloading invoice for ${paymentId}`);
       // In a real app, you would handle the actual file download
       alert(`Downloading invoice for ${paymentId}`);
     }
   };
 
   const PaymentStatusBadge: React.FC<{ status: Payment["status"] }> = ({ status }) => {
-    const statusConfig = {
+    const statusConfig: Record<string, string> = {
       Paid: "bg-[var(--success-bg)] text-[var(--success-green)]",
+      paid: "bg-[var(--success-bg)] text-[var(--success-green)]",
+      PAID: "bg-[var(--success-bg)] text-[var(--success-green)]",
       Failed: "bg-[var(--error-bg)] text-[var(--error-red)]",
+      failed: "bg-[var(--error-bg)] text-[var(--error-red)]",
+      FAILED: "bg-[var(--error-bg)] text-[var(--error-red)]",
       Pending: "bg-[var(--warm-yellow)]/20 text-[var(--warning-amber)]",
+      pending: "bg-[var(--warm-yellow)]/20 text-[var(--warning-amber)]",
+      PENDING: "bg-[var(--warm-yellow)]/20 text-[var(--warning-amber)]",
     };
 
+    const className = statusConfig[status] || "bg-gray-100 text-gray-800";
+
     return (
-      <Badge variant="secondary" className={statusConfig[status]}>
+      <Badge variant="secondary" className={className}>
         {status}
       </Badge>
     );
@@ -227,6 +205,16 @@ export default function PaymentHistoryPage() {
           View all payment transactions and earnings
         </p>
       </div>
+
+      {/* Error Alert */}
+      {error && (
+        <ErrorAlert 
+          message={error} 
+          type="error" 
+          onDismiss={clearError}
+          className="mb-4"
+        />
+      )}
 
       {/* Monthly Summary */}
       <Card className="shadow-sm border border-gray-200">
@@ -410,15 +398,28 @@ export default function PaymentHistoryPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {currentPayments.map((payment) => (
-                <tr
-                  key={payment.id}
-                  className="hover:bg-blue-50 transition-colors"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {payment.paymentId}
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                    Loading payment history...
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                </tr>
+              ) : currentPayments.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                    No payment records found. {searchTerm || selectedStatus || dateFrom || dateTo ? 'Try adjusting your filters.' : 'Payment history will appear here.'}
+                  </td>
+                </tr>
+              ) : (
+                currentPayments.map((payment) => (
+                  <tr
+                    key={payment.id}
+                    className="hover:bg-blue-50 transition-colors"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {payment.paymentId}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {new Date(payment.date).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -433,7 +434,7 @@ export default function PaymentHistoryPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     {payment.invoiceUrl ? (
                       <button
-                        onClick={() => downloadInvoice(payment.paymentId, payment.invoiceUrl)}
+                        onClick={() => downloadInvoice(payment.paymentId || '', payment.invoiceUrl)}
                         className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
                       >
                         <Download className="w-4 h-4" />
@@ -444,7 +445,8 @@ export default function PaymentHistoryPage() {
                     )}
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>

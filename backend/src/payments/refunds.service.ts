@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRefundDto } from './dto/create-refund.dto';
 
@@ -95,11 +99,7 @@ export class RefundsService {
     });
   }
 
-  async rejectRefund(
-    id: number,
-    rejectorId: number,
-    rejectionReason: string,
-  ) {
+  async rejectRefund(id: number, rejectorId: number, rejectionReason: string) {
     await this.findOne(id);
 
     return this.prisma.paymentRefund.update({
