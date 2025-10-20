@@ -391,4 +391,103 @@ export class DriverService {
       cityIds: driverCities.cityIds,
     };
   }
+
+  // Get assigned passengers based on driver type (School/Work/Both)
+  async getAssignedPassengers(driverId: number) {
+    // First, get driver's ride type from DriverCities
+    const driverCities = await this.prisma.driverCities.findUnique({
+      where: { driverId },
+      select: { rideType: true },
+    });
+
+    if (!driverCities) {
+      return {
+        success: false,
+        message: 'Driver route not set up',
+        rideType: null,
+        children: [],
+        staff: [],
+        total: 0,
+      };
+    }
+
+    const rideType = driverCities.rideType;
+    let children: any[] = [];
+    let staff: any[] = [];
+
+    // Fetch children if driver type is School or Both
+    if (rideType === 'School' || rideType === 'Both') {
+      const childRequests = await this.prisma.childRideRequest.findMany({
+        where: {
+          driverId,
+          status: 'Assigned',
+        },
+        include: {
+          child: {
+            select: {
+              child_id: true,
+              childFirstName: true,
+              childLastName: true,
+              pickUpAddress: true,
+              school: true,
+              pickupLatitude: true,
+              pickupLongitude: true,
+              schoolLatitude: true,
+              schoolLongitude: true,
+              childImageUrl: true,
+            },
+          },
+        },
+      });
+      children = childRequests.map((req) => req.child);
+    }
+
+    // Fetch staff if driver type is Work or Both
+    if (rideType === 'Work' || rideType === 'Both') {
+      const staffRequests = await this.prisma.staffRideRequest.findMany({
+        where: {
+          driverId,
+          status: 'Assigned',
+        },
+        include: {
+          staffPassenger: {
+            select: {
+              id: true,
+              customerId: true,
+              nearbyCity: true,
+              workLocation: true,
+              workAddress: true,
+              pickUpLocation: true,
+              pickupAddress: true,
+              pickupLatitude: true,
+              pickupLongitude: true,
+              workLatitude: true,
+              workLongitude: true,
+              customer: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  profileImageUrl: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      staff = staffRequests.map((req) => ({
+        ...req.staffPassenger,
+        staffFirstName: req.staffPassenger.customer.firstName,
+        staffLastName: req.staffPassenger.customer.lastName,
+        staffImageUrl: req.staffPassenger.customer.profileImageUrl,
+      }));
+    }
+
+    return {
+      success: true,
+      rideType,
+      children,
+      staff,
+      total: children.length + staff.length,
+    };
+  }
 }
