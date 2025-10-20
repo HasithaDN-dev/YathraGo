@@ -53,14 +53,14 @@ export default function InformDriverScreen() {
             </View>
 
             {/* Send Button */}
-            <View className="items-center">
+            <View className="flex-row justify-center items-center w-full">
               <CustomButton
                 title="Send"
                 bgVariant="primary"
                 textVariant="white"
                 size="large"
                 IconLeft={PaperPlaneRight}
-                className="w-full max-w-[200px]"
+                className="w-[200px]"
                 onPress={handleSend}
                 disabled={!description.trim()}
               />
