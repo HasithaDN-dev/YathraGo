@@ -9,8 +9,10 @@ import {
   FileText,
   LogOut,
   Bell,
+  Settings,
 } from "lucide-react";
 import { useRouter } from 'next/navigation';
+import { logoutAndRedirectHome } from '@/lib/auth';
 
 interface MenuItem {
   icon: React.ElementType;
@@ -24,10 +26,7 @@ export default function ManagerSidebar() {
   const router = useRouter();
 
   const handleLogout = () => {
-    // Remove access_token cookie
-    document.cookie = 'access_token=; Max-Age=0; path=/;';
-    // Optionally clear other cookies or localStorage if used
-    router.push('/login');
+    logoutAndRedirectHome(router);
   };
 
   const menuItems: MenuItem[] = [
@@ -52,7 +51,11 @@ export default function ManagerSidebar() {
       label: "Generate Reports",
       href: "/manager/generate-reports",
     },
-    
+    {
+      icon: Settings,
+      label: "Settings",
+      href: "/manager/settings",
+    },
     {
       icon: Bell,
       label: "Receive Alerts",

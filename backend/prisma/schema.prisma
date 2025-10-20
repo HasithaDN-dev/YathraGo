@@ -566,6 +566,23 @@ model StaffRideRequest {
   Staff_Passenger Staff_Passenger @relation(fields: [staffId], references: [id])
 }
 
+model ComplaintsInquiries {
+  id             Int                      @id @default(autoincrement())
+  senderId       Int
+  senderUserType UserTypes
+  type           ComplaintInquiryTypes
+  description    String
+  category       ComplaintInquiryCategory
+  status         ComplaintStatus          @default(PENDING)
+  createdAt      DateTime                 @default(now())
+
+  @@index([category])
+  @@index([senderId])
+  @@index([senderUserType])
+  @@index([status])
+  @@index([type])
+}
+
 enum RegistrationStatus {
   OTP_PENDING
   OTP_VERIFIED
@@ -632,6 +649,7 @@ enum ChildPaymentStatus {
   OVERDUE
   GRACE_PERIOD
   CANCELLED
+  AWAITING_CONFIRMATION
 }
 
 enum Ridetype {

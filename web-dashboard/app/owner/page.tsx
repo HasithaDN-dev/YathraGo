@@ -12,7 +12,8 @@ import {
   AlertCircle, 
   Plus,
   Eye,
-  UserPlus
+  UserPlus,
+  Loader2
 } from "lucide-react";
 import Link from "next/link";
 
@@ -69,55 +70,32 @@ const ActivityBadge: React.FC<{ status: ActivityEntry["status"] }> = ({ status }
 };
 
 export default function OwnerDashboard() {
-  const { firstName: ownerFirstName, lastName: ownerLastName } = useOwner();
-  interface Vehicle {
-    id: number;
-    registrationNumber?: string | null;
-    type: string;
-    brand?: string | null;
-    model?: string | null;
-    no_of_seats?: number | null;
-    status?: string | null;
-    ownerId?: number | null;
-  }
+  const { 
+    username: ownerUsername, 
+    vehicles, 
+    drivers, 
+    paymentHistory, 
+    fetchVehicles, 
+    fetchDrivers, 
+    fetchPaymentHistory,
+    loading 
+  } = useOwner();
 
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [loadingVehicles, setLoadingVehicles] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 5;
 
   useEffect(() => {
-    const fetchVehicles = async () => {
-      setLoadingVehicles(true);
-      try {
-        const token = typeof document !== 'undefined' ? document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1] : undefined;
-        const res = await fetch('http://localhost:3000/vehicles', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          credentials: 'include',
-        });
-        if (!res.ok) {
-          console.error('Failed to fetch vehicles', res.status);
-          setVehicles([]);
-          return;
-        }
-        const data = await res.json();
-        setVehicles(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error('Error fetching vehicles', err);
-        setVehicles([]);
-      } finally {
-        setLoadingVehicles(false);
-      }
-    };
-
-    void fetchVehicles();
-  }, []);
+    // Fetch all data when component mounts
+    fetchVehicles();
+    fetchDrivers();
+    fetchPaymentHistory();
+  }, [fetchVehicles, fetchDrivers, fetchPaymentHistory]);
 
   const stats = {
-    totalVehicles: vehicles.length,
-    totalDrivers: 8,
+    totalVehicles: vehicles?.length || 0,
+    totalDrivers: drivers?.length || 0,
     monthlyEarnings: "Rs 45,320",
-    pendingPayments: 3
+    pendingPayments: paymentHistory?.filter(p => p.status === 'pending')?.length || 0
   };
 
   const recentActivities: ActivityEntry[] = [
@@ -153,10 +131,10 @@ export default function OwnerDashboard() {
       {/* Welcome Header */}
       <div className="bg-white rounded-lg shadow-sm border border-[var(--neutral-gray)] p-6">
         <h1 className="text-3xl font-bold text-[var(--color-deep-navy)]">
-          Welcome, {ownerFirstName} {ownerLastName}
+          Welcome, {ownerUsername}
         </h1>
         <p className="text-[var(--neutral-gray)] mt-2">
-          Here&apos;s an overview of your fleet operations, {ownerFirstName} {ownerLastName}
+          Here&apos;s an overview of your fleet operations, {ownerUsername}
         </p>
       </div>
 
@@ -270,9 +248,9 @@ export default function OwnerDashboard() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Vehicles</h2>
 
-          {loadingVehicles ? (
-            <div className="text-center py-12">Loading vehicles...</div>
-          ) : vehicles.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-4">Loading vehicles...</div>
+          ) : (vehicles?.length || 0) === 0 ? (
             <p className="text-[var(--neutral-gray)]">No vehicles found for your account.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -287,7 +265,7 @@ export default function OwnerDashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-[var(--neutral-gray)]">
-                  {vehicles.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((v) => (
+                  {(vehicles || []).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((v) => (
                     <tr key={v.id} className="hover:bg-[var(--light-gray)] transition-colors cursor-pointer">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--color-deep-navy)]">{v.registrationNumber || '—'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--neutral-gray)]">{v.type}</td>
@@ -305,16 +283,16 @@ export default function OwnerDashboard() {
               </table>
 
               {/* Pagination */}
-              {Math.ceil(vehicles.length / itemsPerPage) > 1 && (
+              {Math.ceil((vehicles?.length || 0) / itemsPerPage) > 1 && (
                 <div className="px-6 py-3 border-t border-[var(--neutral-gray)]">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-[var(--neutral-gray)]">Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, vehicles.length)} of {vehicles.length} vehicles</div>
+                    <div className="text-sm text-[var(--neutral-gray)]">Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, vehicles?.length || 0)} of {vehicles?.length || 0} vehicles</div>
                     <div className="flex items-center space-x-2">
                       <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="p-2 rounded-lg border border-[var(--neutral-gray)] text-[var(--neutral-gray)] hover:bg-[var(--bright-orange)] hover:text-[var(--black)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Prev</button>
-                      {Array.from({ length: Math.ceil(vehicles.length / itemsPerPage) }, (_, i) => i + 1).map((page) => (
+                      {Array.from({ length: Math.ceil((vehicles?.length || 0) / itemsPerPage) }, (_, i) => i + 1).map((page) => (
                         <button key={page} onClick={() => setCurrentPage(page)} className={`px-3 py-1 rounded-lg transition-colors ${currentPage === page ? 'bg-[var(--color-deep-navy)] text-white' : 'text-[var(--bright-orange)] hover:bg-[var(--color-deep-navy)] hover:text-white'}`}>{page}</button>
                       ))}
-                      <button onClick={() => setCurrentPage(Math.min(Math.ceil(vehicles.length / itemsPerPage), currentPage + 1))} disabled={currentPage === Math.ceil(vehicles.length / itemsPerPage)} className="p-2 rounded-lg border border-[var(--neutral-gray)] text-[var(--neutral-gray)] hover:bg-[var(--bright-orange)] hover:text-[var(--black)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Next</button>
+                      <button onClick={() => setCurrentPage(Math.min(Math.ceil((vehicles?.length || 0) / itemsPerPage), currentPage + 1))} disabled={currentPage === Math.ceil((vehicles?.length || 0) / itemsPerPage)} className="p-2 rounded-lg border border-[var(--neutral-gray)] text-[var(--neutral-gray)] hover:bg-[var(--bright-orange)] hover:text-[var(--black)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Next</button>
                     </div>
                   </div>
                 </div>

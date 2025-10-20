@@ -16,14 +16,31 @@ export class RolesGuard implements CanActivate {
       ROLES_KEY,
       [context.getHandler(), context.getClass()],
     );
+    
     //if the role is not required for unristricted access
     if (!requiredRoles) {
       return true;
     }
-    const { user } = context.switchToHttp().getRequest();
+    
+    const request = context.switchToHttp().getRequest();
+    const { user } = request;
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (!user.role) {
+      throw new UnauthorizedException('User role not found');
+    }
 
     try {
-      return requiredRoles.includes(user.role);
+      const hasRole = requiredRoles.includes(user.role);
+      
+      if (!hasRole) {
+        throw new UnauthorizedException(`User role '${user.role}' not authorized. Required: ${requiredRoles.join(', ')}`);
+      }
+      
+      return hasRole;
     } catch (error) {
       throw new UnauthorizedException('User not authorized');
     }

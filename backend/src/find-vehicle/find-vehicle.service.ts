@@ -9,7 +9,9 @@ import {
   VehicleSearchResponseDto,
   VehicleDetailsResponseDto,
 } from './dto';
-import * as turf from '@turf/turf';
+// Use require for turf to avoid typing mismatch for some turf helper names
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const turf = require('@turf/turf');
 
 @Injectable()
 export class FindVehicleService {
@@ -25,9 +27,9 @@ export class FindVehicleService {
     point: [number, number],
     lineSegment: [[number, number], [number, number]],
   ): number {
-    const turfPoint = turf.point(point);
-    const turfLine = turf.lineString(lineSegment);
-    const distance = turf.pointToLineDistance(turfPoint, turfLine, {
+    const tp = turf.point(point);
+    const tl = turf.lineString(lineSegment as any);
+    const distance = turf.pointToLineDistance(tp, tl, {
       units: 'kilometers',
     });
     return distance;
@@ -224,15 +226,14 @@ export class FindVehicleService {
     const dropPoint: [number, number] = [dropLon, dropLat];
 
     for (const driver of drivers) {
-      // Check if driver has DriverCities entry
-      if (!driver.driverCities) {
+      // Check if driver has DriverCities entry (schema defines driverCities as a singular optional relation)
+      const driverCity = driver.driverCities;
+      if (!driverCity) {
         console.log(
           `[FindVehicle] Driver ${driver.driver_id} (${driver.name}): No driverCities entry`,
         );
         continue;
       }
-
-      const driverCity = driver.driverCities; // One-to-one relationship
 
       // Filter by ride type
       if (driverCity.rideType !== 'Both' && driverCity.rideType !== rideType) {
@@ -429,7 +430,7 @@ export class FindVehicleService {
       throw new NotFoundException('Vehicle not found for this driver');
     }
 
-    // Get driver cities/route information
+    // Get driver cities/route information (DriverCities is singular optional relation)
     const driverCity = driver.driverCities;
     if (!driverCity) {
       throw new NotFoundException(

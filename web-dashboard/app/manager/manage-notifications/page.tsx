@@ -21,7 +21,7 @@ export default function PublishNoticesPage() {
   const searchTimeout = useRef<number | null>(null);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [rawResponse, setRawResponse] = useState<any>(null);
+  const [rawResponse, setRawResponse] = useState<unknown | null>(null);
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'sender' | 'type'>('newest');
@@ -320,10 +320,10 @@ export default function PublishNoticesPage() {
             {fetchError && (
               <div className="text-sm text-[var(--error-red)]">{fetchError}</div>
             )}
-            {(!fetchError && notices.length === 0 && rawResponse) && (
+            {(!fetchError && notices.length === 0 && Boolean(rawResponse)) && (
               <div className="text-xs text-[var(--neutral-gray)] mt-2">
                 <div className="font-medium">Raw response (debug):</div>
-                <pre className="whitespace-pre-wrap text-[12px] max-h-48 overflow-auto">{JSON.stringify(rawResponse, null, 2)}</pre>
+                <pre className="whitespace-pre-wrap text-[12px] max-h-48 overflow-auto">{typeof rawResponse === 'string' ? rawResponse : JSON.stringify(rawResponse, null, 2)}</pre>
               </div>
             )}
             {/* Sorting controls */}

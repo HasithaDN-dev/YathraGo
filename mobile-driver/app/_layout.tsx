@@ -94,6 +94,7 @@ export default function RootLayout() {
           <Stack.Screen name="vehicle-list" options={{ headerShown: false }} />
           <Stack.Screen name="(homeLinks)" options={{ headerShown: false }} />
           <Stack.Screen name="profile" options={{ headerShown: false }} />
+          <Stack.Screen name="requests" options={{ headerShown: false }} />
         </Stack.Protected>
 
         {/* Registration routes - accessible when authenticated but not account  created yet */}

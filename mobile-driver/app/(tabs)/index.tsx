@@ -6,7 +6,7 @@ import {
   Car, MapPin, Clock, CurrencyDollar, Star, Bell, Play, Pause, CompassIcon, Calendar,
   User, House, Building, CaretDown, ChatCircle, Megaphone, List, CreditCard, FileText,
   CheckCircle, Clock as ClockIcon, Users,
-  ToggleLeftIcon
+  ToggleLeftIcon, Notification
 } from 'phosphor-react-native';
 import CustomButton from '@/components/ui/CustomButton';
 import { useRouter } from 'expo-router';
@@ -14,6 +14,8 @@ import { useAuthStore } from '@/lib/stores/auth.store';
 import { tokenService } from '@/lib/services/token.service';
 import { routeCitiesService } from '@/lib/services/route-cities.service';
 import SetupRouteCard from '@/components/SetupRouteCard';
+import { driverRequestApi } from '@/lib/api/driver-request.api';
+import { useDriverStore } from '@/lib/stores/driver.store';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -27,6 +29,8 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [hasRouteSetup, setHasRouteSetup] = useState<boolean>(false);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
+  const [driverId, setDriverId] = useState<number | null>(null);
   
   // Route cities state
   const [startCity, setStartCity] = useState<string>('Maharagama Junction');
@@ -50,10 +54,25 @@ export default function HomeScreen() {
         const profile = profileData.profile;
         setDriverName(profile.name || user?.name || 'Driver');
         setIsOnline(profile.status === 'ACTIVE');
+        setDriverId(profile.id || user?.id || null);
       } else {
         // Fallback to user from store
         setDriverName(user?.name || 'Driver');
         setIsOnline(user?.status === 'ACTIVE');
+        setDriverId(user?.id || null);
+      }
+
+      // Fetch pending ride requests count
+      if (user?.id || driverId) {
+        try {
+          const requests = await driverRequestApi.getDriverRequests(
+            driverId || user?.id || 0,
+            'PENDING'
+          );
+          setPendingRequestsCount(requests.length);
+        } catch (error) {
+          console.error('Error fetching pending requests:', error);
+        }
       }
 
       // Check if driver has route setup
@@ -279,7 +298,7 @@ export default function HomeScreen() {
             <View className="flex-row items-center">
               <Users size={20} color="#143373" weight="regular" />
               <Typography variant="body" weight="semibold" className="text-brand-deepNavy ml-2">
-                Today's Students
+                Today&apos;s Students
               </Typography>
             </View>
             <Typography variant="title-2" weight="bold" className="text-brand-deepNavy">
@@ -313,7 +332,7 @@ export default function HomeScreen() {
       {hasRouteSetup && (
       <View className="bg-white mx-6 mt-4 rounded-xl p-4 shadow-sm">
         <Typography variant="headline" weight="semibold" className="text-brand-deepNavy mb-4">
-          Today's Schedule
+          Today&apos;s Schedule
         </Typography>
 
         <View className="space-y-3">
@@ -391,13 +410,27 @@ export default function HomeScreen() {
         
         <TouchableOpacity 
           className="bg-brand-deepNavy p-4 rounded-xl items-center"
-          onPress={() => router.push('/(tabs)/attendance')}
+          onPress={() => router.push('/requests/request-list')}
           activeOpacity={0.8}
         >
-          <CheckCircle size={24} color="#ffffff" weight="regular" />
+          <View className="flex-row items-center">
+            <Bell size={24} color="#ffffff" weight="regular" />
+            {pendingRequestsCount > 0 && (
+              <View className="bg-red-500 rounded-full w-6 h-6 items-center justify-center ml-2">
+                <Typography variant="caption-2" weight="bold" className="text-white">
+                  {pendingRequestsCount}
+                </Typography>
+              </View>
+            )}
+          </View>
           <Typography variant="caption-1" weight="medium" className="text-white mt-2">
-            Mark Attendance
+            View Ride Requests
           </Typography>
+          {pendingRequestsCount > 0 && (
+            <Typography variant="caption-2" className="text-brand-warmYellow mt-1">
+              {pendingRequestsCount} pending request{pendingRequestsCount !== 1 ? 's' : ''}
+            </Typography>
+          )}
         </TouchableOpacity>
         </View>
       )}
