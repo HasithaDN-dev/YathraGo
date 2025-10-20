@@ -1,15 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { 
   Users,
   Plus,
-  UserCheck,
-  Settings,
   ArrowLeft,
   Eye,
   Edit,
@@ -21,8 +19,11 @@ import {
   Star,
   AlertTriangle,
   User,
-  Car
+  Car,
+  Search,
+  PieChart as PieChartIcon
 } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 // Type definitions
 interface Child {
@@ -73,7 +74,9 @@ interface UserData {
   address: string;
   status: string;
   joinDate: string;
-  profileImage: string;
+  profileImage?: string;
+  userType?: string;
+  source?: string;
   emergencyContact?: string;
   children?: Child[];
   reviews?: Review[];
@@ -98,7 +101,7 @@ interface UserData {
   managementArea?: string;
 }
 
-// Sample user data for different roles with ID prefixes for identification
+/* Sample user data for different roles - DEPRECATED: Now fetching from API
 const roleUsers = {
   "Parents": [
     { 
@@ -384,6 +387,7 @@ const roleUsers = {
     }
   ]
 };
+*/
 
 // User Profile Modal Component
 const UserProfileModal = ({ 
@@ -504,6 +508,26 @@ const UserProfileModal = ({
                     </Badge>
                   </div>
                 </div>
+                {user.userType && (
+                  <div className="flex items-center space-x-3">
+                    <div className="w-5 h-5"></div>
+                    <div>
+                      <p className="text-sm text-gray-500">User Type</p>
+                      <p className="font-medium">{user.userType}</p>
+                    </div>
+                  </div>
+                )}
+                {user.source && (
+                  <div className="flex items-center space-x-3">
+                    <div className="w-5 h-5"></div>
+                    <div>
+                      <p className="text-sm text-gray-500">Data Source</p>
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                        {user.source}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -861,6 +885,94 @@ const EditUserModal = ({
   );
 };
 
+// Confirmation Dialog Component
+const ConfirmationDialog = ({
+  isOpen,
+  title,
+  message,
+  onConfirm,
+  onCancel,
+  confirmText = "Confirm",
+  cancelText = "Cancel",
+  user,
+  oldStatus,
+  newStatus
+}: {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  confirmText?: string;
+  cancelText?: string;
+  user?: UserData | null;
+  oldStatus?: string;
+  newStatus?: string;
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+      <div className="bg-white rounded-lg max-w-md w-full">
+        <div className="p-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="bg-yellow-100 p-3 rounded-full">
+              <AlertTriangle className="w-6 h-6 text-yellow-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          </div>
+
+          <p className="text-gray-700 mb-4">{message}</p>
+
+          {user && oldStatus && newStatus && (
+            <div className="bg-gray-50 p-4 rounded-lg mb-4">
+              <h4 className="font-medium text-gray-900 mb-3">Change Summary:</h4>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="text-gray-500">User:</span>
+                  <span className="ml-2 font-medium">{user.name}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">User ID:</span>
+                  <span className="ml-2 font-medium">{user.id}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-gray-500">Status Change:</span>
+                  <Badge className={oldStatus === "Active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                    {oldStatus}
+                  </Badge>
+                  <span className="text-gray-500">→</span>
+                  <Badge className={newStatus === "Active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                    {newStatus}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-blue-50 p-3 rounded-lg mb-4">
+            <p className="text-sm text-blue-800">
+              <strong>Note:</strong> This action will {newStatus === "Active" ? "enable" : "disable"} the user&apos;s access to the system.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-end space-x-3 p-4 border-t bg-gray-50">
+          <Button variant="outline" onClick={onCancel}>
+            {cancelText}
+          </Button>
+          <Button
+            onClick={onConfirm}
+            className={newStatus === "Active" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
+          >
+            {confirmText}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function RolePermissionManagementPage() {
   const [selectedRole, setSelectedRole] = useState("Staff Passengers");
   const [showUserTable, setShowUserTable] = useState(false);
@@ -868,58 +980,172 @@ export default function RolePermissionManagementPage() {
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState<UserData | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roles, setRoles] = useState<Array<{ name: string; userCount: number; color: string; userType: string }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [roleUsersData, setRoleUsersData] = useState<Record<string, UserData[]>>({});
+  const [globalSearchQuery, setGlobalSearchQuery] = useState("");
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState("all");
+  const [searchResults, setSearchResults] = useState<UserData[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [originalStatus, setOriginalStatus] = useState<string>("");
 
-  const roles = [
-    { name: "Parents", userCount: 24 },
-    { name: "Staff Passengers", userCount: 12 },
-    { name: "Drivers", userCount: 8 },
-    { name: "Owners", userCount: 3 },
-    { name: "Admins", userCount: 2 },
-    { name: "Managers", userCount: 5 },
-    { name: "Driver Coordinators", userCount: 4 },
-    { name: "Finance Managers", userCount: 2 },
-  ];
+  // Fetch roles from API
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:3000/admin/users/roles', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}` // Adjust token key as needed
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setRoles(data.roles || []);
+        } else {
+          console.error('Failed to fetch roles:', response.statusText);
+          // Fallback to empty array if API fails
+          setRoles([]);
+        }
+      } catch (error) {
+        console.error('Error fetching roles:', error);
+        // Fallback to empty array on error
+        setRoles([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const permissions = [
-    {
-      module: "Dashboard Access",
-      view: true,
-      create: false,
-      edit: false,
-      delete: false
-    },
-    {
-      module: "Trip Management",
-      view: true,
-      create: true,
-      edit: true,
-      delete: false
-    },
-    {
-      module: "User Accounts",
-      view: true,
-      create: true,
-      edit: true,
-      delete: true
-    },
-    {
-      module: "Vehicle Assignment",
-      view: true,
-      create: true,
-      edit: false,
-      delete: false
+    fetchRoles();
+  }, []);
+
+  // Debounced search effect
+  useEffect(() => {
+    const searchUsers = async () => {
+      if (!globalSearchQuery.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const roleParam = selectedRoleFilter !== "all" 
+          ? `&roleType=${roles.find(r => r.name === selectedRoleFilter)?.userType || ''}`
+          : '';
+        
+        const response = await fetch(
+          `http://localhost:3000/admin/users/search?query=${encodeURIComponent(globalSearchQuery)}${roleParam}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+            }
+          }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          setSearchResults(data.results || []);
+        } else {
+          console.error('Failed to search users:', response.statusText);
+          setSearchResults([]);
+        }
+      } catch (error) {
+        console.error('Error searching users:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(() => {
+      searchUsers();
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(debounceTimer);
+  }, [globalSearchQuery, selectedRoleFilter, roles]);
+
+  // Filter roles based on global search and role filter
+  const filteredRolesForChart = useMemo(() => {
+    let filtered = roles;
+
+    // If searching, use search results to calculate role distribution
+    if (globalSearchQuery.trim() && searchResults.length > 0) {
+      // Count users by role from search results
+      const roleCounts: Record<string, number> = {};
+      searchResults.forEach((user) => {
+        const roleName = roles.find(r => r.userType === user.userType)?.name;
+        if (roleName) {
+          roleCounts[roleName] = (roleCounts[roleName] || 0) + 1;
+        }
+      });
+
+      // Return chart data based on search results
+      return Object.entries(roleCounts).map(([name, count]) => {
+        const roleData = roles.find(r => r.name === name);
+        return {
+          name,
+          value: count,
+          color: roleData?.color || '#gray',
+        };
+      });
     }
-  ];
 
-  const [permissionMatrix, setPermissionMatrix] = useState(permissions);
+    // Filter by selected role
+    if (selectedRoleFilter !== "all") {
+      filtered = filtered.filter(role => role.name === selectedRoleFilter);
+    }
 
-  const handleRoleChange = (roleName: string) => {
+    return filtered.filter(role => role.userCount > 0).map(role => ({
+      name: role.name,
+      value: role.userCount,
+      color: role.color
+    }));
+  }, [roles, selectedRoleFilter, globalSearchQuery, searchResults]);
+
+  const filteredTotalUsers = useMemo(() => 
+    filteredRolesForChart.reduce((sum, role) => sum + role.value, 0), 
+    [filteredRolesForChart]
+  );
+
+  // Removed: Permissions array and related functions - no longer needed without permissions matrix
+
+  const handleRoleChange = async (roleName: string, userType: string) => {
     setSelectedRole(roleName);
-    setShowUserTable(true); // Navigate to user table when role is clicked
+    setShowUserTable(true);
+    setSearchQuery("");
+    
+    // Fetch users for this role if not already loaded
+    if (!roleUsersData[roleName]) {
+      try {
+        const response = await fetch(`http://localhost:3000/admin/users/by-role?roleType=${userType}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          }
+        });
+        
+        if (response.ok) {
+          const users = await response.json();
+          setRoleUsersData(prev => ({
+            ...prev,
+            [roleName]: users || []
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        setRoleUsersData(prev => ({
+          ...prev,
+          [roleName]: []
+        }));
+      }
+    }
   };
 
   const handleBackToRoles = () => {
     setShowUserTable(false);
+    setSearchQuery(""); // Reset search when going back
   };
 
   const handleViewUser = (user: UserData) => {
@@ -934,26 +1160,56 @@ export default function RolePermissionManagementPage() {
 
   const handleEditUser = (user: UserData) => {
     setEditingUser({ ...user });
+    setOriginalStatus(user.status);
     setShowEditModal(true);
   };
 
   const handleCloseEditModal = () => {
     setShowEditModal(false);
+    setShowConfirmDialog(false);
     setEditingUser(null);
+    setOriginalStatus("");
   };
 
   const handleSaveUserChanges = () => {
+    // Check if status has changed
+    if (editingUser && editingUser.status !== originalStatus) {
+      setShowConfirmDialog(true);
+    } else {
+      // No changes, just close
+      handleCloseEditModal();
+    }
+  };
+
+  const handleConfirmSave = async () => {
     if (editingUser) {
-      // In a real application, this would make an API call to update the user
-      console.log('Saving user changes:', editingUser);
+      // TODO: Make API call to update user status
+      console.log('Saving user status change:', {
+        userId: editingUser.id,
+        oldStatus: originalStatus,
+        newStatus: editingUser.status
+      });
       
-      // If we're viewing the user profile, update the selected user too
+      // Update local state
       if (selectedUser && selectedUser.id === editingUser.id) {
         setSelectedUser({ ...editingUser });
       }
       
-      setShowEditModal(false);
-      setEditingUser(null);
+      // Update in roleUsersData
+      if (roleUsersData[selectedRole]) {
+        const updatedUsers = roleUsersData[selectedRole].map(u => 
+          u.id === editingUser.id ? { ...editingUser } : u
+        );
+        setRoleUsersData(prev => ({
+          ...prev,
+          [selectedRole]: updatedUsers
+        }));
+      }
+      
+      handleCloseEditModal();
+      
+      // Show success message (you can use a toast library)
+      alert('User status updated successfully!');
     }
   };
 
@@ -963,20 +1219,24 @@ export default function RolePermissionManagementPage() {
     }
   };
 
-  const handlePermissionToggle = (moduleIndex: number, permissionType: string) => {
-    setPermissionMatrix(prev => prev.map((item, index) => {
-      if (index === moduleIndex) {
-        return {
-          ...item,
-          [permissionType]: !item[permissionType as keyof typeof item]
-        };
-      }
-      return item;
-    }));
-  };
+  // Get users for selected role with useMemo to prevent dependency issues
+  const currentRoleUsers = useMemo(() => 
+    roleUsersData[selectedRole] || [], 
+    [selectedRole, roleUsersData]
+  );
 
-  // Get users for selected role
-  const currentRoleUsers = roleUsers[selectedRole as keyof typeof roleUsers] || [];
+  // Filter users based on search query
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return currentRoleUsers;
+    
+    const query = searchQuery.toLowerCase();
+    return currentRoleUsers.filter(user => 
+      user.name.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query) ||
+      user.mobile.toLowerCase().includes(query) ||
+      user.id.toLowerCase().includes(query)
+    );
+  }, [currentRoleUsers, searchQuery]);
 
   // If showing user table, render the user management interface
   if (showUserTable) {
@@ -995,9 +1255,32 @@ export default function RolePermissionManagementPage() {
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{selectedRole} Users</h1>
-              <p className="text-gray-600">Manage users in the {selectedRole} role</p>
+              <p className="text-gray-600">
+                Manage users in the {selectedRole} role ({filteredUsers.length} {filteredUsers.length === 1 ? 'user' : 'users'})
+              </p>
             </div>
           </div>
+
+          {/* Search Bar */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  type="text"
+                  placeholder="Search by name, email, mobile number, or user ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-full"
+                />
+              </div>
+              {searchQuery && (
+                <p className="text-sm text-gray-600 mt-2">
+                  Showing {filteredUsers.length} of {currentRoleUsers.length} users
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Users Table */}
           <Card>
@@ -1005,64 +1288,78 @@ export default function RolePermissionManagementPage() {
               <CardTitle>User List</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-medium text-gray-900">User ID</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-900">User Name</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-900">Email</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-900">Mobile</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-900">Address</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
-                      <th className="text-center py-3 px-4 font-medium text-gray-900">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentRoleUsers.map((user) => {
-                      return (
-                        <tr key={user.id} className="border-b hover:bg-gray-50">
-                          <td className="py-4 px-4 font-medium text-gray-900">{user.id}</td>
-                          <td className="py-4 px-4 font-medium text-gray-900">{user.name}</td>
-                          <td className="py-4 px-4 text-gray-700">{user.email}</td>
-                          <td className="py-4 px-4 text-gray-700">{user.mobile}</td>
-                          <td className="py-4 px-4 text-gray-700">{user.address}</td>
-                          <td className="py-4 px-4">
-                            <Badge 
-                              variant={user.status === "Active" ? "default" : "secondary"}
-                              className={user.status === "Active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
-                            >
-                              {user.status}
-                            </Badge>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex space-x-2 justify-center">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleViewUser(user)}
-                                className="flex items-center space-x-1"
+              {filteredUsers.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {searchQuery ? 'No users found' : 'No users in this role'}
+                  </h3>
+                  <p className="text-gray-600">
+                    {searchQuery 
+                      ? 'Try adjusting your search criteria'
+                      : 'There are currently no users assigned to this role'}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">User ID</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">User Name</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Email</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Mobile</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Address</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
+                        <th className="text-center py-3 px-4 font-medium text-gray-900">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredUsers.map((user) => {
+                        return (
+                          <tr key={user.id} className="border-b hover:bg-gray-50">
+                            <td className="py-4 px-4 font-medium text-gray-900">{user.id}</td>
+                            <td className="py-4 px-4 font-medium text-gray-900">{user.name}</td>
+                            <td className="py-4 px-4 text-gray-700">{user.email}</td>
+                            <td className="py-4 px-4 text-gray-700">{user.mobile}</td>
+                            <td className="py-4 px-4 text-gray-700">{user.address}</td>
+                            <td className="py-4 px-4">
+                              <Badge 
+                                variant={user.status === "Active" ? "default" : "secondary"}
+                                className={user.status === "Active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
                               >
-                                <Eye className="w-4 h-4" />
-                                <span>View</span>
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleEditUser(user)}
-                                className="flex items-center space-x-1"
-                              >
-                                <Edit className="w-4 h-4" />
-                                <span>Edit</span>
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                                {user.status}
+                              </Badge>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="flex space-x-2 justify-center">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleViewUser(user)}
+                                  className="flex items-center space-x-1"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  <span>View</span>
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleEditUser(user)}
+                                  className="flex items-center space-x-1"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                  <span>Edit</span>
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -1078,10 +1375,24 @@ export default function RolePermissionManagementPage() {
         {/* Edit User Modal */}
         <EditUserModal
           user={editingUser}
-          isOpen={showEditModal}
+          isOpen={showEditModal && !showConfirmDialog}
           onClose={handleCloseEditModal}
           onSave={handleSaveUserChanges}
           onStatusChange={handleStatusChange}
+        />
+
+        {/* Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={showConfirmDialog}
+          title="Confirm Status Change"
+          message="Are you sure you want to change this user's status? This will affect their access to the system."
+          onConfirm={handleConfirmSave}
+          onCancel={() => setShowConfirmDialog(false)}
+          confirmText="Yes, Save Changes"
+          cancelText="No, Cancel"
+          user={editingUser}
+          oldStatus={originalStatus}
+          newStatus={editingUser?.status}
         />
       </>
     );
@@ -1096,8 +1407,16 @@ export default function RolePermissionManagementPage() {
         <p className="text-gray-600">Manage user roles and their permissions</p>
       </div>
 
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-600">Loading roles...</p>
+          </div>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Roles Section */}
+        {/* Roles Section - Left Panel */}
         <div className="lg:col-span-1">
           <Card>
             <CardHeader>
@@ -1106,15 +1425,20 @@ export default function RolePermissionManagementPage() {
                   <Users className="w-5 h-5" />
                   <span>Roles</span>
                 </CardTitle>
-                <Button className="bg-yellow-500 hover:bg-yellow-600 text-white">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add New Role
+                <Button className="bg-yellow-500 hover:bg-yellow-600 text-white" size="sm">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Role
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {roles.map((role, index) => (
+                {roles.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No roles found
+                  </div>
+                ) : (
+                  roles.map((role, index) => (
                   <div
                     key={index}
                     className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
@@ -1122,7 +1446,7 @@ export default function RolePermissionManagementPage() {
                         ? 'bg-blue-50 border-2 border-blue-200' 
                         : 'bg-gray-50 hover:bg-gray-100'
                     }`}
-                    onClick={() => handleRoleChange(role.name)}
+                    onClick={() => handleRoleChange(role.name, role.userType)}
                   >
                     <div className="flex flex-col">
                       <span className={`font-medium ${
@@ -1132,100 +1456,178 @@ export default function RolePermissionManagementPage() {
                       </span>
                     </div>
                     <Badge variant="secondary" className="text-xs">
-                      {role.userCount} users
+                      {role.userCount} {role.userCount === 1 ? 'user' : 'users'}
                     </Badge>
                   </div>
-                ))}
+                )))}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Permissions Matrix */}
+        {/* User Distribution Pie Chart - Right Panel */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  <Settings className="w-5 h-5" />
-                  <span>Permissions Matrix - {selectedRole}</span>
-                </CardTitle>
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm">
-                    Clone Existing Role
-                  </Button>
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    <UserCheck className="w-4 h-4 mr-2" />
-                    Assign Role to User
-                  </Button>
-                </div>
-              </div>
+              <CardTitle className="flex items-center space-x-2">
+                <PieChartIcon className="w-5 h-5" />
+                <span>User Distribution by Role</span>
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-medium text-gray-900">
-                        Module / Feature
-                      </th>
-                      <th className="text-center py-3 px-4 font-medium text-gray-900">
-                        View
-                      </th>
-                      <th className="text-center py-3 px-4 font-medium text-gray-900">
-                        Create
-                      </th>
-                      <th className="text-center py-3 px-4 font-medium text-gray-900">
-                        Edit
-                      </th>
-                      <th className="text-center py-3 px-4 font-medium text-gray-900">
-                        Delete
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {permissionMatrix.map((permission, index) => (
-                      <tr key={index} className="border-b hover:bg-gray-50">
-                        <td className="py-4 px-4 font-medium text-gray-900">
-                          {permission.module}
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <Switch
-                            checked={permission.view}
-                            onCheckedChange={() => handlePermissionToggle(index, 'view')}
-                            className="data-[state=checked]:bg-green-500"
-                          />
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <Switch
-                            checked={permission.create}
-                            onCheckedChange={() => handlePermissionToggle(index, 'create')}
-                            className="data-[state=checked]:bg-green-500"
-                          />
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <Switch
-                            checked={permission.edit}
-                            onCheckedChange={() => handlePermissionToggle(index, 'edit')}
-                            className="data-[state=checked]:bg-green-500"
-                          />
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <Switch
-                            checked={permission.delete}
-                            onCheckedChange={() => handlePermissionToggle(index, 'delete')}
-                            className="data-[state=checked]:bg-green-500"
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-6">
+                {/* Search Bar with Role Filter */}
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                      type="text"
+                      placeholder="Search by name, email, user ID, or mobile number..."
+                      value={globalSearchQuery}
+                      onChange={(e) => setGlobalSearchQuery(e.target.value)}
+                      className="pl-10 w-full"
+                    />
+                    {isSearching && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Role Filter Dropdown */}
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Filter by Role:</label>
+                    <select
+                      value={selectedRoleFilter}
+                      onChange={(e) => setSelectedRoleFilter(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="all">All Roles</option>
+                      {roles.filter(r => r.userCount > 0).map((role, index) => (
+                        <option key={index} value={role.name}>
+                          {role.name} ({role.userCount})
+                        </option>
+                      ))}
+                    </select>
+                    {selectedRoleFilter !== "all" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedRoleFilter("all")}
+                        className="whitespace-nowrap"
+                      >
+                        Clear Filter
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {/* Search Results Summary */}
+                  {(globalSearchQuery || selectedRoleFilter !== "all") && (
+                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-gray-700">
+                        {globalSearchQuery && searchResults.length > 0
+                          ? `Found ${searchResults.length} ${searchResults.length === 1 ? 'user' : 'users'} matching "${globalSearchQuery}"`
+                          : globalSearchQuery && searchResults.length === 0
+                          ? `No users found matching "${globalSearchQuery}"`
+                          : selectedRoleFilter !== "all" 
+                          ? `Showing ${filteredTotalUsers} users in ${selectedRoleFilter}`
+                          : `Showing ${filteredTotalUsers} users`}
+                      </p>
+                      {globalSearchQuery && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setGlobalSearchQuery("")}
+                          className="text-blue-600 hover:text-blue-700 h-auto p-0"
+                        >
+                          Clear search
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Total Users Summary */}
+                <div className="flex items-center justify-center p-4 bg-blue-50 rounded-lg">
+                  <div className="text-center">
+                    <p className="text-sm text-gray-600 mb-1">
+                      {selectedRoleFilter !== "all" ? `${selectedRoleFilter} Users` : "Total Users"}
+                    </p>
+                    <p className="text-4xl font-bold text-blue-600">{filteredTotalUsers}</p>
+                  </div>
+                </div>
+
+                {/* Pie Chart */}
+                {filteredRolesForChart.length > 0 ? (
+                  <div className="h-96">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={filteredRolesForChart}
+                          cx="50%"
+                          cy="45%"
+                          labelLine={false}
+                          outerRadius={120}
+                          innerRadius={60}
+                          fill="#8884d8"
+                          dataKey="value"
+                          paddingAngle={2}
+                        >
+                          {filteredRolesForChart.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} stroke="#fff" strokeWidth={2} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'white', 
+                            border: '1px solid #ccc',
+                            borderRadius: '8px',
+                            padding: '10px'
+                          }}
+                          formatter={(value, name) => [`${value} users`, name]}
+                        />
+                        <Legend 
+                          verticalAlign="bottom" 
+                          height={50}
+                          iconType="circle"
+                          wrapperStyle={{
+                            paddingTop: '20px'
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Users Found</h3>
+                    <p className="text-gray-600">
+                      {selectedRoleFilter !== "all" 
+                        ? `There are no users in ${selectedRoleFilter} role`
+                        : "There are no users in the system yet"}
+                    </p>
+                  </div>
+                )}
+
+                {/* Role Statistics Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+                  {(selectedRoleFilter === "all" ? roles.filter(r => r.userCount > 0).slice(0, 4) : roles.filter(r => r.name === selectedRoleFilter && r.userCount > 0)).map((role, index) => (
+                    <div key={index} className="text-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onClick={() => handleRoleChange(role.name, role.userType)}>
+                      <div 
+                        className="w-4 h-4 rounded-full mx-auto mb-2" 
+                        style={{ backgroundColor: role.color }}
+                      ></div>
+                      <p className="text-sm font-medium text-gray-900">{role.name}</p>
+                      <p className="text-2xl font-bold text-gray-700">{role.userCount}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+      )}
     </div>
   );
 }

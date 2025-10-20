@@ -203,7 +203,7 @@ export default function Home() {
       </section>
 
   {/* About Us and Testimonials Section */}
-  <section className="py-8 bg-white">
+  <section id="who-we-are" className="py-8 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             {/* Left Side - About Us (3/5 of the space) */}

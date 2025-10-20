@@ -855,6 +855,152 @@ enum RefundStatus {
   FAILED
 }
 
+
+// ============================================
+// ADMIN SUPPORT MODELS (Added for Admin Features)
+// ============================================
+
+model SystemSettings {
+  id             Int              @id @default(autoincrement())
+  key            String           @unique
+  value          String
+  category       SettingsCategory
+  description    String?
+  isEditable     Boolean          @default(true)
+  modifiedBy     Int?
+  modifiedAt     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([category])
+  @@index([key])
+}
+
+model BackupHistory {
+  id            Int          @id @default(autoincrement())
+  fileName      String
+  filePath      String
+  fileSize      BigInt
+  backupType    BackupType
+  status        BackupStatus @default(IN_PROGRESS)
+  triggeredBy   Int?
+  startedAt     DateTime     @default(now())
+  completedAt   DateTime?
+  failureReason String?
+  metadata      Json?
+  createdAt     DateTime     @default(now())
+  
+  @@index([status])
+  @@index([backupType])
+  @@index([startedAt])
+  @@index([triggeredBy])
+}
+
+model AdminSession {
+  id           Int      @id @default(autoincrement())
+  adminId      Int
+  token        String   @unique
+  ipAddress    String?
+  userAgent    String?
+  isActive     Boolean  @default(true)
+  lastActivity DateTime @default(now())
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  
+  @@index([adminId])
+  @@index([token])
+  @@index([isActive])
+}
+
+model AdminActivity {
+  id           Int      @id @default(autoincrement())
+  adminId      Int
+  action       String
+  module       String
+  details      Json?
+  ipAddress    String?
+  userAgent    String?
+  success      Boolean  @default(true)
+  errorMessage String?
+  createdAt    DateTime @default(now())
+  
+  @@index([adminId])
+  @@index([action])
+  @@index([module])
+  @@index([createdAt])
+}
+
+model ComplaintResponse {
+  id          Int      @id @default(autoincrement())
+  complaintId Int
+  adminId     Int
+  response    String
+  isInternal  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([complaintId])
+  @@index([adminId])
+  @@index([createdAt])
+}
+
+model UserStatusHistory {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  userType  UserTypes
+  oldStatus String
+  newStatus String
+  reason    String?
+  changedBy Int
+  changedAt DateTime  @default(now())
+  
+  @@index([userId, userType])
+  @@index([changedBy])
+  @@index([changedAt])
+}
+
+model AdminPermissionLog {
+  id             Int      @id @default(autoincrement())
+  adminId        Int
+  changedBy      Int
+  oldPermissions String[]
+  newPermissions String[]
+  reason         String?
+  createdAt      DateTime @default(now())
+  
+  @@index([adminId])
+  @@index([changedBy])
+  @@index([createdAt])
+}
+
+// ============================================
+// ADMIN SUPPORT ENUMS (Added for Admin Features)
+// ============================================
+
+enum BackupType {
+  MANUAL
+  SCHEDULED
+  AUTO
+}
+
+enum BackupStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  DELETED
+}
+
+enum SettingsCategory {
+  EMAIL
+  SMS
+  PAYMENT
+  MAPS
+  FCM
+  BACKUP
+  SECURITY
+  GENERAL
+}
+
 enum AttendanceType {
   MORNING_PICKUP
   MORNING_DROPOFF
