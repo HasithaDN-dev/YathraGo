@@ -6,6 +6,17 @@ import * as ImagePicker from 'expo-image-picker';
 import { useDriverStore } from '../../lib/stores/driver.store';
 import { uploadDriverProfileImageApi } from '../../lib/api/profile.api';
 import { useAuthStore } from '../../lib/stores/auth.store';
+import {
+  validateName,
+  validateDateOfBirth,
+  validateEmail,
+  validatePhone,
+  validateCity,
+  validateNIC,
+  validateGender,
+  validateImage,
+  validateAll,
+} from '../../lib/utils/validation';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -58,8 +69,21 @@ export default function RegisterScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!firstName || !lastName || !dob || !city || !nic || !gender || !profileImage) {
-      Alert.alert('Error', 'Please fill all required fields and select a profile image.');
+    // Comprehensive validation
+    const validation = validateAll([
+      { validate: () => validateName(firstName, 'First name'), priority: 1 },
+      { validate: () => validateName(lastName, 'Last name'), priority: 2 },
+      { validate: () => validateDateOfBirth(dob), priority: 3 },
+      { validate: () => validateEmail(email), priority: 4 },
+      { validate: () => validatePhone(secondaryPhone, false), priority: 5 },
+      { validate: () => validateCity(city), priority: 6 },
+      { validate: () => validateNIC(nic), priority: 7 },
+      { validate: () => validateGender(gender), priority: 8 },
+      { validate: () => validateImage(profileImage, 'Profile image'), priority: 9 },
+    ]);
+
+    if (!validation.isValid) {
+      Alert.alert('Validation Error', validation.error || 'Please check your input');
       return;
     }
 
@@ -92,13 +116,13 @@ export default function RegisterScreen() {
 
       // Update store with all personal info including the uploaded image filename
       updatePersonalInfo({
-        firstName,
-        lastName,
-        dateOfBirth: dob,
-        email,
-        secondaryPhone,
-        city,
-        NIC: nic,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        dateOfBirth: dob.trim(),
+        email: email.trim(),
+        secondaryPhone: secondaryPhone.trim(),
+        city: city.trim(),
+        NIC: nic.trim().toUpperCase(),
         gender,
         profileImage: profileImageFilename, // Store the filename, not the asset
       });
@@ -247,9 +271,9 @@ export default function RegisterScreen() {
 
           disabled={isLoading}
         >
-          <Link href={'/phone-auth'}>Back</Link>
+          {/* <Link href={'/phone-auth'}>Back</Link> */}
         </TouchableOpacity>
-        <Link href={'/reg-verify'}>Next</Link>
+        {/* <Link href={'/reg-verify'}>Next</Link> */}
       </View>
     </ScrollView>
   );

@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Icon } from '@/components/ui/Icon';
 import * as ImagePicker from 'expo-image-picker';
 import { useDriverStore } from '../../lib/stores/driver.store';
+import {
+  validateVehicleType,
+  validateRequired,
+  validateLicensePlate,
+  validateYear,
+  validateSeats,
+  validateImage,
+  validateAll,
+} from '../../lib/utils/validation';
 
 interface PhotoUploadBoxProps {
   label: string;
@@ -80,14 +89,34 @@ export default function VehicleRegScreen() {
   };
 
   const handleNext = () => {
+    // Comprehensive validation
+    const validation = validateAll([
+      { validate: () => validateVehicleType(vehicleType), priority: 1 },
+      { validate: () => validateRequired(vehicleBrand, 'Vehicle brand'), priority: 2 },
+      { validate: () => validateRequired(vehicleModel, 'Vehicle model'), priority: 3 },
+      { validate: () => validateYear(yearOfManufacture), priority: 4 },
+      { validate: () => validateRequired(vehicleColor, 'Vehicle color'), priority: 5 },
+      { validate: () => validateLicensePlate(licensePlate), priority: 6 },
+      { validate: () => validateSeats(seats.toString()), priority: 7 },
+      { validate: () => validateImage(frontView, 'Front view photo'), priority: 8 },
+      { validate: () => validateImage(sideView, 'Side view photo'), priority: 9 },
+      { validate: () => validateImage(rearView, 'Rear view photo'), priority: 10 },
+      { validate: () => validateImage(interiorView, 'Interior photo'), priority: 11 },
+    ]);
+
+    if (!validation.isValid) {
+      Alert.alert('Validation Error', validation.error || 'Please check your input');
+      return;
+    }
+
     // Save data to store before navigating
     updateVehicleInfo({
       vehicleType,
-      vehicleBrand,
-      vehicleModel,
-      yearOfManufacture,
-      vehicleColor,
-      licensePlate,
+      vehicleBrand: vehicleBrand.trim(),
+      vehicleModel: vehicleModel.trim(),
+      yearOfManufacture: yearOfManufacture.trim(),
+      vehicleColor: vehicleColor.trim(),
+      licensePlate: licensePlate.trim().toUpperCase(),
       seats,
       femaleAssistant,
       frontView,
