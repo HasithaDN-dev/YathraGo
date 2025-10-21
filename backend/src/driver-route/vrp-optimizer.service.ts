@@ -63,11 +63,19 @@ export class VRPOptimizerService {
     this.logger.log(`Starting morning route optimization for driver ${driverId}`);
 
     try {
-      // Step 1: Get driver + all child pickup/dropoff coordinates
-      const presentChildren = await this.getPresentAssignedChildren(driverId);
+      // Get driver's ride type
+      const driverCity = await this.prisma.driverCities.findFirst({
+        where: { driverId },
+        select: { rideType: true },
+      });
+      const driverRideType = driverCity?.rideType || 'School';
+
+      // Step 1: Get driver + all passenger pickup/dropoff coordinates
+      const presentChildren = await this.getPresentAssignedChildren(driverId, driverRideType);
       
       if (presentChildren.length === 0) {
-        throw new Error('No present students assigned to this driver');
+        const passengerType = driverRideType === 'Work' ? 'staff members' : 'students';
+        throw new Error(`No present ${passengerType} assigned to this driver`);
       }
 
       // Step 2: Build a combined list of all locations
@@ -116,11 +124,19 @@ export class VRPOptimizerService {
     this.logger.log(`Starting evening route optimization for driver ${driverId}`);
 
     try {
-      // Step 1: Get driver + all child pickup/dropoff coordinates (evening: pickup from school, dropoff at home)
-      const presentChildren = await this.getPresentAssignedChildren(driverId);
+      // Get driver's ride type
+      const driverCity = await this.prisma.driverCities.findFirst({
+        where: { driverId },
+        select: { rideType: true },
+      });
+      const driverRideType = driverCity?.rideType || 'School';
+
+      // Step 1: Get driver + all passenger pickup/dropoff coordinates (evening: pickup from school/work, dropoff at home)
+      const presentChildren = await this.getPresentAssignedChildren(driverId, driverRideType);
       
       if (presentChildren.length === 0) {
-        throw new Error('No present students assigned to this driver');
+        const passengerType = driverRideType === 'Work' ? 'staff members' : 'students';
+        throw new Error(`No present ${passengerType} assigned to this driver`);
       }
 
       // Step 2: Build a combined list of all locations (evening: reversed pickup/dropoff)
@@ -161,13 +177,64 @@ export class VRPOptimizerService {
   /**
    * Get present assigned children for the driver
    */
-  private async getPresentAssignedChildren(driverId: number): Promise<PresentChild[]> {
+  private async getPresentAssignedChildren(
+    driverId: number,
+    rideType: string = 'School',
+  ): Promise<PresentChild[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Get assigned children
+    // For Work type drivers, fetch from StaffRideRequest
+    if (rideType === 'Work') {
+      const staffRequests = await this.prisma.staffRideRequest.findMany({
+        where: {
+          driverId,
+          status: 'Assigned',
+        },
+        include: {
+          staffPassenger: {
+            select: {
+              id: true,
+              pickupLatitude: true,
+              pickupLongitude: true,
+              pickupAddress: true,
+              workLatitude: true,
+              workLongitude: true,
+              workAddress: true,
+              customer: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // No absence filtering for staff yet
+      return staffRequests
+        .filter((req) => 
+          req.staffPassenger.pickupLatitude != null && 
+          req.staffPassenger.pickupLongitude != null &&
+          req.staffPassenger.workLatitude != null && 
+          req.staffPassenger.workLongitude != null
+        )
+        .map((req) => ({
+          childId: req.staffPassenger.id, // Using childId for compatibility
+          childName: `${req.staffPassenger.customer.firstName} ${req.staffPassenger.customer.lastName}`,
+          pickupLatitude: req.staffPassenger.pickupLatitude!,
+          pickupLongitude: req.staffPassenger.pickupLongitude!,
+          pickupAddress: req.staffPassenger.pickupAddress,
+          schoolLatitude: req.staffPassenger.workLatitude!, // Using schoolLatitude for work location
+          schoolLongitude: req.staffPassenger.workLongitude!,
+          schoolAddress: req.staffPassenger.workAddress,
+        }));
+    }
+
+    // For School type drivers, fetch from ChildRideRequest
     const assignedRequests = await this.prisma.childRideRequest.findMany({
       where: {
         driverId,
@@ -691,7 +758,14 @@ export class VRPOptimizerService {
     this.logger.warn(`Creating fallback result for driver ${driverId}, route type: ${routeType}`);
     
     try {
-      const presentChildren = await this.getPresentAssignedChildren(driverId);
+      // Get driver's ride type
+      const driverCity = await this.prisma.driverCities.findFirst({
+        where: { driverId },
+        select: { rideType: true },
+      });
+      const driverRideType = driverCity?.rideType || 'School';
+
+      const presentChildren = await this.getPresentAssignedChildren(driverId, driverRideType);
       
       if (presentChildren.length === 0) {
         return {

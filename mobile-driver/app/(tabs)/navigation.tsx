@@ -591,6 +591,8 @@ export default function NavigationScreen() {
                                             onPress={handleGetDirections}
                                         size="medium"
                                             bgVariant="outline"
+                                            textVariant='primary'
+                                            
                                         IconLeft={MapTrifold}
                                         fullWidth
                                     />

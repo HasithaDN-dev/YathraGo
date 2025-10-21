@@ -25,6 +25,8 @@ export default function HomeScreen() {
   const [isButtonEnabled, setIsButtonEnabled] = useState(false);
   const [currentTripStatus, setCurrentTripStatus] = useState<'pending' | 'on-the-way' | 'completed'>('pending');
   const [studentCount, setStudentCount] = useState<number>(0);
+  const [passengerCount, setPassengerCount] = useState<number>(0);
+  const [rideType, setRideType] = useState<'School' | 'Work' | 'Both' | null>(null);
   const [driverName, setDriverName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -95,11 +97,16 @@ export default function HomeScreen() {
         setHasRouteSetup(false);
       }
 
-      // Fetch student count
-      const studentsResponse = await authenticatedFetch(`${API_BASE_URL}/driver/child-ride-requests`);
-      if (studentsResponse.ok) {
-        const studentsData = await studentsResponse.json();
-        setStudentCount(studentsData.length || 0);
+      // Fetch assigned passengers based on driver type
+      const passengersResponse = await authenticatedFetch(`${API_BASE_URL}/driver/assigned-passengers`);
+      if (passengersResponse.ok) {
+        const passengersData = await passengersResponse.json();
+        if (passengersData.success) {
+          setRideType(passengersData.rideType);
+          setPassengerCount(passengersData.total || 0);
+          // For backward compatibility, also set studentCount
+          setStudentCount(passengersData.total || 0);
+        }
       }
     } catch (error) {
       console.error('Error fetching driver data:', error);
@@ -141,6 +148,14 @@ export default function HomeScreen() {
 
   const viewTrip = () => {
     console.log('Viewing trip...');
+  };
+
+  // Helper function to get passenger label based on ride type
+  const getPassengerLabel = (plural: boolean = false): string => {
+    if (!rideType) return plural ? 'Passengers' : 'Passenger';
+    if (rideType === 'School') return plural ? 'Students' : 'Student';
+    if (rideType === 'Work') return plural ? 'Staff' : 'Staff Member';
+    return plural ? 'Passengers' : 'Passenger'; // Both
   };
 
   const viewAllStudents = () => {
@@ -278,16 +293,16 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Assigned Children Summary Section */}
+      {/* Assigned Passengers Summary Section */}
       {hasRouteSetup && (
       <View className="bg-white mx-6 mt-4 rounded-xl p-4 shadow-sm">
         <View className="flex-row items-center justify-between mb-4">
           <Typography variant="headline" weight="semibold" className="text-brand-deepNavy">
-            Assigned Students
+            Assigned {getPassengerLabel(true)}
           </Typography>
           <TouchableOpacity onPress={viewAllStudents}>
             <Typography variant="subhead" weight="medium" className="text-brand-warmYellow">
-              See All Students
+              See All {getPassengerLabel(true)}
             </Typography>
           </TouchableOpacity>
         </View>
@@ -298,11 +313,11 @@ export default function HomeScreen() {
             <View className="flex-row items-center">
               <Users size={20} color="#143373" weight="regular" />
               <Typography variant="body" weight="semibold" className="text-brand-deepNavy ml-2">
-                Today&apos;s Students
+                Today&apos;s {getPassengerLabel(true)}
               </Typography>
             </View>
             <Typography variant="title-2" weight="bold" className="text-brand-deepNavy">
-              {studentCount} Students
+              {passengerCount} {getPassengerLabel(passengerCount !== 1)}
             </Typography>
           </View>
 

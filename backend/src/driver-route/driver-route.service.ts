@@ -19,6 +19,18 @@ interface ChildLocation {
   schoolAddress: string;
 }
 
+// Generic passenger interface (can be child or staff)
+interface PassengerLocation {
+  passengerId: number;
+  passengerName: string;
+  pickupLatitude: number | null;
+  pickupLongitude: number | null;
+  pickupAddress: string;
+  dropoffLatitude: number | null;
+  dropoffLongitude: number | null;
+  dropoffAddress: string;
+}
+
 interface Stop {
   childId: number;
   childName: string;
@@ -62,6 +74,14 @@ export class DriverRouteService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Get driver's ride type (School/Work/Both) from DriverCities
+    const driverCity = await this.prisma.driverCities.findFirst({
+      where: { driverId },
+      select: { rideType: true },
+    });
+
+    const driverRideType = driverCity?.rideType || 'School'; // Default to School
+
     // Step 1: Check if route already exists for today
     const existingRoute = await this.prisma.driverRoute.findUnique({
       where: {
@@ -74,16 +94,6 @@ export class DriverRouteService {
       include: {
         stops: {
           orderBy: { order: 'asc' },
-          include: {
-            child: {
-              select: {
-                child_id: true,
-                childFirstName: true,
-                childLastName: true,
-                childImageUrl: true,
-              },
-            },
-          },
         },
       },
     });
@@ -103,51 +113,45 @@ export class DriverRouteService {
         existingRoute.status = 'IN_PROGRESS';
         existingRoute.startedAt = new Date();
       }
+      // Format stops based on driver type (staff vs children)
+      const formattedStops = await this.formatStopsWithPassengerData(
+        existingRoute.stops,
+        driverRideType,
+      );
 
       return {
         success: true,
         route: existingRoute,
-        stops: existingRoute.stops.map((stop) => ({
-          stopId: stop.id,
-          childId: stop.childId,
-          childName: `${stop.child.childFirstName} ${stop.child.childLastName}`,
-          childImage: stop.child.childImageUrl,
-          type: stop.type,
-          address: stop.address,
-          latitude: stop.latitude,
-          longitude: stop.longitude,
-          etaSecs: stop.etaSecs,
-          legDistanceMeters: stop.legDistanceMeters,
-          cumulativeDistanceMeters: stop.cumulativeDistanceMeters,
-          status: stop.status,
-          order: stop.order,
-        })),
+        stops: formattedStops,
       };
     }
 
-    // Step 2: Get all assigned children for this driver
-    const assignedChildren = await this.getAssignedChildren(driverId);
+    // Step 2: Get all assigned passengers (children or staff) for this driver based on ride type
+    const assignedPassengers = await this.getAssignedPassengers(driverId, driverRideType);
 
-    if (assignedChildren.length === 0) {
+    if (assignedPassengers.length === 0) {
+      const passengerType = driverRideType === 'Work' ? 'staff members' : 'students';
       throw new BadRequestException(
-        'No students assigned to this driver. Please check ride requests.',
+        `No ${passengerType} assigned to this driver. Please check ride requests.`,
       );
     }
 
-    // Step 3: Filter by attendance (get present students only)
-    const presentChildren = await this.filterByAttendance(
-      assignedChildren,
+    // Step 3: Filter by attendance (get present passengers only)
+    const presentPassengers = await this.filterByAttendance(
+      assignedPassengers,
       today,
+      driverRideType,
     );
 
-    if (presentChildren.length === 0) {
+    if (presentPassengers.length === 0) {
+      const passengerType = driverRideType === 'Work' ? 'staff members' : 'students';
       throw new BadRequestException(
-        'No students are present today or all students are marked absent.',
+        `No ${passengerType} are present today or all are marked absent.`,
       );
     }
 
     // Step 4: Generate stops based on route type
-    const stops = this.generateStops(presentChildren, routeType);
+    const stops = this.generateStops(presentPassengers, routeType);
 
     if (stops.length === 0) {
       throw new BadRequestException(
@@ -171,14 +175,109 @@ export class DriverRouteService {
       optimizedRoute,
     );
 
+    // Format stops based on driver type
+    const formattedStops = await this.formatStopsWithPassengerData(
+      savedRoute?.stops || [],
+      driverRideType,
+    );
+
     return {
       success: true,
       route: savedRoute,
-      stops: savedRoute?.stops?.map((stop) => ({
+      stops: formattedStops,
+    };
+  }
+
+  /**
+   * Get all children assigned to this driver with confirmed ride requests
+   */
+  /**
+   * Format route stops with passenger data based on driver type
+   */
+  private async formatStopsWithPassengerData(
+    stops: any[],
+    rideType: string,
+  ): Promise<any[]> {
+    if (rideType === 'Work') {
+      // For Work drivers, fetch staff data
+      const staffIds = stops.map((stop) => stop.childId); // childId is actually staffId
+      const staffData = await this.prisma.staff_Passenger.findMany({
+        where: {
+          id: { in: staffIds },
+        },
+        include: {
+          customer: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      });
+
+      // Create a map for quick lookup
+      const staffMap = new Map(
+        staffData.map((staff) => [
+          staff.id,
+          {
+            name: `${staff.customer.firstName} ${staff.customer.lastName}`,
+            image: null, // Staff don't have images yet
+          },
+        ]),
+      );
+
+      return stops.map((stop) => {
+        const staff = staffMap.get(stop.childId);
+        return {
+          stopId: stop.id,
+          childId: stop.childId, // Actually staffId
+          childName: staff?.name || 'Unknown Staff',
+          childImage: staff?.image || null,
+          type: stop.type,
+          address: stop.address,
+          latitude: stop.latitude,
+          longitude: stop.longitude,
+          etaSecs: stop.etaSecs,
+          legDistanceMeters: stop.legDistanceMeters,
+          cumulativeDistanceMeters: stop.cumulativeDistanceMeters,
+          status: stop.status,
+          order: stop.order,
+        };
+      });
+    }
+
+    // For School drivers, fetch child data
+    const childIds = stops.map((stop) => stop.childId);
+    const childData = await this.prisma.child.findMany({
+      where: {
+        child_id: { in: childIds },
+      },
+      select: {
+        child_id: true,
+        childFirstName: true,
+        childLastName: true,
+        childImageUrl: true,
+      },
+    });
+
+    // Create a map for quick lookup
+    const childMap = new Map(
+      childData.map((child) => [
+        child.child_id,
+        {
+          name: `${child.childFirstName} ${child.childLastName}`,
+          image: child.childImageUrl,
+        },
+      ]),
+    );
+
+    return stops.map((stop) => {
+      const child = childMap.get(stop.childId);
+      return {
         stopId: stop.id,
         childId: stop.childId,
-        childName: `${stop.child.childFirstName} ${stop.child.childLastName}`,
-        childImage: stop.child.childImageUrl,
+        childName: child?.name || 'Unknown Child',
+        childImage: child?.image || null,
         type: stop.type,
         address: stop.address,
         latitude: stop.latitude,
@@ -188,12 +287,94 @@ export class DriverRouteService {
         cumulativeDistanceMeters: stop.cumulativeDistanceMeters,
         status: stop.status,
         order: stop.order,
-      })),
-    };
+      };
+    });
   }
 
   /**
-   * Get all children assigned to this driver with confirmed ride requests
+   * Get assigned passengers based on driver's ride type (children or staff)
+   */
+  private async getAssignedPassengers(
+    driverId: number,
+    rideType: string,
+  ): Promise<ChildLocation[]> {
+    // For Work type drivers, fetch from StaffRideRequest
+    if (rideType === 'Work') {
+      const staffRequests = await this.prisma.staffRideRequest.findMany({
+        where: {
+          driverId,
+          status: 'Assigned',
+        },
+        include: {
+          staffPassenger: {
+            select: {
+              id: true,
+              pickupLatitude: true,
+              pickupLongitude: true,
+              pickupAddress: true,
+              workLatitude: true,
+              workLongitude: true,
+              workAddress: true,
+              customer: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return staffRequests.map((req) => ({
+        childId: req.staffPassenger.id, // Using childId field for compatibility
+        childName: `${req.staffPassenger.customer.firstName} ${req.staffPassenger.customer.lastName}`,
+        pickupLatitude: req.staffPassenger.pickupLatitude,
+        pickupLongitude: req.staffPassenger.pickupLongitude,
+        pickupAddress: req.staffPassenger.pickupAddress,
+        schoolLatitude: req.staffPassenger.workLatitude, // Using schoolLatitude for work location
+        schoolLongitude: req.staffPassenger.workLongitude,
+        schoolAddress: req.staffPassenger.workAddress,
+      }));
+    }
+
+    // For School type drivers (or Both), fetch from ChildRideRequest
+    const rideRequests = await this.prisma.childRideRequest.findMany({
+      where: {
+        driverId,
+        status: 'Assigned',
+      },
+      include: {
+        child: {
+          select: {
+            child_id: true,
+            childFirstName: true,
+            childLastName: true,
+            pickupLatitude: true,
+            pickupLongitude: true,
+            pickUpAddress: true,
+            schoolLatitude: true,
+            schoolLongitude: true,
+            school: true,
+          },
+        },
+      },
+    });
+
+    return rideRequests.map((req) => ({
+      childId: req.child.child_id,
+      childName: `${req.child.childFirstName} ${req.child.childLastName}`,
+      pickupLatitude: req.child.pickupLatitude,
+      pickupLongitude: req.child.pickupLongitude,
+      pickupAddress: req.child.pickUpAddress,
+      schoolLatitude: req.child.schoolLatitude,
+      schoolLongitude: req.child.schoolLongitude,
+      schoolAddress: req.child.school,
+    }));
+  }
+
+  /**
+   * @deprecated Use getAssignedPassengers instead
    */
   private async getAssignedChildren(
     driverId: number,
@@ -233,19 +414,28 @@ export class DriverRouteService {
   }
 
   /**
-   * Filter children by today's attendance (check for absences)
+   * Filter passengers by today's attendance (check for absences)
+   * Works for both children and staff based on ride type
    */
   private async filterByAttendance(
-    children: ChildLocation[],
+    passengers: ChildLocation[],
     date: Date,
+    rideType: string,
   ): Promise<ChildLocation[]> {
     const tomorrow = new Date(date);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Get all absent children for today
+    // For Work type drivers, there's no absence_Staff table yet
+    // So we return all assigned staff as present
+    // TODO: Implement absence_Staff table with staffId and date fields
+    if (rideType === 'Work') {
+      return passengers;
+    }
+
+    // For School type drivers, check Attendance table
     const absences = await this.prisma.absence_Child.findMany({
       where: {
-        childId: { in: children.map((c) => c.childId) },
+        childId: { in: passengers.map((p) => p.childId) },
         date: {
           gte: date,
           lt: tomorrow,
@@ -256,8 +446,8 @@ export class DriverRouteService {
 
     const absentChildIds = new Set(absences.map((a) => a.childId));
 
-    // Return only present children (those not in absence list)
-    return children.filter((child) => !absentChildIds.has(child.childId));
+    // Return only present passengers (those not in absence list)
+    return passengers.filter((passenger) => !absentChildIds.has(passenger.childId));
   }
 
   /**
@@ -391,9 +581,20 @@ export class DriverRouteService {
     } catch (error) {
       console.error('VRP optimization failed, falling back to legacy method:', error);
       // Fallback to legacy optimization
-      const assignedChildren = await this.getAssignedChildren(driverId);
-      const presentChildren = await this.filterByAttendance(assignedChildren, new Date());
-      const stops = this.generateStops(presentChildren, routeType);
+      // Get driver's ride type
+      const driverCity = await this.prisma.driverCities.findFirst({
+        where: { driverId },
+        select: { rideType: true },
+      });
+      const driverRideType = driverCity?.rideType || 'School';
+      
+      const assignedPassengers = await this.getAssignedPassengers(driverId, driverRideType);
+      const presentPassengers = await this.filterByAttendance(
+        assignedPassengers,
+        new Date(),
+        driverRideType,
+      );
+      const stops = this.generateStops(presentPassengers, routeType);
       return this.optimizeRoute(stops, driverLatitude, driverLongitude);
     }
   }
@@ -766,22 +967,12 @@ export class DriverRouteService {
       })),
     });
 
-    // Fetch and return complete route with stops
+    // Fetch and return complete route with stops (without child relation - handled by formatStopsWithPassengerData)
     return this.prisma.driverRoute.findUnique({
       where: { id: driverRoute.id },
       include: {
         stops: {
           orderBy: { order: 'asc' },
-          include: {
-            child: {
-              select: {
-                child_id: true,
-                childFirstName: true,
-                childLastName: true,
-                childImageUrl: true,
-              },
-            },
-          },
         },
       },
     });
@@ -842,18 +1033,43 @@ export class DriverRouteService {
       attendanceType = 'MORNING_PICKUP';
     }
 
-    await this.prisma.attendance.create({
-      data: {
-        driverId,
-        childId: stop.childId,
-        date: stop.driverRoute.date,
-        type: attendanceType,
-        latitude,
-        longitude,
-        notes: notes || `${stop.type} completed`,
-        status: 'completed',
-      },
+    // Get driver's ride type to determine if we need to create Attendance or StaffAttendance
+    const driverCity = await this.prisma.driverCities.findFirst({
+      where: { driverId },
+      select: { rideType: true },
     });
+    const driverRideType = driverCity?.rideType || 'School';
+
+    // Create attendance record in appropriate table
+    if (driverRideType === 'Work') {
+      // For work drivers, create StaffAttendance
+      await this.prisma.staffAttendance.create({
+        data: {
+          driverId,
+          staffId: stop.childId, // childId is used for compatibility, but it's actually staffId
+          date: stop.driverRoute.date,
+          type: attendanceType,
+          latitude,
+          longitude,
+          notes: notes || `${stop.type} completed`,
+          status: 'completed',
+        },
+      });
+    } else {
+      // For school drivers, create Attendance
+      await this.prisma.attendance.create({
+        data: {
+          driverId,
+          childId: stop.childId,
+          date: stop.driverRoute.date,
+          type: attendanceType,
+          latitude,
+          longitude,
+          notes: notes || `${stop.type} completed`,
+          status: 'completed',
+        },
+      });
+    }
 
     // Check if all stops are completed
     const remainingStops = await this.prisma.routeStop.count({
