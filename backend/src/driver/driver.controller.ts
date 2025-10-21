@@ -9,6 +9,7 @@ import {
   Req,
   UseInterceptors,
   UploadedFiles,
+  UploadedFile,
   Get,
   Param,
   ParseIntPipe,
@@ -19,11 +20,13 @@ import { CompleteDriverRegistrationDto } from './dto/complete-driver-registratio
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; // Your existing JwtAuthGuard
 import { UserType } from '@prisma/client';
 import { Request } from 'express';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { multerConfigVehicle } from 'src/common/services/multer.config';
 import axios from 'axios';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { computeGreedyOrder } from './optimizer.util';
+import { diskStorage } from 'multer';
+import * as path from 'path';
 
 // Extend Request to include user property from JwtPayload
 // This interface MUST match what your JwtStrategy returns in its validate method.
@@ -47,11 +50,40 @@ export class DriverController {
 
   // --- NEW ENDPOINT FOR SINGLE-PHASE DRIVER REGISTRATION (SECURE) ---
   @UseGuards(JwtAuthGuard) // Protect with JWT Guard
+  // Upload driver profile image
+  @Post('upload-profile-image')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          const uploadPath = path.join(process.cwd(), 'uploads', 'driver');
+          cb(null, uploadPath);
+        },
+        filename: (req, file, cb) => {
+          const ext = path.extname(file.originalname);
+          // Normalize extension to .jpg for compatibility
+          const normalizedExt = ext.toLowerCase() === '.jpeg' || ext.toLowerCase() === '.jpe' ? '.jpg' : ext;
+          const uniqueName = `driver-${Date.now()}${normalizedExt}`;
+          cb(null, uniqueName);
+        },
+      }),
+    }),
+  )
+  uploadDriverProfileImage(@UploadedFile() file: Express.Multer.File) {
+    // Attach subfolder info for driver images
+    if (file) {
+      file.filename = `driver/${file.filename}`;
+    }
+    return this.driverService.handleImageUpload(file);
+  }
+
   @Post('register') // A single endpoint for the complete registration
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FileFieldsInterceptor(
       [
-        { name: 'profileImage', maxCount: 1 },
         { name: 'idFrontImage', maxCount: 1 },
         { name: 'idBackImage', maxCount: 1 },
         { name: 'vehicleFrontView', maxCount: 1 },
@@ -176,8 +208,31 @@ export class DriverController {
   @Get('profile')
   @HttpCode(HttpStatus.OK)
   async getDriverProfile(@Req() req: AuthenticatedRequest) {
-    const driverId = req.user.sub; // Get driver ID from JWT token
+    const driverId = req.user.sub;
     return this.driverService.getDriverProfile(driverId);
+  }
+
+  // Test endpoint to verify image URL construction
+  @Get('test-image-url/:driverId')
+  @HttpCode(HttpStatus.OK)
+  async testImageUrl(@Param('driverId') driverId: string) {
+    const driver = await this.prisma.driver.findUnique({
+      where: { driver_id: parseInt(driverId) },
+      select: { profile_picture_url: true, name: true },
+    });
+
+    const baseUrl = process.env.SERVER_BASE_URL || 'http://localhost:3000';
+    const fullUrl = driver?.profile_picture_url 
+      ? `${baseUrl}/uploads/${driver.profile_picture_url}`
+      : null;
+
+    return {
+      driverName: driver?.name,
+      rawDbValue: driver?.profile_picture_url,
+      baseUrl,
+      constructedUrl: fullUrl,
+      directAccessTest: fullUrl ? `Open this in browser: ${fullUrl}` : 'No image',
+    };
   }
 
   // --- AUTHENTICATED ENDPOINT TO GET DRIVER TRIP HISTORY ---

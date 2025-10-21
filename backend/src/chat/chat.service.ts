@@ -126,7 +126,7 @@ export class ChatService {
           ? avatarPath.startsWith('http')
             ? avatarPath
             : base
-              ? `${base}/${avatarPath.replace(/^\/+/, '')}`
+              ? `${base}/uploads/${avatarPath.replace(/^\/+/, '')}`
               : avatarPath
           : null;
 

@@ -16,6 +16,7 @@ import { routeCitiesService } from '@/lib/services/route-cities.service';
 import SetupRouteCard from '@/components/SetupRouteCard';
 import { driverRequestApi } from '@/lib/api/driver-request.api';
 import { useDriverStore } from '@/lib/stores/driver.store';
+import { ProfileImage } from '@/components/ProfileImage';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -165,8 +166,8 @@ export default function HomeScreen() {
       <View className="bg-brand-deepNavy px-6 pt-20 pb-8 rounded-b-3xl">
         <View className="flex-row items-center justify-between mb-3">
           <View className="flex-row items-center">
-            <View className="bg-brand-warmYellow w-10 h-10 rounded-full items-center justify-center mr-3">
-              <User size={20} color="#143373" weight="regular" />
+            <View className="bg-brand-warmYellow w-10 h-10 rounded-full items-center justify-center mr-3 overflow-hidden">
+              <ProfileImage size={40} style={{ borderRadius: 20 }} />
             </View>
             <View>
               <Typography variant="headline" weight="bold" className="text-white">

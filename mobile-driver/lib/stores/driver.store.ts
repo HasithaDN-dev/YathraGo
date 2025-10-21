@@ -13,7 +13,7 @@ interface PersonalInfo {
   city: string;
   NIC: string;
   gender: string;
-  profileImage?: any;
+  profileImage?: any; // Can be ImagePickerAsset for UI or string (filename) after upload
 }
 
 interface IdVerification {

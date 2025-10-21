@@ -112,13 +112,9 @@ export default function ChatListScreen() {
           !(msg.senderId === actorId && String(msg.senderType).toUpperCase() === actorType) && !msg.seen
         ).length;
 
-        // Determine avatar URL from common fields (fallback to bundled default image)
-        const avatarPath = other.profileImage || other.avatarUrl || other.imageUrl || other.avatar || '';
-        const avatarUri = avatarPath
-          ? avatarPath.startsWith('http')
-            ? avatarPath
-            : `${API_BASE_URL}/${avatarPath.replace(/^\//, '')}`
-          : null;
+        // Determine avatar URL from backend response (already includes full URL)
+        // Backend sends avatarUrl with full path: http://SERVER_BASE_URL/uploads/driver/filename.jpg
+        const avatarUri = other.avatarUrl || other.profileImage || other.imageUrl || other.avatar || null;
 
         return {
           id: c.id,
@@ -227,13 +223,14 @@ export default function ChatListScreen() {
                 <TouchableOpacity
                 key={c.id}
                 activeOpacity={0.8}
-                onPress={() => router.push({ pathname: '/(menu)/(homeCards)/chat_room', params: { id: String(c.id), name: c.name, phone: c.phone, avatarUri: c.avatarUri } })}
+                onPress={() => router.push({ pathname: '/(menu)/(homeCards)/chat_room', params: { id: String(c.id), name: c.name, phone: c.phone, avatarUri: c.avatarUri || '' } })}
               >
                 <View className="bg-white rounded-2xl px-3 py-3 mb-3 shadow-sm flex-row items-center">
                   {c.avatarUri && c.avatarUri !== 'null' && c.avatarUri !== 'undefined' ? (
                     <Image
                       source={{ uri: c.avatarUri }}
                       style={{ width: 44, height: 44, borderRadius: 22, marginRight: 12 }}
+                      defaultSource={require('../../../assets/images/profile_Picture.png')}
                     />
                   ) : (
                     <Image

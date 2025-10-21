@@ -12,10 +12,35 @@ import { CompleteDriverRegistrationDto } from './dto/complete-driver-registratio
 import { UpdateDriverProfileDto } from './dto/update-driver-profile.dto'; // Assuming this DTO exists
 import { UploadDocumentsDto } from './dto/upload-documents.dto'; // Assuming this DTO exists
 import { Driver, RegistrationStatus } from '@prisma/client';
+import { Express } from 'express';
 
 @Injectable()
 export class DriverService {
   constructor(private prisma: PrismaService) {}
+
+  /**
+   * Handles image upload for driver profile images.
+   * @param file The uploaded file
+   * @returns An object with success and filename or error message
+   */
+  handleImageUpload(file: Express.Multer.File) {
+    if (!file) {
+      return { success: false, message: 'No file uploaded' };
+    }
+    // Validate mimetype
+    if (!file.mimetype.startsWith('image/')) {
+      return { success: false, message: 'Only image files are allowed!' };
+    }
+    // Multer diskStorage already saves the file with a unique name in the correct folder
+    if (!file.filename) {
+      return {
+        success: false,
+        message: 'File upload failed: filename missing.',
+      };
+    }
+    // file.filename may already have subfolder prefix (e.g., 'driver/filename.jpg')
+    return { success: true, filename: file.filename };
+  }
 
   // Fetch driver details for a given driverId (for frontend welcome message)
 
@@ -29,9 +54,22 @@ export class DriverService {
       throw new BadRequestException('Driver not found');
     }
 
+    // Helper to build full image URL
+    const baseUrl = process.env.SERVER_BASE_URL || 'http://localhost:3000';
+    const getImageUrl = (filepath: string | null) => {
+      if (!filepath) return null;
+      // The filepath should already include 'driver/' prefix from upload
+      return `${baseUrl}/uploads/${filepath}`;
+    };
+
+    const profileImageUrl = getImageUrl(driver.profile_picture_url);
+
     return {
       success: true,
-      profile: driver,
+      profile: {
+        ...driver,
+        profile_picture_url: profileImageUrl,
+      },
     };
   }
 
@@ -160,8 +198,8 @@ export class DriverService {
           nic_front_pic_url: registrationData.nic_front_pic_url,
           nice_back_pic_url: registrationData.nice_back_pic_url,
           second_phone: registrationData.second_phone,
-          vehicle_Reg_No: registrationData.vehicle_Reg_No, // This field is in your Driver model
-          registrationStatus: RegistrationStatus.ACCOUNT_CREATED, // Set to ACCOUNT_CREATED after all details
+          vehicle_Reg_No: registrationData.vehicle_Reg_No,
+          registrationStatus: RegistrationStatus.ACCOUNT_CREATED,
         },
       });
 
