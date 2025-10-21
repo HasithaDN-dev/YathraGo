@@ -9,7 +9,6 @@ import { Card } from '@/components/ui/Card';
 import { customerLocationService, DriverLocation, RideStatus } from '@/lib/services/customer-location.service';
 import { assignedRideApi, AssignedRideResponse } from '@/lib/api/assigned-ride.api';
 import { useProfileStore } from '@/lib/stores/profile.store';
-import { tokenService } from '@/lib/services/token.service';
 
 // Default location (Colombo, Sri Lanka)
 const DEFAULT_REGION = {
@@ -116,15 +115,18 @@ export default function NavigateScreen() {
         console.log('✅ Found assigned ride:', ride);
         setAssignedRide(ride);
         
-        // Now fetch the active route ID for this driver
+        // Now fetch the active route ID for this driver (public endpoint)
         try {
           console.log('📡 Fetching active route for driver ID:', ride.driverId);
           
-          // Use authenticated fetch to avoid 401 errors
-          const authenticatedFetch = tokenService.createAuthenticatedFetch();
-          const response = await authenticatedFetch(
+          // This is a public endpoint, no auth needed
+          const response = await fetch(
             `${process.env.EXPO_PUBLIC_API_URL || 'http://192.168.8.183:3000'}/driver/route/active/${ride.driverId}`
           );
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
           
           const routeData = await response.json();
           
