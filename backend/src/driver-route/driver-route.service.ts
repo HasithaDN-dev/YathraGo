@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { VRPOptimizerService } from './vrp-optimizer.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import axios from 'axios';
 
 interface ChildLocation {
@@ -59,6 +60,7 @@ export class DriverRouteService {
   constructor(
     private prisma: PrismaService,
     private vrpOptimizer: VRPOptimizerService,
+    private notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -1040,6 +1042,21 @@ export class DriverRouteService {
           status: 'completed',
         },
       });
+
+      // Send notification to staff
+      try {
+        const notificationMessage = this.getNotificationMessage(attendanceType);
+        await this.notificationsService.sendNotification({
+          sender: 'Driver',
+          message: notificationMessage,
+          type: 'System',
+          receiver: 'STAFF',
+          receiverId: stop.childId, // childId is actually staffId for work drivers
+        });
+      } catch (error) {
+        console.error('Failed to send notification to staff:', error);
+        // Don't throw error - notification failure shouldn't break attendance marking
+      }
     } else {
       // For school drivers, create Attendance
       await this.prisma.attendance.create({
@@ -1054,6 +1071,21 @@ export class DriverRouteService {
           status: 'completed',
         },
       });
+
+      // Send notification to child
+      try {
+        const notificationMessage = this.getNotificationMessage(attendanceType);
+        await this.notificationsService.sendNotification({
+          sender: 'Driver',
+          message: notificationMessage,
+          type: 'System',
+          receiver: 'CHILD',
+          receiverId: stop.childId,
+        });
+      } catch (error) {
+        console.error('Failed to send notification to child:', error);
+        // Don't throw error - notification failure shouldn't break attendance marking
+      }
     }
 
     // Check if all stops are completed
@@ -1173,5 +1205,29 @@ export class DriverRouteService {
         completed: eveningCompleted,
       },
     };
+  }
+
+  /**
+   * Helper method to generate notification message based on attendance type
+   */
+  private getNotificationMessage(
+    attendanceType:
+      | 'MORNING_PICKUP'
+      | 'MORNING_DROPOFF'
+      | 'EVENING_PICKUP'
+      | 'EVENING_DROPOFF',
+  ): string {
+    switch (attendanceType) {
+      case 'MORNING_PICKUP':
+        return 'Your morning pickup has been completed';
+      case 'MORNING_DROPOFF':
+        return 'Your morning dropoff has been completed';
+      case 'EVENING_PICKUP':
+        return 'Your evening pickup has been completed';
+      case 'EVENING_DROPOFF':
+        return 'Your evening dropoff has been completed';
+      default:
+        return 'Your attendance has been marked';
+    }
   }
 }
