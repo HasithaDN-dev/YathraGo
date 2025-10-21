@@ -6,7 +6,7 @@ import * as Location from 'expo-location';
 import { NavigationArrow, MapPin, MagnifyingGlass, Car } from 'phosphor-react-native';
 import { Typography } from '@/components/Typography';
 import { Card } from '@/components/ui/Card';
-import { customerLocationService, DriverLocation, RideStatus } from '@/lib/services/customer-location.service';
+import { customerLocationService, DriverLocation } from '@/lib/services/customer-location.service';
 import { assignedRideApi, AssignedRideResponse } from '@/lib/api/assigned-ride.api';
 import { useProfileStore } from '@/lib/stores/profile.store';
 
@@ -16,6 +16,54 @@ const DEFAULT_REGION = {
   longitude: 79.8612,
   latitudeDelta: 0.0922,
   longitudeDelta: 0.0421,
+};
+
+/**
+ * Decode Google Maps encoded polyline string
+ * Algorithm: https://developers.google.com/maps/documentation/utilities/polylinealgorithm
+ */
+const decodePolyline = (encoded: string): { latitude: number; longitude: number }[] => {
+  if (!encoded) return [];
+  
+  const points: { latitude: number; longitude: number }[] = [];
+  let index = 0;
+  const len = encoded.length;
+  let lat = 0;
+  let lng = 0;
+
+  while (index < len) {
+    let b;
+    let shift = 0;
+    let result = 0;
+    
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    
+    const dlat = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    
+    const dlng = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
+    lng += dlng;
+
+    points.push({
+      latitude: lat / 1e5,
+      longitude: lng / 1e5,
+    });
+  }
+
+  return points;
 };
 
 export default function NavigateScreen() {
@@ -29,6 +77,7 @@ export default function NavigateScreen() {
   const [isTrackingDriver, setIsTrackingDriver] = useState(false);
   const [assignedRide, setAssignedRide] = useState<AssignedRideResponse | null>(null);
   const [rideStatus, setRideStatus] = useState<'WAITING' | 'ACTIVE' | 'COMPLETED'>('WAITING');
+  const [routePolyline, setRoutePolyline] = useState<{ latitude: number; longitude: number }[]>([]);
   
   const { activeProfile } = useProfileStore();
 
@@ -40,7 +89,6 @@ export default function NavigateScreen() {
     return () => {
       customerLocationService.disconnect();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   // Check for assigned ride when active profile changes OR when screen is focused
@@ -135,6 +183,17 @@ export default function NavigateScreen() {
           if (routeData.success && routeData.activeRoute) {
             console.log('✅ Found active route:', routeData.activeRoute);
             const routeId = routeData.activeRoute.routeId.toString();
+            
+            // Decode and store the route polyline if available
+            if (routeData.activeRoute.polyline) {
+              console.log('📍 Decoding route polyline...');
+              const decodedPolyline = decodePolyline(routeData.activeRoute.polyline);
+              console.log(`✅ Decoded ${decodedPolyline.length} points from polyline`);
+              setRoutePolyline(decodedPolyline);
+            } else {
+              console.log('⚠️ No polyline data available for route');
+              setRoutePolyline([]);
+            }
             
             // Only start tracking if not already tracking this route
             if (!isTrackingDriver) {
@@ -352,22 +411,12 @@ export default function NavigateScreen() {
               </Marker>
             )}
             
-            {/* Draw line between user and driver */}
-            {userLocation && driverLocation && (
+            {/* Draw the driver's route polyline */}
+            {routePolyline.length > 0 && (
               <Polyline
-                coordinates={[
-                  {
-                    latitude: userLocation.coords.latitude,
-                    longitude: userLocation.coords.longitude,
-                  },
-                  {
-                    latitude: driverLocation.latitude,
-                    longitude: driverLocation.longitude,
-                  },
-                ]}
-                strokeColor="#4285f4"
-                strokeWidth={3}
-                lineDashPattern={[10, 5]}
+                coordinates={routePolyline}
+                strokeColor="#4285F4"
+                strokeWidth={4}
               />
             )}
           </MapView>

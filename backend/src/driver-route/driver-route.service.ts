@@ -993,6 +993,7 @@ export class DriverRouteService {
         id: true,
         routeType: true,
         status: true,
+        optimizedPolyline: true,
       },
     });
 
@@ -1010,6 +1011,7 @@ export class DriverRouteService {
         routeId: activeRoute.id,
         routeType: activeRoute.routeType,
         status: activeRoute.status,
+        polyline: activeRoute.optimizedPolyline,
       },
     };
   }
