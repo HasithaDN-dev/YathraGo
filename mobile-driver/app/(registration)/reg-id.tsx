@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { StatusBar } from 'expo-status-bar';
 import { useDriverStore } from '../../lib/stores/driver.store';
+import { validateImage, validateAll } from '../../lib/utils/validation';
 
 const IdCardPlaceholder = ({ onPress, imageUri }: { onPress: () => void; imageUri?: string | null }) => (
   <View className="w-full h-48 bg-brand-lightGray rounded-lg border-2 border-dashed border-gray-300 overflow-hidden">
@@ -29,12 +30,19 @@ export default function RegIdScreen() {
   const { frontImage, backImage } = idVerification;
 
   const handleVerify = () => {
-    if (frontImage && backImage) {
-      // Data is already saved in store, just navigate to next screen
-      router.push('/(registration)/ownership');
-    } else {
-      Alert.alert('Error', 'Please upload both front and back images of your ID.');
+    // Validate both images are uploaded
+    const validation = validateAll([
+      { validate: () => validateImage(frontImage, 'Front ID photo'), priority: 1 },
+      { validate: () => validateImage(backImage, 'Back ID photo'), priority: 2 },
+    ]);
+
+    if (!validation.isValid) {
+      Alert.alert('Validation Error', validation.error || 'Please upload both ID photos');
+      return;
     }
+
+    // Data is already saved in store, just navigate to next screen
+    router.push('/(registration)/ownership');
   };
 
   return (

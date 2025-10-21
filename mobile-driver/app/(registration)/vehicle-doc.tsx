@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useDriverStore } from '../../lib/stores/driver.store';
 import { useAuthStore } from '../../lib/stores/auth.store';
 import { completeDriverRegistrationApi } from '../../lib/api/profile.api';
+import { validateImage, validateAll, validateNIC, validateGender } from '../../lib/utils/validation';
 
 interface FileUploadItemProps {
   file: DocumentPicker.DocumentPickerSuccessResult | null;
@@ -129,20 +130,25 @@ export default function VehicleDocScreen() {
   };
 
   const handleVerify = async () => {
-    if (
-      !revenueLicense ||
-      !vehicleInsurance ||
-      !registrationDoc ||
-      !licenseFront ||
-      !licenseBack
-    ) {
-      Alert.alert('Error', 'Please complete all required fields before submitting.');
-      return;
-    }
+    // Helper to validate document/file exists
+    const validateDocument = (doc: any, name: string) => ({
+      isValid: !!doc,
+      error: doc ? undefined : `${name} is required`,
+    });
 
-    // Validate that personal info has NIC and gender
-    if (!personalInfo.NIC || !personalInfo.gender) {
-      Alert.alert('Error', 'NIC and Gender are required. Please go back and complete your personal information.');
+    // Comprehensive validation
+    const validation = validateAll([
+      { validate: () => validateDocument(revenueLicense, 'Revenue license'), priority: 1 },
+      { validate: () => validateDocument(vehicleInsurance, 'Vehicle insurance'), priority: 2 },
+      { validate: () => validateDocument(registrationDoc, 'Vehicle registration document'), priority: 3 },
+      { validate: () => validateImage(licenseFront, 'Driving license front photo'), priority: 4 },
+      { validate: () => validateImage(licenseBack, 'Driving license back photo'), priority: 5 },
+      { validate: () => validateNIC(personalInfo.NIC || ''), priority: 6 },
+      { validate: () => validateGender(personalInfo.gender || ''), priority: 7 },
+    ]);
+
+    if (!validation.isValid) {
+      Alert.alert('Validation Error', validation.error || 'Please complete all required fields');
       return;
     }
 
