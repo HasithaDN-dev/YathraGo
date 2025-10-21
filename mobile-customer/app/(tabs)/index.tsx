@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -14,7 +14,7 @@ import { RideStatus } from '@/components/ui/RideStatus';
 import { DriverVehicleCard } from '@/components/ui/DriverVehicleCard';
 import { PaymentSection } from '@/components/ui/PaymentSection';
 import CustomButton from '@/components/ui/CustomButton';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useProfileStore } from '@/lib/stores/profile.store';
 import { useAuthStore } from '@/lib/stores/auth.store';
 import { useAssignedRideStore } from '@/lib/stores/assigned-ride.store';
@@ -24,6 +24,7 @@ export default function HomeScreen() {
   const { activeProfile, loadProfiles } = useProfileStore();
   const { accessToken } = useAuthStore();
   const { assignedRide, isLoading, loadAssignedRide } = useAssignedRideStore();
+  const [routeStatus, setRouteStatus] = useState<string>('PENDING');
 
   useEffect(() => {
     if (accessToken && !activeProfile) {
@@ -40,6 +41,17 @@ export default function HomeScreen() {
     }
   }, [activeProfile, loadAssignedRide]);
 
+  // Refresh assigned ride when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      if (activeProfile) {
+        const profileIdStr = activeProfile.id.split('-')[1];
+        const profileId = parseInt(profileIdStr, 10);
+        loadAssignedRide(activeProfile.type, profileId);
+      }
+    }, [activeProfile, loadAssignedRide])
+  );
+
   const openOverview = (tab: 'Driver' | 'Vehicle') => {
     if (!assignedRide) {
       return; // Don't navigate if no assigned ride
@@ -51,6 +63,33 @@ export default function HomeScreen() {
   };
 
 
+
+  const getRideStatusDisplay = () => {
+    if (!assignedRide) return 'Waiting';
+    
+    switch (routeStatus) {
+      case 'PENDING':
+        return 'Driver Assigned';
+      case 'IN_PROGRESS':
+        return 'On the Way';
+      case 'COMPLETED':
+        return 'Completed';
+      default:
+        return 'Driver Assigned';
+    }
+  };
+
+  const getEtaDisplay = () => {
+    // Calculate ETA based on current time + 15 minutes (placeholder)
+    const now = new Date();
+    const etaTime = new Date(now.getTime() + 15 * 60000);
+    const hours = etaTime.getHours();
+    const minutes = etaTime.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    const displayMinutes = minutes.toString().padStart(2, '0');
+    return `${displayHours}:${displayMinutes} ${ampm}`;
+  };
 
   const getDestinationName = () => {
     if (!activeProfile) return 'Destination';
@@ -83,7 +122,7 @@ export default function HomeScreen() {
             </Typography>
             <TouchableOpacity 
               className="flex-row items-center"
-              onPress={() => console.log('See more pressed')}
+              onPress={() => router.push('/(tabs)/navigate')}
               activeOpacity={0.8}
             >
               <Typography variant="subhead" weight="medium" className="text-brand-deepNavy mr-1">
@@ -93,12 +132,20 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
           
-          <RideStatus
-            status="Picked Up"
-            pickupLocation={getPickupLocation()}
-            destination={getDestinationName()}
-            eta="ETA 08:20"
-          />
+          {assignedRide ? (
+            <RideStatus
+              status={getRideStatusDisplay()}
+              pickupLocation={getPickupLocation()}
+              destination={getDestinationName()}
+              eta={getEtaDisplay()}
+            />
+          ) : (
+            <View className="bg-[#F7F9FB] rounded-2xl px-4 py-6">
+              <Typography variant="body" className="text-gray-500 text-center">
+                No active ride
+              </Typography>
+            </View>
+          )}
         </Card>
         
         {/* Driver & Vehicle Section */}
