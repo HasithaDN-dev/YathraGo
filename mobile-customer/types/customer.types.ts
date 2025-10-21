@@ -20,6 +20,8 @@ export type Gender = 'Male' | 'Female' | 'Unspecified';
 
 export interface Profile {
   id: string;
+  customerId?: number; // Customer ID for payment processing
+  parentName?: string; // Parent name for billing
   /**
    * Display name for the profile (e.g., child name or staff label).
    * Optional because not all backend shapes provide a single name field.

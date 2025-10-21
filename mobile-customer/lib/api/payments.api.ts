@@ -6,9 +6,11 @@ import { tokenService } from '../services/token.service';
  */
 
 export interface PaymentMonth {
+  id: number; // Payment record ID
   year: number;
   month: number;
   paymentStatus: string;
+  amountDue: number; // Amount to be paid
 }
 
 export interface PayableMonthsResponse {

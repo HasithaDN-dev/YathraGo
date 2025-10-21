@@ -159,7 +159,7 @@ export class TransactionsService {
     }
 
     // 4. Fetch existing payment records for these 5 months
-    const existingRecords = await this.prisma.childPayment.findMany({
+    let existingRecords = await this.prisma.childPayment.findMany({
       where: {
         childId: childId,
         OR: monthsArray.map((m) => ({
@@ -168,11 +168,116 @@ export class TransactionsService {
         })),
       },
       select: {
+        id: true,
         paymentMonth: true,
         paymentYear: true,
         paymentStatus: true,
+        finalPrice: true,
       },
     });
+
+    // 4.5. Handle first-time users (no paid records AND no existing records)
+    if (!lastPaidRecord && existingRecords.length === 0) {
+      // This is a brand new user who has never paid - create initial records
+      const rideRequest = await this.prisma.childRideRequest.findFirst({
+        where: { childId: childId, status: 'Assigned' },
+        orderBy: { AssignedDate: 'desc' },
+        select: { Amount: true, driverId: true, AssignedDate: true },
+      });
+
+      if (rideRequest && rideRequest.driverId && rideRequest.AssignedDate) {
+        const childData = await this.prisma.child.findUnique({
+          where: { child_id: childId },
+          select: { customerId: true },
+        });
+
+        if (childData && childData.customerId !== null) {
+          // Calculate first month from assignment date
+          const assignmentDate = new Date(rideRequest.AssignedDate);
+          const firstMonth = assignmentDate.getMonth() + 1; // 1-12
+          const firstYear = assignmentDate.getFullYear();
+
+          // Build list of ALL months from first assignment to current month + 5
+          const allMonthsToCreate: { year: number; month: number }[] = [];
+          let tempMonth = firstMonth;
+          let tempYear = firstYear;
+
+          // Calculate how many months to create (from assignment to current + 5)
+          const monthsFromAssignment =
+            (currentYear - firstYear) * 12 + (currentMonth - firstMonth);
+          const totalMonthsToCreate = Math.max(6, monthsFromAssignment + 6); // At least 6 months
+
+          for (let i = 0; i < totalMonthsToCreate && i < 50; i++) {
+            // Safety cap at 50 months
+            allMonthsToCreate.push({ year: tempYear, month: tempMonth });
+
+            tempMonth++;
+            if (tempMonth > 12) {
+              tempMonth = 1;
+              tempYear++;
+            }
+          }
+
+          // Create payment records with appropriate status
+          const recordsToCreate = allMonthsToCreate.map((m) => {
+            // Determine status based on month relative to current date
+            const monthsFromCurrent =
+              (currentYear - m.year) * 12 + (currentMonth - m.month);
+
+            let status: ChildPaymentStatus;
+            if (monthsFromCurrent > 3) {
+              status = ChildPaymentStatus.CANCELLED; // More than 3 months overdue
+            } else if (monthsFromCurrent > 1) {
+              status = ChildPaymentStatus.GRACE_PERIOD; // 2-3 months overdue
+            } else if (monthsFromCurrent === 1) {
+              status = ChildPaymentStatus.OVERDUE; // 1 month overdue
+            } else if (monthsFromCurrent === 0) {
+              status = ChildPaymentStatus.PENDING; // Current month
+            } else {
+              status = ChildPaymentStatus.NOT_DUE; // Future months
+            }
+
+            return {
+              childId: childId,
+              driverId: rideRequest.driverId,
+              customerId: childData.customerId as number,
+              paymentMonth: m.month,
+              paymentYear: m.year,
+              baseMonthlyPrice: rideRequest.Amount ?? 0,
+              finalPrice: rideRequest.Amount ?? 0,
+              paymentStatus: status,
+              updatedAt: new Date(),
+              dueDate: new Date(m.year, m.month - 1, 5), // 5th of the month
+              gracePeriodEndDate: new Date(m.year, m.month - 1, 10), // 10th of the month
+            };
+          });
+
+          // Create all records in database
+          await this.prisma.childPayment.createMany({
+            data: recordsToCreate,
+            skipDuplicates: true,
+          });
+
+          // Re-fetch the records we need for the 5-month display
+          existingRecords = await this.prisma.childPayment.findMany({
+            where: {
+              childId: childId,
+              OR: monthsArray.map((m) => ({
+                paymentYear: m.year,
+                paymentMonth: m.month,
+              })),
+            },
+            select: {
+              id: true,
+              paymentMonth: true,
+              paymentYear: true,
+              paymentStatus: true,
+              finalPrice: true,
+            },
+          });
+        }
+      }
+    }
 
     // 5. Update status for months between last paid and current month
     if (lastPaidRecord) {
@@ -304,9 +409,11 @@ export class TransactionsService {
               })),
             },
             select: {
+              id: true,
               paymentMonth: true,
               paymentYear: true,
               paymentStatus: true,
+              finalPrice: true,
             },
           });
 
@@ -318,27 +425,37 @@ export class TransactionsService {
     }
 
     // 6. Build status map for quick lookup
-    const statusMap = new Map<string, string>();
+    const dataMap = new Map<
+      string,
+      { id: number; status: string; amount: number }
+    >();
     existingRecords.forEach((record) => {
       const key = `${record.paymentYear}-${record.paymentMonth}`;
-      statusMap.set(key, record.paymentStatus);
+      dataMap.set(key, {
+        id: record.id,
+        status: record.paymentStatus,
+        amount: record.finalPrice,
+      });
     });
 
     // 7. Create final response array with status for each month
     const monthsResponse = monthsArray.map((m) => {
       const key = `${m.year}-${m.month}`;
-      const status = statusMap.get(key) || 'NOT_CREATED';
+      const data = dataMap.get(key);
 
       return {
+        id: data?.id || 0,
         year: m.year,
         month: m.month,
-        paymentStatus: status,
+        paymentStatus: data?.status || 'NOT_CREATED',
+        amountDue: data?.amount || 0,
       };
     });
 
     // 8. Get current month's status separately
     const currentMonthKey = `${currentYear}-${currentMonth}`;
-    const currentMonthStatus = statusMap.get(currentMonthKey) || 'NOT_CREATED';
+    const currentMonthData = dataMap.get(currentMonthKey);
+    const currentMonthStatus = currentMonthData?.status || 'NOT_CREATED';
 
     // 9. Return response with months array and current month status
     return {

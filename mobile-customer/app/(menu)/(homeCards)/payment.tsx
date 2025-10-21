@@ -8,7 +8,7 @@ import CustomButton from '@/components/ui/CustomButton';
 import { CheckCircle, CreditCard, Money } from 'phosphor-react-native';
 import { getPayableMonthsApi, submitMonthsForPaymentApi, PaymentMonth } from '@/lib/api/payments.api';
 import { useProfileStore } from '@/lib/stores/profile.store';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 type PaymentType = 'card' | 'physical';
 
@@ -58,6 +58,7 @@ const formatStatus = (status: string): string => {
 export default function PaymentScreen() {
   // Get payment type from navigation params (if coming from Payment Method screen)
   const params = useLocalSearchParams();
+  const router = useRouter();
   const initialPaymentType = (params.paymentType as PaymentType) || 'card';
   
   const [paymentType, setPaymentType] = useState<PaymentType>(initialPaymentType);
@@ -92,9 +93,9 @@ export default function PaymentScreen() {
     }
   }, [childId]);
 
-  // Fetch payable months when switching to physical payment
+  // Fetch payable months when switching to either payment type
   useEffect(() => {
-    if (paymentType === 'physical' && childId) {
+    if (childId) {
       fetchPayableMonths();
     }
   }, [paymentType, childId, fetchPayableMonths]);
@@ -123,13 +124,28 @@ export default function PaymentScreen() {
       return;
     }
 
+    // Filter out any invalid months (with id: 0 or NOT_CREATED status)
+    const validMonthsToSubmit = months.filter(m => 
+      selectedMonths.has(`${m.year}-${m.month}`) && 
+      m.id !== 0 &&
+      m.paymentStatus.toUpperCase() !== 'NOT_CREATED'
+    );
+
+    if (validMonthsToSubmit.length === 0) {
+      Alert.alert(
+        'Invalid Selection',
+        'The selected months are not available for payment yet. Please refresh the page and try again.'
+      );
+      return;
+    }
+
     setSubmitting(true);
     try {
       // Convert selected months to API format
-      const monthsToSubmit = Array.from(selectedMonths).map(key => {
-        const [year, month] = key.split('-').map(Number);
-        return { year, month };
-      });
+      const monthsToSubmit = validMonthsToSubmit.map(m => ({
+        year: m.year,
+        month: m.month,
+      }));
 
       const response = await submitMonthsForPaymentApi({
         childId,
@@ -159,7 +175,48 @@ export default function PaymentScreen() {
   };
 
   const handleCardPayment = () => {
-    Alert.alert('Card Payment', 'Card payment integration coming soon!');
+    // Validate selection
+    if (selectedMonths.size === 0) {
+      Alert.alert('No Selection', 'Please select at least one month to pay with card');
+      return;
+    }
+
+    if (!childId || !activeProfile?.customerId) {
+      Alert.alert('Error', 'Profile information not found');
+      return;
+    }
+
+    // Get selected payment IDs and data
+    const selectedPayments = months.filter(m => 
+      selectedMonths.has(`${m.year}-${m.month}`) && m.id !== 0
+    );
+    
+    if (selectedPayments.length === 0) {
+      Alert.alert('Error', 'No valid payments selected or payment records not ready. Please refresh and try again.');
+      return;
+    }
+    
+    // Additional validation to ensure all payments have valid IDs
+    const invalidPayments = selectedPayments.filter(p => !p.id || p.id === 0);
+    if (invalidPayments.length > 0) {
+      Alert.alert(
+        'Invalid Payment Records', 
+        'Some payment records are not ready yet. Please refresh the page and try again.'
+      );
+      return;
+    }
+
+    // Navigate to card payment screen with selected data
+    // Using type assertion to bypass TypeScript route checking for dynamic route
+    router.push({
+      pathname: '/(menu)/(homeCards)/card-payment' as any,
+      params: {
+        selectedPayments: JSON.stringify(selectedPayments),
+        childId: childId.toString(),
+        customerId: activeProfile.customerId.toString(),
+        parentName: activeProfile.parentName || 'Customer',
+      },
+    });
   };
 
   // Check if a month can be selected
@@ -215,41 +272,101 @@ export default function PaymentScreen() {
         {/* Card Payment View */}
         {paymentType === 'card' && (
           <View className="px-4">
-            <Card className="p-6 mb-4">
-              <View className="mb-6">
-                <Typography variant="subhead" className="text-black mb-4">
-                  Card Payment Summary
+            {/* Loading State */}
+            {loading && (
+              <View className="py-12 items-center justify-center">
+                <ActivityIndicator size="large" color="#143373" />
+                <Typography variant="body" className="text-gray-600 mt-4">
+                  Loading payment information...
+                </Typography>
+              </View>
+            )}
+
+            {/* Months List for Card Payment */}
+            {!loading && months.length > 0 && (
+              <>
+                <Typography variant="subhead" weight="semibold" className="text-black mb-4">
+                  Select Months to Pay
                 </Typography>
                 
-                <View className="flex-row justify-between items-center mb-3">
-                  <Typography variant="body" className="text-gray-700">
-                    Monthly Amount:
-                  </Typography>
-                  <Typography variant="body" weight="semibold" className="text-black">
-                    Rs. 8,500.00
-                  </Typography>
-                </View>
-                
-                <View className="flex-row justify-between items-center mb-6">
-                  <Typography variant="body" className="text-gray-700">
-                    Total Payable:
-                  </Typography>
-                  <Typography variant="headline" weight="semibold" className="text-brand-deepNavy">
-                    Rs. 8,500.00
-                  </Typography>
-                </View>
-              </View>
+                {months.map((month) => {
+                  const monthKey = `${month.year}-${month.month}`;
+                  const isSelected = selectedMonths.has(monthKey);
+                  const selectable = canSelectMonth(month.paymentStatus);
+                  
+                  return (
+                    <TouchableOpacity
+                      key={monthKey}
+                      className={`mb-3 ${!selectable && 'opacity-50'}`}
+                      activeOpacity={selectable ? 0.7 : 1}
+                      onPress={() => selectable && toggleMonthSelection(month.year, month.month)}
+                      disabled={!selectable}
+                    >
+                      <Card className={`p-4 ${isSelected ? 'border-2 border-brand-deepNavy' : ''}`}>
+                        <View className="flex-row items-center justify-between">
+                          {/* Month Info */}
+                          <View className="flex-1">
+                            <Typography variant="subhead" weight="semibold" className="text-black mb-1">
+                              {MONTH_NAMES[month.month - 1]} {month.year}
+                            </Typography>
+                            <Typography variant="body" className="text-gray-600 mb-2">
+                              Rs. {month.amountDue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </Typography>
+                            <View className={`self-start px-3 py-1 rounded-full ${getStatusColor(month.paymentStatus)}`}>
+                              <Typography variant="caption-2" className="text-white">
+                                {formatStatus(month.paymentStatus)}
+                              </Typography>
+                            </View>
+                          </View>
+                          
+                          {/* Selection Indicator */}
+                          {selectable && (
+                            <View className="ml-3">
+                              {isSelected ? (
+                                <CheckCircle size={28} color="#143373" weight="fill" />
+                              ) : (
+                                <View className="w-7 h-7 rounded-full border-2 border-gray-400" />
+                              )}
+                            </View>
+                          )}
+                        </View>
+                      </Card>
+                    </TouchableOpacity>
+                  );
+                })}
 
-              <CustomButton
-                title="Pay with Card"
-                bgVariant="primary"
-                textVariant="white"
-                size="large"
-                IconLeft={CreditCard}
-                className="w-full"
-                onPress={handleCardPayment}
-              />
-            </Card>
+                {/* Proceed to Card Payment Button */}
+                {selectedMonths.size > 0 && (
+                  <View className="mt-6 mb-8">
+                    <CustomButton
+                      title={`Proceed to Card Payment (${selectedMonths.size} month${selectedMonths.size > 1 ? 's' : ''})`}
+                      bgVariant="primary"
+                      textVariant="white"
+                      size="large"
+                      IconLeft={CreditCard}
+                      className="w-full"
+                      onPress={handleCardPayment}
+                    />
+                  </View>
+                )}
+
+                {/* Info Text */}
+                <View className="mb-8 p-4 bg-gray-100 rounded-xl">
+                  <Typography variant="caption-1" className="text-gray-700 text-center">
+                    Select the months you want to pay for, then proceed to enter your card details.
+                  </Typography>
+                </View>
+              </>
+            )}
+
+            {/* Empty State */}
+            {!loading && months.length === 0 && (
+              <View className="py-12 items-center justify-center">
+                <Typography variant="body" className="text-gray-600 text-center">
+                  No payment information available
+                </Typography>
+              </View>
+            )}
           </View>
         )}
 

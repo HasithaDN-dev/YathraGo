@@ -44,6 +44,8 @@ export const getProfilesApi = async (token: string): Promise<ProfileApiResponse>
       profiles.push(...data.profile.children.map((child: any, index: number) => ({
         ...child,
         id: `child-${child.child_id || index}`,
+        customerId: data.profile.customer_id, // Add customer ID for payments
+        parentName: `${data.profile.firstName || ''} ${data.profile.lastName || ''}`.trim(), // Add parent name for billing
         firstName: child.childFirstName,
         lastName: child.childLastName,
         type: 'child' as const,
@@ -55,6 +57,8 @@ export const getProfilesApi = async (token: string): Promise<ProfileApiResponse>
       profiles.push({
         ...data.profile.staffPassenger,
         id: `staff-${data.profile.staffPassenger.id}`,
+        customerId: data.profile.customer_id, // Add customer ID for payments
+        parentName: `${data.profile.firstName || ''} ${data.profile.lastName || ''}`.trim(), // Add parent name for billing
         firstName: data.profile.firstName || '',
         lastName: data.profile.lastName || '',
         profileImageUrl: data.profile.staffPassenger.profileImageUrl || data.profile.profileImageUrl,

@@ -25,6 +25,7 @@ import { ManagerModule } from './manager/manager.module';
 import { DriverRequestModule } from './driver-request/driver-request.module';
 import { ComplaintsInquiriesModule } from './complaints-inquiries/complaints-inquiries.module';
 import { DriverLocationModule } from './driver-location/driver-location.module';
+import { StripeModule } from './stripe/stripe.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { DriverLocationModule } from './driver-location/driver-location.module';
     DriverRequestModule,
     ComplaintsInquiriesModule,
     DriverLocationModule,
+    StripeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
