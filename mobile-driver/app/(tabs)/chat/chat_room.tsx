@@ -271,6 +271,7 @@ export default function ChatRoomScreen() {
             <Image
               source={{ uri: avatarUri }}
               style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10 }}
+              defaultSource={require('../../../assets/images/profile_Picture.png')}
             />
           ) : (
             <Image

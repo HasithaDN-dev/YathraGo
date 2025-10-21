@@ -223,9 +223,13 @@ export default function ChatRoomScreen() {
         <TouchableOpacity onPress={() => router.back()} className="mr-2" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <ArrowLeft size={22} color="#000" />
         </TouchableOpacity>
-        {/* show avatar passed via route params if available */}
+        {/* show avatar passed via route params - driver profile image from backend */}
         {avatarUri && avatarUri !== 'null' && avatarUri !== 'undefined' ? (
-          <Image source={{ uri: avatarUri }} style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10 }} />
+          <Image 
+            source={{ uri: avatarUri }} 
+            style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10 }}
+            defaultSource={require('../../../assets/images/profile_Picture.png')}
+          />
         ) : (
           <Image source={require('../../../assets/images/profile_Picture.png')} style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10 }} />
         )}

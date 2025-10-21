@@ -4,10 +4,13 @@ import { Link, useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import * as ImagePicker from 'expo-image-picker';
 import { useDriverStore } from '../../lib/stores/driver.store';
+import { uploadDriverProfileImageApi } from '../../lib/api/profile.api';
+import { useAuthStore } from '../../lib/stores/auth.store';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { personalInfo, updatePersonalInfo } = useDriverStore();
+  const { accessToken } = useAuthStore();
 
   const [firstName, setFirstName] = useState(personalInfo.firstName);
   const [lastName, setLastName] = useState(personalInfo.lastName);
@@ -19,6 +22,7 @@ export default function RegisterScreen() {
   const [gender, setGender] = useState(personalInfo.gender);
   const [profileImage, setProfileImage] = useState<ImagePicker.ImagePickerAsset | null>(personalInfo.profileImage);
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Sync local state with store data
   useEffect(() => {
@@ -59,21 +63,54 @@ export default function RegisterScreen() {
       return;
     }
 
-    // Update store with all personal info including NIC and gender
-    updatePersonalInfo({
-      firstName,
-      lastName,
-      dateOfBirth: dob,
-      email,
-      secondaryPhone,
-      city,
-      NIC: nic,
-      gender,
-      profileImage,
-    });
+    if (!accessToken) {
+      Alert.alert('Error', 'Authentication token not found. Please login again.');
+      return;
+    }
 
-    // Navigate to next screen
-    router.push('/(registration)/reg-verify');
+    setIsLoading(true);
+    let profileImageFilename = '';
+
+    try {
+      // Upload profile image first and get the filename
+      if (profileImage && !profileImage.uri.startsWith('http')) {
+        setUploadingImage(true);
+        try {
+          const uploadRes = await uploadDriverProfileImageApi(accessToken, profileImage.uri);
+          profileImageFilename = uploadRes.filename;
+          console.log('[DRIVER REG] Profile image uploaded:', profileImageFilename);
+        } catch (err) {
+          let msg = 'Failed to upload profile image.';
+          if (err instanceof Error) msg = err.message;
+          Alert.alert('Error', msg);
+          setIsLoading(false);
+          setUploadingImage(false);
+          return;
+        }
+        setUploadingImage(false);
+      }
+
+      // Update store with all personal info including the uploaded image filename
+      updatePersonalInfo({
+        firstName,
+        lastName,
+        dateOfBirth: dob,
+        email,
+        secondaryPhone,
+        city,
+        NIC: nic,
+        gender,
+        profileImage: profileImageFilename, // Store the filename, not the asset
+      });
+
+      // Navigate to next screen
+      router.push('/(registration)/reg-verify');
+    } catch (error) {
+      console.error('[DRIVER REG] Error:', error);
+      Alert.alert('Error', 'An error occurred during registration.');
+    } finally {
+      setIsLoading(false);
+    }
   };
   return (
     <ScrollView className="flex-1 bg-white">

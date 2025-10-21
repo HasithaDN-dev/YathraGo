@@ -19,7 +19,7 @@ export const getDriverProfileApi = async (token: string): Promise<Driver> => {
   
   // Transform backend profile to match frontend Driver interface
   // Backend returns driver_id, frontend expects id
-  return {
+  const transformedProfile = {
     id: profile.driver_id || profile.id,
     name: profile.name,
     phone: profile.phone,
@@ -32,6 +32,46 @@ export const getDriverProfileApi = async (token: string): Promise<Driver> => {
     createdAt: profile.createdAt,
     updatedAt: profile.updatedAt,
   };
+  
+  return transformedProfile;
+};
+
+/**
+ * Upload driver profile image to the backend. Returns the unique filename.
+ */
+export const uploadDriverProfileImageApi = async (
+  token: string,
+  imageUri: string
+): Promise<{ filename: string }> => {
+  const formData = new FormData();
+  const uriParts = imageUri.split('/');
+  const name = uriParts[uriParts.length - 1];
+  const type = name.endsWith('.png') ? 'image/png' : 'image/jpeg';
+  formData.append('file', {
+    uri: imageUri,
+    name,
+    type,
+  } as any);
+
+  const authenticatedFetch = tokenService.createAuthenticatedFetch();
+  const response = await authenticatedFetch(`${API_BASE_URL}/driver/upload-profile-image`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data',
+    },
+    body: formData,
+  });
+  if (!response.ok) {
+    let errorMsg = 'Failed to upload driver profile image';
+    try {
+      const err = await response.json();
+      if (err && err.message) errorMsg = err.message;
+      console.error('Driver profile image upload error:', err);
+    } catch (e) {}
+    throw new Error(errorMsg);
+  }
+  return response.json();
 };
 
 /**

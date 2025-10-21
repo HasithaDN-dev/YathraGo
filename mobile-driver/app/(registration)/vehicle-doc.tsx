@@ -161,7 +161,7 @@ export default function VehicleDocScreen() {
         city: personalInfo.city,
         dateOfBirth: personalInfo.dateOfBirth,
         gender: personalInfo.gender,
-        profileImage: personalInfo.profileImage?.uri || '',
+        profileImage: personalInfo.profileImage || '', // This is now the uploaded filename like "driver/driver-1234567890.jpg"
         email: personalInfo.email,
         secondaryPhone: personalInfo.secondaryPhone,
         
