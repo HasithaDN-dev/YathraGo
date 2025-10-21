@@ -1244,9 +1244,10 @@ export class DriverRouteService {
       default:
         return 'Your attendance has been marked';
     }
-   * Get active route for a specific driver (for customer location tracking)
-   * Returns the currently active route ID if the driver has started a ride
-   */
+  }
+  //  * Get active route for a specific driver (for customer location tracking)
+  //  * Returns the currently active route ID if the driver has started a ride
+  //  */
   async getActiveRouteForDriver(driverId: number) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
