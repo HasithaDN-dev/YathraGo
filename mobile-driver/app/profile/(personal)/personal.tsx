@@ -94,6 +94,7 @@ export default function PersonalDetailsScreen() {
                     <View className="w-24 h-24 rounded-full bg-brand-lightGray items-center justify-center mt-5 mb-12 overflow-hidden ">
                         {driverProfile.profileImageUrl ? (
                             <Image 
+                                key={driverProfile.profileImageUrl}
                                 source={{ uri: driverProfile.profileImageUrl }} 
                                 className="w-24 h-24 rounded-full" 
                                 resizeMode="cover"

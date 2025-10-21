@@ -28,7 +28,7 @@ export const ProfileImage: React.FC<ProfileImageProps> = ({ className, style, si
       
       const profile = await getDriverProfileApi(token);
       setProfilePicUrl(profile.profileImageUrl || null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching profile picture:', error);
       // Fallback to user from store
       setProfilePicUrl(user?.profileImageUrl || null);
@@ -48,6 +48,7 @@ export const ProfileImage: React.FC<ProfileImageProps> = ({ className, style, si
   if (profilePicUrl) {
     return (
       <Image
+        key={profilePicUrl}
         source={{ uri: profilePicUrl }}
         className={className}
         style={[{ width: size, height: size }, style]}

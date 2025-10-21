@@ -115,23 +115,17 @@ export default function ChatListScreen() {
           }
         }
 
-        // Determine avatar URL from common fields (fallback to bundled default image)
-        const avatarPath = other.profileImage || other.avatarUrl || other.imageUrl || other.avatar || '';
-        const avatarUri = avatarPath
-          ? avatarPath.startsWith('http')
-            ? avatarPath
-            : `${API_BASE_URL}/${avatarPath.replace(/^\//, '')}`
-          : null;
+        // Backend sends avatarUrl with full path: http://SERVER_BASE_URL/uploads/customer/filename.jpg
+        // or http://SERVER_BASE_URL/uploads/child/filename.jpg
+        const avatarUri = other.avatarUrl || other.profileImage || other.imageUrl || other.avatar || null;
 
-        // Use child image from passenger store if available
+        // Use child image from passenger store if available (this overrides backend avatarUrl)
         let finalAvatarUri = avatarUri;
         if (childId) {
           const passengerData: any = childMap.get(childId);
           if (passengerData?.child?.childImageUrl) {
-            const childImgPath = passengerData.child.childImageUrl;
-            finalAvatarUri = childImgPath.startsWith('http')
-              ? childImgPath
-              : `${API_BASE_URL}/${childImgPath.replace(/^\//, '')}`;
+            // Child image URL from passenger store is already a full URL
+            finalAvatarUri = passengerData.child.childImageUrl;
           }
         }
 
@@ -263,6 +257,7 @@ export default function ChatListScreen() {
                       <Image
                         source={{ uri: c.avatarUri }}
                         style={{ width: 44, height: 44, borderRadius: 22, marginRight: 12 }}
+                        defaultSource={require('../../../assets/images/profile_Picture.png')}
                       />
                     ) : (
                       <Image

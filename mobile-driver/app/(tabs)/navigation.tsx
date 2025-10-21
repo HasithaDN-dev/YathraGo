@@ -138,6 +138,7 @@ export default function NavigationScreen() {
             const location = await getCurrentLocation();
             if (!location) {
                 Alert.alert('Location Required', 'Please enable location services to start the ride.');
+                setLoading(false);
                 return;
             }
             
@@ -152,6 +153,7 @@ export default function NavigationScreen() {
             
             if (!routeData.success || !routeData.stops || routeData.stops.length === 0) {
                 setError('No stops found for today. Please check student assignments and attendance.');
+                setLoading(false);
                 return;
             }
             
@@ -161,8 +163,23 @@ export default function NavigationScreen() {
             setCurrentStopIndex(0);
             setIsRideActive(true);
             
-            // START LOCATION TRACKING
-            if (profile?.id && routeData.route?.id) {
+            // START LOCATION TRACKING - This is crucial for customer tracking
+            console.log('🔍 Checking location tracking requirements:', {
+                hasProfile: !!profile,
+                profileId: profile?.id,
+                hasRouteData: !!routeData,
+                hasRoute: !!routeData?.route,
+                routeId: routeData?.route?.id,
+                fullRouteData: routeData,
+            });
+
+            if (profile?.id && routeData?.route?.id) {
+                console.log('🚀 Starting location tracking...', {
+                    driverId: profile.id,
+                    routeId: routeData.route.id,
+                    routeType: routeType,
+                });
+
                 const trackingStarted = await driverLocationService.startLocationTracking({
                     driverId: profile.id.toString(),
                     routeId: routeData.route.id.toString(),
@@ -172,14 +189,16 @@ export default function NavigationScreen() {
                             latitude: location.coords.latitude,
                             longitude: location.coords.longitude,
                         });
+                        console.log(`📍 Location updated (${locationUpdateCount + 1} updates)`);
                     },
                     onError: (error) => {
-                        console.error('Location tracking error:', error);
-                        Alert.alert('Tracking Error', error.message);
+                        console.error('❌ Location tracking error:', error);
+                        // Don't alert on every error - just log it
+                        setIsLocationTracking(false);
                     },
                     onRideStarted: () => {
                         setIsLocationTracking(true);
-                        console.log('📍 Location sharing started');
+                        console.log('✅ Location sharing started successfully');
                     },
                     onRideEnded: () => {
                         setIsLocationTracking(false);
@@ -188,19 +207,29 @@ export default function NavigationScreen() {
                 });
 
                 if (!trackingStarted) {
+                    console.warn('⚠️ Location tracking could not be started');
                     Alert.alert(
                         'Warning',
-                        'Location tracking could not be started. Your ride will continue without real-time location sharing.'
+                        'Location tracking could not be started. Your ride will continue without real-time location sharing to customers.'
                     );
+                } else {
+                    console.log('✅ Location tracking started successfully');
                 }
+            } else {
+                console.error('❌ Missing profile ID or route ID for location tracking', {
+                    profileId: profile?.id,
+                    routeId: routeData?.route?.id,
+                    missingProfile: !profile?.id,
+                    missingRouteId: !routeData?.route?.id,
+                });
             }
             
             Alert.alert(
-                'Ride Started',
-                `You have ${routeData.stops.length} stops today. Your location is now being shared with customers.`
+                'Ride Started!',
+                `You have ${routeData.stops.length} stops today.${isLocationTracking ? '\n\n Your location is being shared with customers in real-time.' : ''}`
             );
         } catch (error) {
-            console.error('Error starting ride:', error);
+            console.error('❌ Error starting ride:', error);
             setError(error instanceof Error ? error.message : 'Failed to start ride. Please try again.');
         } finally {
             setLoading(false);
@@ -308,14 +337,23 @@ export default function NavigationScreen() {
                 );
             } else {
                 // This was the last stop - STOP LOCATION TRACKING
-                await driverLocationService.stopLocationTracking();
-                setIsLocationTracking(false);
+                console.log('🏁 All stops completed - stopping location tracking');
+                
+                try {
+                    await driverLocationService.stopLocationTracking();
+                    setIsLocationTracking(false);
+                    setLocationUpdateCount(0);
+                    console.log('✅ Location tracking stopped successfully');
+                } catch (error) {
+                    console.error('❌ Error stopping location tracking:', error);
+                }
+                
                 // This was the last stop!
                 // Reload session availability to enable/disable evening button if morning was completed
                 await loadSessionAvailability();
                 
                 Alert.alert(
-                    'Ride Complete!',
+                    'Ride Complete! 🎉',
                     'All stops have been completed. Location sharing has been stopped. Great job!',
                     [
                         {
@@ -324,7 +362,7 @@ export default function NavigationScreen() {
                                 setIsRideActive(false);
                                 setStopList([]);
                                 setCurrentStopIndex(0);
-                                setLocationUpdateCount(0);
+                                setRouteData(null);
                             }
                         }
                     ]
@@ -397,15 +435,23 @@ export default function NavigationScreen() {
                         <Typography variant="title-2" weight="bold" className="text-white">
                             {isRideActive ? 'Ride in Progress' : 'Ready to Start'}
                         </Typography>
-                        <View className="flex-row items-center mt-1">
+                        <View className="flex-row items-center mt-1 flex-wrap">
                             <Typography variant="body" className="text-white opacity-80">
                                 {isRideActive ? `Stop ${currentStopIndex + 1} of ${stopList.length}` : 'Start your trip'}
                             </Typography>
                             {isLocationTracking && (
                                 <View className="flex-row items-center ml-3">
-                                    <View className="w-2 h-2 rounded-full bg-green-400 mr-1" />
+                                    <View className="w-2 h-2 rounded-full bg-green-400 mr-1 animate-pulse" />
                                     <Typography variant="caption-1" className="text-green-400">
-                                        Sharing location
+                                        Live ({locationUpdateCount} updates)
+                                    </Typography>
+                                </View>
+                            )}
+                            {isRideActive && !isLocationTracking && (
+                                <View className="flex-row items-center ml-3">
+                                    <View className="w-2 h-2 rounded-full bg-yellow-400 mr-1" />
+                                    <Typography variant="caption-1" className="text-yellow-400">
+                                        Not tracking
                                     </Typography>
                                 </View>
                             )}

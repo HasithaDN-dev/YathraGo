@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { Stack, SplashScreen } from 'expo-router';
 import { useAuthStore } from '../lib/stores/auth.store';
 import { usePassengerStore } from '../lib/stores/passenger.store';
+import { useDriverStore } from '../lib/stores/driver.store';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
@@ -64,16 +65,21 @@ export default function RootLayout() {
     }
   }, []);
 
-  // Load assigned passengers when auth has hydrated and driver is logged in
+  // Load driver profile and assigned passengers when auth has hydrated and driver is logged in
   useEffect(() => {
     if (hasHydrated && isLoggedIn && accessToken) {
-      console.log('[RootLayout] loading assigned passengers...');
+      console.log('[RootLayout] loading driver profile and assigned passengers...');
       (async () => {
         try {
+          // Load driver profile first
+          await useDriverStore.getState().loadProfile(String(accessToken));
+          console.log('[RootLayout] loadProfile completed');
+          
+          // Then load assigned passengers
           await usePassengerStore.getState().fetchForDriver(String(accessToken));
           console.log('[RootLayout] fetchForDriver completed');
         } catch (err) {
-          console.error('[RootLayout] fetchForDriver error', err);
+          console.error('[RootLayout] data loading error', err);
         }
       })();
     }

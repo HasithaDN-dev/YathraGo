@@ -102,6 +102,19 @@ export class DriverRouteService {
 
     // If route exists and is not completed, return it
     if (existingRoute && existingRoute.status !== 'COMPLETED') {
+      // Mark route as IN_PROGRESS when driver starts (first time they fetch it)
+      // This ensures customer app can track the driver immediately
+      if (existingRoute.status === 'PENDING') {
+        await this.prisma.driverRoute.update({
+          where: { id: existingRoute.id },
+          data: {
+            status: 'IN_PROGRESS',
+            startedAt: new Date(),
+          },
+        });
+        existingRoute.status = 'IN_PROGRESS';
+        existingRoute.startedAt = new Date();
+      }
       // Format stops based on driver type (staff vs children)
       const formattedStops = await this.formatStopsWithPassengerData(
         existingRoute.stops,
@@ -919,7 +932,8 @@ export class DriverRouteService {
         driverId,
         date,
         routeType,
-        status: 'PENDING',
+        status: 'IN_PROGRESS', // Start as IN_PROGRESS so customer can track immediately
+        startedAt: new Date(),
         totalDistanceMeters: optimizedRoute.totalDistanceMeters,
         totalDurationSecs: optimizedRoute.totalDurationSecs,
         optimizedPolyline: optimizedRoute.polyline,
@@ -928,7 +942,8 @@ export class DriverRouteService {
         totalDistanceMeters: optimizedRoute.totalDistanceMeters,
         totalDurationSecs: optimizedRoute.totalDurationSecs,
         optimizedPolyline: optimizedRoute.polyline,
-        status: 'PENDING',
+        status: 'IN_PROGRESS', // Update to IN_PROGRESS when route is refetched
+        startedAt: new Date(),
       },
     });
 
@@ -1229,5 +1244,44 @@ export class DriverRouteService {
       default:
         return 'Your attendance has been marked';
     }
+   * Get active route for a specific driver (for customer location tracking)
+   * Returns the currently active route ID if the driver has started a ride
+   */
+  async getActiveRouteForDriver(driverId: number) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Find any active route for today (either morning or evening)
+    const activeRoute = await this.prisma.driverRoute.findFirst({
+      where: {
+        driverId,
+        date: today,
+        status: 'IN_PROGRESS',
+      },
+      select: {
+        id: true,
+        routeType: true,
+        status: true,
+        optimizedPolyline: true,
+      },
+    });
+
+    if (!activeRoute) {
+      return {
+        success: false,
+        message: 'No active route found for this driver',
+        activeRoute: null,
+      };
+    }
+
+    return {
+      success: true,
+      activeRoute: {
+        routeId: activeRoute.id,
+        routeType: activeRoute.routeType,
+        status: activeRoute.status,
+        polyline: activeRoute.optimizedPolyline,
+      },
+    };
   }
 }
