@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { DriverRouteService } from './driver-route.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../auth/decorators/public.decorator';
 import { Request } from 'express';
 import { UserType } from '@prisma/client';
 
@@ -101,5 +102,19 @@ export class DriverRouteController {
   async getSessionAvailability(@Req() req: AuthenticatedRequest) {
     const driverId = parseInt(req.user.sub, 10);
     return this.driverRouteService.getSessionAvailability(driverId);
+  }
+
+  /**
+   * Get active route ID for a specific driver (for customer location tracking)
+   * This endpoint is called by customers to find out which route to subscribe to
+   * Made public so customers can check driver's active route without driver auth
+   */
+  @Public()
+  @Get('active/:driverId')
+  @HttpCode(HttpStatus.OK)
+  async getActiveRouteForDriver(
+    @Param('driverId', ParseIntPipe) driverId: number,
+  ) {
+    return this.driverRouteService.getActiveRouteForDriver(driverId);
   }
 }

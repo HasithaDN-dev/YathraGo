@@ -301,6 +301,7 @@ model Driver {
   driverCities             DriverCities?      @relation("DriverCities")
   DriverRoute              DriverRoute[]
   RouteWaypoint            RouteWaypoint[]
+  StaffAttendance          StaffAttendance[]  @relation("StaffAttendance")
   StaffRideRequest         StaffRideRequest[]
   vehicles                 Vehicle[]          @relation("DriverVehicles")
   askDriverRequest         askDriverRequest[]
@@ -487,6 +488,32 @@ model RouteWaypoint {
   DriverRoute              DriverRoute  @relation(fields: [driverRouteId], references: [id])
 }
 
+model StaffAttendance {
+  id            Int            @id @default(autoincrement())
+  driverId      Int
+  staffId       Int
+  waypointId    Int?
+  latitude      Float?
+  longitude     Float?
+  notes         String?
+  tripId        Int?
+  status        String         @default("completed")
+  timestamp     DateTime       @default(now())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  date          DateTime       @db.Date
+  type          AttendanceType
+  Driver        Driver         @relation("StaffAttendance", fields: [driverId], references: [driver_id])
+  Staff         Staff_Passenger @relation(fields: [staffId], references: [id])
+
+  @@unique([driverId, staffId, date, type])
+  @@index([staffId])
+  @@index([date])
+  @@index([driverId])
+  @@index([timestamp])
+  @@index([waypointId])
+}
+
 model StaffEmergency {
   id             Int      @id @default(autoincrement())
   type           String
@@ -519,6 +546,7 @@ model Staff_Passenger {
   pickupLongitude  Float?
   workLatitude     Float?
   workLongitude    Float?
+  StaffAttendance  StaffAttendance[]
   StaffRideRequest StaffRideRequest[]
   customer         Customer           @relation("CustomerStaffPassenger", fields: [customerId], references: [customer_id])
 

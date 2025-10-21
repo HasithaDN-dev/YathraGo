@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { customerLocationService, DriverLocation, RideStatus } from '@/lib/services/customer-location.service';
 import { assignedRideApi, AssignedRideResponse } from '@/lib/api/assigned-ride.api';
 import { useProfileStore } from '@/lib/stores/profile.store';
+import { tokenService } from '@/lib/services/token.service';
 
 // Default location (Colombo, Sri Lanka)
 const DEFAULT_REGION = {
@@ -43,10 +44,21 @@ export default function NavigateScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  // Check for assigned ride when active profile changes
+  // Check for assigned ride when active profile changes OR when screen is focused
   useEffect(() => {
     if (activeProfile) {
+      console.log('🔄 Checking for assigned ride...');
       checkForAssignedRide();
+      
+      // Poll every 15 seconds to check if driver has started route
+      const pollInterval = setInterval(() => {
+        console.log('🔄 Polling for driver route status...');
+        checkForAssignedRide();
+      }, 15000); // Check every 15 seconds
+      
+      return () => {
+        clearInterval(pollInterval);
+      };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeProfile]);
@@ -103,9 +115,50 @@ export default function NavigateScreen() {
       if (ride) {
         console.log('✅ Found assigned ride:', ride);
         setAssignedRide(ride);
-        await startDriverTracking(ride.driverId.toString());
+        
+        // Now fetch the active route ID for this driver
+        try {
+          console.log('📡 Fetching active route for driver ID:', ride.driverId);
+          
+          // Use authenticated fetch to avoid 401 errors
+          const authenticatedFetch = tokenService.createAuthenticatedFetch();
+          const response = await authenticatedFetch(
+            `${process.env.EXPO_PUBLIC_API_URL || 'http://192.168.8.183:3000'}/driver/route/active/${ride.driverId}`
+          );
+          
+          const routeData = await response.json();
+          
+          console.log('📦 Route data response:', routeData);
+          
+          if (routeData.success && routeData.activeRoute) {
+            console.log('✅ Found active route:', routeData.activeRoute);
+            const routeId = routeData.activeRoute.routeId.toString();
+            
+            // Only start tracking if not already tracking this route
+            if (!isTrackingDriver) {
+              console.log('🚀 Starting driver tracking for route:', routeId);
+              await startDriverTracking(routeId);
+            } else {
+              console.log('ℹ️ Already tracking driver');
+            }
+          } else {
+            console.log('ℹ️ Driver has no active route yet - will check again shortly');
+            // Reset tracking state if driver stopped their route
+            if (isTrackingDriver) {
+              console.log('🛑 Driver route no longer active, stopping tracking');
+              setIsTrackingDriver(false);
+              setDriverLocation(null);
+              setRideStatus('WAITING');
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error fetching active route:', error);
+        }
       } else {
         console.log('ℹ️ No assigned ride found');
+        setAssignedRide(null);
+        setIsTrackingDriver(false);
+        setDriverLocation(null);
       }
     } catch (error: any) {
       console.error('❌ Error checking for assigned ride:', error);
@@ -368,28 +421,37 @@ export default function NavigateScreen() {
             </View>
           ) : (
             <View>
-              <View className="flex-row items-center">
+              <View className="flex-row items-center mb-3">
                 <View className="w-10 h-10 rounded-full bg-blue-50 items-center justify-center">
                   <MapPin size={20} color="#4285f4" />
                 </View>
                 <View className="flex-1 ml-3">
                   <Typography variant="subhead" weight="medium" className="text-gray-900">
-                    Ready to Navigate
+                    {assignedRide ? 'Waiting for Driver' : 'Ready to Navigate'}
                   </Typography>
                   <Typography variant="caption-1" className="text-gray-600 mt-1">
                     {activeProfile 
-                      ? 'When your driver starts their ride, you will see their live location here.'
+                      ? assignedRide
+                        ? `${assignedRide.driver.name} hasn't started their route yet. Checking every 15 seconds...`
+                        : 'No driver assigned yet. Checking for assignments...'
                       : 'Select a profile to see driver tracking.'}
                   </Typography>
                 </View>
               </View>
+              {activeProfile && assignedRide && (
+                <View className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 mb-2">
+                  <Typography variant="caption-1" className="text-yellow-800 text-center">
+                    Driver: {assignedRide.driver.name} • {assignedRide.vehicle?.brand || 'Vehicle info pending'}
+                  </Typography>
+                </View>
+              )}
               {activeProfile && (
                 <TouchableOpacity 
                   onPress={checkForAssignedRide}
-                  className="mt-3 bg-blue-50 rounded-lg p-2"
+                  className="bg-blue-50 rounded-lg p-3"
                 >
-                  <Typography variant="caption-1" className="text-blue-600 text-center">
-                    Tap to check for assigned driver
+                  <Typography variant="caption-1" className="text-blue-600 text-center font-medium">
+                    🔄 Refresh Driver Status
                   </Typography>
                 </TouchableOpacity>
               )}
