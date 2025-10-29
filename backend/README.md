@@ -27,19 +27,13 @@ YathraGo is a comprehensive transport management system backend built with moder
 - **JWT (JSON Web Tokens)** - Secure token-based authentication
 - **Passport.js** - Authentication middleware for Node.js
 - **Argon2** - Secure password hashing algorithm
-- **Class Validator** - Decorator-based validation for TypeScript classes
-- **Class Transformer** - Transform objects to and from different representations
 
 ### Communication & Notifications
-- **Twilio** - SMS and voice communication platform
 - **Android SMS Gateway** - SMS sending service integration
 
 ### File Handling & HTTP
 - **Multer** - Node.js middleware for handling multipart/form-data (file uploads)
 - **Axios** - Promise-based HTTP client for making API requests
-
-### API Documentation
-- **Swagger/OpenAPI** - API documentation and testing interface
 
 ### Development & Testing
 - **Jest** - JavaScript testing framework
@@ -93,11 +87,6 @@ DIRECT_URL="postgresql://username:password@localhost:5432/yathrago"
 # JWT
 JWT_SECRET="your-jwt-secret-key"
 JWT_EXPIRES_IN="7d"
-
-# Twilio Configuration
-TWILIO_ACCOUNT_SID="your-twilio-account-sid"
-TWILIO_AUTH_TOKEN="your-twilio-auth-token"
-TWILIO_PHONE_NUMBER="your-twilio-phone-number"
 
 # Other configurations
 PORT=3000
