@@ -175,16 +175,6 @@ export default function EarningsScreen() {
               <Text style={styles.bankName}>Commercial Bank</Text>
               <Text style={styles.accountNumber}>**** **** **** 1326</Text>
             </View>
-            <View style={styles.cardLogos}>
-              <Image
-                source={require('../../assets/images/visa.png')}
-                style={styles.cardLogo}
-              />
-              <Image
-                source={require('../../assets/images/mastercard.png')}
-                style={styles.cardLogo}
-              />
-            </View>
           </View>
         </View>
 

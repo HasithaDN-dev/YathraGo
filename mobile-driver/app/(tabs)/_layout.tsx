@@ -32,7 +32,9 @@ export default function TabLayout() {
         name="navigation"
         options={{
           title: 'Navigation',
-          tabBarIcon: ({ color }) => <NavigationIcon size={28} color={color} weight="fill" />,
+          tabBarIcon: ({ color, focused }) => (
+            <NavigationIcon size={28} color={color} weight={focused ? 'fill' : 'regular'} />
+          ),
         }}
       />
       <Tabs.Screen

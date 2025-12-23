@@ -15,7 +15,7 @@ export default function HistoryScreen() {
       from: 'Home',
       to: 'School',
       status: 'completed',
-      cost: '$12.50'
+      cost: 'Rs. 12.50'
     },
     {
       id: '2',
@@ -23,7 +23,7 @@ export default function HistoryScreen() {
       from: 'School',
       to: 'Home',
       status: 'completed',
-      cost: '$8.00'
+      cost: 'Rs. 8.00'
     },
     {
       id: '3',
@@ -31,7 +31,7 @@ export default function HistoryScreen() {
       from: 'Home',
       to: 'School',
       status: 'cancelled',
-      cost: '$0.00'
+      cost: 'Rs. 0.00'
     },
     {
       id: '4',
@@ -39,7 +39,7 @@ export default function HistoryScreen() {
       from: 'School',
       to: 'Home',
       status: 'completed',
-      cost: '$10.00'
+      cost: 'Rs. 10.00'
     },
     {
       id: '5',
@@ -47,7 +47,7 @@ export default function HistoryScreen() {
       from: 'Home',
       to: 'School',
       status: 'cancelled',
-      cost: '$0.00'
+      cost: 'Rs. 0.00'
     },
     {
       id: '6',
@@ -55,7 +55,7 @@ export default function HistoryScreen() {
       from: 'School',
       to: 'Home',
       status: 'completed',
-      cost: '$15.00'
+      cost: 'Rs. 15.00'
     },
     {
       id: '7',
@@ -63,7 +63,7 @@ export default function HistoryScreen() {
       from: 'Home',
       to: 'School',
       status: 'completed',
-      cost: '$15.00'
+      cost: 'Rs. 15.00'
     },
     {
       id: '8',
@@ -71,7 +71,7 @@ export default function HistoryScreen() {
       from: 'School',
       to: 'Home',
       status: 'cancelled',
-      cost: '$0.00'
+      cost: 'Rs. 0.00'
     },
     {
       id: '9',
@@ -79,7 +79,7 @@ export default function HistoryScreen() {
       from: 'Home',
       to: 'School',
       status: 'completed',
-      cost: '$20.00'
+      cost: 'Rs. 20.00'
     },
     {
       id: '10',
@@ -87,7 +87,7 @@ export default function HistoryScreen() {
       from: 'School',
       to: 'Home',
       status: 'completed',
-      cost: '$18.00'
+      cost: 'Rs. 18.00'
     },
     {
       id: '11',
@@ -95,7 +95,7 @@ export default function HistoryScreen() {
       from: 'Home',
       to: 'School',
       status: 'completed',
-      cost: '$18.00'
+      cost: 'Rs. 18.00'
     },
     {
       id: '12',
@@ -103,7 +103,7 @@ export default function HistoryScreen() {
       from: 'School',
       to: 'Home',
       status: 'cancelled',
-      cost: '$0.00'
+      cost: 'Rs. 0.00'
     }
   ];
 
@@ -128,7 +128,7 @@ export default function HistoryScreen() {
               {['All Trips', 'Completed', 'Cancelled'].map((filter) => (
                 <TouchableOpacity
                   key={filter}
-                  className={`px-4 py-2 rounded-full${selectedFilter === filter ? ' bg-brand-deepNavy' : ' bg-brand-lightGray'}${filter !== 'All Trips' ? ' ml-3' : ''}`}
+                  className={`px-4 py-2 rounded-fullRs. {selectedFilter === filter ? ' bg-brand-deepNavy' : ' bg-brand-lightGray'}Rs. {filter !== 'All Trips' ? ' ml-3' : ''}`}
                   onPress={() => setSelectedFilter(filter)}
                 >
                   <Typography
