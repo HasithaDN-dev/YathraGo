@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import { House } from 'phosphor-react-native';
+import { House, Building } from 'phosphor-react-native';
 import { Typography } from '@/components/Typography';
 import { StatusBadge } from './StatusBadge';
 
@@ -57,7 +57,7 @@ export const RideStatus: React.FC<RideStatusProps> = ({
           </Typography>
         </View>
         <View className="flex-1 flex-row items-center justify-end">
-          <House size={16} color="#6b7280" weight="regular" />
+          <Building size={16} color="#6b7280" weight="regular" />
           <Typography variant="footnote" className="text-brand-deepNavy ml-1">
             {destination}
           </Typography>
