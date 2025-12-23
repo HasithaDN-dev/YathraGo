@@ -67,7 +67,7 @@ export default function AboutUsScreen() {
               </Typography>
               <TouchableOpacity onPress={() => handleDial("119")}>
                 <Typography variant="subhead" className="text-brand-deepNavy">
-                  119
+                  011 - 1234567
                 </Typography>
               </TouchableOpacity>
             </View>
